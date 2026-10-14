@@ -23,8 +23,8 @@ struct Args {
 
 fn parse_args() -> Args {
     let env = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
-    // Beim Entwickeln liegen Editor und Bedienfeld noch im Ordner der bisherigen Fassung.
-    let dev_public = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../touchdeck/public");
+    // Beim Entwickeln: Editor und Bedienfeld aus dem Quellordner.
+    let dev_public = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web");
     let mut args = Args {
         port: env("TOUCHDECK_PORT").and_then(|p| p.parse().ok()).unwrap_or(8770),
         data: env("TOUCHDECK_DATA").map_or_else(|| PathBuf::from("data"), PathBuf::from),

@@ -6,8 +6,7 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 
 | Ordner | Inhalt |
 |---|---|
-| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri): Server, Aktionen und Integrationen, Fenster mit Symbol in der Systemleiste – kleineres Paket, kein Node.js oder Python nötig |
-| [`touchdeck/`](touchdeck/) | Bisherige Fassung (Node.js + Electron) sowie Editor und Bedienfeld (HTML/JS), die auch die Rust-Fassung nutzt |
+| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri): Server, Aktionen und Integrationen, Editor und Bedienfeld, Fenster mit Symbol in der Systemleiste |
 | [`android/`](android/) | Android-App (Kotlin): findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
 
 ## Funktionen
@@ -29,32 +28,20 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 - **Desktop-Programm** mit Symbol in der Systemleiste, Autostart und
   Firewall-Freigabe fürs Heimnetz
 
-Ausführliche Beschreibung: [`touchdeck/README.md`](touchdeck/README.md),
-Rust-Fassung: [`touchdeck-rs/README.md`](touchdeck-rs/README.md)
+Ausführliche Beschreibung: [`touchdeck-rs/README.md`](touchdeck-rs/README.md)
 
 ## Bauen
 
-Voraussetzungen: Rust (für die Rust-Fassung), Node.js ab 22 (bisherige Fassung),
-Java 17+ und ein Android SDK (für die App). `env.sh` setzt alle Pfade auf Ordner
-im Projekt (`.rustup/`, `.cargo/`, `.node/`, `.android-sdk/`, `.cache/`), damit
+Voraussetzungen: Rust, Java 17+ und ein Android SDK (für die App). `env.sh` setzt alle
+Pfade auf Ordner im Projekt (`.rustup/`, `.cargo/`, `.android-sdk/`, `.cache/`), damit
 nichts systemweit installiert werden muss.
 
 ```sh
 source env.sh
 cd touchdeck-rs
-cargo test                                            # automatische Tests
+cargo test                     # automatische Tests
+scripts/build-android.sh       # Android-App bauen (signiert mit android/keystore/, siehe unten)
 cd app && XDG_CACHE_HOME="$PWD/../../.cache" cargo tauri build   # .deb und AppImage
-```
-
-Bisherige Fassung und Android-App:
-
-```sh
-source env.sh
-cd touchdeck
-npm install
-npm test             # automatische Tests
-npm run android      # Android-App bauen (signiert mit android/keystore/, siehe unten)
-npm run dist         # PC-Pakete bauen: dist/*.deb und dist/*.AppImage
 ```
 
 Die Android-App wird mit einem eigenen Schlüssel signiert. Er liegt **nicht**

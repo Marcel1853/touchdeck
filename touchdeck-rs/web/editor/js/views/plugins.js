@@ -6,16 +6,15 @@ const TABS = [['installed', 'Installiert'], ['market', 'Marktplatz'], ['dev', 'E
 let tab = 'installed';
 let plugins = null;
 let market = null;
-let available = true;
 let config = { advanced: false, confirm: 'AUF EIGENE GEFAHR' };
 
 async function refresh() {
   try {
     plugins = await api('GET', '/api/plugins');
     config = await api('GET', '/api/plugins/config');
-  } catch {
-    available = false;
+  } catch (err) {
     plugins = [];
+    toast(err.message, 'error');
   }
   render();
 }
@@ -57,7 +56,7 @@ async function installFromGitHub(repo) {
   const perms = preview.permissions.length ? preview.permissions.map((p) => `• ${p}`).join('\n') : '• keine besonderen Rechte';
   const existing = plugins?.find((p) => p.id === m.id);
   const answer = await ask(`🧱 ${m.name} ${m.version ? `(${m.version})` : ''}`,
-    `${preview.native ? '⚠️ EIGENES PROGRAMM MIT VOLLEN RECHTEN\n\n' : ''}${m.description || 'Keine Beschreibung.'}\n\nVon: ${m.author || 'unbekannt'}\nLizenz: ${m.license || 'keine Angabe (alle Rechte beim Autor)'}\nQuelle: ${preview.url} (Stand: ${preview.ref})\n\nDas Plugin möchte:\n${perms}\n\n`
+    `${preview.native ? '⚠️ EIGENES PROGRAMM MIT VOLLEN RECHTEN\n\n' : ''}${preview.listed ? '' : '⚠️ Nicht im Marktplatz – nicht angesehen, Installation auf eigene Gefahr.\n\n'}${m.description || 'Keine Beschreibung.'}\n\nVon: ${m.author || 'unbekannt'}\nLizenz: ${m.license || 'keine Angabe (alle Rechte beim Autor)'}\nQuelle: ${preview.url} (Stand: ${preview.ref})\n\nDas Plugin möchte:\n${perms}\n\n`
     + (preview.native ? 'Erweiterte Plugins laufen NICHT abgeschottet.' : 'Plugins laufen abgeschottet und können nur das oben Genannte. Installiere trotzdem nur Plugins, deren Quelle du vertraust.'),
     [{ value: 'install', label: existing ? 'Aktualisieren' : 'Installieren', kind: 'primary' }]);
   if (answer !== 'install') return;
@@ -226,7 +225,6 @@ export function renderPlugins() {
   const head = [h('h1', {}, 'Plugins'), h('p', { class: 'hint-text' }, 'Erweiterungen von anderen: neue Aktionen und Auslöser. Plugins laufen abgeschottet und dürfen nur, was sie beim Installieren angeben.'),
     h('div', { class: 'segmented plugin-tabs' }, TABS.map(([id, label]) => h('button', { type: 'button', class: id === tab ? 'active' : '', onclick: () => { tab = id; if (id === 'market') market = null; render(); } }, label)))];
   if (plugins === null) return el.replaceChildren(...head, h('p', { class: 'hint-text' }, 'Wird geladen …'));
-  if (!available) return el.replaceChildren(...head, h('div', { class: 'settings-card' }, h('p', {}, 'Plugins gibt es nur in der Rust-Fassung von TouchDeck.')));
   const body = { installed: installedTab, market: marketTab, dev: devTab, advanced: advancedTab }[tab]();
   el.replaceChildren(...head, ...body.filter(Boolean));
 }

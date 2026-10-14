@@ -818,7 +818,10 @@ impl Plugins {
         let (files, git_ref, url) = self.download(&owner, &repo).await?;
         let (m, digest, chosen) = manifest_of(files)?;
         let native = is_native(&m);
-        Ok(json!({ "repo": format!("{owner}/{repo}"), "ref": git_ref, "url": url, "manifest": localize(&m, lang), "permissions": describe_permissions(&m),
+        // Steht das Plugin im Marktplatz? Sonst zeigt der Editor „auf eigene Gefahr“.
+        let full = format!("{owner}/{repo}").to_lowercase();
+        let listed = self.market(lang).await.is_ok_and(|v| v["plugins"].as_array().into_iter().flatten().any(|p| p["repo"].as_str().is_some_and(|r| r.to_lowercase() == full)));
+        Ok(json!({ "listed": listed, "repo": format!("{owner}/{repo}"), "ref": git_ref, "url": url, "manifest": localize(&m, lang), "permissions": describe_permissions(&m),
             "digest": digest, "native": native, "advanced": self.advanced(), "files": chosen.len() }))
     }
 

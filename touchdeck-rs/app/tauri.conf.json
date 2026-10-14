@@ -23,8 +23,8 @@
     "homepage": "https://github.com/Marcel1853",
     "icon": ["icons/icon.png"],
     "resources": {
-      "../../touchdeck/public/": "public/",
-      "../../touchdeck/downloads/TouchDeck.apk": "downloads/TouchDeck.apk"
+      "../web/": "web/",
+      "../downloads/TouchDeck.apk": "downloads/TouchDeck.apk"
     },
     "linux": {
       "deb": {

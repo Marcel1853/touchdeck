@@ -31,7 +31,6 @@ export const S = {
   apps: null,
   icons: [],
   iconPacks: [],
-  iconPacksAvailable: false,
   logs: [],
   showIcons: false,
 };

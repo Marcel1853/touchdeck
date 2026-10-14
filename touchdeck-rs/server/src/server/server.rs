@@ -643,9 +643,6 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let release = std::fs::read_to_string("/proc/sys/kernel/osrelease").unwrap_or_default();
             Ok(json!({
                 "version": VERSION,
-                "runtime": "Rust",
-                "node": null,
-                "electron": null,
                 "platform": format!("Linux {}", release.trim()),
                 "host": linux::hostname(),
                 "dataDir": store.data_dir,

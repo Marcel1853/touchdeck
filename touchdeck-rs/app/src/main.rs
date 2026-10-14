@@ -35,15 +35,15 @@ fn data_dir() -> PathBuf {
     config.join("TouchDeck/data")
 }
 
-/** Editor und Bedienfeld: im Paket als Ressource, beim Entwickeln aus dem Ordner der bisherigen Fassung. */
+/** Editor und Bedienfeld: im Paket als Ressource, beim Entwickeln aus dem Quellordner touchdeck-rs/web. */
 fn public_dir(app: &AppHandle) -> PathBuf {
     if let Some(d) = std::env::var_os("TOUCHDECK_PUBLIC") {
         return PathBuf::from(d);
     }
-    let bundled = app.path().resource_dir().map(|r| r.join("public"));
+    let bundled = app.path().resource_dir().map(|r| r.join("web"));
     match bundled {
         Ok(p) if p.join("editor/index.html").exists() => p,
-        _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../touchdeck/public"),
+        _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web"),
     }
 }
 

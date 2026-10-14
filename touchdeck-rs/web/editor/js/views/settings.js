@@ -385,7 +385,6 @@ function infoSection() {
   const up = `${Math.floor(info.uptime / 3600)} h ${Math.floor((info.uptime % 3600) / 60)} min`;
   const rows = [
     ['Version', `TouchDeck ${info.version}`],
-    ['Laufzeit', info.runtime ?? (info.electron ? `Electron ${info.electron} · Node ${info.node}` : `Node ${info.node}`)],
     ['System', `${info.platform} · ${info.host}`],
     ['Läuft seit', up],
     ['Adresse', info.lan.map((ip) => `http://${ip}:${info.port}`).join(', ') || 'kein Netzwerk'],

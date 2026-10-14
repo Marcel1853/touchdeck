@@ -14,11 +14,9 @@ const usage = (packId) => S.pages.flatMap((p) => p.buttons).filter((b) => b.icon
 export async function loadIconPacks() {
   try {
     S.iconPacks = await api('GET', '/api/iconpacks');
-    S.iconPacksAvailable = true;
-  } catch {
-    // Die ältere Fassung kennt noch keine Icon-Pakete.
+  } catch (err) {
     S.iconPacks = [];
-    S.iconPacksAvailable = false;
+    toast(err.message, 'error');
   }
 }
 
@@ -129,7 +127,6 @@ function packCard(pack) {
 export function iconPacksSection() {
   const title = [h('h1', {}, 'Icon-Pakete'), h('p', { class: 'hint-text' },
     'Eigene Bildersammlungen für deine Buttons. Lege Pakete an, füge Bilder hinzu und gib sie als .tdicons-Datei weiter – oder importiere Pakete von anderen. Bitte nur Bilder verwenden, die du nutzen darfst (selbst erstellt oder mit passender Lizenz).')];
-  if (!S.iconPacksAvailable) return [...title, h('div', { class: 'settings-card' }, h('p', {}, 'Icon-Pakete gibt es nur in der Rust-Fassung von TouchDeck.'))];
   const importInput = h('input', { type: 'file', hidden: true, accept: '.tdicons,.zip,application/zip', onchange: (e) => e.target.files[0] && importPack(e.target.files[0]) });
   return [
     ...title,
