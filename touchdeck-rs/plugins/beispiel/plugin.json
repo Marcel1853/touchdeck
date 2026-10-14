@@ -1,0 +1,39 @@
+{
+  "id": "beispiel",
+  "name": "Beispiel-Plugin",
+  "version": "1.0.0",
+  "author": "TouchDeck",
+  "description": "Zeigt, wie Plugins funktionieren: eigene Aktionen, ein Auslöser, ein Zeitgeber und Werte.",
+  "main": "plugin.js",
+  "permissions": {
+    "http": ["api.github.com"],
+    "values": true,
+    "notify": false
+  },
+  "settings": [
+    { "key": "gruss", "label": "Begrüßung", "type": "text", "default": "Hallo" }
+  ],
+  "actions": [
+    {
+      "id": "gruessen",
+      "label": "Begrüßen",
+      "icon": "👋",
+      "fields": [{ "key": "name", "label": "Name ({Wert} möglich)", "type": "text" }]
+    },
+    {
+      "id": "zaehlen",
+      "label": "Zähler um 1 erhöhen",
+      "icon": "🔢",
+      "fields": [{ "key": "wert", "label": "Wert", "type": "dynamic", "source": "variables", "allowNew": true }]
+    },
+    { "id": "github", "label": "GitHub-Sterne abfragen", "icon": "⭐", "fields": [{ "key": "repo", "label": "Repo (besitzer/name)", "type": "text" }] }
+  ],
+  "triggers": [
+    {
+      "id": "zehn",
+      "label": "Zähler erreicht 10",
+      "icon": "🎯",
+      "fields": [{ "key": "wert", "label": "Wert (leer = jeder)", "type": "text" }]
+    }
+  ]
+}

@@ -6,6 +6,8 @@ import { mountValues, renderValues } from './views/values.js';
 import { mountFlows, renderFlows } from './views/flows.js';
 import { mountEvents, renderEvents } from './views/events.js';
 import { mountLogs, unmountLogs, renderLogs } from './views/logs.js';
+import { loadIconPacks } from './views/iconpacks.js';
+import { mountPlugins, renderPlugins } from './views/plugins.js';
 import { mountSettings, renderSettings, applyTheme, updateSettings, resetSettingsCache } from './views/settings.js';
 
 const VIEWS = {
@@ -14,6 +16,7 @@ const VIEWS = {
   events: { icon: '⚡', label: 'Events', mount: mountEvents, render: renderEvents },
   flows: { icon: '🧩', label: 'Vorlagen', mount: mountFlows, render: renderFlows },
   logs: { icon: '📜', label: 'Logs', mount: mountLogs, render: renderLogs, unmount: unmountLogs },
+  plugins: { icon: '🧱', label: 'Plugins', mount: mountPlugins, render: renderPlugins },
   settings: { icon: '⚙️', label: 'Einstellungen', mount: mountSettings, render: renderSettings },
 };
 
@@ -131,7 +134,7 @@ function bind() {
       deleteButton();
     } else if (S.view === 'pages' && e.key === 'Escape' && sel()) {
       select(null);
-    } else if (ctrl && /^[1-6]$/.test(key)) {
+    } else if (ctrl && /^[1-7]$/.test(key)) {
       e.preventDefault();
       showView(Object.keys(VIEWS)[Number(key) - 1]);
     }
@@ -152,6 +155,7 @@ async function init() {
   try {
     await loadState();
     S.icons = await api('GET', '/api/icons');
+    await loadIconPacks();
     applyTheme();
     showView('pages');
     watchServer();

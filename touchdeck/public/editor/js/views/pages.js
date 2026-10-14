@@ -2,6 +2,7 @@
 import { buttonElement, setupGrid, iconUrl } from '/shared/render.js';
 import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
+import { iconPicker } from './iconpacks.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
 
 const EMOJIS = '⏯️ ⏮️ ⏭️ ⏹️ 🔊 🔉 🔇 🎙️ 🎧 🎵 🎬 📷 🎥 🖥️ 💻 ⌨️ 🖱️ 📁 📂 📄 📝 🌐 🔍 ⚙️ 🔧 🔒 🔓 💡 🔔 💬 📧 📅 ⏰ ⏱️ 🚀 🎮 🕹️ 🏠 ⬅️ ➡️ ⬆️ ⬇️ ↩️ 🔄 ✅ ❌ ⭐ ❤️ 🔥 ⚡ 🌙 ☀️ 🎨 ✂️ 📋 🗑️ 💾 📤 📥 🔴 🟢 🔵 🟡'.split(' ');
@@ -555,10 +556,7 @@ function lookTab(b) {
       h('input', { type: 'checkbox', checked: b.iconFit === 'cover', onchange: (e) => mutate(() => (b.iconFit = e.target.checked ? 'cover' : 'contain')) }),
       'Bild füllt den ganzen Button'),
     h('div', { class: 'emoji-grid' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => mutate(() => (b.icon = { type: 'emoji', value: em })) }, em))),
-    S.icons.length > 0 && h('div', {},
-      h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S.showIcons = !S.showIcons; render(); } },
-        `${S.showIcons ? '▾' : '▸'} Eigene Bilder (${S.icons.length})`),
-      S.showIcons && h('div', { class: 'icon-grid' }, S.icons.map((name) => h('button', { type: 'button', title: name, onclick: () => mutate(() => (b.icon = { type: 'image', value: name })) }, h('img', { src: iconUrl(name), alt: '', loading: 'lazy' }))))),
+    iconPicker(b),
 
     h('h3', {}, 'Farben'),
     h('div', { class: 'colors' },

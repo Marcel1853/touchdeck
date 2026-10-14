@@ -27,6 +27,8 @@ use crate::core::actions::{RunOpts, option_source, run_actions};
 use crate::core::backup::Backups;
 use crate::core::catalog;
 use crate::core::events::EventEngine;
+use crate::core::iconpacks::IconPacks;
+use crate::core::plugins::Plugins;
 use crate::core::live::{apply_slider, collect_live};
 use crate::core::log::Log;
 use crate::core::store::{Action, Store, action_list, new_id};
@@ -38,6 +40,8 @@ use crate::system::linux;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_BODY: usize = 8 * 1024 * 1024;
+// Icon-Pakete hochladen oder importieren darf nur der Editor auf diesem PC, dafür mit größerem Limit.
+const MAX_UPLOAD: usize = 128 * 1024 * 1024;
 const PAIR_TIMEOUT: Duration = Duration::from_secs(2 * 60);
 
 /** Eine Kopplungsanfrage, die am PC bestätigt werden muss. */
@@ -111,6 +115,8 @@ pub struct App {
     pub twitch: TwitchClient,
     pub discord: DiscordClient,
     pub events: EventEngine,
+    pub iconpacks: IconPacks,
+    pub plugins: Plugins,
     pub version: &'static str,
     pub port: u16,
     public_dir: PathBuf,
@@ -150,13 +156,20 @@ impl App {
 
     fn editor_state(&self, store: &Store) -> Value {
         let mut state = self.deck_state(store);
+        // Aktionen und Auslöser der eingeschalteten Plugins kommen zum festen Katalog dazu.
+        let (plugin_actions, plugin_triggers) = self.plugins.catalog();
+        let with_plugins = |base: &Value, extra: Vec<Value>| {
+            let mut list = base.as_array().cloned().unwrap_or_default();
+            list.extend(extra);
+            Value::Array(list)
+        };
         let extra = json!({
             "flows": store.config.flows,
             "events": store.config.events,
             "values": store.config.values,
             "settings": store.public_settings(),
-            "actionTypes": *catalog::ACTION_TYPES,
-            "triggerTypes": *catalog::TRIGGER_TYPES,
+            "actionTypes": with_plugins(&catalog::ACTION_TYPES, plugin_actions),
+            "triggerTypes": with_plugins(&catalog::TRIGGER_TYPES, plugin_triggers),
             "liveSources": catalog::live_sources(),
             "sliderTargets": catalog::slider_targets(),
             "pairingUrls": self.pairing_urls(store),
@@ -454,7 +467,23 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 36] = [
+const ROUTES: [&str; 52] = [
+    "GET /api/plugins",
+    "GET /api/plugins/market",
+    "POST /api/plugins/preview",
+    "POST /api/plugins/install",
+    "POST /api/plugins/dev",
+    "POST /api/plugins/reload",
+    "POST /api/plugins/enable",
+    "POST /api/plugins/settings",
+    "POST /api/plugins/remove",
+    "GET /api/iconpacks",
+    "POST /api/iconpacks",
+    "POST /api/iconpacks/update",
+    "POST /api/iconpacks/delete",
+    "POST /api/iconpacks/add",
+    "POST /api/iconpacks/remove-icon",
+    "POST /api/iconpacks/import",
     "GET /api/state",
     "PUT /api/pages",
     "PUT /api/settings",
@@ -748,6 +777,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
                 .into_iter()
                 .flatten()
                 .flatten()
+                .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
                 .filter_map(|e| e.file_name().into_string().ok())
                 .filter(|n| !n.starts_with('.'))
                 .collect();
@@ -781,6 +811,64 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             store.replace_template_pages("touchportal", pages).map_err(bad)?;
             Ok(json!({ "ok": true, "stats": stats, "pages": store.config.pages, "revision": store.revision, "updated": updated }))
         }
+        // Plugins
+        "GET /api/plugins" => Ok(json!(app.plugins.list())),
+        "GET /api/plugins/market" => app.plugins.market().await.map_err(user_error),
+        "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo")).await.map_err(user_error),
+        "POST /api/plugins/install" => {
+            let id = app.plugins.install(app, str_of(&body, "repo"), str_of(&body, "digest")).await.map_err(user_error)?;
+            Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list() }))
+        }
+        "POST /api/plugins/dev" => {
+            let id = app.plugins.install_local(app, str_of(&body, "path")).map_err(bad)?;
+            Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list() }))
+        }
+        "POST /api/plugins/reload" => {
+            app.plugins.reload(app, str_of(&body, "id")).map_err(bad)?;
+            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+        }
+        "POST /api/plugins/enable" => {
+            app.plugins.set_enabled(app, str_of(&body, "id"), body["enabled"] == true).map_err(bad)?;
+            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+        }
+        "POST /api/plugins/settings" => {
+            app.plugins.set_settings(app, str_of(&body, "id"), &body["settings"]).map_err(bad)?;
+            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+        }
+        "POST /api/plugins/remove" => {
+            app.plugins.remove(app, str_of(&body, "id")).map_err(bad)?;
+            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+        }
+
+        // Icon-Pakete
+        "GET /api/iconpacks" => Ok(json!(app.iconpacks.list())),
+        "POST /api/iconpacks" => Ok(json!({ "ok": true, "id": app.iconpacks.create(&body).map_err(bad)?, "packs": app.iconpacks.list() })),
+        "POST /api/iconpacks/update" => {
+            app.iconpacks.update(str_of(&body, "id"), &body).map_err(bad)?;
+            Ok(json!({ "ok": true, "packs": app.iconpacks.list() }))
+        }
+        "POST /api/iconpacks/delete" => {
+            app.iconpacks.delete(str_of(&body, "id")).map_err(bad)?;
+            Ok(json!({ "ok": true, "packs": app.iconpacks.list() }))
+        }
+        "POST /api/iconpacks/add" => {
+            let saved = app.iconpacks.add_icons(str_of(&body, "id"), &body["files"]).map_err(bad)?;
+            Ok(json!({ "ok": true, "saved": saved, "packs": app.iconpacks.list() }))
+        }
+        "POST /api/iconpacks/remove-icon" => {
+            app.iconpacks.remove_icon(str_of(&body, "id"), str_of(&body, "file")).map_err(bad)?;
+            Ok(json!({ "ok": true, "packs": app.iconpacks.list() }))
+        }
+        "POST /api/iconpacks/import" => {
+            let data = str_of(&body, "data");
+            let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
+            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, "Die Datei ist beschädigt."))?;
+            let fallback = str_of(&body, "fileName").trim_end_matches(".tdicons").trim_end_matches(".zip").to_string();
+            let (id, count) = app.iconpacks.import(&bytes, &fallback).map_err(bad)?;
+            app.log.info("Icons", format!("Icon-Paket importiert ({count} Bilder)"));
+            Ok(json!({ "ok": true, "id": id, "count": count, "packs": app.iconpacks.list() }))
+        }
+
         "GET /api/options/*" => {
             let name = path.trim_start_matches("/api/options/");
             match option_source(app, name).await {
@@ -822,7 +910,8 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         let body = if method == Method::GET {
             json!({})
         } else {
-            match axum::body::to_bytes(req.into_body(), MAX_BODY).await {
+            let limit = if who == Some(Who::Local) && route.starts_with("POST /api/iconpacks") { MAX_UPLOAD } else { MAX_BODY };
+            match axum::body::to_bytes(req.into_body(), limit).await {
                 Err(_) => return error_response(413, "Anfrage zu groß"),
                 Ok(b) if b.is_empty() => json!({}),
                 Ok(b) => match serde_json::from_slice(&b) {
@@ -871,6 +960,17 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
             res.headers_mut().insert(header::CONTENT_TYPE, "application/vnd.android.package-archive".parse().expect("gültiger Typ"));
         }
         return res;
+    }
+    if path == "/iconpacks/export" && who == Some(Who::Local) {
+        return match app.iconpacks.export(query.get("id").map_or("", String::as_str)) {
+            Ok((file, bytes)) => Response::builder()
+                .header(header::CONTENT_TYPE, "application/zip")
+                .header(header::CACHE_CONTROL, "no-store")
+                .header(header::CONTENT_DISPOSITION, format!("attachment; filename*=UTF-8''{}", percent_encoding::utf8_percent_encode(&file, percent_encoding::NON_ALPHANUMERIC)))
+                .body(Body::from(bytes))
+                .expect("gültige Antwort"),
+            Err(err) => error_response(404, &err.to_string()),
+        };
     }
     if path == "/backups/download" && who == Some(Who::Local) {
         let name = query.get("name").cloned().unwrap_or_default();
@@ -998,12 +1098,16 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
     let log = Arc::new(Log::new(store.data_dir.join("logs")));
     log.set_level(&store.settings().logs.level);
     let backups = Backups::new(&store.data_dir);
+    let iconpacks = IconPacks::new(&store.icon_dir);
+    let plugins = Plugins::new(&store.data_dir);
     let store = Arc::new(Mutex::new(store));
     let app = Arc::new(App {
         obs: ObsClient::new(store.clone()),
         twitch: TwitchClient::new(store.clone(), log.clone()),
         discord: DiscordClient::new(store.clone(), log.clone()),
         events: EventEngine::default(),
+        iconpacks,
+        plugins,
         backups,
         store,
         log,
@@ -1100,6 +1204,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         }
     });
 
+    app.plugins.start_all(&app);
     EventEngine::start(&app);
     if app.twitch.connected() {
         let a = app.clone();

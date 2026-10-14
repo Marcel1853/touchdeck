@@ -118,7 +118,10 @@ struct Ctx {
     stop: bool,
 }
 
-fn label(kind: &str) -> String {
+fn label(app: &App, kind: &str) -> String {
+    if let Some(l) = app.plugins.label(kind) {
+        return l;
+    }
     catalog::ACTION_TYPES
         .as_array()
         .into_iter()
@@ -130,7 +133,7 @@ fn label(kind: &str) -> String {
 }
 
 fn known(kind: &str) -> bool {
-    catalog::ACTION_TYPES.as_array().into_iter().flatten().any(|a| a["type"] == kind)
+    kind.starts_with("plugin:") || catalog::ACTION_TYPES.as_array().into_iter().flatten().any(|a| a["type"] == kind)
 }
 
 /** Führt die Aktionen nacheinander aus und bricht beim ersten Fehler ab. Ergebnis: { ok, error?, messages, navigate }. */
@@ -144,7 +147,7 @@ pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) 
                 Ok(Some(msg)) if !msg.is_empty() => messages.push(msg),
                 Ok(_) => {}
                 Err(err) => {
-                    let label = if known(&action.kind) { label(&action.kind) } else { action.kind.clone() };
+                    let label = if known(&action.kind) { label(app, &action.kind) } else { action.kind.clone() };
                     return json!({ "ok": false, "error": format!("{label}: {err:#}"), "messages": messages, "navigate": ctx.navigate });
                 }
             }
@@ -198,6 +201,14 @@ fn resolve_button(app: &App, target: &str, ctx: &Ctx) -> Result<String> {
 }
 
 async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Option<String>> {
+    if action.kind.starts_with("plugin:") {
+        // Platzhalter wie {Wert} oder {Event.Nutzer} vor der Übergabe ans Plugin ersetzen.
+        let vars = variables(app);
+        let params: Map<String, Value> =
+            action.params.iter().map(|(k, v)| (k.clone(), v.as_str().map_or_else(|| v.clone(), |t| json!(fill_variables(t, &vars, &ctx.opts.event_data))))).collect();
+        let info = json!({ "buttonId": ctx.opts.button_id, "event": ctx.opts.event_data });
+        return app.plugins.run_action(&action.kind, &params, info, crate::core::events::current_depth()).await;
+    }
     let p = P(&action.params);
     let none = Ok(None);
     match action.kind.as_str() {

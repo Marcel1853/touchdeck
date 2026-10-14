@@ -6,8 +6,8 @@ das Programmfenster nutzt Tauri mit der Web-Ansicht des Systems statt Electron.
 
 | | bisher (Electron) | Rust |
 |---|---|---|
-| .deb-Paket | 100 MB | 6,6 MB |
-| AppImage (bringt WebKitGTK mit) | 126 MB | 88 MB |
+| .deb-Paket | 100 MB | 7,2 MB |
+| AppImage (bringt WebKitGTK mit) | 126 MB | 89 MB |
 | Tastatur, Maus, Fenster | Python-Hilfsskript | direkt in Rust (X11/XTest) |
 | Laufzeit | Node.js + Chromium | ein Programm + WebKitGTK |
 
@@ -22,15 +22,28 @@ touchdeck-rs/
 ├── server/                 Bibliothek + Kommandozeilen-Server (touchdeck-server)
 │   ├── catalog/            Beschreibung der Aktionen und Auslöser für den Editor
 │   └── src/
-│       ├── core/           Daten (store), Aktionen, Events, Live-Werte, Protokoll, Sicherungen
+│       ├── core/           Daten (store), Aktionen, Events, Live-Werte, Icon-Pakete, Plugins, Protokoll, Sicherungen
 │       ├── server/         HTTP-Routen, WebSocket, Suche im WLAN
 │       ├── system/         Linux: Programme, Audio, Medien (linux.rs), Tastatur/Maus/Fenster (x11.rs)
 │       └── integrations/   OBS, Steam, Twitch, Discord, Import aus Touch Portal
-└── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart
+├── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart
+└── plugins/beispiel/       Beispiel-Plugin (Vorlage für eigene Plugins)
 ```
 
 Editor und Bedienfeld (HTML/JS) kommen unverändert aus `../touchdeck/public`
 und werden beim Bauen ins Paket übernommen.
+
+## Icon-Pakete
+
+Eigene Bildersammlungen (Einstellungen › Icon-Pakete): anlegen, Bilder hinzufügen,
+als `.tdicons`-Datei exportieren und weitergeben, Pakete anderer importieren.
+Abgelegt im Datenordner unter `icons/packs/`.
+
+## Plugins
+
+Erweiterungen in JavaScript, abgeschottet in einer eigenen JS-Engine (QuickJS) mit
+festen Grenzen und Berechtigungen; Installation nur aus öffentlichen GitHub-Repos,
+dazu ein Marktplatz und ein Testmodus für Entwickler. Anleitung: [PLUGINS.md](PLUGINS.md).
 
 ## Entwickeln
 

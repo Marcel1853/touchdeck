@@ -22,6 +22,9 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
   Discord (Sprachsteuerung über das Discord-Programm, Webhooks)
 - **Handy und Tablet**: Android-App oder Bedienfeld im Browser; mehrere PCs,
   automatische Suche im WLAN, Kopplung mit Bestätigung am PC, optionale PIN
+- **Icon-Pakete**: eigene Bildersammlungen anlegen, exportieren und weitergeben
+- **Plugins**: Erweiterungen in JavaScript, abgeschottet und nur aus öffentlichen
+  GitHub-Repos, mit Marktplatz ([Anleitung](touchdeck-rs/PLUGINS.md))
 - **Desktop-Programm** mit Symbol in der Systemleiste, Autostart und
   Firewall-Freigabe fürs Heimnetz
 

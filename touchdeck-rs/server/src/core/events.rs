@@ -21,6 +21,11 @@ tokio::task_local! {
 }
 const MAX_DEPTH: u32 = 8;
 
+/** Wie tief die aktuelle Kette von Events ist (0 = direkt ausgelöst). */
+pub fn current_depth() -> u32 {
+    CHAIN.try_with(|d| *d).unwrap_or(0)
+}
+
 fn s(v: &Value) -> String {
     js_string(v)
 }
@@ -90,6 +95,8 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
             };
             text_ok && (roles.is_empty() || d["badges"].as_array().into_iter().flatten().any(|b| roles.contains(&s(b).as_str())))
         }
+        // Plugin-Auslöser: jede ausgefüllte Einstellung muss zum gleichnamigen Feld des Ereignisses passen.
+        k if k.starts_with("plugin:") => p.iter().all(|(key, want)| empty_or_eq(want, &d[key])),
         _ => false,
     }
 }
@@ -286,17 +293,26 @@ impl EventEngine {
 
     /** Ein Ereignis ist eingetreten: alle passenden Events ausführen. */
     pub fn fire(&self, app: &Arc<App>, kind: &str, data: &Value) {
-        if !known(kind) {
+        self.fire_at(app, kind, data, current_depth());
+    }
+
+    /** Wie fire, aber mit bekannter Verkettungstiefe (Plugins laufen in eigenen Threads). */
+    pub fn fire_at(&self, app: &Arc<App>, kind: &str, data: &Value, depth: u32) {
+        let plugin = kind.starts_with("plugin:") && app.plugins.has_trigger(kind);
+        if !plugin && !known(kind) {
             return;
         }
         let matching: Vec<Sub> = self.subs.lock().unwrap().iter().filter(|s| s.trigger.kind == kind && trigger_matches(kind, &s.trigger.params, data)).cloned().collect();
         for sub in matching {
-            self.run_sub(app, &sub, data);
+            self.run_sub_at(app, &sub, data, depth);
         }
     }
 
     fn run_sub(&self, app: &Arc<App>, sub: &Sub, data: &Value) {
-        let depth = CHAIN.try_with(|d| *d).unwrap_or(0);
+        self.run_sub_at(app, sub, data, current_depth());
+    }
+
+    fn run_sub_at(&self, app: &Arc<App>, sub: &Sub, data: &Value, depth: u32) {
         if depth >= MAX_DEPTH {
             app.log.warn("Events", format!("„{}“ übersprungen: Events lösen sich gegenseitig endlos aus.", sub.name));
             return;
