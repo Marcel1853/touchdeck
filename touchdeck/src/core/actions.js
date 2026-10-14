@@ -1,6 +1,7 @@
 // Alle Aktionstypen: Beschreibung für den Editor und Ausführung auf dem PC.
 import * as linux from '../system/linux.js';
 import * as steam from '../integrations/steam.js';
+import { sendWebhook } from '../integrations/discord.js';
 import path from 'node:path';
 
 /** Ersetzt {Name} durch den Wert, {Event.X} durch Daten des auslösenden Events und {Zeit}/{Datum}. */
@@ -720,6 +721,88 @@ export const ACTION_TYPES = [
     },
   },
 
+
+  // ---------- Discord ----------
+  {
+    type: 'discord_mute', category: 'Discord', label: 'Mikrofon stumm (Discord)', icon: '🎙️',
+    fields: [{ key: 'op', label: 'Aktion', type: 'select', default: 'toggle', options: [opt('toggle', 'Umschalten'), opt('on', 'Stumm'), opt('off', 'Laut')] }],
+    async run(p, ctx) {
+      const v = await ctx.discord.voiceSettings();
+      const mute = p.op === 'on' ? true : p.op === 'off' ? false : !v.mute;
+      await ctx.discord.setVoice({ mute });
+      return mute ? 'Discord: stumm' : 'Discord: Mikrofon an';
+    },
+  },
+  {
+    type: 'discord_deafen', category: 'Discord', label: 'Taub schalten (Discord)', icon: '🎧',
+    fields: [{ key: 'op', label: 'Aktion', type: 'select', default: 'toggle', options: [opt('toggle', 'Umschalten'), opt('on', 'Taub'), opt('off', 'Hören')] }],
+    async run(p, ctx) {
+      const v = await ctx.discord.voiceSettings();
+      const deaf = p.op === 'on' ? true : p.op === 'off' ? false : !v.deaf;
+      await ctx.discord.setVoice({ deaf });
+      return deaf ? 'Discord: taub' : 'Discord: hört wieder';
+    },
+  },
+  {
+    type: 'discord_channel', category: 'Discord', label: 'Sprachkanal betreten / verlassen', icon: '🔊',
+    fields: [
+      { key: 'op', label: 'Aktion', type: 'select', default: 'join', options: [opt('join', 'Betreten'), opt('toggle', 'Betreten / verlassen'), opt('leave', 'Verlassen')] },
+      { key: 'channel', label: 'Sprachkanal', type: 'dynamic', source: 'discord-voice-channels', showIf: { op: ['join', 'toggle'] } },
+    ],
+    async run(p, ctx) {
+      const d = ctx.discord;
+      const current = (await d.call('GET_SELECTED_VOICE_CHANNEL'))?.id;
+      const leave = p.op === 'leave' || (p.op === 'toggle' && current === p.channel);
+      if (leave) {
+        await d.call('SELECT_VOICE_CHANNEL', { channel_id: null });
+        return 'Sprachkanal verlassen';
+      }
+      if (!p.channel) throw new Error('Kein Sprachkanal ausgewählt.');
+      await d.call('SELECT_VOICE_CHANNEL', { channel_id: p.channel, force: true });
+    },
+  },
+  {
+    type: 'discord_volume', category: 'Discord', label: 'Lautstärke (Discord)', icon: '🔉',
+    fields: [
+      { key: 'target', label: 'Was?', type: 'select', default: 'output', options: [opt('output', 'Ausgabe (andere hören)'), opt('input', 'Eingabe (eigenes Mikrofon)')] },
+      { key: 'op', label: 'Aktion', type: 'select', default: 'up', options: [opt('up', 'Lauter'), opt('down', 'Leiser'), opt('set', 'Auf Wert setzen')] },
+      { key: 'step', label: 'Schritt', type: 'number', default: 10, min: 1, max: 100, showIf: { op: ['up', 'down'] } },
+      { key: 'value', label: 'Wert (Ausgabe 0–200, Eingabe 0–100)', type: 'number', default: 100, min: 0, max: 200, showIf: { op: ['set'] } },
+    ],
+    async run(p, ctx) {
+      const target = p.target === 'input' ? 'input' : 'output';
+      const max = target === 'input' ? 100 : 200;
+      const v = await ctx.discord.voiceSettings();
+      const cur = v[target]?.volume ?? 100;
+      const step = Number(p.step) || 10;
+      const next = Math.round(Math.max(0, Math.min(max, p.op === 'set' ? Number(p.value) : cur + (p.op === 'down' ? -step : step))));
+      await ctx.discord.setVoice({ [target]: { volume: next } });
+      return `Discord ${target === 'input' ? 'Eingabe' : 'Ausgabe'}: ${next}`;
+    },
+  },
+  {
+    type: 'discord_mode', category: 'Discord', label: 'Sprachmodus (Push-to-Talk)', icon: '📻',
+    fields: [{ key: 'op', label: 'Modus', type: 'select', default: 'toggle', options: [opt('toggle', 'Umschalten'), opt('PUSH_TO_TALK', 'Push-to-Talk'), opt('VOICE_ACTIVITY', 'Sprachaktivierung')] }],
+    async run(p, ctx) {
+      const v = await ctx.discord.voiceSettings();
+      const type = p.op === 'toggle' || !p.op ? (v.mode?.type === 'PUSH_TO_TALK' ? 'VOICE_ACTIVITY' : 'PUSH_TO_TALK') : p.op;
+      await ctx.discord.setVoice({ mode: { type } });
+      return type === 'PUSH_TO_TALK' ? 'Push-to-Talk' : 'Sprachaktivierung';
+    },
+  },
+  {
+    type: 'discord_webhook', category: 'Discord', label: 'Nachricht in Kanal senden (Webhook)', icon: '💬',
+    fields: [
+      { key: 'url', label: 'Webhook-URL (Kanal bearbeiten → Integrationen → Webhooks)', type: 'text', placeholder: 'https://discord.com/api/webhooks/…' },
+      { key: 'message', label: 'Nachricht ({Wert} und {Event.X} möglich)', type: 'textarea' },
+      { key: 'username', label: 'Absendername (optional)', type: 'text' },
+    ],
+    async run(p, ctx) {
+      await sendWebhook(p.url, { content: fillVariables(p.message ?? '', ctx.store, ctx.eventData), username: p.username });
+      return 'Nachricht gesendet';
+    },
+  },
+
   // ---------- Logik ----------
   {
     type: 'run_flow', category: 'Logik', label: 'Vorlage ausführen', icon: '🧩',
@@ -825,6 +908,7 @@ const GROUP = {
   Dateien: 'Allgemein', HTTP: 'Allgemein', Visuelles: 'Allgemein',
   Audio: 'Audio, Musik & Medien', Medien: 'Audio, Musik & Medien', Soundboard: 'Audio, Musik & Medien',
   'OBS Studio': 'Streaming', Twitch: 'Streaming',
+  Discord: 'Kommunikation',
   Steam: 'Spiele',
 };
 for (const t of ACTION_TYPES) {
@@ -871,6 +955,7 @@ export const OPTION_SOURCES = {
   ],
   'toggle-buttons': ({ store }) => store.pages.flatMap((pg) => pg.buttons.filter((b) => b.mode === 'toggle').map((b) => ({ value: b.id, label: `${pg.name} › ${b.title || b.id}` }))),
   'audio-sinks-only': () => linux.audioDevices('sinks'),
+  'discord-voice-channels': ({ discord }) => discord.voiceChannels(),
   'twitch-rewards': async ({ twitch }) => (await twitch.api('GET', `/channel_points/custom_rewards?broadcaster_id=${twitch.me}&only_manageable_rewards=true`)).data
     .map((r) => ({ value: r.id, label: `${r.title} (${r.cost})` })),
   variables: ({ store }) => {

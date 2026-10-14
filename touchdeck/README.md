@@ -175,6 +175,27 @@ Chat-Befehl wie `!szene`, Stream online/offline, Werbepause) und
 Live-Anzeigen (live?, Zuschauer, Follower). Die Anmeldung bleibt nur auf
 dem PC und wird automatisch erneuert.
 
+## Discord einrichten
+
+**Sprachsteuerung** (stumm, taub, Sprachkanal betreten/verlassen, Lautstärke,
+Push-to-Talk) läuft über das Discord-Programm am selben PC. Jeder nutzt dafür
+eine eigene Discord-Anwendung:
+
+1. Auf <https://discord.com/developers/applications> „New Application“ anlegen.
+2. Unter **OAuth2 → Redirects** `http://localhost` eintragen.
+3. **Client ID** und **Client Secret** (über „Reset Secret“) kopieren.
+4. In TouchDeck: **Einstellungen → Integrationen → Discord** eintragen,
+   **Mit Discord verbinden** klicken und in Discord **Autorisieren**.
+
+Danach: Aktionen unter „Kommunikation › Discord“, Events (stumm/taub
+geschaltet, Sprachkanal betreten/verlassen) und Live-Anzeigen (stumm?, taub?,
+Sprachkanal). TouchDeck verbindet sich automatisch, sobald Discord läuft
+(auch Flatpak und Snap).
+
+**Nachrichten in einen Kanal** gehen ohne Anmeldung per Webhook: in Discord
+Kanal bearbeiten → Integrationen → Webhooks → Webhook-URL kopieren und in der
+Aktion „Nachricht in Kanal senden“ eintragen.
+
 ## OBS einrichten
 
 1. In OBS: **Werkzeuge → WebSocket-Servereinstellungen → WebSocket-Server aktivieren**.
@@ -233,5 +254,6 @@ public/shared/            gemeinsame Button-Darstellung
 helpers/xinput.py         X11: Tastatur, Maus, Fenster
 src/server/discovery.js   automatisches Finden (UDP 8769)
 src/integrations/twitch.js  Twitch (Geräte-Code-Anmeldung, Helix, EventSub)
+src/integrations/discord.js Discord (lokale RPC-Schnittstelle, Webhooks)
 ../android/               Android-App (Kotlin, ohne AndroidX)
 ```

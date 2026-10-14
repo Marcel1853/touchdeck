@@ -174,6 +174,16 @@ export const TRIGGER_TYPES = [
     match: (p, d) => stateMatches(p.state, d.state),
   },
   { type: 'twitch_ad', category: 'Twitch', label: 'Werbepause beginnt', icon: '📺', fields: [], match: () => true },
+  {
+    type: 'discord_voice', category: 'Discord', label: 'Stumm / taub geschaltet', icon: '🎙️',
+    fields: [stateField([opt('muted', 'stumm'), opt('unmuted', 'Mikrofon wieder an'), opt('deafened', 'taub'), opt('undeafened', 'hört wieder'), STATE_ANY])],
+    match: (p, d) => stateMatches(p.state, d.state),
+  },
+  {
+    type: 'discord_channel', category: 'Discord', label: 'Sprachkanal betreten / verlassen', icon: '🔊',
+    fields: [stateField([opt('joined', 'betreten'), opt('left', 'verlassen'), STATE_ANY])],
+    match: (p, d) => stateMatches(p.state, d.state),
+  },
 ];
 
 const BY_TYPE = new Map(TRIGGER_TYPES.map((t) => [t.type, t]));
@@ -192,11 +202,13 @@ const MAX_DEPTH = 8;
 
 export class EventEngine {
   /** run(actions, { eventData, buttonId, source }) führt Aktionen aus (runActions mit Diensten). */
-  constructor({ store, obs, twitch, log, run }) {
+  constructor({ store, obs, twitch, discord, log, run }) {
     this.store = store;
     this.obs = obs;
     this.twitch = twitch;
+    this.discord = discord;
     twitch?.onEvent((type, data) => this.fire(type, data));
+    discord?.onEvent((type, data) => this.fire(type, data));
     this.log = log;
     this.run = run;
     this.subs = [];
@@ -265,6 +277,12 @@ export class EventEngine {
       every(10000, keep);
     }
     if (has('steam_game')) every(4000, () => this.#checkSteam());
+    if (this.subs.some((s) => s.trigger.type.startsWith('discord_')) && this.discord?.configured) {
+      // Verbindung zu Discord halten, damit Ereignisse ankommen (Discord kann auch später gestartet werden).
+      const keep = () => this.discord.connect().catch(() => {});
+      keep();
+      every(10000, keep);
+    }
     if (has('audio_output')) every(4000, () => this.#checkAudio().catch(() => {}));
     this.twitch?.setWanted(this.subs.map((s) => s.trigger.type));
     this.log.debug('Events', `${this.subs.length} Event(s) aktiv`);

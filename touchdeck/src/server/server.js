@@ -16,6 +16,7 @@ import { ObsClient, readLocalObsConfig } from '../integrations/obs.js';
 import { buildSteamPages } from '../integrations/steam-pages.js';
 import { importTouchPortal, DEFAULT_TP_DIR } from '../integrations/touchportal.js';
 import { TwitchClient } from '../integrations/twitch.js';
+import { DiscordClient } from '../integrations/discord.js';
 import { lanAddresses, listApps, firewallActive, openFirewall } from '../system/linux.js';
 import { send, readJson, serveFile, isLoopback, safeEqual, httpError } from './http.js';
 import { startDiscovery } from './discovery.js';
@@ -31,16 +32,17 @@ export function createServer(store, { port, host = '0.0.0.0', onPairRequest = ()
   const obs = new ObsClient(() => store.settings.obs);
   const backups = new Backups(store, log);
   const twitch = new TwitchClient({ auth: () => store.settings.twitch, saveAuth: (p) => store.setTwitchAuth(p), log });
+  const discord = new DiscordClient({ auth: () => store.settings.discord, saveAuth: (p) => store.setDiscordAuth(p), log });
   const startedAt = Date.now();
   let liveValues = {};
 
   /** Aktionen ausführen und Fehler protokollieren. extra: { buttonId, eventData, source }. */
   const run = async (actions, { source = '', ...extra } = {}) => {
-    const result = await runActions(actions, { store, obs, twitch, ...extra });
+    const result = await runActions(actions, { store, obs, twitch, discord, ...extra });
     if (!result.ok) log.error('Aktion', `${source ? `${source}: ` : ''}${result.error}`);
     return result;
   };
-  const events = new EventEngine({ store, obs, twitch, log, run });
+  const events = new EventEngine({ store, obs, twitch, discord, log, run });
 
   // ---------- Zugriff ----------
 
@@ -220,6 +222,7 @@ export function createServer(store, { port, host = '0.0.0.0', onPairRequest = ()
       devices: [...wss.clients].filter((ws) => ws.role === 'device').length,
       obsConnected: obs.connected,
       twitch: twitch.status(),
+      discord: discord.status(),
       counts: {
         pages: store.pages.length,
         buttons: store.pages.reduce((n, p) => n + p.buttons.length, 0),
@@ -269,6 +272,17 @@ export function createServer(store, { port, host = '0.0.0.0', onPairRequest = ()
       p.state = body.allow ? 'approved' : 'denied';
       log.info('Gerät', `${p.device}: ${body.allow ? 'erlaubt' : 'abgelehnt'}`);
       return { ok: true };
+    },
+    'GET /api/discord/status': () => discord.status(),
+    'POST /api/discord/connect': async ({ body }) => {
+      store.setSettings({ discord: { clientId: body.clientId ?? '', clientSecret: body.clientSecret ?? '' } });
+      await discord.login();
+      events.reload();
+      return discord.status();
+    },
+    'POST /api/discord/disconnect': () => {
+      discord.disconnect();
+      return discord.status();
     },
     'GET /api/twitch/status': () => twitch.status(),
     'POST /api/twitch/connect': async ({ body }) => {
@@ -330,7 +344,7 @@ export function createServer(store, { port, host = '0.0.0.0', onPairRequest = ()
       const source = Object.hasOwn(OPTION_SOURCES, name) ? OPTION_SOURCES[name] : null;
       if (!source) return send(res, 404, { error: 'Unbekannte Liste' });
       try {
-        return send(res, 200, await source({ store, obs, twitch }));
+        return send(res, 200, await source({ store, obs, twitch, discord }));
       } catch (err) {
         return send(res, 502, { error: err.message });
       }
@@ -483,7 +497,7 @@ export function createServer(store, { port, host = '0.0.0.0', onPairRequest = ()
     }
     liveBusy = true;
     try {
-      const next = { ...liveValues, ...await collectLive(store.pages.filter((p) => viewed.has(p.id)), obs, store.variables, twitch) };
+      const next = { ...liveValues, ...await collectLive(store.pages.filter((p) => viewed.has(p.id)), obs, store.variables, twitch, discord) };
       if (JSON.stringify(next) !== JSON.stringify(liveValues)) {
         liveValues = next;
         const payload = JSON.stringify({ type: 'live', values: next });
@@ -532,6 +546,7 @@ export function createServer(store, { port, host = '0.0.0.0', onPairRequest = ()
     events.stop();
     stopDiscovery();
     twitch.stop();
+    discord.stop();
     obs.reset();
   });
   server.touchdeck = { log, events, backups };

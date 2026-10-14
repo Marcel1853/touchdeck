@@ -2,7 +2,7 @@
 
 Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy
 oder Tablet aus auslösen – Programme starten, Tastenkürzel, Medien und
-Lautstärke, Steam-Spiele, OBS Studio, Twitch und vieles mehr.
+Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 
 | Ordner | Inhalt |
 |---|---|
@@ -15,7 +15,8 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch und vieles mehr.
   Werten (Variablen), Events („Wenn …, dann …“), Vorlagen, Logs, Backups
 - **Über 60 Aktionen**: Programme, Tastatur und Maus, Fenster, Audio und
   Medien (PipeWire, MPRIS), Soundboard, System, Dateien, HTTP, Steam,
-  OBS Studio (obs-websocket 5), Twitch (eigene Client-ID, Geräte-Code-Anmeldung)
+  OBS Studio (obs-websocket 5), Twitch (eigene Client-ID, Geräte-Code-Anmeldung),
+  Discord (Sprachsteuerung über das Discord-Programm, Webhooks)
 - **Handy und Tablet**: Android-App oder Bedienfeld im Browser; mehrere PCs,
   automatische Suche im WLAN, Kopplung mit Bestätigung am PC, optionale PIN
 - **Desktop-Programm** mit Symbol in der Systemleiste, Autostart und

@@ -170,7 +170,64 @@ function integrations() {
           }
         } }, 'Verbindung testen'))),
     twitchCard(),
+    discordCard(),
   ];
+}
+
+let discordStatus = null;
+
+function discordCard() {
+  const dc = S.settings.discord ?? {};
+  if (!discordStatus) {
+    api('GET', '/api/discord/status').then((st) => {
+      discordStatus = st;
+      if (section === 'integrations') render();
+    }).catch(() => {});
+  }
+  const st = discordStatus ?? { state: 'idle' };
+  const connect = async (e) => {
+    const clientId = document.getElementById('discord-client').value.trim();
+    const clientSecret = document.getElementById('discord-secret').value.trim();
+    if (!/^\d{15,25}$/.test(clientId)) return toast('Die Client-ID besteht nur aus Ziffern (ca. 19 Stellen).', 'error');
+    if (!clientSecret && !dc.hasSecret) return toast('Bitte auch das Client-Secret eintragen.', 'error');
+    e.target.disabled = true;
+    e.target.textContent = 'Bitte in Discord „Autorisieren“ klicken …';
+    try {
+      discordStatus = await api('POST', '/api/discord/connect', { clientId, clientSecret });
+      toast(`Mit Discord verbunden ✓`, 'ok');
+    } catch (err) {
+      toast(err.message, 'error');
+      discordStatus = null;
+    }
+    render();
+  };
+  let body;
+  if (st.state === 'connected') {
+    body = [
+      h('p', {}, '✅ Verbunden als ', h('b', {}, st.user || 'Discord-Nutzer'), st.running ? ' · Discord läuft' : ' · Discord ist gerade nicht geöffnet'),
+      h('p', { class: 'hint-text' }, 'Aktionen unter „Kommunikation › Discord“, Auslöser bei den Events, Live-Anzeigen „Discord: stumm?“, „taub?“, „Sprachkanal“. TouchDeck verbindet sich automatisch, sobald Discord läuft.'),
+      h('button', { class: 'btn ghost danger', onclick: async () => { discordStatus = await api('POST', '/api/discord/disconnect', {}); toast('Discord getrennt', 'ok'); render(); } }, 'Verbindung trennen'),
+    ];
+  } else {
+    body = [
+      h('details', { class: 'howto', open: !dc.clientId },
+        h('summary', {}, 'So richtest du es ein (einmalig, ca. 3 Minuten)'),
+        h('ol', {},
+          h('li', {}, 'Auf ', h('a', { href: 'https://discord.com/developers/applications', target: '_blank', rel: 'noopener' }, 'discord.com/developers/applications'), ' mit deinem Discord-Konto anmelden und „New Application“ anlegen (Name z. B. „TouchDeck“).'),
+          h('li', {}, 'Links „OAuth2“ öffnen, unter „Redirects“ ', h('code', {}, 'http://localhost'), ' eintragen und speichern.'),
+          h('li', {}, 'Auf derselben Seite „Client ID“ kopieren und mit „Reset Secret“ ein „Client Secret“ erzeugen und kopieren.'),
+          h('li', {}, 'Beides hier eintragen, Discord am PC geöffnet lassen und „Mit Discord verbinden“ klicken. In Discord erscheint eine Abfrage – „Autorisieren“.'))),
+      h('div', { class: 'row' },
+        h('label', { class: 'field' }, 'Client-ID', h('input', { id: 'discord-client', value: dc.clientId ?? '', placeholder: 'z. B. 1234567890123456789', autocomplete: 'off', spellcheck: 'false' })),
+        h('label', { class: 'field' }, 'Client-Secret', h('input', { id: 'discord-secret', type: 'password', placeholder: dc.hasSecret ? '•••••• (gespeichert)' : '', autocomplete: 'off' }))),
+      st.error && h('p', { class: 'hint-text error' }, st.error),
+      h('button', { class: 'btn primary', onclick: connect }, '💬 Mit Discord verbinden'),
+    ];
+  }
+  return card(
+    h('h3', {}, '💬 Discord'),
+    h('p', { class: 'hint-text' }, 'Sprachsteuerung des Discord-Programms an diesem PC (stumm, taub, Sprachkanal, Lautstärke). Jeder nutzt dafür eine eigene Discord-Anwendung. Nachrichten per Webhook gehen auch ohne Verbindung.'),
+    ...body);
 }
 
 let twitchStatus = null;
@@ -345,4 +402,5 @@ export function resetSettingsCache() {
   info = null;
   backups = null;
   twitchStatus = null;
+  discordStatus = null;
 }

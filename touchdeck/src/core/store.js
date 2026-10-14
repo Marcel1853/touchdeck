@@ -194,6 +194,7 @@ function defaultSettings(startPage) {
     deck: { pressAnimation: 'shrink', vibrate: true, sound: false, showLabels: true },
     obs: { host: '127.0.0.1', port: 4455, password: '' },
     twitch: { clientId: '', accessToken: '', refreshToken: '', expiresAt: 0, userId: '', login: '', displayName: '', lastError: null },
+    discord: { clientId: '', clientSecret: '', accessToken: '', refreshToken: '', expiresAt: 0, user: '', lastError: null },
     theme: { mode: 'dark', accent: '#7c8cff' },
     backups: { auto: true, keep: 10 },
     logs: { level: 'info' },
@@ -229,7 +230,7 @@ export class Store {
     cfg.overrides = { buttons: cfg.overrides?.buttons ?? {}, pages: cfg.overrides?.pages ?? {} };
     const defaults = defaultSettings(cfg.pages[0].id);
     cfg.settings = { ...defaults, ...cfg.settings };
-    for (const k of ['deck', 'obs', 'twitch', 'theme', 'backups', 'logs']) cfg.settings[k] = { ...defaults[k], ...cfg.settings[k] };
+    for (const k of ['deck', 'obs', 'twitch', 'discord', 'theme', 'backups', 'logs']) cfg.settings[k] = { ...defaults[k], ...cfg.settings[k] };
     cfg.settings.token ||= defaults.token;
     if (!cfg.pages.some((p) => p.id === cfg.settings.startPage)) cfg.settings.startPage = cfg.pages[0].id;
     // Werte mit „beim Start zurücksetzen“ und noch nie gesetzte Werte bekommen ihren Startwert.
@@ -358,6 +359,14 @@ export class Store {
       // Neue Client-ID: alte Anmeldung gilt nicht mehr.
       if (id !== s.twitch.clientId) Object.assign(s.twitch, { clientId: id, accessToken: '', refreshToken: '', userId: '', login: '', displayName: '', lastError: null });
     }
+    if (patch.discord && typeof patch.discord === 'object') {
+      const d = s.discord;
+      const id = typeof patch.discord.clientId === 'string' ? patch.discord.clientId.trim().slice(0, 32) : d.clientId;
+      const secret = typeof patch.discord.clientSecret === 'string' && patch.discord.clientSecret ? patch.discord.clientSecret.trim().slice(0, 64) : d.clientSecret;
+      // Andere Anwendung: alte Anmeldung gilt nicht mehr.
+      if (id !== d.clientId) Object.assign(d, { accessToken: '', refreshToken: '', user: '', lastError: null });
+      Object.assign(d, { clientId: id, clientSecret: secret });
+    }
     if (patch.theme && typeof patch.theme === 'object') {
       if (['dark', 'light', 'system'].includes(patch.theme.mode)) s.theme.mode = patch.theme.mode;
       s.theme.accent = color(patch.theme.accent, s.theme.accent);
@@ -378,10 +387,16 @@ export class Store {
     this.#changed('settings');
   }
 
+  setDiscordAuth(patch) {
+    Object.assign(this.settings.discord, patch);
+    this.#changed('settings');
+  }
+
   /** Einstellungen ohne Geheimnisse für den Editor. */
   publicSettings() {
     const { accessToken, refreshToken, ...twitch } = this.settings.twitch;
-    return { ...this.settings, twitch: { ...twitch, connected: !!accessToken } };
+    const { accessToken: dAt, refreshToken: dRt, clientSecret, ...discord } = this.settings.discord;
+    return { ...this.settings, twitch: { ...twitch, connected: !!accessToken }, discord: { ...discord, hasSecret: !!clientSecret, connected: !!dAt } };
   }
 
   get variables() {

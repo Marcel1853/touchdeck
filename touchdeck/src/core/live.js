@@ -23,6 +23,9 @@ export const LIVE_SOURCES = [
   opt('twitch_live', 'Twitch: live?'),
   opt('twitch_viewers', 'Twitch: Zuschauer'),
   opt('twitch_followers', 'Twitch: Follower'),
+  opt('discord_mute', 'Discord: stumm?'),
+  opt('discord_deaf', 'Discord: taub?'),
+  opt('discord_channel', 'Discord: Sprachkanal'),
   opt('variable', 'Wert einer Variable'),
   opt('command', 'Ausgabe eines Befehls'),
 ];
@@ -141,6 +144,21 @@ async function liveValue(button, snap) {
       if (source === 'twitch_live') return { text: s ? 'LIVE' : 'Offline', on: !!s };
       return { text: s ? `${s.viewer_count} 👁` : '–', on: !!s };
     }
+    case 'discord_mute':
+    case 'discord_deaf':
+    case 'discord_channel': {
+      const d = snap.discord;
+      if (!d?.configured) return { text: 'Discord aus' };
+      try {
+        await d.connect();
+      } catch {
+        return { text: 'Discord aus' };
+      }
+      if (source === 'discord_channel') return { text: d.channel?.name ?? 'kein Kanal', on: !!d.channel };
+      const v = d.voice ?? await d.voiceSettings();
+      if (source === 'discord_mute') return { text: v.mute ? 'Stumm' : 'An', on: v.mute };
+      return { text: v.deaf ? 'Taub' : 'Hört', on: v.deaf };
+    }
     case 'variable': {
       const v = snap.variables?.[variable];
       return { text: v === undefined ? '–' : String(v), on: truthy(v) };
@@ -166,10 +184,11 @@ async function sliderValue(button, snap) {
 }
 
 /** Berechnet die Live-Werte aller Buttons, die welche brauchen. */
-export async function collectLive(pages, obs, variables = {}, twitch = null) {
+export async function collectLive(pages, obs, variables = {}, twitch = null, discord = null) {
   const snap = new Snapshot(obs);
   snap.variables = variables;
   snap.twitch = twitch;
+  snap.discord = discord;
   const values = {};
   const jobs = [];
   for (const page of pages) {
