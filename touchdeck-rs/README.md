@@ -27,7 +27,7 @@ touchdeck-rs/
 │       ├── system/         Linux: Programme, Audio, Medien (linux.rs), Tastatur/Maus/Fenster (x11.rs)
 │       └── integrations/   OBS, Steam, Twitch, Discord, Import aus Touch Portal
 ├── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart
-└── plugins/beispiel/       Beispiel-Plugin (Vorlage für eigene Plugins)
+└── plugins/                Beispiel-Plugins: beispiel (abgeschottet), beispiel-erweitert (Python, volle Rechte)
 ```
 
 Editor und Bedienfeld (HTML/JS) kommen unverändert aus `../touchdeck/public`
@@ -43,7 +43,9 @@ Abgelegt im Datenordner unter `icons/packs/`.
 
 Erweiterungen in JavaScript, abgeschottet in einer eigenen JS-Engine (QuickJS) mit
 festen Grenzen und Berechtigungen; Installation nur aus öffentlichen GitHub-Repos,
-dazu ein Marktplatz und ein Testmodus für Entwickler. Anleitung: [PLUGINS.md](PLUGINS.md).
+dazu ein Marktplatz und ein Testmodus für Entwickler. Für mehr Möglichkeiten gibt es
+erweiterte Plugins (eigene Programme mit vollen Rechten), die nur nach doppelter
+Bestätigung auf eigene Gefahr laufen. Anleitung: [PLUGINS.md](PLUGINS.md).
 
 ## Entwickeln
 

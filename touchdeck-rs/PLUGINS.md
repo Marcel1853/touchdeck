@@ -1,5 +1,9 @@
 # TouchDeck-Plugins schreiben
 
+Es gibt zwei Arten: **normale Plugins** (JavaScript, abgeschottet – der Standard) und
+**erweiterte Plugins** (eigene Programme mit vollen Rechten, nur auf eigene Gefahr,
+siehe unten).
+
 Ein Plugin bringt neue **Aktionen** (für Buttons, Events und Vorlagen) und neue
 **Auslöser** (für Events) in TouchDeck. Plugins sind JavaScript und laufen
 abgeschottet in einer eigenen kleinen JS-Engine. Sie können nur das, was TouchDeck
@@ -99,6 +103,60 @@ td.plugin.id; td.plugin.version;
 
 Alle Aufrufe sind synchron (kein `await` nötig). Ein Plugin läuft in einem eigenen
 Thread; lange Netzanfragen halten TouchDeck nicht auf.
+
+## Erweiterte Plugins (volle Rechte)
+
+Wer mehr braucht, als die Abschottung erlaubt, kann ein **eigenes Programm** als
+Plugin schreiben, ähnlich wie bei Touch Portal: in Python, Node.js, Rust oder einer
+anderen Sprache. Solche Plugins laufen **nicht** abgeschottet und können alles, was
+der Nutzer am PC kann.
+
+- Sie laufen nur, wenn der Nutzer unter **Plugins › Erweitert** den erweiterten Modus
+  einschaltet. Dafür gibt es zwei Bestätigungen: eine Warnung und dann das Eintippen
+  von „AUF EIGENE GEFAHR“.
+- Jedes erweiterte Plugin muss beim Installieren noch einmal bestätigt werden.
+- Auch sie gibt es nur aus öffentlichen GitHub-Repos (oder im Testmodus aus einem
+  eigenen Ordner). Hier dürfen Unterordner und beliebige Dateien dabei sein (bis 80 MB).
+- Ist der Modus aus, sind erweiterte Plugins gesperrt, und ihre Aktionen erscheinen
+  nicht im Editor.
+
+In `plugin.json` statt `main` einen Startbefehl angeben. Er wird ohne Shell im
+Plugin-Ordner ausgeführt; `./name` meint eine Datei im Plugin-Ordner.
+
+```json
+{
+  "id": "mein-tool",
+  "name": "Mein Tool",
+  "native": { "command": ["python3", "plugin.py"] },
+  "actions": [{ "id": "los", "label": "Los", "fields": [] }],
+  "triggers": [{ "id": "fertig", "label": "Fertig" }],
+  "settings": [{ "key": "ziel", "label": "Ziel", "type": "text" }]
+}
+```
+
+TouchDeck startet das Programm und spricht mit ihm über **JSON-Zeilen**: eine
+Nachricht pro Zeile auf stdin (von TouchDeck) und stdout (an TouchDeck). Alles auf
+stderr erscheint im Protokoll. Es gibt keinen offenen Netzwerk-Port. Stürzt das
+Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
+
+| Von TouchDeck | Bedeutung |
+|---|---|
+| `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.7.0"}` | Programm ist gestartet |
+| `{"type":"action","requestId":"r_1","id":"los","params":{…},"info":{…}}` | Aktion ausführen, mit `result` antworten |
+| `{"type":"value","requestId":"…","value":"…"}` | Antwort auf `getValue` |
+| `{"type":"stop"}` | Beenden (sonst nach 2 s gestoppt) |
+
+| An TouchDeck | Bedeutung |
+|---|---|
+| `{"type":"result","requestId":"r_1","ok":true,"message":"…"}` | Aktion fertig (oder `"ok":false,"error":"…"`) |
+| `{"type":"setValue","name":"…","value":"…"}` | Wert setzen |
+| `{"type":"getValue","requestId":"…","name":"…"}` | Wert abfragen |
+| `{"type":"fire","trigger":"fertig","data":{…}}` | Auslöser melden |
+| `{"type":"notify","title":"…","body":"…"}` | Benachrichtigung |
+| `{"type":"log","level":"info","message":"…"}` | Protokoll |
+
+Ein vollständiges Beispiel in Python (nur Standardbibliothek):
+[`plugins/beispiel-erweitert`](plugins/beispiel-erweitert).
 
 ## Marktplatz
 

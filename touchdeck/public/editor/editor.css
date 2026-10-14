@@ -554,3 +554,5 @@ a.btn { text-decoration: none; }
 .status-badge.warn { color: #f4b860; border-color: #f4b86080; }
 .settings-card .row input { flex: 1; min-width: 0; }
 pre.code { margin: 8px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 12px; line-height: 1.6; overflow: auto; white-space: pre; }
+.danger-card { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+#ask-text { white-space: pre-line; line-height: 1.5; }

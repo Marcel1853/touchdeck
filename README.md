@@ -24,7 +24,8 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
   automatische Suche im WLAN, Kopplung mit Bestätigung am PC, optionale PIN
 - **Icon-Pakete**: eigene Bildersammlungen anlegen, exportieren und weitergeben
 - **Plugins**: Erweiterungen in JavaScript, abgeschottet und nur aus öffentlichen
-  GitHub-Repos, mit Marktplatz ([Anleitung](touchdeck-rs/PLUGINS.md))
+  GitHub-Repos, mit Marktplatz; dazu erweiterte Plugins mit vollen Rechten nur nach
+  doppelter Bestätigung ([Anleitung](touchdeck-rs/PLUGINS.md))
 - **Desktop-Programm** mit Symbol in der Systemleiste, Autostart und
   Firewall-Freigabe fürs Heimnetz
 

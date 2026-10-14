@@ -1,0 +1,26 @@
+{
+  "id": "beispiel-erweitert",
+  "name": "Beispiel: erweitertes Plugin",
+  "version": "1.0.0",
+  "author": "TouchDeck",
+  "description": "Ein eigenes Python-Programm mit vollen Rechten: liest Systemwerte, führt Befehle aus und meldet einen Auslöser. Läuft nur im erweiterten Modus.",
+  "native": { "command": ["python3", "plugin.py"] },
+  "settings": [
+    { "key": "grenze", "label": "Auslastung, ab der der Auslöser kommt", "type": "number", "default": "4" }
+  ],
+  "actions": [
+    { "id": "auslastung", "label": "Systemauslastung anzeigen", "icon": "📈", "fields": [] },
+    {
+      "id": "befehl",
+      "label": "Befehl ausführen und Ausgabe in Wert schreiben",
+      "icon": "🖥️",
+      "fields": [
+        { "key": "befehl", "label": "Befehl", "type": "text", "placeholder": "uptime -p" },
+        { "key": "wert", "label": "Wert für die Ausgabe", "type": "dynamic", "source": "variables", "allowNew": true }
+      ]
+    }
+  ],
+  "triggers": [
+    { "id": "hoch", "label": "Auslastung ist hoch", "icon": "🔥", "fields": [] }
+  ]
+}

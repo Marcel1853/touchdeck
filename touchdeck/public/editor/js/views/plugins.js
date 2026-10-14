@@ -1,16 +1,18 @@
 // Bereich „Plugins“: installierte Plugins, Marktplatz (öffentliche GitHub-Repos) und Testmodus für Entwickler.
-import { h, api, toast, ask } from '../dom.js';
+import { h, api, toast, ask, prompt } from '../dom.js';
 import { S, render, loadState, save } from '../state.js';
 
-const TABS = [['installed', 'Installiert'], ['market', 'Marktplatz'], ['dev', 'Entwickeln']];
+const TABS = [['installed', 'Installiert'], ['market', 'Marktplatz'], ['dev', 'Entwickeln'], ['advanced', 'Erweitert']];
 let tab = 'installed';
 let plugins = null;
 let market = null;
 let available = true;
+let config = { advanced: false, confirm: 'AUF EIGENE GEFAHR' };
 
 async function refresh() {
   try {
     plugins = await api('GET', '/api/plugins');
+    config = await api('GET', '/api/plugins/config');
   } catch {
     available = false;
     plugins = [];
@@ -48,14 +50,24 @@ async function installFromGitHub(repo) {
     return toast(err.message, 'error');
   }
   const m = preview.manifest;
+  if (preview.native && !config.advanced) {
+    return ask(`⚠️ ${m.name}`, 'Dieses Plugin ist ein eigenes Programm mit vollen Rechten. Solche Plugins laufen nur im erweiterten Modus (Plugins › Erweitert), den du bewusst und auf eigene Gefahr einschalten musst.',
+      [{ value: 'go', label: 'Zum erweiterten Modus', kind: 'primary' }]).then((a) => { if (a === 'go') { tab = 'advanced'; render(); } });
+  }
   const perms = preview.permissions.length ? preview.permissions.map((p) => `• ${p}`).join('\n') : '• keine besonderen Rechte';
   const existing = plugins?.find((p) => p.id === m.id);
   const answer = await ask(`🧱 ${m.name} ${m.version ? `(${m.version})` : ''}`,
-    `${m.description || 'Keine Beschreibung.'}\n\nVon: ${m.author || 'unbekannt'}\nQuelle: ${preview.url} (Stand: ${preview.ref})\n\nDas Plugin möchte:\n${perms}\n\n`
-    + 'Plugins laufen abgeschottet und können nur das oben Genannte. Installiere trotzdem nur Plugins, deren Quelle du vertraust.',
+    `${preview.native ? '⚠️ EIGENES PROGRAMM MIT VOLLEN RECHTEN\n\n' : ''}${m.description || 'Keine Beschreibung.'}\n\nVon: ${m.author || 'unbekannt'}\nQuelle: ${preview.url} (Stand: ${preview.ref})\n\nDas Plugin möchte:\n${perms}\n\n`
+    + (preview.native ? 'Erweiterte Plugins laufen NICHT abgeschottet.' : 'Plugins laufen abgeschottet und können nur das oben Genannte. Installiere trotzdem nur Plugins, deren Quelle du vertraust.'),
     [{ value: 'install', label: existing ? 'Aktualisieren' : 'Installieren', kind: 'primary' }]);
   if (answer !== 'install') return;
-  const r = await call('/api/plugins/install', { repo: preview.repo, digest: preview.digest }, `${m.name} ${existing ? 'aktualisiert' : 'installiert'} ✓`);
+  // Zweite Bestätigung für Plugins mit vollen Rechten.
+  if (preview.native) {
+    const sure = await ask('⚠️ Volle Rechte geben?', `„${m.name}“ ist ein eigenes Programm und kann auf deinem PC alles, was du auch kannst: Dateien lesen und löschen, Programme starten, Daten ins Internet schicken. TouchDeck kann es nicht einschränken.\n\nNur installieren, wenn du der Quelle wirklich vertraust: ${preview.url}`,
+      [{ value: 'yes', label: 'Ja, volle Rechte geben', kind: 'danger' }]);
+    if (sure !== 'yes') return;
+  }
+  const r = await call('/api/plugins/install', { repo: preview.repo, digest: preview.digest, acceptRisk: !!preview.native }, `${m.name} ${existing ? 'aktualisiert' : 'installiert'} ✓`);
   if (r) tab = 'installed';
   render();
 }
@@ -81,13 +93,14 @@ function pluginCard(p) {
   const m = p.manifest;
   const local = String(p.source ?? '').startsWith('local:');
   const repo = String(p.source ?? '').replace(/^github:/, '');
-  const status = p.status.state === 'running' ? ['läuft', 'ok'] : p.status.state === 'off' ? ['aus', ''] : ['Fehler', 'error'];
+  const status = { running: ['läuft', 'ok'], off: ['aus', ''], blocked: ['gesperrt', 'warn'] }[p.status.state] ?? ['Fehler', 'error'];
   return h('div', { class: 'settings-card plugin' },
     h('div', { class: 'plugin-head' },
       h('div', {},
         h('b', {}, m.name), m.version && h('span', { class: 'muted' }, ` ${m.version}`),
         h('span', { class: `status-badge ${status[1]}` }, status[0]),
         local && h('span', { class: 'status-badge warn' }, 'Testmodus'),
+        p.native && h('span', { class: 'status-badge error' }, 'volle Rechte'),
         h('p', { class: 'hint-text' }, m.description || ''),
         h('p', { class: 'hint-text' }, [m.author && `Von ${m.author}`, local ? `Ordner: ${p.source.slice(6)}` : null].filter(Boolean).join(' · '),
           !local && p.url && h('span', {}, m.author ? ' · ' : '', h('a', { href: p.url, target: '_blank', rel: 'noopener' }, `${repo} @ ${p.ref}`)))),
@@ -142,6 +155,40 @@ function marketTab() {
   ];
 }
 
+async function setAdvanced(on) {
+  if (on) {
+    const first = await ask('⚠️ Erweiterter Modus', 'Im erweiterten Modus dürfen Plugins eigene Programme mitbringen. Diese laufen mit vollen Rechten: Sie können Dateien lesen und löschen, Programme starten und Daten ins Internet schicken. TouchDeck kann sie nicht einschränken oder prüfen.\n\nDas geschieht auf eigene Gefahr. Installiere nur Plugins, deren Quelltext du dir angesehen hast oder deren Entwickler du vertraust.',
+      [{ value: 'next', label: 'Verstanden, weiter', kind: 'danger' }]);
+    if (first !== 'next') return render();
+    const typed = await prompt('Zweite Bestätigung', `Zum Einschalten bitte „${config.confirm}“ eintippen:`);
+    if (typed === null) return render();
+    if (typed.trim() !== config.confirm) {
+      toast('Nicht eingeschaltet – der Text stimmt nicht.', 'error');
+      return render();
+    }
+    const r = await call('/api/plugins/advanced', { enabled: true, confirm: typed }, 'Erweiterter Modus eingeschaltet');
+    if (r) config.advanced = r.advanced;
+  } else {
+    const r = await call('/api/plugins/advanced', { enabled: false }, 'Erweiterter Modus ausgeschaltet – Plugins mit vollen Rechten sind gestoppt.');
+    if (r) config.advanced = r.advanced;
+  }
+  render();
+}
+
+function advancedTab() {
+  const natives = plugins.filter((p) => p.native);
+  return [
+    h('div', { class: `settings-card ${config.advanced ? 'danger-card' : ''}` },
+      h('h3', {}, 'Erweiterte Plugins (volle Rechte)'),
+      h('p', {}, 'Normale Plugins laufen abgeschottet. Erweiterte Plugins sind eigene Programme (z. B. in Python oder Node.js), die TouchDeck startet – sie können damit alles, was auch Touch-Portal-Plugins können, aber eben auch Schaden anrichten.'),
+      h('p', { class: 'hint-text' }, 'Auch erweiterte Plugins gibt es nur aus öffentlichen GitHub-Repos (oder im Testmodus aus einem eigenen Ordner). Jedes einzelne muss beim Installieren noch einmal bestätigt werden.'),
+      h('label', { class: 'switch-row' },
+        h('input', { type: 'checkbox', checked: config.advanced, onchange: (e) => setAdvanced(e.target.checked) }),
+        config.advanced ? 'Erweiterter Modus ist eingeschaltet (auf eigene Gefahr)' : 'Erweiterten Modus einschalten …')),
+    natives.length > 0 && h('p', { class: 'hint-text' }, `${natives.length} erweiterte(s) Plugin(s) installiert${config.advanced ? '' : ' – gesperrt, solange der Modus aus ist'}.`),
+  ];
+}
+
 function devTab() {
   let path = '';
   return [
@@ -153,7 +200,7 @@ function devTab() {
         h('button', { class: 'btn primary small', onclick: () => call('/api/plugins/dev', { path }, 'Plugin im Testmodus geladen ✓').then((r) => r && ((tab = 'installed'), render())) }, 'Laden'))),
     h('div', { class: 'settings-card' },
       h('h3', {}, 'So sieht ein Plugin aus'),
-      h('p', { class: 'hint-text' }, 'Ein Ordner (bzw. ein öffentliches GitHub-Repo) mit plugin.json und plugin.js. Ein vollständiges Beispiel liegt im TouchDeck-Quelltext unter touchdeck-rs/plugins/beispiel.'),
+      h('p', { class: 'hint-text' }, 'Ein Ordner (bzw. ein öffentliches GitHub-Repo) mit plugin.json und plugin.js. Vollständige Beispiele: touchdeck-rs/plugins/beispiel (abgeschottet) und touchdeck-rs/plugins/beispiel-erweitert (Python, volle Rechte, braucht den erweiterten Modus).'),
       h('pre', { class: 'code' }, `// plugin.js
 td.action('gruessen', (params, info) => \`Hallo \${params.name}!\`);   // Aktion
 td.every(60000, () => td.values.set('Uhr', new Date().toLocaleTimeString()));  // Zeitgeber
@@ -176,6 +223,6 @@ export function renderPlugins() {
     h('div', { class: 'segmented plugin-tabs' }, TABS.map(([id, label]) => h('button', { type: 'button', class: id === tab ? 'active' : '', onclick: () => { tab = id; if (id === 'market') market = null; render(); } }, label)))];
   if (plugins === null) return el.replaceChildren(...head, h('p', { class: 'hint-text' }, 'Wird geladen …'));
   if (!available) return el.replaceChildren(...head, h('div', { class: 'settings-card' }, h('p', {}, 'Plugins gibt es nur in der Rust-Fassung von TouchDeck.')));
-  const body = { installed: installedTab, market: marketTab, dev: devTab }[tab]();
+  const body = { installed: installedTab, market: marketTab, dev: devTab, advanced: advancedTab }[tab]();
   el.replaceChildren(...head, ...body.filter(Boolean));
 }

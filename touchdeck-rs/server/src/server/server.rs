@@ -467,8 +467,10 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 52] = [
+const ROUTES: [&str; 54] = [
     "GET /api/plugins",
+    "GET /api/plugins/config",
+    "POST /api/plugins/advanced",
     "GET /api/plugins/market",
     "POST /api/plugins/preview",
     "POST /api/plugins/install",
@@ -813,10 +815,15 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         }
         // Plugins
         "GET /api/plugins" => Ok(json!(app.plugins.list())),
+        "GET /api/plugins/config" => Ok(json!({ "advanced": app.plugins.advanced(), "confirm": crate::core::plugins::ADVANCED_CONFIRM })),
+        "POST /api/plugins/advanced" => {
+            app.plugins.set_advanced(app, body["enabled"] == true, str_of(&body, "confirm")).map_err(bad)?;
+            Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list() }))
+        }
         "GET /api/plugins/market" => app.plugins.market().await.map_err(user_error),
         "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo")).await.map_err(user_error),
         "POST /api/plugins/install" => {
-            let id = app.plugins.install(app, str_of(&body, "repo"), str_of(&body, "digest")).await.map_err(user_error)?;
+            let id = app.plugins.install(app, str_of(&body, "repo"), str_of(&body, "digest"), body["acceptRisk"] == true).await.map_err(user_error)?;
             Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list() }))
         }
         "POST /api/plugins/dev" => {
