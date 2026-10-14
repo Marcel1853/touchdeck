@@ -44,9 +44,14 @@ let renderer = () => {};
 export function setRenderer(fn) {
   renderer = fn;
 }
+const renderHooks = new Set();
+/** Weitere Bereiche (z. B. der Aktions-Editor), die nach jeder Änderung mit neu gezeichnet werden. */
+export const onRender = (fn) => renderHooks.add(fn);
+
 /** detail=false zeichnet die Eingabespalte nicht neu (damit Tippen den Fokus behält). */
 export function render({ detail = true } = {}) {
   renderer({ detail });
+  for (const fn of renderHooks) fn({ detail });
   $('#undo').disabled = !undoStack.length;
   $('#redo').disabled = !redoStack.length;
 }

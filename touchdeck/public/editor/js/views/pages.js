@@ -1,6 +1,6 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
 import { buttonElement, setupGrid, iconUrl } from '/shared/render.js';
-import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty } from '../dom.js';
+import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
 
@@ -49,8 +49,15 @@ export function mountPages(root) {
     h('aside', { class: 'sidebar' },
       h('div', { class: 'sidebar-head' }, h('h2', {}, 'Seiten'), h('button', { class: 'btn small', title: 'Neue Seite', onclick: addPage }, '＋')),
       h('ul', { id: 'page-list', class: 'page-list' }),
-      h('div', { class: 'templates' },
-        h('h3', {}, 'Fertige Seiten'),
+      h('div', { class: `templates${prefs.get('touchdeck.templatesOpen') === '1' ? '' : ' collapsed'}` },
+        h('button', {
+          type: 'button', class: 'templates-toggle', title: 'Ein-/ausklappen',
+          onclick: (e) => {
+            const box = e.currentTarget.parentElement;
+            box.classList.toggle('collapsed');
+            prefs.set('touchdeck.templatesOpen', box.classList.contains('collapsed') ? '0' : '1');
+          },
+        }, h('span', { class: 'chevron' }, '▸'), 'Fertige Seiten'),
         tplButton('steam', '🎮', 'Steam-Spiele', 'Alle Spiele mit Cover', steamTemplate),
         tplButton('system', '📊', 'System', 'Uhr, CPU, Audio, Sperren …', systemTemplate),
         tplButton('obs', '🎬', 'OBS Studio', 'Szenen, Stream, Aufnahme', obsTemplate),
@@ -467,11 +474,11 @@ function liveSection(b) {
 function pressTab(b) {
   if (b.mode === 'toggle') {
     return [
-      actionList(b, 'actions', 'Beim Einschalten', { buttonId: b.id }),
-      actionList(b, 'actionsOff', 'Beim Ausschalten', { buttonId: b.id }),
+      actionList(b, 'actions', 'Beim Einschalten', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
+      actionList(b, 'actionsOff', 'Beim Ausschalten', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
     ];
   }
-  return [actionList(b, 'actions', 'Beim Drücken', { buttonId: b.id, hint: b.holdActions.length ? 'Kurz tippen führt diese Aktionen aus, langes Drücken die unter „Halten“.' : '' })];
+  return [actionList(b, 'actions', 'Beim Drücken', { buttonId: b.id, compact: true, context: b.title || 'Button', hint: b.holdActions.length ? 'Kurz tippen führt diese Aktionen aus, langes Drücken die unter „Halten“.' : '' })];
 }
 
 function sliderTab(b) {
@@ -497,7 +504,7 @@ function eventsTab(b) {
         h('button', { class: 'btn icon ghost danger', title: 'Event entfernen', onclick: () => mutate(() => b.events.splice(i, 1)) }, '✕')),
       h('p', { class: 'muted-note' }, triggerSummary(ev.trigger)),
       triggerEditor(ev.trigger),
-      actionList(ev, 'actions', 'Dann …', { buttonId: b.id }))),
+      actionList(ev, 'actions', 'Dann …', { buttonId: b.id, compact: true, context: `${b.title || 'Button'} · Event ${i + 1}` }))),
     h('button', { class: 'btn', onclick: () => mutate(() => b.events.push({ id: uid('e_'), enabled: true, trigger: newTrigger(), actions: [] })) }, '＋ Event hinzufügen'),
   ];
 }
@@ -505,10 +512,10 @@ function eventsTab(b) {
 function holdTab(b) {
   return [
     h('p', { class: 'hint-text' }, 'Lange drücken (ab ca. 0,5 s) führt diese Aktionen statt der normalen aus. Beim Loslassen danach laufen die unteren.'),
-    actionList(b, 'holdActions', 'Beim Gedrückthalten', { buttonId: b.id }),
+    actionList(b, 'holdActions', 'Beim Gedrückthalten', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
     h('label', { class: 'field' }, 'Wiederholen, solange gedrückt (ms, 0 = nur einmal)',
       h('input', { type: 'number', min: 0, max: 10000, step: 50, value: b.holdRepeat, onchange: (e) => mutate(() => (b.holdRepeat = Math.max(0, Number(e.target.value) || 0))) })),
-    actionList(b, 'releaseActions', 'Beim Loslassen (nach dem Halten)', { buttonId: b.id }),
+    actionList(b, 'releaseActions', 'Beim Loslassen (nach dem Halten)', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
   ];
 }
 

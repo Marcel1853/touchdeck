@@ -1,6 +1,6 @@
 // Aktionslisten, Eingabefelder, Aktionsauswahl und Auslöser-Editor – genutzt von Buttons, Vorlagen und Events.
 import { $, h, api, toast, uid } from './dom.js';
-import { S, mutate, render, save } from './state.js';
+import { S, mutate, render, save, onRender } from './state.js';
 
 const refresh = () => render();
 
@@ -59,18 +59,72 @@ export async function testActions(actions, label, { buttonId } = {}) {
 
 // ---------- Aktionslisten ----------
 
-/** Eine bearbeitbare Liste von Aktionen: owner[key] ist das Array. */
-export function actionList(owner, key, title, { hint, buttonId } = {}) {
+/**
+ * Eine Aktionsliste (owner[key] ist das Array). compact = schmale Übersicht für die Eigenschaften-Spalte;
+ * bearbeitet wird dann im großen Aktions-Editor. context benennt den Besitzer im Editor-Titel.
+ */
+export function actionList(owner, key, title, { hint, buttonId, compact = false, context = '' } = {}) {
   const list = owner[key];
-  return h('div', { class: 'action-section' },
+  const open = (focusId) => openActionEditor(owner, key, context ? `${context} · ${title}` : title, { buttonId, focusId });
+  return h('div', { class: `action-section${compact ? ' compact' : ''}` },
     h('div', { class: 'list-title' },
       h('h3', {}, title),
       list.length > 0 && h('button', { class: 'btn small ghost', title: 'Diese Aktionen jetzt ausführen', onclick: () => testActions(list, title, { buttonId }) }, '▶'),
-      h('button', { class: 'btn small', onclick: () => openPicker(owner, key) }, '＋ Aktion')),
+      h('button', { class: 'btn small', onclick: () => open() }, compact && list.length ? '✎ Bearbeiten' : '＋ Aktion')),
     hint && h('p', { class: 'hint-text' }, hint),
-    list.length
-      ? h('div', { class: 'action-list' }, list.map((a, i) => actionCard(list, a, i, buttonId)))
-      : h('p', { class: 'muted-note' }, 'Noch keine Aktion. Klicke auf „＋ Aktion“.'));
+    !list.length
+      ? h('button', { type: 'button', class: 'empty-drop', onclick: () => open() }, '＋ Erste Aktion hinzufügen')
+      : compact
+        ? h('div', { class: 'action-mini-list' }, list.map((a) => miniRow(a, () => open(a.id))))
+        : flowList(list, buttonId));
+}
+
+/** Kurze Zeile für die Übersicht: Klick öffnet den Editor mit dieser Aktion. */
+function miniRow(a, onOpen) {
+  const def = S.typeMap.get(a.type) ?? { label: a.type, icon: '❔' };
+  return h('button', { type: 'button', class: `mini-row${a.enabled ? '' : ' disabled'}`, title: 'Im Aktions-Editor bearbeiten', onclick: onOpen },
+    h('span', { class: 'ai' }, def.icon),
+    h('span', { class: 'al' }, h('b', {}, def.label), h('span', {}, summary(a))));
+}
+
+// Laufendes Ziehen: neue Aktion aus dem Katalog oder Verschieben innerhalb einer Liste.
+let drag = null;
+
+/** Bearbeitbare Liste mit Ziehen zum Sortieren und Ablegen neuer Aktionen. */
+function flowList(list, buttonId) {
+  const box = h('div', { class: 'action-list flow-list' }, list.map((a, i) => actionCard(list, a, i, buttonId)));
+  const marker = h('div', { class: 'drop-marker' });
+  const indexAt = (y) => {
+    const cards = [...box.querySelectorAll(':scope > .action-card')];
+    const i = cards.findIndex((c) => y < c.getBoundingClientRect().top + c.offsetHeight / 2);
+    return i < 0 ? cards.length : i;
+  };
+  box.addEventListener('dragover', (e) => {
+    if (!drag || (drag.kind === 'move' && drag.list !== list)) return;
+    e.preventDefault();
+    const i = indexAt(e.clientY);
+    const cards = box.querySelectorAll(':scope > .action-card');
+    if (i < cards.length) box.insertBefore(marker, cards[i]);
+    else box.append(marker);
+  });
+  box.addEventListener('dragleave', (e) => {
+    if (!box.contains(e.relatedTarget)) marker.remove();
+  });
+  box.addEventListener('drop', (e) => {
+    if (!drag) return;
+    e.preventDefault();
+    const i = indexAt(e.clientY);
+    marker.remove();
+    if (drag.kind === 'new') insertAction(list, drag.def, i);
+    else if (drag.list === list && drag.index !== i && drag.index + 1 !== i) {
+      mutate(() => {
+        const [x] = list.splice(drag.index, 1);
+        list.splice(i > drag.index ? i - 1 : i, 0, x);
+      });
+    }
+    drag = null;
+  });
+  return box;
 }
 
 function actionCard(list, a, i, buttonId) {
@@ -92,11 +146,26 @@ function actionCard(list, a, i, buttonId) {
 
   const body = open && h('div', { class: 'action-body' },
     def.fields.filter((f) => fieldVisible(f, a.params, def)).map((f) => fieldInput(f, a, setParam)),
-    a.type === 'unsupported' && h('p', { class: 'hint-text' }, 'Diese Aktion stammt aus Touch Portal und hat in TouchDeck noch kein Gegenstück. Deaktiviere oder ersetze sie.'),
+    a.type === 'unsupported' && h('p', { class: 'hint-text' }, 'Diese Aktion wurde importiert und hat in TouchDeck noch kein Gegenstück. Deaktiviere oder ersetze sie.'),
     h('button', { class: 'btn small', onclick: () => testActions([{ ...a, enabled: true }], def.label, { buttonId }) }, '▶ Nur diese Aktion testen'));
 
-  return h('div', { class: `action-card${a.enabled ? '' : ' disabled'}${a.type === 'unsupported' ? ' unsupported' : ''}${a.type === 'comment' ? ' comment' : ''}` },
+  const card = h('div', { class: `action-card${a.enabled ? '' : ' disabled'}${a.type === 'unsupported' ? ' unsupported' : ''}${a.type === 'comment' ? ' comment' : ''}${open ? ' open' : ''}`, 'data-id': a.id },
     h('div', { class: 'action-head', onclick: () => { open ? S.expanded.delete(a.id) : S.expanded.add(a.id); refresh(); } },
+      h('span', {
+        class: 'drag-handle', title: 'Ziehen zum Verschieben', draggable: 'true',
+        onclick: (e) => e.stopPropagation(),
+        ondragstart: (e) => {
+          drag = { kind: 'move', list, index: i };
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', a.id);
+          e.dataTransfer.setDragImage(card, 24, 20);
+          requestAnimationFrame(() => card.classList.add('dragging'));
+        },
+        ondragend: () => {
+          drag = null;
+          card.classList.remove('dragging');
+        },
+      }, '⠿'),
       h('span', { class: 'ai' }, def.icon),
       h('div', { class: 'al' }, h('b', {}, def.label), sum),
       h('input', { type: 'checkbox', checked: a.enabled, title: 'Aktiv', onclick: (e) => e.stopPropagation(), onchange: (e) => mutate(() => (a.enabled = e.target.checked)) }),
@@ -105,6 +174,7 @@ function actionCard(list, a, i, buttonId) {
       h('button', { class: 'btn icon ghost', title: 'Duplizieren', onclick: stop(() => mutate(() => list.splice(i + 1, 0, { ...structuredClone(a), id: uid('a_') }))) }, '⧉'),
       h('button', { class: 'btn icon ghost danger', title: 'Entfernen', onclick: stop(() => mutate(() => list.splice(i, 1))) }, '✕')),
     body);
+  return card;
 }
 
 // ---------- Eingabefelder ----------
@@ -240,41 +310,169 @@ function recordHotkey(input, button, done) {
   window.addEventListener('keydown', onKey, true);
 }
 
-// ---------- Aktionsauswahl ----------
+// ---------- Aktions-Editor ----------
 
-let pickerTarget = null;
+// Großes Fenster: links Kategorien, in der Mitte die Aktionen als Kacheln, rechts der Ablauf.
+let ed = null; // { owner, key, title, buttonId }
+let edCat = 'all';
+let edQuery = '';
+const RECENT_KEY = 'touchdeck.recentActions';
 
-export function openPicker(owner, key) {
-  pickerTarget = { owner, key };
-  $('#picker-search').value = '';
-  renderPicker('');
-  $('#dlg-picker').showModal();
-  $('#picker-search').focus();
+function recent() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]').filter((t) => S.typeMap.has(t));
+  } catch {
+    return [];
+  }
 }
 
-export function renderPicker(query) {
-  const q = query.trim().toLowerCase();
-  const types = S.actionTypes.filter((t) => !t.hidden && (!q || `${t.label} ${t.category} ${t.group}`.toLowerCase().includes(q)));
-  const groups = [...new Set(types.map((t) => t.group))];
-  $('#picker-list').replaceChildren(...groups.flatMap((g) => [
-    h('h2', { class: 'picker-group' }, g),
-    ...[...new Set(types.filter((t) => t.group === g).map((t) => t.category))].flatMap((c) => [
-      h('h3', {}, c),
-      ...types.filter((t) => t.group === g && t.category === c).map((t) => h('button', { type: 'button', onclick: () => addAction(t) }, h('span', { class: 'pi' }, t.icon), t.label)),
-    ]),
-  ]));
+function remember(type) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify([type, ...recent().filter((t) => t !== type)].slice(0, 12)));
+  } catch {
+    // Ohne Speicher gibt es eben keine „Zuletzt benutzt“-Liste.
+  }
 }
 
-function addAction(def) {
-  const { owner, key } = pickerTarget;
+function newAction(def) {
   const params = {};
   for (const f of def.fields) if (f.default !== undefined) params[f.key] = f.default;
   if (def.type === 'go_page') params.page = S.pages.find((p) => p.id !== S.pageId)?.id ?? '__back';
-  const a = { id: uid('a_'), type: def.type, enabled: true, params };
-  $('#dlg-picker').close();
-  S.expanded.add(a.id);
-  mutate(() => owner[key].push(a));
+  return { id: uid('a_'), type: def.type, enabled: true, params };
 }
+
+/** Neue Aktion an Position index einfügen und zum Bearbeiten aufklappen. */
+function insertAction(list, def, index = list.length) {
+  const a = newAction(def);
+  remember(def.type);
+  S.expanded.clear();
+  S.expanded.add(a.id);
+  mutate(() => list.splice(index, 0, a));
+  requestAnimationFrame(() => document.querySelector(`#ae-flow [data-id="${a.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+}
+
+function editorDialog() {
+  let dlg = document.getElementById('dlg-actions');
+  if (dlg) return dlg;
+  dlg = h('dialog', { id: 'dlg-actions', class: 'action-editor' },
+    h('div', { class: 'ae-head' },
+      h('div', {}, h('h2', { id: 'ae-title' }), h('p', { class: 'hint-text' }, 'Aktion links anklicken oder in den Ablauf ziehen · im Ablauf am ⠿ ziehen zum Sortieren')),
+      h('div', { class: 'spacer' }),
+      h('button', { class: 'btn', id: 'ae-test', onclick: () => ed && testActions(ed.owner[ed.key], ed.title, { buttonId: ed.buttonId }) }, '▶ Ablauf testen'),
+      h('button', { class: 'btn primary', onclick: () => dlg.close() }, 'Fertig')),
+    h('div', { class: 'ae-body' },
+      h('aside', { class: 'ae-nav' },
+        h('input', {
+          id: 'ae-search', class: 'search', placeholder: '🔍 Aktion suchen …', autocomplete: 'off',
+          oninput: (e) => { edQuery = e.target.value; renderCatalog(); },
+          onkeydown: (e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            document.querySelector('#ae-tiles .ae-tile')?.click();
+          },
+        }),
+        h('div', { id: 'ae-cats', class: 'ae-cats' })),
+      h('section', { class: 'ae-catalog' }, h('h3', { id: 'ae-cat-title' }), h('div', { id: 'ae-tiles', class: 'ae-tiles' })),
+      h('section', { class: 'ae-flow' },
+        h('div', { class: 'ae-flow-head' }, h('h3', {}, 'Ablauf'), h('span', { id: 'ae-count', class: 'muted-note' })),
+        h('div', { id: 'ae-flow' }))));
+  dlg.addEventListener('close', () => {
+    ed = null;
+    render();
+  });
+  document.body.append(dlg);
+  return dlg;
+}
+
+/** Öffnet den Aktions-Editor für owner[key]; focusId klappt eine Aktion direkt auf. */
+export function openActionEditor(owner, key, title, { buttonId, focusId } = {}) {
+  const dlg = editorDialog();
+  ed = { owner, key, title, buttonId };
+  S.expanded.clear();
+  if (focusId) S.expanded.add(focusId);
+  edQuery = '';
+  document.getElementById('ae-search').value = '';
+  if (edCat !== 'all' && edCat !== 'recent' && !S.actionTypes.some((t) => `${t.group}|${t.category}` === edCat)) edCat = 'all';
+  if (edCat === 'recent' && !recent().length) edCat = 'all';
+  document.getElementById('ae-title').textContent = title;
+  renderCatalog();
+  renderFlow();
+  dlg.showModal();
+  if (!focusId) document.getElementById('ae-search').focus();
+  else requestAnimationFrame(() => document.querySelector(`#ae-flow [data-id="${focusId}"]`)?.scrollIntoView({ block: 'center' }));
+}
+
+function renderCatalog() {
+  const visible = S.actionTypes.filter((t) => !t.hidden);
+  const rec = recent();
+  const groups = [...new Set(visible.map((t) => t.group))];
+  const navItem = (id, icon, label, count) => h('button', {
+    type: 'button', class: `ae-cat${!edQuery && edCat === id ? ' active' : ''}`,
+    onclick: () => { edCat = id; edQuery = ''; document.getElementById('ae-search').value = ''; renderCatalog(); },
+  }, h('span', { class: 'ae-cat-icon' }, icon), h('span', { class: 'ae-cat-label' }, label), count !== undefined && h('span', { class: 'ae-cat-count' }, String(count)));
+
+  document.getElementById('ae-cats').replaceChildren(...[
+    rec.length > 0 && navItem('recent', '⭐', 'Zuletzt benutzt', rec.length),
+    navItem('all', '▦', 'Alle Aktionen', visible.length),
+    ...groups.flatMap((g) => [
+      h('div', { class: 'ae-group' }, g),
+      ...[...new Set(visible.filter((t) => t.group === g).map((t) => t.category))].map((c) => {
+        const items = visible.filter((t) => t.group === g && t.category === c);
+        return navItem(`${g}|${c}`, items[0].icon, c, items.length);
+      }),
+    ]),
+  ].filter(Boolean));
+
+  const q = edQuery.trim().toLowerCase();
+  let shown;
+  let heading;
+  if (q) {
+    shown = visible.filter((t) => `${t.label} ${t.category} ${t.group}`.toLowerCase().includes(q));
+    heading = `Suche: „${edQuery.trim()}“`;
+  } else if (edCat === 'recent') {
+    shown = rec.map((type) => S.typeMap.get(type)).filter(Boolean);
+    heading = 'Zuletzt benutzt';
+  } else if (edCat === 'all') {
+    shown = visible;
+    heading = 'Alle Aktionen';
+  } else {
+    const [g, c] = edCat.split('|');
+    shown = visible.filter((t) => t.group === g && t.category === c);
+    heading = `${g} › ${c}`;
+  }
+  document.getElementById('ae-cat-title').textContent = heading;
+  const showCategory = q || edCat === 'all' || edCat === 'recent';
+  document.getElementById('ae-tiles').replaceChildren(...(shown.length ? shown.map((def) => h('button', {
+    type: 'button', class: 'ae-tile', draggable: 'true', title: `${def.label} – klicken zum Hinzufügen oder in den Ablauf ziehen`,
+    onclick: () => ed && insertAction(ed.owner[ed.key], def),
+    ondragstart: (e) => {
+      drag = { kind: 'new', def };
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', def.type);
+    },
+    ondragend: () => (drag = null),
+  },
+  h('span', { class: 'ae-tile-icon' }, def.icon),
+  h('span', { class: 'ae-tile-label' }, def.label),
+  showCategory && h('span', { class: 'ae-tile-cat' }, def.category))) : [h('p', { class: 'muted-note' }, 'Keine passende Aktion gefunden.')]));
+}
+
+function renderFlow() {
+  if (!ed) return;
+  const list = ed.owner[ed.key];
+  document.getElementById('ae-count').textContent = list.length === 1 ? '1 Aktion' : `${list.length} Aktionen`;
+  document.getElementById('ae-test').disabled = !list.length;
+  const flow = flowList(list, ed.buttonId);
+  if (!list.length) flow.append(h('div', { class: 'ae-empty' }, h('div', { class: 'empty-icon' }, '⬅️'), h('p', {}, 'Klicke links auf eine Aktion oder ziehe sie hierher.')));
+  document.getElementById('ae-flow').replaceChildren(flow);
+}
+
+// Nach jeder Änderung den Ablauf neu zeichnen – außer beim Tippen (detail=false), damit der Fokus bleibt.
+onRender(({ detail }) => {
+  if (!ed || !document.getElementById('dlg-actions')?.open) return;
+  if (detail) renderFlow();
+  else document.getElementById('ae-count').textContent = `${ed.owner[ed.key].length} Aktionen`;
+});
 
 // ---------- Auslöser (Events) ----------
 

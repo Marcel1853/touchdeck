@@ -69,6 +69,6 @@ export function renderFlows({ detail = true } = {}) {
       h('button', { class: 'btn primary small', onclick: () => testActions(flow.actions, flow.name) }, '▶ Ausführen'),
       h('button', { class: 'btn ghost danger small', onclick: () => deleteFlow(flow) }, 'Löschen')),
     h('p', { class: 'hint-text' }, used.length ? `Benutzt von: ${used.join(', ')}` : 'Noch nirgends benutzt. Füge in einem Button oder Event „Vorlage ausführen“ hinzu.'),
-    actionList(flow, 'actions', 'Aktionen'),
+    actionList(flow, 'actions', 'Aktionen', { context: `Vorlage „${flow.name}“` }),
   );
 }

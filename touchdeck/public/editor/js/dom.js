@@ -87,3 +87,62 @@ export function setIfChanged(input, value) {
 }
 
 export const empty = (icon, ...lines) => h('div', { class: 'empty' }, h('div', { class: 'empty-icon' }, icon), lines.map((l) => h('p', {}, l)));
+
+const store = {
+  get: (k) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  set: (k, v) => {
+    try {
+      if (v === null) localStorage.removeItem(k);
+      else localStorage.setItem(k, v);
+    } catch {
+      // Ohne Speicher gelten eben die Standardwerte.
+    }
+  },
+};
+export const prefs = store;
+
+/**
+ * Ziehgriff zwischen zwei Spalten: ändert die Breite von panel über die CSS-Variable varName an root.
+ * invert = true, wenn das Panel rechts vom Griff liegt. Breite wird gemerkt, Doppelklick = Standard.
+ */
+export function resizer(root, panel, varName, { min = 160, max = 640, invert = false, key }) {
+  const saved = Number(store.get(key));
+  if (saved) root.style.setProperty(varName, `${saved}px`);
+  const el = h('div', { class: 'resizer', role: 'separator', title: 'Ziehen zum Verbreitern · Doppelklick: Standardbreite' });
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // Ohne Zeiger-Erfassung funktioniert das Ziehen trotzdem, solange der Zeiger auf dem Griff bleibt.
+    }
+    const startX = e.clientX;
+    const startW = panel.getBoundingClientRect().width;
+    el.classList.add('active');
+    document.body.classList.add('resizing');
+    const move = (ev) => {
+      const w = Math.round(Math.min(max, Math.max(min, startW + (ev.clientX - startX) * (invert ? -1 : 1))));
+      root.style.setProperty(varName, `${w}px`);
+    };
+    const up = () => {
+      el.removeEventListener('pointermove', move);
+      el.classList.remove('active');
+      document.body.classList.remove('resizing');
+      store.set(key, String(Math.round(panel.getBoundingClientRect().width)));
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up, { once: true });
+    el.addEventListener('pointercancel', up, { once: true });
+  });
+  el.addEventListener('dblclick', () => {
+    root.style.removeProperty(varName);
+    store.set(key, null);
+  });
+  return el;
+}

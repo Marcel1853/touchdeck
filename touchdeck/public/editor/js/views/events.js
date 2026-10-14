@@ -57,6 +57,6 @@ export function renderEvents({ detail = true } = {}) {
       triggerEditor(ev.trigger),
       h('label', { class: 'field' }, 'Abklingzeit in Sekunden (0 = keine) – so oft darf das Event höchstens laufen',
         h('input', { type: 'number', min: 0, max: 86400, value: ev.cooldown, onchange: (e) => mutate(() => (ev.cooldown = Math.max(0, Number(e.target.value) || 0))) }))),
-    actionList(ev, 'actions', 'Dann …'),
+    actionList(ev, 'actions', 'Dann …', { context: `Event „${ev.name}“` }),
   );
 }

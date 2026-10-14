@@ -1,7 +1,6 @@
 // Einstieg des Editors: Navigation zwischen den Bereichen, Kopplungsdialog, Tastenkürzel, Start.
-import { $, h, api, toast, ask } from './dom.js';
+import { $, h, api, toast, ask, resizer } from './dom.js';
 import { S, setRenderer, render, loadState, watchServer, undo, redo, sel, onPairRequest } from './state.js';
-import { renderPicker } from './actions-ui.js';
 import { mountPages, renderPages, duplicateButton, deleteButton, select } from './views/pages.js';
 import { mountValues, renderValues } from './views/values.js';
 import { mountFlows, renderFlows } from './views/flows.js';
@@ -25,9 +24,18 @@ export function showView(name) {
   if (name === 'settings') resetSettingsCache();
   const view = VIEWS[name];
   view.mount($('#view'));
+  addResizers($('#view'));
   setRenderer(view.render);
   for (const b of document.querySelectorAll('.rail button[data-view]')) b.classList.toggle('active', b.dataset.view === name);
   render();
+}
+
+/** Ziehgriffe zwischen die Spalten setzen (Seiten: links und rechts, sonst nach der Liste). */
+function addResizers(root) {
+  const side = root.querySelector(':scope > .sidebar');
+  if (side) side.after(resizer(root, side, '--side-w', { min: 170, max: 480, key: `touchdeck.width.${S.view}.side` }));
+  const insp = root.querySelector(':scope > .inspector');
+  if (insp) insp.before(resizer(root, insp, '--insp-w', { min: 300, max: 760, invert: true, key: 'touchdeck.width.pages.insp' }));
 }
 
 function buildRail() {
@@ -93,13 +101,6 @@ function bind() {
   $('#pair-settings').onclick = () => {
     $('#dlg-pair').close();
     showView('settings');
-  };
-  $('#picker-search').oninput = (e) => renderPicker(e.target.value);
-  $('#picker-search').onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      $('#picker-list button')?.click();
-    }
   };
 
   document.addEventListener('keydown', (e) => {

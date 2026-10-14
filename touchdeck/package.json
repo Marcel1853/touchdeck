@@ -1,6 +1,6 @@
 {
   "name": "touchdeck",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy auslösen.",
   "type": "module",
   "private": true,
