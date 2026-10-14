@@ -6,13 +6,16 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 
 | Ordner | Inhalt |
 |---|---|
-| [`touchdeck/`](touchdeck/) | PC-Programm (Node.js + Electron): Server, Editor, Bedienfeld fürs Handy, Pakete als `.deb` und AppImage |
+| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri): Server, Aktionen und Integrationen, Fenster mit Symbol in der Systemleiste – kleineres Paket, kein Node.js oder Python nötig |
+| [`touchdeck/`](touchdeck/) | Bisherige Fassung (Node.js + Electron) sowie Editor und Bedienfeld (HTML/JS), die auch die Rust-Fassung nutzt |
 | [`android/`](android/) | Android-App (Kotlin): findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
 
 ## Funktionen
 
 - **Editor** mit Seiten, Buttons (Drücken, Umschalter, Regler), Live-Anzeigen,
-  Werten (Variablen), Events („Wenn …, dann …“), Vorlagen, Logs, Backups
+  Werten (Variablen), Events („Wenn …, dann …“), Vorlagen, Logs, Backups;
+  Rechtsklick auf Buttons zum Duplizieren, Kopieren, Ausschneiden, Einfügen,
+  Aussehen übertragen und Verschieben auf andere Seiten
 - **Über 60 Aktionen**: Programme, Tastatur und Maus, Fenster, Audio und
   Medien (PipeWire, MPRIS), Soundboard, System, Dateien, HTTP, Steam,
   OBS Studio (obs-websocket 5), Twitch (eigene Client-ID, Geräte-Code-Anmeldung),
@@ -22,13 +25,24 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 - **Desktop-Programm** mit Symbol in der Systemleiste, Autostart und
   Firewall-Freigabe fürs Heimnetz
 
-Ausführliche Beschreibung: [`touchdeck/README.md`](touchdeck/README.md)
+Ausführliche Beschreibung: [`touchdeck/README.md`](touchdeck/README.md),
+Rust-Fassung: [`touchdeck-rs/README.md`](touchdeck-rs/README.md)
 
 ## Bauen
 
-Voraussetzungen: Node.js ab 22, Java 17+ und ein Android SDK (für die App).
-`env.sh` setzt alle Pfade auf Ordner im Projekt (`.node/`, `.android-sdk/`,
-`.cache/`), damit nichts systemweit installiert werden muss.
+Voraussetzungen: Rust (für die Rust-Fassung), Node.js ab 22 (bisherige Fassung),
+Java 17+ und ein Android SDK (für die App). `env.sh` setzt alle Pfade auf Ordner
+im Projekt (`.rustup/`, `.cargo/`, `.node/`, `.android-sdk/`, `.cache/`), damit
+nichts systemweit installiert werden muss.
+
+```sh
+source env.sh
+cd touchdeck-rs
+cargo test                                            # automatische Tests
+cd app && XDG_CACHE_HOME="$PWD/../../.cache" cargo tauri build   # .deb und AppImage
+```
+
+Bisherige Fassung und Android-App:
 
 ```sh
 source env.sh

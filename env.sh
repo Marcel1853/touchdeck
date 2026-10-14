@@ -13,3 +13,7 @@ export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export ANDROID_USER_HOME="$PROJ/.cache/android"
 export GRADLE_USER_HOME="$PROJ/.cache/gradle"
 export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+# Rust: Werkzeuge und Paket-Cache im Projektordner statt in ~/.rustup und ~/.cargo.
+export RUSTUP_HOME="$PROJ/.rustup"
+export CARGO_HOME="$PROJ/.cargo"
+export PATH="$CARGO_HOME/bin:$PATH"

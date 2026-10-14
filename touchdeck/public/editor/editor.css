@@ -492,3 +492,22 @@ body.resizing iframe, body.resizing .canvas { pointer-events: none; }
 
 /* Aktions-Editor: Karten im Ablauf nicht strecken */
 .flow-list { align-content: start; }
+
+/* Kontextmenü (Rechtsklick auf Buttons und leere Felder) */
+.ctx-menu {
+  position: fixed; z-index: 50; min-width: 230px; padding: 5px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.55); animation: ctx-in 0.08s ease-out;
+}
+@keyframes ctx-in { from { opacity: 0; transform: scale(0.97); } }
+.ctx-item {
+  display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 9px; border: 0; border-radius: 7px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.ctx-item:hover:not([disabled]), .ctx-item:focus-visible { background: color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }
+.ctx-item[disabled] { color: var(--muted); opacity: 0.55; cursor: default; }
+.ctx-item.danger { color: var(--danger); }
+.ctx-icon { text-align: center; }
+.ctx-keys { color: var(--muted); font-size: 12px; }
+.ctx-sep { height: 1px; margin: 5px 6px; background: var(--line); }
+:root[data-theme="light"] .ctx-menu { background: #fff; }

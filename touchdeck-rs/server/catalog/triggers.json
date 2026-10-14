@@ -1,0 +1,769 @@
+[
+ {
+  "type": "value_change",
+  "category": "Werte",
+  "label": "Wert ändert sich",
+  "icon": "🏷️",
+  "fields": [
+   {
+    "key": "name",
+    "label": "Wert",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "op",
+    "label": "Wann?",
+    "type": "select",
+    "default": "any",
+    "options": [
+     {
+      "value": "any",
+      "label": "bei jeder Änderung"
+     },
+     {
+      "value": "eq",
+      "label": "wird gleich"
+     },
+     {
+      "value": "ne",
+      "label": "wird ungleich"
+     },
+     {
+      "value": "gt",
+      "label": "wird größer als"
+     },
+     {
+      "value": "lt",
+      "label": "wird kleiner als"
+     },
+     {
+      "value": "contains",
+      "label": "enthält"
+     }
+    ]
+   },
+   {
+    "key": "value",
+    "label": "Vergleichswert",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "eq",
+      "ne",
+      "gt",
+      "lt",
+      "contains"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "type": "app_start",
+  "category": "Allgemein",
+  "label": "TouchDeck startet",
+  "icon": "🚀",
+  "fields": []
+ },
+ {
+  "type": "timer",
+  "category": "Allgemein",
+  "label": "Zeitgeber (regelmäßig)",
+  "icon": "⏱️",
+  "fields": [
+   {
+    "key": "seconds",
+    "label": "Alle … Sekunden",
+    "type": "number",
+    "default": 60,
+    "min": 1,
+    "max": 86400
+   }
+  ]
+ },
+ {
+  "type": "time_of_day",
+  "category": "Allgemein",
+  "label": "Uhrzeit erreicht",
+  "icon": "⏰",
+  "fields": [
+   {
+    "key": "time",
+    "label": "Uhrzeit (HH:MM)",
+    "type": "text",
+    "placeholder": "18:30"
+   },
+   {
+    "key": "days",
+    "label": "Tage",
+    "type": "select",
+    "default": "all",
+    "options": [
+     {
+      "value": "all",
+      "label": "täglich"
+     },
+     {
+      "value": "weekdays",
+      "label": "Mo–Fr"
+     },
+     {
+      "value": "weekend",
+      "label": "Sa und So"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "file_change",
+  "category": "Dateien",
+  "label": "Datei ändert sich",
+  "icon": "📄",
+  "fields": [
+   {
+    "key": "path",
+    "label": "Datei",
+    "type": "text",
+    "placeholder": "~/status.txt"
+   }
+  ]
+ },
+ {
+  "type": "device",
+  "category": "Allgemein",
+  "label": "Handy verbindet/trennt sich",
+  "icon": "📱",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "connected",
+    "options": [
+     {
+      "value": "connected",
+      "label": "verbunden"
+     },
+     {
+      "value": "disconnected",
+      "label": "getrennt"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "button_toggle",
+  "category": "Allgemein",
+  "label": "Umschalter wird an/aus geschaltet",
+  "icon": "🔘",
+  "fields": [
+   {
+    "key": "button",
+    "label": "Button",
+    "type": "dynamic",
+    "source": "toggle-buttons"
+   },
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "on",
+    "options": [
+     {
+      "value": "on",
+      "label": "an"
+     },
+     {
+      "value": "off",
+      "label": "aus"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "audio_output",
+  "category": "Audio",
+  "label": "Audioausgang wechselt",
+  "icon": "🎧",
+  "fields": [
+   {
+    "key": "device",
+    "label": "Zu Gerät (leer = jedes)",
+    "type": "dynamic",
+    "source": "audio-sinks-only"
+   }
+  ]
+ },
+ {
+  "type": "steam_game",
+  "category": "Steam",
+  "label": "Spiel startet/endet",
+  "icon": "🎮",
+  "fields": [
+   {
+    "key": "game",
+    "label": "Spiel (leer = jedes)",
+    "type": "dynamic",
+    "source": "steam-games"
+   },
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "started",
+    "options": [
+     {
+      "value": "started",
+      "label": "startet"
+     },
+     {
+      "value": "stopped",
+      "label": "endet"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_scene",
+  "category": "OBS Studio",
+  "label": "Szene wechselt",
+  "icon": "🎬",
+  "fields": [
+   {
+    "key": "scene",
+    "label": "Zu Szene (leer = jede)",
+    "type": "dynamic",
+    "source": "obs-scenes"
+   }
+  ]
+ },
+ {
+  "type": "obs_preview",
+  "category": "OBS Studio",
+  "label": "Vorschauszene wechselt",
+  "icon": "🖼️",
+  "fields": [
+   {
+    "key": "scene",
+    "label": "Zu Szene (leer = jede)",
+    "type": "dynamic",
+    "source": "obs-scenes"
+   }
+  ]
+ },
+ {
+  "type": "obs_stream",
+  "category": "OBS Studio",
+  "label": "Stream startet/stoppt",
+  "icon": "📡",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "started",
+    "options": [
+     {
+      "value": "started",
+      "label": "startet"
+     },
+     {
+      "value": "stopped",
+      "label": "stoppt"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_record",
+  "category": "OBS Studio",
+  "label": "Aufnahme startet/stoppt/pausiert",
+  "icon": "⏺️",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "started",
+    "options": [
+     {
+      "value": "started",
+      "label": "startet"
+     },
+     {
+      "value": "stopped",
+      "label": "stoppt"
+     },
+     {
+      "value": "paused",
+      "label": "pausiert"
+     },
+     {
+      "value": "resumed",
+      "label": "läuft weiter"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_replay_saved",
+  "category": "OBS Studio",
+  "label": "Clip gespeichert",
+  "icon": "⏪",
+  "fields": []
+ },
+ {
+  "type": "obs_mute",
+  "category": "OBS Studio",
+  "label": "Audioquelle stumm/laut",
+  "icon": "🔈",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Audioquelle (leer = jede)",
+    "type": "dynamic",
+    "source": "obs-inputs"
+   },
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "muted",
+    "options": [
+     {
+      "value": "muted",
+      "label": "stumm"
+     },
+     {
+      "value": "unmuted",
+      "label": "laut"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_source",
+  "category": "OBS Studio",
+  "label": "Quelle ein-/ausgeblendet",
+  "icon": "👁️",
+  "fields": [
+   {
+    "key": "item",
+    "label": "Quelle",
+    "type": "dynamic",
+    "source": "obs-scene-items"
+   },
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "shown",
+    "options": [
+     {
+      "value": "shown",
+      "label": "eingeblendet"
+     },
+     {
+      "value": "hidden",
+      "label": "ausgeblendet"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_filter",
+  "category": "OBS Studio",
+  "label": "Filter ein/aus",
+  "icon": "✨",
+  "fields": [
+   {
+    "key": "filter",
+    "label": "Filter",
+    "type": "dynamic",
+    "source": "obs-filters"
+   },
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "on",
+    "options": [
+     {
+      "value": "on",
+      "label": "an"
+     },
+     {
+      "value": "off",
+      "label": "aus"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_studio",
+  "category": "OBS Studio",
+  "label": "Studio-Modus an/aus",
+  "icon": "🎛️",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "on",
+    "options": [
+     {
+      "value": "on",
+      "label": "an"
+     },
+     {
+      "value": "off",
+      "label": "aus"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_profile",
+  "category": "OBS Studio",
+  "label": "Profil/Szenensammlung wechselt",
+  "icon": "🗂️",
+  "fields": [
+   {
+    "key": "kind",
+    "label": "Was?",
+    "type": "select",
+    "default": "any",
+    "options": [
+     {
+      "value": "any",
+      "label": "egal"
+     },
+     {
+      "value": "profile",
+      "label": "Profil"
+     },
+     {
+      "value": "collection",
+      "label": "Szenensammlung"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "obs_connection",
+  "category": "OBS Studio",
+  "label": "OBS verbunden/getrennt",
+  "icon": "🔌",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "connected",
+    "options": [
+     {
+      "value": "connected",
+      "label": "verbunden"
+     },
+     {
+      "value": "disconnected",
+      "label": "getrennt"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_follow",
+  "category": "Twitch",
+  "label": "Neuer Follower",
+  "icon": "💜",
+  "fields": []
+ },
+ {
+  "type": "twitch_sub",
+  "category": "Twitch",
+  "label": "Abo (neu, verlängert, verschenkt)",
+  "icon": "⭐",
+  "fields": [
+   {
+    "key": "kind",
+    "label": "Art",
+    "type": "select",
+    "default": "any",
+    "options": [
+     {
+      "value": "any",
+      "label": "egal"
+     },
+     {
+      "value": "new",
+      "label": "neues Abo"
+     },
+     {
+      "value": "resub",
+      "label": "verlängert"
+     },
+     {
+      "value": "gift",
+      "label": "verschenkt"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_cheer",
+  "category": "Twitch",
+  "label": "Bits",
+  "icon": "💎",
+  "fields": [
+   {
+    "key": "min",
+    "label": "Ab wie vielen Bits?",
+    "type": "number",
+    "default": 1,
+    "min": 1
+   }
+  ]
+ },
+ {
+  "type": "twitch_raid",
+  "category": "Twitch",
+  "label": "Raid",
+  "icon": "🚀",
+  "fields": [
+   {
+    "key": "min",
+    "label": "Ab wie vielen Zuschauern?",
+    "type": "number",
+    "default": 1,
+    "min": 1
+   }
+  ]
+ },
+ {
+  "type": "twitch_redeem",
+  "category": "Twitch",
+  "label": "Kanalpunkte eingelöst",
+  "icon": "🎁",
+  "fields": [
+   {
+    "key": "reward",
+    "label": "Belohnung (Titel, leer = jede)",
+    "type": "text"
+   }
+  ]
+ },
+ {
+  "type": "twitch_chat",
+  "category": "Twitch",
+  "label": "Chat-Nachricht / Befehl",
+  "icon": "💬",
+  "fields": [
+   {
+    "key": "mode",
+    "label": "Wann?",
+    "type": "select",
+    "default": "command",
+    "options": [
+     {
+      "value": "command",
+      "label": "Nachricht beginnt mit"
+     },
+     {
+      "value": "contains",
+      "label": "Nachricht enthält"
+     },
+     {
+      "value": "any",
+      "label": "jede Nachricht"
+     }
+    ]
+   },
+   {
+    "key": "text",
+    "label": "Text (z. B. !szene)",
+    "type": "text",
+    "showIf": {
+     "mode": [
+      "command",
+      "contains"
+     ]
+    }
+   },
+   {
+    "key": "who",
+    "label": "Von wem?",
+    "type": "select",
+    "default": "all",
+    "options": [
+     {
+      "value": "all",
+      "label": "allen"
+     },
+     {
+      "value": "mod",
+      "label": "nur Moderatoren und dir"
+     },
+     {
+      "value": "sub",
+      "label": "nur Abonnenten"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_stream",
+  "category": "Twitch",
+  "label": "Stream geht online/offline",
+  "icon": "🔴",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "online",
+    "options": [
+     {
+      "value": "online",
+      "label": "online"
+     },
+     {
+      "value": "offline",
+      "label": "offline"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_ad",
+  "category": "Twitch",
+  "label": "Werbepause beginnt",
+  "icon": "📺",
+  "fields": []
+ },
+ {
+  "type": "discord_voice",
+  "category": "Discord",
+  "label": "Stumm / taub geschaltet",
+  "icon": "🎙️",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "muted",
+    "options": [
+     {
+      "value": "muted",
+      "label": "stumm"
+     },
+     {
+      "value": "unmuted",
+      "label": "Mikrofon wieder an"
+     },
+     {
+      "value": "deafened",
+      "label": "taub"
+     },
+     {
+      "value": "undeafened",
+      "label": "hört wieder"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "discord_channel",
+  "category": "Discord",
+  "label": "Sprachkanal betreten / verlassen",
+  "icon": "🔊",
+  "fields": [
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "joined",
+    "options": [
+     {
+      "value": "joined",
+      "label": "betreten"
+     },
+     {
+      "value": "left",
+      "label": "verlassen"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ }
+]

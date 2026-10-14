@@ -78,6 +78,64 @@ export async function prompt(title, text, initial = '') {
 
 export const uid = (prefix) => prefix + Math.random().toString(16).slice(2, 14);
 
+/**
+ * Kontextmenü (Rechtsklick) an Position x/y. items: { icon, label, keys, onclick, disabled, danger }
+ * oder '-' für eine Trennlinie; { label, submenu: [...] } öffnet ein Untermenü.
+ */
+export function contextMenu(x, y, items) {
+  closeContextMenu();
+  const menu = h('div', { class: 'ctx-menu', role: 'menu' });
+  const close = () => closeContextMenu();
+  menu.append(...items.filter(Boolean).map((it) => {
+    if (it === '-') return h('div', { class: 'ctx-sep' });
+    return h('button', {
+      type: 'button', role: 'menuitem', class: `ctx-item${it.danger ? ' danger' : ''}`, disabled: it.disabled,
+      onclick: (e) => {
+        e.stopPropagation();
+        if (it.submenu) {
+          const r = e.currentTarget.getBoundingClientRect();
+          return contextMenu(r.right - 4, r.top - 6, it.submenu);
+        }
+        close();
+        it.onclick?.();
+      },
+    },
+    h('span', { class: 'ctx-icon' }, it.icon ?? ''),
+    h('span', { class: 'ctx-label' }, it.label),
+    h('span', { class: 'ctx-keys' }, it.submenu ? '▸' : it.keys ?? ''));
+  }));
+  document.body.append(menu);
+  // Im Fenster halten.
+  const r = menu.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, Math.min(x, innerWidth - r.width - 8))}px`;
+  menu.style.top = `${Math.max(8, Math.min(y, innerHeight - r.height - 8))}px`;
+  menu.querySelector('.ctx-item:not([disabled])')?.focus();
+  menu.addEventListener('keydown', (e) => {
+    const list = [...menu.querySelectorAll('.ctx-item:not([disabled])')];
+    const i = list.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      list[(i + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length]?.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  });
+  setTimeout(() => {
+    document.addEventListener('pointerdown', onOutside, true);
+    window.addEventListener('blur', close, { once: true });
+  });
+}
+
+function onOutside(e) {
+  if (!e.target.closest('.ctx-menu')) closeContextMenu();
+}
+
+export function closeContextMenu() {
+  document.querySelector('.ctx-menu')?.remove();
+  document.removeEventListener('pointerdown', onOutside, true);
+}
+
 export function segmented(options, current, onPick) {
   return h('div', { class: 'segmented' }, options.map(([value, label]) => h('button', { type: 'button', class: value === current ? 'active' : '', onclick: () => onPick(value) }, label)));
 }

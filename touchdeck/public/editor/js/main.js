@@ -1,7 +1,7 @@
 // Einstieg des Editors: Navigation zwischen den Bereichen, Kopplungsdialog, Tastenkürzel, Start.
 import { $, h, api, toast, ask, resizer } from './dom.js';
 import { S, setRenderer, render, loadState, watchServer, undo, redo, sel, onPairRequest } from './state.js';
-import { mountPages, renderPages, duplicateButton, deleteButton, select } from './views/pages.js';
+import { mountPages, renderPages, duplicateButton, deleteButton, select, copyButton, cutButton, pasteButton } from './views/pages.js';
 import { mountValues, renderValues } from './views/values.js';
 import { mountFlows, renderFlows } from './views/flows.js';
 import { mountEvents, renderEvents } from './views/events.js';
@@ -104,7 +104,7 @@ function bind() {
   };
 
   document.addEventListener('keydown', (e) => {
-    const typing = e.target.closest('input, textarea, select') || document.querySelector('dialog[open]');
+    const typing = e.target.closest('input, textarea, select') || document.querySelector('dialog[open], .ctx-menu');
     if (typing) return;
     const ctrl = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
@@ -117,6 +117,15 @@ function bind() {
     } else if (S.view === 'pages' && ctrl && key === 'd') {
       e.preventDefault();
       duplicateButton();
+    } else if (S.view === 'pages' && ctrl && key === 'c' && sel() && !getSelection().toString()) {
+      e.preventDefault();
+      copyButton();
+    } else if (S.view === 'pages' && ctrl && key === 'x' && sel()) {
+      e.preventDefault();
+      cutButton();
+    } else if (S.view === 'pages' && ctrl && key === 'v') {
+      e.preventDefault();
+      pasteButton();
     } else if (S.view === 'pages' && (e.key === 'Delete' || e.key === 'Backspace') && sel()) {
       e.preventDefault();
       deleteButton();

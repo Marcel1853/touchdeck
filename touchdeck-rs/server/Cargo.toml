@@ -1,0 +1,32 @@
+[package]
+name = "touchdeck-server"
+version = "0.6.0"
+edition = "2024"
+description = "TouchDeck-Server: Makro-Fernbedienung für Linux"
+license = "MIT"
+
+[[bin]]
+name = "touchdeck-server"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+axum = { version = "0.8.9", features = ["ws"] }
+base64 = "0.23.1"
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
+futures-util = "0.3.34"
+hex = "0.4.3"
+if-addrs = "0.15.0"
+indexmap = { version = "2.14.2", features = ["serde"] }
+libc = "0.2.190"
+percent-encoding = "2.3.2"
+qrcode = { version = "0.14.1", default-features = false }
+rand = "0.10.3"
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+sha2 = "0.11.1"
+socket2 = "0.6"
+tokio = { version = "1.53.3", features = ["full"] }
+tokio-tungstenite = { version = "0.29", features = ["rustls-tls-webpki-roots"] }
+x11-dl = "2.21.0"

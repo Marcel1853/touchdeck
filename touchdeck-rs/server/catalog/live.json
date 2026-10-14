@@ -1,0 +1,110 @@
+{
+ "liveSources": [
+  {
+   "value": "none",
+   "label": "Keine"
+  },
+  {
+   "value": "clock",
+   "label": "Uhrzeit"
+  },
+  {
+   "value": "date",
+   "label": "Datum"
+  },
+  {
+   "value": "cpu",
+   "label": "CPU-Auslastung"
+  },
+  {
+   "value": "ram",
+   "label": "Arbeitsspeicher"
+  },
+  {
+   "value": "temp",
+   "label": "CPU-Temperatur"
+  },
+  {
+   "value": "volume",
+   "label": "Lautstärke"
+  },
+  {
+   "value": "mic",
+   "label": "Mikrofon stumm?"
+  },
+  {
+   "value": "track",
+   "label": "Aktueller Musiktitel"
+  },
+  {
+   "value": "steam_updates",
+   "label": "Steam-Updates"
+  },
+  {
+   "value": "steam_running",
+   "label": "Spiel läuft (aus Aktion)"
+  },
+  {
+   "value": "obs_stream",
+   "label": "OBS: Stream läuft?"
+  },
+  {
+   "value": "obs_record",
+   "label": "OBS: Aufnahme läuft?"
+  },
+  {
+   "value": "obs_scene",
+   "label": "OBS: Szene aktiv? (aus Aktion)"
+  },
+  {
+   "value": "twitch_live",
+   "label": "Twitch: live?"
+  },
+  {
+   "value": "twitch_viewers",
+   "label": "Twitch: Zuschauer"
+  },
+  {
+   "value": "twitch_followers",
+   "label": "Twitch: Follower"
+  },
+  {
+   "value": "discord_mute",
+   "label": "Discord: stumm?"
+  },
+  {
+   "value": "discord_deaf",
+   "label": "Discord: taub?"
+  },
+  {
+   "value": "discord_channel",
+   "label": "Discord: Sprachkanal"
+  },
+  {
+   "value": "variable",
+   "label": "Wert einer Variable"
+  },
+  {
+   "value": "command",
+   "label": "Ausgabe eines Befehls"
+  }
+ ],
+ "sliderTargets": [
+  {
+   "value": "volume",
+   "label": "Lautstärke (PC)"
+  },
+  {
+   "value": "mic",
+   "label": "Mikrofon-Pegel"
+  },
+  {
+   "value": "obs_volume",
+   "label": "OBS-Audioquelle"
+  },
+  {
+   "value": "command",
+   "label": "Eigener Befehl ({value} = 0–100)"
+  }
+ ]
+}

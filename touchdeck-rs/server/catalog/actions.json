@@ -1,0 +1,2135 @@
+[
+ {
+  "type": "open_url",
+  "category": "Ausführen",
+  "label": "Webseite öffnen",
+  "icon": "🌐",
+  "fields": [
+   {
+    "key": "url",
+    "label": "Adresse",
+    "type": "text",
+    "placeholder": "https://…"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "open_path",
+  "category": "Ausführen",
+  "label": "Datei oder Ordner öffnen",
+  "icon": "📂",
+  "fields": [
+   {
+    "key": "path",
+    "label": "Pfad",
+    "type": "text",
+    "placeholder": "~/Dokumente"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "launch_app",
+  "category": "Ausführen",
+  "label": "Programm starten",
+  "icon": "🚀",
+  "fields": [
+   {
+    "key": "app",
+    "label": "Programm",
+    "type": "app"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "run_command",
+  "category": "Ausführen",
+  "label": "Befehl ausführen",
+  "icon": "⌨️",
+  "fields": [
+   {
+    "key": "command",
+    "label": "Befehl",
+    "type": "textarea",
+    "placeholder": "z. B. gnome-screenshot -i"
+   },
+   {
+    "key": "wait",
+    "label": "Auf Ende warten und Ausgabe anzeigen",
+    "type": "checkbox"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "hotkey",
+  "category": "Eingabe",
+  "label": "Tastenkürzel drücken",
+  "icon": "🎹",
+  "fields": [
+   {
+    "key": "keys",
+    "label": "Tastenkürzel",
+    "type": "hotkey",
+    "placeholder": "ctrl+shift+s"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "type_text",
+  "category": "Eingabe",
+  "label": "Text tippen",
+  "icon": "✍️",
+  "fields": [
+   {
+    "key": "text",
+    "label": "Text",
+    "type": "textarea"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "media",
+  "category": "Medien",
+  "label": "Mediensteuerung",
+  "icon": "⏯️",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "play-pause",
+    "options": [
+     {
+      "value": "play-pause",
+      "label": "Abspielen / Pause"
+     },
+     {
+      "value": "next",
+      "label": "Nächster Titel"
+     },
+     {
+      "value": "previous",
+      "label": "Vorheriger Titel"
+     },
+     {
+      "value": "stop",
+      "label": "Stopp"
+     }
+    ]
+   }
+  ],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "volume",
+  "category": "Audio",
+  "label": "Lautstärke",
+  "icon": "🔊",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "up",
+    "options": [
+     {
+      "value": "up",
+      "label": "Lauter"
+     },
+     {
+      "value": "down",
+      "label": "Leiser"
+     },
+     {
+      "value": "set",
+      "label": "Auf Wert setzen"
+     },
+     {
+      "value": "mute",
+      "label": "Stumm an/aus"
+     }
+    ]
+   },
+   {
+    "key": "step",
+    "label": "Schritt in %",
+    "type": "number",
+    "default": 5,
+    "min": 1,
+    "max": 50,
+    "showIf": {
+     "op": [
+      "up",
+      "down"
+     ]
+    }
+   },
+   {
+    "key": "value",
+    "label": "Lautstärke in %",
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 100,
+    "showIf": {
+     "op": [
+      "set"
+     ]
+    }
+   }
+  ],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "mic_mute",
+  "category": "Audio",
+  "label": "Mikrofon stumm",
+  "icon": "🎙️",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "mute",
+      "label": "Stumm"
+     },
+     {
+      "value": "unmute",
+      "label": "Laut"
+     }
+    ]
+   }
+  ],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "go_page",
+  "category": "Navigation",
+  "label": "Seite wechseln",
+  "icon": "📄",
+  "fields": [
+   {
+    "key": "page",
+    "label": "Zielseite",
+    "type": "page"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "delay",
+  "category": "Logik",
+  "label": "Warten",
+  "icon": "⏱️",
+  "fields": [
+   {
+    "key": "ms",
+    "label": "Millisekunden",
+    "type": "number",
+    "default": 500,
+    "min": 0,
+    "max": 60000
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "notify",
+  "category": "Dienste",
+  "label": "Benachrichtigung zeigen",
+  "icon": "💬",
+  "fields": [
+   {
+    "key": "title",
+    "label": "Titel",
+    "type": "text"
+   },
+   {
+    "key": "body",
+    "label": "Text",
+    "type": "textarea"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "http",
+  "category": "HTTP",
+  "label": "HTTP-Anfrage",
+  "icon": "📡",
+  "fields": [
+   {
+    "key": "method",
+    "label": "Methode",
+    "type": "select",
+    "default": "GET",
+    "options": [
+     {
+      "value": "GET",
+      "label": "GET"
+     },
+     {
+      "value": "POST",
+      "label": "POST"
+     },
+     {
+      "value": "PUT",
+      "label": "PUT"
+     },
+     {
+      "value": "PATCH",
+      "label": "PATCH"
+     },
+     {
+      "value": "DELETE",
+      "label": "DELETE"
+     }
+    ]
+   },
+   {
+    "key": "url",
+    "label": "Adresse",
+    "type": "text",
+    "placeholder": "http://…"
+   },
+   {
+    "key": "headers",
+    "label": "Header (eine Zeile pro Header: Name: Wert)",
+    "type": "textarea"
+   },
+   {
+    "key": "body",
+    "label": "Inhalt",
+    "type": "textarea",
+    "showIf": {
+     "method": [
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE"
+     ]
+    }
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "audio_output",
+  "category": "Audio",
+  "label": "Audioausgang wechseln",
+  "icon": "🎧",
+  "fields": [
+   {
+    "key": "target",
+    "label": "Ausgang",
+    "type": "dynamic",
+    "source": "audio-sinks",
+    "default": "next"
+   }
+  ],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "audio_input",
+  "category": "Audio",
+  "label": "Mikrofon wechseln",
+  "icon": "🎙️",
+  "fields": [
+   {
+    "key": "target",
+    "label": "Eingang",
+    "type": "dynamic",
+    "source": "audio-sources",
+    "default": "next"
+   }
+  ],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "screenshot",
+  "category": "Dienste",
+  "label": "Bildschirmfoto",
+  "icon": "📸",
+  "fields": [
+   {
+    "key": "mode",
+    "label": "Bereich",
+    "type": "select",
+    "default": "dialog",
+    "options": [
+     {
+      "value": "dialog",
+      "label": "Dialog öffnen"
+     },
+     {
+      "value": "full",
+      "label": "Ganzer Bildschirm"
+     },
+     {
+      "value": "window",
+      "label": "Aktives Fenster"
+     },
+     {
+      "value": "area",
+      "label": "Bereich auswählen"
+     }
+    ]
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "lock_screen",
+  "category": "Dienste",
+  "label": "Bildschirm sperren",
+  "icon": "🔒",
+  "fields": [],
+  "group": "Allgemein"
+ },
+ {
+  "type": "power",
+  "category": "Dienste",
+  "label": "Energie",
+  "icon": "⏻",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "suspend",
+    "options": [
+     {
+      "value": "suspend",
+      "label": "Bereitschaft"
+     },
+     {
+      "value": "logout",
+      "label": "Abmelden"
+     },
+     {
+      "value": "reboot",
+      "label": "Neu starten"
+     },
+     {
+      "value": "poweroff",
+      "label": "Herunterfahren"
+     }
+    ]
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "night_light",
+  "category": "Dienste",
+  "label": "Nachtlicht",
+  "icon": "🌙",
+  "fields": [
+   {
+    "key": "mode",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "on",
+      "label": "An"
+     },
+     {
+      "value": "off",
+      "label": "Aus"
+     }
+    ]
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "dark_mode",
+  "category": "Dienste",
+  "label": "Hell / Dunkel",
+  "icon": "🌗",
+  "fields": [
+   {
+    "key": "mode",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "on",
+      "label": "Dunkel"
+     },
+     {
+      "value": "off",
+      "label": "Hell"
+     }
+    ]
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "wake_on_lan",
+  "category": "Dienste",
+  "label": "Rechner aufwecken (Wake-on-LAN)",
+  "icon": "⏰",
+  "fields": [
+   {
+    "key": "mac",
+    "label": "MAC-Adresse",
+    "type": "text",
+    "placeholder": "00:11:22:33:44:55"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "steam_game",
+  "category": "Steam",
+  "label": "Spiel starten",
+  "icon": "🎮",
+  "fields": [
+   {
+    "key": "game",
+    "label": "Spiel",
+    "type": "dynamic",
+    "source": "steam-games"
+   }
+  ],
+  "group": "Spiele"
+ },
+ {
+  "type": "steam_open",
+  "category": "Steam",
+  "label": "Steam öffnen",
+  "icon": "🕹️",
+  "fields": [
+   {
+    "key": "view",
+    "label": "Bereich",
+    "type": "select",
+    "default": "library",
+    "options": [
+     {
+      "value": "library",
+      "label": "Bibliothek"
+     },
+     {
+      "value": "downloads",
+      "label": "Downloads & Updates"
+     },
+     {
+      "value": "bigpicture",
+      "label": "Big Picture"
+     },
+     {
+      "value": "friends",
+      "label": "Freunde"
+     },
+     {
+      "value": "store",
+      "label": "Shop"
+     },
+     {
+      "value": "screenshots",
+      "label": "Bildschirmfotos"
+     }
+    ]
+   }
+  ],
+  "group": "Spiele"
+ },
+ {
+  "type": "obs_scene",
+  "category": "OBS Studio",
+  "label": "Szene wechseln",
+  "icon": "🎬",
+  "fields": [
+   {
+    "key": "scene",
+    "label": "Szene",
+    "type": "dynamic",
+    "source": "obs-scenes"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_stream",
+  "category": "OBS Studio",
+  "label": "Stream",
+  "icon": "📡",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Starten / Stoppen"
+     },
+     {
+      "value": "start",
+      "label": "Starten"
+     },
+     {
+      "value": "stop",
+      "label": "Stoppen"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_record",
+  "category": "OBS Studio",
+  "label": "Aufnahme",
+  "icon": "⏺️",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Starten / Stoppen"
+     },
+     {
+      "value": "start",
+      "label": "Starten"
+     },
+     {
+      "value": "stop",
+      "label": "Stoppen"
+     },
+     {
+      "value": "pause",
+      "label": "Pause an/aus"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_replay",
+  "category": "OBS Studio",
+  "label": "Wiederholungspuffer",
+  "icon": "⏪",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "save",
+    "options": [
+     {
+      "value": "save",
+      "label": "Clip speichern"
+     },
+     {
+      "value": "toggle",
+      "label": "Puffer an/aus"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_mute",
+  "category": "OBS Studio",
+  "label": "Audioquelle stumm",
+  "icon": "🔈",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Audioquelle",
+    "type": "dynamic",
+    "source": "obs-inputs"
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "mute",
+      "label": "Stumm"
+     },
+     {
+      "value": "unmute",
+      "label": "Laut"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_source",
+  "category": "OBS Studio",
+  "label": "Quelle ein-/ausblenden",
+  "icon": "👁️",
+  "fields": [
+   {
+    "key": "item",
+    "label": "Quelle",
+    "type": "dynamic",
+    "source": "obs-scene-items"
+   },
+   {
+    "key": "mode",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "show",
+      "label": "Einblenden"
+     },
+     {
+      "value": "hide",
+      "label": "Ausblenden"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_misc",
+  "category": "OBS Studio",
+  "label": "Studio-Modus / Virtuelle Kamera",
+  "icon": "🎛️",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "virtualcam",
+    "options": [
+     {
+      "value": "virtualcam",
+      "label": "Virtuelle Kamera an/aus"
+     },
+     {
+      "value": "studio",
+      "label": "Studio-Modus an/aus"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_preview",
+  "category": "OBS Studio",
+  "label": "Vorschauszene setzen (Studio-Modus)",
+  "icon": "🖼️",
+  "fields": [
+   {
+    "key": "scene",
+    "label": "Szene",
+    "type": "dynamic",
+    "source": "obs-scenes"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_transition",
+  "category": "OBS Studio",
+  "label": "Übergang",
+  "icon": "🔀",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "take",
+    "options": [
+     {
+      "value": "take",
+      "label": "Vorschau auf Sendung schalten (Studio-Modus)"
+     },
+     {
+      "value": "set",
+      "label": "Übergang auswählen"
+     }
+    ]
+   },
+   {
+    "key": "transition",
+    "label": "Übergang",
+    "type": "dynamic",
+    "source": "obs-transitions",
+    "showIf": {
+     "op": [
+      "set"
+     ]
+    }
+   },
+   {
+    "key": "duration",
+    "label": "Dauer in ms (0 = unverändert)",
+    "type": "number",
+    "default": 0,
+    "min": 0,
+    "max": 20000,
+    "showIf": {
+     "op": [
+      "set"
+     ]
+    }
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_volume",
+  "category": "OBS Studio",
+  "label": "Lautstärke einer Audioquelle",
+  "icon": "🔉",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Audioquelle",
+    "type": "dynamic",
+    "source": "obs-inputs"
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "up",
+    "options": [
+     {
+      "value": "up",
+      "label": "Lauter"
+     },
+     {
+      "value": "down",
+      "label": "Leiser"
+     },
+     {
+      "value": "set",
+      "label": "Auf Wert setzen"
+     }
+    ]
+   },
+   {
+    "key": "step",
+    "label": "Schritt in dB",
+    "type": "number",
+    "default": 3,
+    "min": 1,
+    "max": 30,
+    "showIf": {
+     "op": [
+      "up",
+      "down"
+     ]
+    }
+   },
+   {
+    "key": "value",
+    "label": "Lautstärke in %",
+    "type": "number",
+    "default": 80,
+    "min": 0,
+    "max": 100,
+    "showIf": {
+     "op": [
+      "set"
+     ]
+    }
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_media",
+  "category": "OBS Studio",
+  "label": "Medienquelle steuern",
+  "icon": "🎞️",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Medienquelle",
+    "type": "dynamic",
+    "source": "obs-media-inputs"
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "playpause",
+    "options": [
+     {
+      "value": "playpause",
+      "label": "Abspielen / Pause"
+     },
+     {
+      "value": "restart",
+      "label": "Von vorn"
+     },
+     {
+      "value": "stop",
+      "label": "Stopp"
+     },
+     {
+      "value": "next",
+      "label": "Nächstes"
+     },
+     {
+      "value": "previous",
+      "label": "Vorheriges"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_filter",
+  "category": "OBS Studio",
+  "label": "Filter ein-/ausschalten",
+  "icon": "✨",
+  "fields": [
+   {
+    "key": "filter",
+    "label": "Filter",
+    "type": "dynamic",
+    "source": "obs-filters"
+   },
+   {
+    "key": "mode",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "on",
+      "label": "Einschalten"
+     },
+     {
+      "value": "off",
+      "label": "Ausschalten"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_text",
+  "category": "OBS Studio",
+  "label": "Text einer Textquelle setzen",
+  "icon": "🔤",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Textquelle",
+    "type": "dynamic",
+    "source": "obs-text-inputs"
+   },
+   {
+    "key": "text",
+    "label": "Text ({Variable} wird ersetzt)",
+    "type": "textarea"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_browser",
+  "category": "OBS Studio",
+  "label": "Browserquelle",
+  "icon": "🌐",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Browserquelle",
+    "type": "dynamic",
+    "source": "obs-browser-inputs"
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "reload",
+    "options": [
+     {
+      "value": "reload",
+      "label": "Neu laden"
+     },
+     {
+      "value": "url",
+      "label": "Adresse ändern"
+     }
+    ]
+   },
+   {
+    "key": "url",
+    "label": "Adresse",
+    "type": "text",
+    "placeholder": "https://…",
+    "showIf": {
+     "op": [
+      "url"
+     ]
+    }
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_image",
+  "category": "OBS Studio",
+  "label": "Bild einer Bildquelle ändern",
+  "icon": "🖼️",
+  "fields": [
+   {
+    "key": "input",
+    "label": "Bildquelle",
+    "type": "dynamic",
+    "source": "obs-image-inputs"
+   },
+   {
+    "key": "file",
+    "label": "Bilddatei",
+    "type": "text",
+    "placeholder": "~/Bilder/…png"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_profile",
+  "category": "OBS Studio",
+  "label": "Profil / Szenensammlung wechseln",
+  "icon": "🗂️",
+  "fields": [
+   {
+    "key": "kind",
+    "label": "Was wechseln?",
+    "type": "select",
+    "default": "profile",
+    "options": [
+     {
+      "value": "profile",
+      "label": "Profil"
+     },
+     {
+      "value": "collection",
+      "label": "Szenensammlung"
+     }
+    ]
+   },
+   {
+    "key": "profile",
+    "label": "Profil",
+    "type": "dynamic",
+    "source": "obs-profiles",
+    "showIf": {
+     "kind": [
+      "profile"
+     ]
+    }
+   },
+   {
+    "key": "collection",
+    "label": "Szenensammlung",
+    "type": "dynamic",
+    "source": "obs-collections",
+    "showIf": {
+     "kind": [
+      "collection"
+     ]
+    }
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_hotkey",
+  "category": "OBS Studio",
+  "label": "OBS-Tastenkürzel auslösen",
+  "icon": "⌨️",
+  "fields": [
+   {
+    "key": "hotkey",
+    "label": "Funktion",
+    "type": "dynamic",
+    "source": "obs-hotkeys"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_screenshot",
+  "category": "OBS Studio",
+  "label": "Bildschirmfoto einer Szene/Quelle",
+  "icon": "📷",
+  "fields": [
+   {
+    "key": "source",
+    "label": "Szene oder Quelle",
+    "type": "dynamic",
+    "source": "obs-sources"
+   },
+   {
+    "key": "folder",
+    "label": "Ordner",
+    "type": "text",
+    "default": "~/Bilder",
+    "placeholder": "~/Bilder"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "obs_raw",
+  "category": "OBS Studio",
+  "label": "Eigene OBS-Anfrage (für Fortgeschrittene)",
+  "icon": "🧪",
+  "fields": [
+   {
+    "key": "request",
+    "label": "Anfrage (requestType)",
+    "type": "text",
+    "placeholder": "z. B. SetInputMute"
+   },
+   {
+    "key": "data",
+    "label": "Daten als JSON",
+    "type": "textarea",
+    "placeholder": "{\"inputName\": \"Mikrofon-/AUX-Audio\", \"inputMuted\": true}"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "mouse_click",
+  "category": "Eingabe",
+  "label": "Mausklick",
+  "icon": "🖱️",
+  "fields": [
+   {
+    "key": "button",
+    "label": "Taste",
+    "type": "select",
+    "default": "left",
+    "options": [
+     {
+      "value": "left",
+      "label": "Links"
+     },
+     {
+      "value": "double",
+      "label": "Doppelklick links"
+     },
+     {
+      "value": "right",
+      "label": "Rechts"
+     },
+     {
+      "value": "middle",
+      "label": "Mitte"
+     },
+     {
+      "value": "scrollup",
+      "label": "Rad hoch"
+     },
+     {
+      "value": "scrolldown",
+      "label": "Rad runter"
+     }
+    ]
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "mouse_move",
+  "category": "Eingabe",
+  "label": "Maus bewegen",
+  "icon": "↗️",
+  "fields": [
+   {
+    "key": "mode",
+    "label": "Art",
+    "type": "select",
+    "default": "abs",
+    "options": [
+     {
+      "value": "abs",
+      "label": "An Bildschirmposition"
+     },
+     {
+      "value": "rel",
+      "label": "Um Abstand verschieben"
+     }
+    ]
+   },
+   {
+    "key": "x",
+    "label": "X",
+    "type": "number",
+    "default": 0
+   },
+   {
+    "key": "y",
+    "label": "Y",
+    "type": "number",
+    "default": 0
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "key_hold",
+  "category": "Eingabe",
+  "label": "Taste gedrückt halten",
+  "icon": "⏳",
+  "fields": [
+   {
+    "key": "keys",
+    "label": "Taste(n)",
+    "type": "hotkey",
+    "placeholder": "w"
+   },
+   {
+    "key": "ms",
+    "label": "Dauer in ms",
+    "type": "number",
+    "default": 1000,
+    "min": 50,
+    "max": 60000
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "window_activate",
+  "category": "Ausführen",
+  "label": "Fenster nach vorn holen",
+  "icon": "🪟",
+  "fields": [
+   {
+    "key": "window",
+    "label": "Programm (Fensterklasse oder Teil des Titels)",
+    "type": "dynamic",
+    "source": "windows"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "kill_app",
+  "category": "Ausführen",
+  "label": "Programm beenden",
+  "icon": "⛔",
+  "fields": [
+   {
+    "key": "name",
+    "label": "Prozessname",
+    "type": "text",
+    "placeholder": "z. B. firefox"
+   },
+   {
+    "key": "force",
+    "label": "Sofort erzwingen (ohne Speichern)",
+    "type": "checkbox"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "sound_play",
+  "category": "Soundboard",
+  "label": "Sound abspielen",
+  "icon": "🔔",
+  "fields": [
+   {
+    "key": "file",
+    "label": "Audiodatei (WAV, OGG, FLAC, MP3)",
+    "type": "text",
+    "placeholder": "~/Musik/sound.mp3"
+   },
+   {
+    "key": "volume",
+    "label": "Lautstärke in %",
+    "type": "number",
+    "default": 100,
+    "min": 0,
+    "max": 100
+   },
+   {
+    "key": "exclusive",
+    "label": "Andere Sounds vorher stoppen",
+    "type": "checkbox"
+   }
+  ],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "sound_stop",
+  "category": "Soundboard",
+  "label": "Alle Sounds stoppen",
+  "icon": "🔕",
+  "fields": [],
+  "group": "Audio, Musik & Medien"
+ },
+ {
+  "type": "file_write",
+  "category": "Dateien",
+  "label": "In Datei schreiben",
+  "icon": "📝",
+  "fields": [
+   {
+    "key": "path",
+    "label": "Datei",
+    "type": "text",
+    "placeholder": "~/notizen.txt"
+   },
+   {
+    "key": "mode",
+    "label": "Art",
+    "type": "select",
+    "default": "append",
+    "options": [
+     {
+      "value": "append",
+      "label": "Als neue Zeile anhängen"
+     },
+     {
+      "value": "write",
+      "label": "Datei überschreiben"
+     }
+    ]
+   },
+   {
+    "key": "text",
+    "label": "Text ({Variable} und {Zeit} werden ersetzt)",
+    "type": "textarea"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "var_set",
+  "category": "Werte",
+  "label": "Variable setzen",
+  "icon": "🏷️",
+  "fields": [
+   {
+    "key": "name",
+    "label": "Variable",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "value",
+    "label": "Wert ({Variable} und {Zeit} werden ersetzt)",
+    "type": "text"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "var_change",
+  "category": "Werte",
+  "label": "Zähler ändern",
+  "icon": "🔢",
+  "fields": [
+   {
+    "key": "name",
+    "label": "Variable",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "add",
+    "options": [
+     {
+      "value": "add",
+      "label": "Erhöhen"
+     },
+     {
+      "value": "sub",
+      "label": "Verringern"
+     },
+     {
+      "value": "reset",
+      "label": "Auf Startwert setzen"
+     }
+    ]
+   },
+   {
+    "key": "amount",
+    "label": "Um / Startwert",
+    "type": "number",
+    "default": 1
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "var_toggle",
+  "category": "Werte",
+  "label": "Variable an/aus umschalten",
+  "icon": "🔁",
+  "fields": [
+   {
+    "key": "name",
+    "label": "Variable",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "condition",
+  "category": "Logik",
+  "label": "Bedingung: nur weiter, wenn …",
+  "icon": "🚦",
+  "fields": [
+   {
+    "key": "name",
+    "label": "Variable",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "op",
+    "label": "Vergleich",
+    "type": "select",
+    "default": "eq",
+    "options": [
+     {
+      "value": "eq",
+      "label": "ist gleich"
+     },
+     {
+      "value": "ne",
+      "label": "ist nicht gleich"
+     },
+     {
+      "value": "gt",
+      "label": "ist größer als"
+     },
+     {
+      "value": "lt",
+      "label": "ist kleiner als"
+     },
+     {
+      "value": "contains",
+      "label": "enthält"
+     },
+     {
+      "value": "empty",
+      "label": "ist leer"
+     }
+    ]
+   },
+   {
+    "key": "value",
+    "label": "Wert",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "eq",
+      "ne",
+      "gt",
+      "lt",
+      "contains"
+     ]
+    }
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "twitch_chat",
+  "category": "Twitch",
+  "label": "Chat-Nachricht senden",
+  "icon": "💬",
+  "fields": [
+   {
+    "key": "message",
+    "label": "Nachricht ({Wert} und {Event.X} möglich)",
+    "type": "textarea"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_announcement",
+  "category": "Twitch",
+  "label": "Ankündigung im Chat",
+  "icon": "📣",
+  "fields": [
+   {
+    "key": "message",
+    "label": "Text",
+    "type": "textarea"
+   },
+   {
+    "key": "color",
+    "label": "Farbe",
+    "type": "select",
+    "default": "primary",
+    "options": [
+     {
+      "value": "primary",
+      "label": "Kanalfarbe"
+     },
+     {
+      "value": "blue",
+      "label": "Blau"
+     },
+     {
+      "value": "green",
+      "label": "Grün"
+     },
+     {
+      "value": "orange",
+      "label": "Orange"
+     },
+     {
+      "value": "purple",
+      "label": "Lila"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_clip",
+  "category": "Twitch",
+  "label": "Clip erstellen",
+  "icon": "🎞️",
+  "fields": [],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_marker",
+  "category": "Twitch",
+  "label": "Stream-Marker setzen",
+  "icon": "📍",
+  "fields": [
+   {
+    "key": "description",
+    "label": "Beschreibung (optional)",
+    "type": "text"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_channel",
+  "category": "Twitch",
+  "label": "Titel / Kategorie ändern",
+  "icon": "🏷️",
+  "fields": [
+   {
+    "key": "title",
+    "label": "Neuer Titel (leer = unverändert)",
+    "type": "text"
+   },
+   {
+    "key": "game",
+    "label": "Neue Kategorie/Spiel (leer = unverändert)",
+    "type": "text",
+    "placeholder": "z. B. RimWorld"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_ad",
+  "category": "Twitch",
+  "label": "Werbung starten",
+  "icon": "📺",
+  "fields": [
+   {
+    "key": "length",
+    "label": "Länge",
+    "type": "select",
+    "default": "60",
+    "options": [
+     {
+      "value": "30",
+      "label": "30 Sekunden"
+     },
+     {
+      "value": "60",
+      "label": "60 Sekunden"
+     },
+     {
+      "value": "90",
+      "label": "90 Sekunden"
+     },
+     {
+      "value": "120",
+      "label": "120 Sekunden"
+     },
+     {
+      "value": "150",
+      "label": "150 Sekunden"
+     },
+     {
+      "value": "180",
+      "label": "180 Sekunden"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_chat_mode",
+  "category": "Twitch",
+  "label": "Chat-Modus umschalten",
+  "icon": "🛡️",
+  "fields": [
+   {
+    "key": "mode",
+    "label": "Modus",
+    "type": "select",
+    "default": "emote_mode",
+    "options": [
+     {
+      "value": "emote_mode",
+      "label": "Nur Emotes"
+     },
+     {
+      "value": "follower_mode",
+      "label": "Nur Follower"
+     },
+     {
+      "value": "subscriber_mode",
+      "label": "Nur Abonnenten"
+     },
+     {
+      "value": "slow_mode",
+      "label": "Langsamer Modus"
+     },
+     {
+      "value": "unique_chat_mode",
+      "label": "Einzigartiger Chat"
+     }
+    ]
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "on",
+      "label": "An"
+     },
+     {
+      "value": "off",
+      "label": "Aus"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_shoutout",
+  "category": "Twitch",
+  "label": "Shoutout",
+  "icon": "📢",
+  "fields": [
+   {
+    "key": "user",
+    "label": "Kanal (Twitch-Name, {Event.Nutzer} möglich)",
+    "type": "text"
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_raid",
+  "category": "Twitch",
+  "label": "Raid starten / abbrechen",
+  "icon": "🚀",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "start",
+    "options": [
+     {
+      "value": "start",
+      "label": "Raid starten"
+     },
+     {
+      "value": "cancel",
+      "label": "Raid abbrechen"
+     }
+    ]
+   },
+   {
+    "key": "user",
+    "label": "Ziel-Kanal (Twitch-Name)",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_reward",
+  "category": "Twitch",
+  "label": "Kanalpunkte-Belohnung an/aus",
+  "icon": "💎",
+  "fields": [
+   {
+    "key": "reward",
+    "label": "Belohnung (nur von TouchDeck angelegte lassen sich ändern)",
+    "type": "dynamic",
+    "source": "twitch-rewards"
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Aktivieren/Deaktivieren"
+     },
+     {
+      "value": "pause",
+      "label": "Pausieren/Fortsetzen"
+     }
+    ]
+   }
+  ],
+  "group": "Streaming"
+ },
+ {
+  "type": "twitch_info",
+  "category": "Twitch",
+  "label": "Kanal-Infos in Werte schreiben",
+  "icon": "📊",
+  "fields": [],
+  "group": "Streaming"
+ },
+ {
+  "type": "discord_mute",
+  "category": "Discord",
+  "label": "Mikrofon stumm (Discord)",
+  "icon": "🎙️",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "on",
+      "label": "Stumm"
+     },
+     {
+      "value": "off",
+      "label": "Laut"
+     }
+    ]
+   }
+  ],
+  "group": "Kommunikation"
+ },
+ {
+  "type": "discord_deafen",
+  "category": "Discord",
+  "label": "Taub schalten (Discord)",
+  "icon": "🎧",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "on",
+      "label": "Taub"
+     },
+     {
+      "value": "off",
+      "label": "Hören"
+     }
+    ]
+   }
+  ],
+  "group": "Kommunikation"
+ },
+ {
+  "type": "discord_channel",
+  "category": "Discord",
+  "label": "Sprachkanal betreten / verlassen",
+  "icon": "🔊",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "join",
+    "options": [
+     {
+      "value": "join",
+      "label": "Betreten"
+     },
+     {
+      "value": "toggle",
+      "label": "Betreten / verlassen"
+     },
+     {
+      "value": "leave",
+      "label": "Verlassen"
+     }
+    ]
+   },
+   {
+    "key": "channel",
+    "label": "Sprachkanal",
+    "type": "dynamic",
+    "source": "discord-voice-channels",
+    "showIf": {
+     "op": [
+      "join",
+      "toggle"
+     ]
+    }
+   }
+  ],
+  "group": "Kommunikation"
+ },
+ {
+  "type": "discord_volume",
+  "category": "Discord",
+  "label": "Lautstärke (Discord)",
+  "icon": "🔉",
+  "fields": [
+   {
+    "key": "target",
+    "label": "Was?",
+    "type": "select",
+    "default": "output",
+    "options": [
+     {
+      "value": "output",
+      "label": "Ausgabe (andere hören)"
+     },
+     {
+      "value": "input",
+      "label": "Eingabe (eigenes Mikrofon)"
+     }
+    ]
+   },
+   {
+    "key": "op",
+    "label": "Aktion",
+    "type": "select",
+    "default": "up",
+    "options": [
+     {
+      "value": "up",
+      "label": "Lauter"
+     },
+     {
+      "value": "down",
+      "label": "Leiser"
+     },
+     {
+      "value": "set",
+      "label": "Auf Wert setzen"
+     }
+    ]
+   },
+   {
+    "key": "step",
+    "label": "Schritt",
+    "type": "number",
+    "default": 10,
+    "min": 1,
+    "max": 100,
+    "showIf": {
+     "op": [
+      "up",
+      "down"
+     ]
+    }
+   },
+   {
+    "key": "value",
+    "label": "Wert (Ausgabe 0–200, Eingabe 0–100)",
+    "type": "number",
+    "default": 100,
+    "min": 0,
+    "max": 200,
+    "showIf": {
+     "op": [
+      "set"
+     ]
+    }
+   }
+  ],
+  "group": "Kommunikation"
+ },
+ {
+  "type": "discord_mode",
+  "category": "Discord",
+  "label": "Sprachmodus (Push-to-Talk)",
+  "icon": "📻",
+  "fields": [
+   {
+    "key": "op",
+    "label": "Modus",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle",
+      "label": "Umschalten"
+     },
+     {
+      "value": "PUSH_TO_TALK",
+      "label": "Push-to-Talk"
+     },
+     {
+      "value": "VOICE_ACTIVITY",
+      "label": "Sprachaktivierung"
+     }
+    ]
+   }
+  ],
+  "group": "Kommunikation"
+ },
+ {
+  "type": "discord_webhook",
+  "category": "Discord",
+  "label": "Nachricht in Kanal senden (Webhook)",
+  "icon": "💬",
+  "fields": [
+   {
+    "key": "url",
+    "label": "Webhook-URL (Kanal bearbeiten → Integrationen → Webhooks)",
+    "type": "text",
+    "placeholder": "https://discord.com/api/webhooks/…"
+   },
+   {
+    "key": "message",
+    "label": "Nachricht ({Wert} und {Event.X} möglich)",
+    "type": "textarea"
+   },
+   {
+    "key": "username",
+    "label": "Absendername (optional)",
+    "type": "text"
+   }
+  ],
+  "group": "Kommunikation"
+ },
+ {
+  "type": "run_flow",
+  "category": "Logik",
+  "label": "Vorlage ausführen",
+  "icon": "🧩",
+  "fields": [
+   {
+    "key": "flow",
+    "label": "Vorlage",
+    "type": "dynamic",
+    "source": "flows"
+   },
+   {
+    "key": "times",
+    "label": "Wie oft? (Wiederholen)",
+    "type": "number",
+    "default": 1,
+    "min": 1,
+    "max": 100
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "stop",
+  "category": "Logik",
+  "label": "Stopp (restliche Aktionen abbrechen)",
+  "icon": "🛑",
+  "fields": [],
+  "group": "Allgemein"
+ },
+ {
+  "type": "comment",
+  "category": "Logik",
+  "label": "Kommentar (tut nichts)",
+  "icon": "💭",
+  "fields": [
+   {
+    "key": "text",
+    "label": "Notiz",
+    "type": "textarea"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "change_visuals",
+  "category": "Visuelles",
+  "label": "Aussehen eines Buttons ändern",
+  "icon": "🎨",
+  "fields": [
+   {
+    "key": "target",
+    "label": "Button",
+    "type": "dynamic",
+    "source": "buttons",
+    "default": "self"
+   },
+   {
+    "key": "title",
+    "label": "Neue Beschriftung (leer = unverändert, {Wert} möglich)",
+    "type": "text"
+   },
+   {
+    "key": "color",
+    "label": "Neue Hintergrundfarbe (leer = unverändert)",
+    "type": "color"
+   },
+   {
+    "key": "textColor",
+    "label": "Neue Textfarbe (leer = unverändert)",
+    "type": "color"
+   },
+   {
+    "key": "icon",
+    "label": "Neues Emoji (leer = unverändert)",
+    "type": "text"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "restore_visuals",
+  "category": "Visuelles",
+  "label": "Ursprüngliches Aussehen wiederherstellen",
+  "icon": "↩️",
+  "fields": [
+   {
+    "key": "target",
+    "label": "Button",
+    "type": "dynamic",
+    "source": "buttons",
+    "default": "self"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "page_background",
+  "category": "Visuelles",
+  "label": "Seitenhintergrund ändern",
+  "icon": "🖌️",
+  "fields": [
+   {
+    "key": "page",
+    "label": "Seite",
+    "type": "page"
+   },
+   {
+    "key": "color",
+    "label": "Farbe (leer = Original)",
+    "type": "color"
+   }
+  ],
+  "group": "Allgemein"
+ },
+ {
+  "type": "unsupported",
+  "category": "Sonstiges",
+  "label": "Nicht unterstützt",
+  "icon": "❔",
+  "hidden": true,
+  "fields": [],
+  "group": "Sonstiges"
+ }
+]

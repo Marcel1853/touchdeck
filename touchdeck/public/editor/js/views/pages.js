@@ -1,6 +1,6 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
 import { buttonElement, setupGrid, iconUrl } from '/shared/render.js';
-import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs } from '../dom.js';
+import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
 
@@ -73,7 +73,7 @@ export function mountPages(root) {
         h('button', { class: 'btn small ghost', onclick: duplicatePage }, 'Duplizieren'),
         h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: deletePage }, 'Löschen')),
       h('div', { class: 'canvas-wrap' }, h('div', { id: 'canvas', class: 'td-grid canvas' })),
-      h('p', { class: 'hint' }, 'Leeres Feld anklicken = neuer Button · Buttons ziehen zum Verschieben oder Tauschen · Entf löscht · Strg+D dupliziert')),
+      h('p', { class: 'hint' }, 'Leeres Feld anklicken = neuer Button · Ziehen verschiebt oder tauscht · Rechtsklick für mehr · Strg+C/X/V kopiert, schneidet aus, fügt ein · Strg+D dupliziert · Entf löscht')),
     h('aside', { id: 'inspector', class: 'inspector' }),
   );
 }
@@ -166,7 +166,11 @@ function renderCanvas() {
   for (let r = 0; r < p.rows; r++) {
     for (let c = 0; c < p.cols; c++) {
       if (covered.has(`${r}:${c}`)) continue;
-      const cell = h('div', { class: 'cell', style: `grid-row:${r + 1};grid-column:${c + 1}`, title: 'Neuer Button', onclick: () => addButton(r, c) }, '＋');
+      const cell = h('div', { class: 'cell', style: `grid-row:${r + 1};grid-column:${c + 1}`, title: 'Neuer Button', onclick: () => addButton(r, c),
+        oncontextmenu: (e) => {
+          e.preventDefault();
+          cellMenu(e.clientX, e.clientY, r, c);
+        } }, '＋');
       dropHandlers(cell, (id) => moveButton(id, r, c));
       cells.push(cell);
     }
@@ -185,6 +189,11 @@ function renderCanvas() {
     }
     el.draggable = true;
     el.addEventListener('click', () => select(b.id));
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (S.selId !== b.id) select(b.id);
+      buttonMenu(e.clientX, e.clientY, b.id);
+    });
     el.addEventListener('dragstart', (e) => {
       dragId = b.id;
       e.dataTransfer.effectAllowed = 'move';
@@ -322,6 +331,126 @@ export function deleteButton() {
     page().buttons = page().buttons.filter((x) => x !== b);
     S.selId = null;
   });
+}
+
+// ---------- Zwischenablage und Rechtsklick-Menü ----------
+
+// Die Zwischenablage bleibt beim Seitenwechsel und Neuladen erhalten (nur in diesem Editor).
+const CLIP = 'touchdeck.clipboard';
+const STYLE_CLIP = 'touchdeck.styleClipboard';
+const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'titlePos', 'iconFit'];
+
+const readClip = (key) => {
+  try {
+    return JSON.parse(prefs.get(key) ?? 'null');
+  } catch {
+    return null;
+  }
+};
+const findButton = (id) => page().buttons.find((x) => x.id === id);
+const label = (b) => (b.title || b.icon.value ? `„${b.title || b.icon.value}“` : 'Button');
+
+export function copyButton(id = S.selId, { quiet = false } = {}) {
+  const b = findButton(id);
+  if (!b) return false;
+  prefs.set(CLIP, JSON.stringify(b));
+  if (!quiet) toast(`${label(b)} kopiert – mit Strg+V oder Rechtsklick › Einfügen einsetzen`, 'ok');
+  return true;
+}
+
+export function cutButton(id = S.selId) {
+  const b = findButton(id);
+  if (!b || !copyButton(id, { quiet: true })) return;
+  mutate(() => {
+    page().buttons = page().buttons.filter((x) => x !== b);
+    if (S.selId === id) S.selId = null;
+  });
+  toast(`${label(b)} ausgeschnitten – zum Einsetzen Strg+V oder Rechtsklick › Einfügen`, 'ok');
+}
+
+/** Fügt den kopierten Button ein: an row/col, sonst ins erste freie Feld. replace = Button an dieser Stelle ersetzen. */
+export function pasteButton({ row, col, replace } = {}) {
+  const src = readClip(CLIP);
+  if (!src) return toast('Nichts zum Einfügen – zuerst einen Button kopieren (Rechtsklick › Kopieren).', 'error');
+  const p = page();
+  const ignore = replace ? [replace] : [];
+  const spot = row === undefined ? freeCell(p) : { row, col };
+  if (!spot) return toast('Auf dieser Seite ist kein Feld mehr frei.', 'error');
+  // Größe übernehmen, wenn sie dort passt, sonst als einzelnes Feld.
+  const big = { ...spot, rowSpan: src.rowSpan ?? 1, colSpan: src.colSpan ?? 1 };
+  const rect = fits(p, big, ignore) ? big : { ...spot, rowSpan: 1, colSpan: 1 };
+  if (!fits(p, rect, ignore)) return toast('Der Button passt dort nicht hin.', 'error');
+  const copy = { ...newButton(rect.row, rect.col), ...cloneButton(src), ...rect };
+  mutate(() => {
+    if (replace) p.buttons = p.buttons.filter((x) => x.id !== replace);
+    p.buttons.push(copy);
+    S.selId = copy.id;
+  });
+}
+
+function copyStyle(id) {
+  const b = findButton(id);
+  if (!b) return;
+  prefs.set(STYLE_CLIP, JSON.stringify(Object.fromEntries(STYLE_KEYS.map((k) => [k, b[k]]))));
+  toast('Aussehen kopiert – mit Rechtsklick › Aussehen einfügen auf andere Buttons übertragen', 'ok');
+}
+
+function pasteStyle(id) {
+  const b = findButton(id);
+  const style = readClip(STYLE_CLIP);
+  if (!b || !style) return;
+  mutate(() => Object.assign(b, Object.fromEntries(STYLE_KEYS.filter((k) => k in style).map((k) => [k, style[k]]))));
+}
+
+/** Button auf eine andere Seite verschieben (keep = false) oder dorthin kopieren (keep = true). */
+function sendToPage(id, targetId, keep) {
+  const b = findButton(id);
+  const target = S.pages.find((p) => p.id === targetId);
+  if (!b || !target) return;
+  const big = { row: b.row, col: b.col, rowSpan: b.rowSpan, colSpan: b.colSpan };
+  // Gleiche Stelle wie hier, sonst erstes freies Feld.
+  const free = freeCell(target);
+  const rect = fits(target, big) ? big : free && { ...free, rowSpan: 1, colSpan: 1 };
+  if (!rect) return toast(`Auf „${target.name}“ ist kein Feld mehr frei.`, 'error');
+  mutate(() => {
+    target.buttons.push({ ...(keep ? cloneButton(b) : b), ...rect });
+    if (!keep) {
+      page().buttons = page().buttons.filter((x) => x !== b);
+      S.selId = null;
+    }
+  });
+  toast(`${label(b)} ${keep ? 'kopiert' : 'verschoben'} nach „${target.name}“`, 'ok');
+}
+
+function buttonMenu(x, y, id) {
+  const b = findButton(id);
+  if (!b) return;
+  const others = S.pages.filter((p) => p.id !== S.pageId);
+  const pageItems = (keep) => others.map((p) => ({ icon: '📄', label: p.name, onclick: () => sendToPage(id, p.id, keep) }));
+  const hasClip = !!readClip(CLIP);
+  contextMenu(x, y, [
+    { icon: '▶️', label: 'Aktionen testen', disabled: !b.actions.length, onclick: () => testActions(b.actions, b.title || 'Button', { buttonId: b.id }) },
+    '-',
+    { icon: '⧉', label: 'Duplizieren', keys: 'Strg+D', onclick: duplicateButton },
+    { icon: '📋', label: 'Kopieren', keys: 'Strg+C', onclick: () => copyButton(id) },
+    { icon: '✂️', label: 'Ausschneiden', keys: 'Strg+X', onclick: () => cutButton(id) },
+    { icon: '📥', label: 'Einfügen (ersetzt diesen)', disabled: !hasClip, onclick: () => pasteButton({ row: b.row, col: b.col, replace: id }) },
+    '-',
+    { icon: '🎨', label: 'Aussehen kopieren', onclick: () => copyStyle(id) },
+    { icon: '🖌️', label: 'Aussehen einfügen', disabled: !readClip(STYLE_CLIP), onclick: () => pasteStyle(id) },
+    '-',
+    { icon: '➡️', label: 'Auf Seite verschieben', disabled: !others.length, submenu: pageItems(false) },
+    { icon: '📑', label: 'Auf Seite kopieren', disabled: !others.length, submenu: pageItems(true) },
+    '-',
+    { icon: '🗑️', label: 'Löschen', keys: 'Entf', danger: true, onclick: deleteButton },
+  ]);
+}
+
+function cellMenu(x, y, row, col) {
+  contextMenu(x, y, [
+    { icon: '＋', label: 'Neuer Button', onclick: () => addButton(row, col) },
+    { icon: '📥', label: 'Hier einfügen', keys: 'Strg+V', disabled: !readClip(CLIP), onclick: () => pasteButton({ row, col }) },
+  ]);
 }
 
 function resizeButton(b, rowSpan, colSpan) {

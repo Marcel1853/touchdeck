@@ -1,0 +1,463 @@
+// Events: „Wenn <Auslöser>, dann <Aktionen>“ – global (Bereich Events) und je Button („Bei Event“).
+// Die Beschreibungen der Auslöser für den Editor stehen in catalog/triggers.json.
+use std::collections::{BTreeSet, HashMap};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant, SystemTime};
+
+use chrono::{Datelike, Local, Timelike};
+use serde_json::{Map, Value, json};
+use tokio::task::JoinHandle;
+
+use crate::core::actions::{RunOpts, js_number, run_actions};
+use crate::core::catalog;
+use crate::core::store::{Action, Trigger, js_string};
+use crate::integrations::steam;
+use crate::server::App;
+use crate::system::linux;
+
+// Verkettung erkennen: ein Event, das ein Event auslöst, das ein Event auslöst …
+tokio::task_local! {
+    static CHAIN: u32;
+}
+const MAX_DEPTH: u32 = 8;
+
+fn s(v: &Value) -> String {
+    js_string(v)
+}
+
+fn compare(op: &str, actual: &Value, expected: &Value) -> bool {
+    let (a, e) = (s(actual), s(expected));
+    let num = |x: &str| js_number(Some(&json!(x)));
+    match op {
+        "eq" => a == e,
+        "ne" => a != e,
+        "gt" => num(&a) > num(&e),
+        "lt" => num(&a) < num(&e),
+        "contains" => a.contains(&e),
+        _ => true, // „ändert sich“
+    }
+}
+
+fn state_matches(want: &Value, actual: &Value) -> bool {
+    let w = s(want);
+    w.is_empty() || w == "any" || w == s(actual)
+}
+
+/** Leerer Parameter passt immer, sonst muss er gleich sein. */
+fn empty_or_eq(p: &Value, d: &Value) -> bool {
+    let w = s(p);
+    w.is_empty() || w == s(d)
+}
+
+/** Passt ein Ereignis zu den Einstellungen eines Auslösers? */
+pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
+    let g = |k: &str| p.get(k).cloned().unwrap_or(Value::Null);
+    let min = |k: &str| {
+        let n = js_number(p.get(k));
+        if n.is_nan() || n == 0.0 { 1.0 } else { n }
+    };
+    match kind {
+        "value_change" => s(&g("name")) == s(&d["name"]) && compare(&s(&g("op")), &d["value"], &g("value")),
+        "app_start" | "timer" | "time_of_day" | "file_change" | "obs_replay_saved" | "twitch_follow" | "twitch_ad" => true,
+        "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
+        "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
+        "audio_output" => empty_or_eq(&g("device"), &d["device"]),
+        "steam_game" => empty_or_eq(&g("game"), &d["appid"]) && state_matches(&g("state"), &d["state"]),
+        "obs_scene" | "obs_preview" => empty_or_eq(&g("scene"), &d["scene"]),
+        "obs_mute" => empty_or_eq(&g("input"), &d["input"]) && state_matches(&g("state"), &d["state"]),
+        "obs_source" => empty_or_eq(&g("item"), &d["item"]) && state_matches(&g("state"), &d["state"]),
+        "obs_filter" => empty_or_eq(&g("filter"), &d["filter"]) && state_matches(&g("state"), &d["state"]),
+        "obs_profile" => state_matches(&g("kind"), &d["kind"]),
+        "twitch_sub" => {
+            let kind = if d["kind"] == "gift_received" { json!("gift") } else { d["kind"].clone() };
+            state_matches(&g("kind"), &kind)
+        }
+        "twitch_cheer" => d["bits"].as_f64().unwrap_or(0.0) >= min("min"),
+        "twitch_raid" => d["viewers"].as_f64().unwrap_or(0.0) >= min("min"),
+        "twitch_redeem" => {
+            let want = s(&g("reward")).trim().to_lowercase();
+            want.is_empty() || want == s(&d["reward"]).to_lowercase()
+        }
+        "twitch_chat" => {
+            let msg = s(&d["text"]).trim().to_lowercase();
+            let t = s(&g("text")).trim().to_lowercase();
+            let mode = s(&g("mode"));
+            let text_ok = mode == "any" || t.is_empty() || if mode == "contains" { msg.contains(&t) } else { msg == t || msg.starts_with(&format!("{t} ")) };
+            let roles: &[&str] = match s(&g("who")).as_str() {
+                "mod" => &["broadcaster", "moderator"],
+                "sub" => &["broadcaster", "subscriber", "founder"],
+                _ => &[],
+            };
+            text_ok && (roles.is_empty() || d["badges"].as_array().into_iter().flatten().any(|b| roles.contains(&s(b).as_str())))
+        }
+        _ => false,
+    }
+}
+
+fn known(kind: &str) -> bool {
+    catalog::TRIGGER_TYPES.as_array().into_iter().flatten().any(|t| t["type"] == kind)
+}
+
+#[derive(Clone)]
+struct Sub {
+    key: String,
+    name: String,
+    trigger: Trigger,
+    actions: Vec<Action>,
+    cooldown: i64,
+    button_id: Option<String>,
+}
+
+#[derive(Default)]
+struct State {
+    obs_connected: bool,
+    running: Option<BTreeSet<String>>,
+    sink: Option<String>,
+}
+
+#[derive(Default)]
+pub struct EventEngine {
+    subs: Mutex<Vec<Sub>>,
+    tasks: Mutex<Vec<JoinHandle<()>>>,
+    last_run: Mutex<HashMap<String, Instant>>,
+    last_day: Mutex<HashMap<String, String>>,
+    state: Mutex<State>,
+}
+
+impl EventEngine {
+    /** Startet die dauerhaften Empfänger (OBS, Twitch, Discord), liest die Events ein und meldet „TouchDeck startet“. */
+    pub fn start(app: &Arc<App>) {
+        let a = app.clone();
+        let mut obs = app.obs.subscribe();
+        tokio::spawn(async move {
+            loop {
+                match obs.recv().await {
+                    Ok((kind, data)) => {
+                        if let Err(err) = on_obs(&a, &kind, &data).await {
+                            a.log.warn("Events", format!("OBS-Ereignis {kind}: {err}"));
+                        }
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                    Err(_) => break,
+                }
+            }
+        });
+        for mut rx in [app.twitch.subscribe(), app.discord.subscribe()] {
+            let a = app.clone();
+            tokio::spawn(async move {
+                loop {
+                    match rx.recv().await {
+                        Ok((kind, data)) => a.events.fire(&a, &kind, &data),
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                        Err(_) => break,
+                    }
+                }
+            });
+        }
+        app.events.reload(app);
+        app.events.fire(app, "app_start", &json!({}));
+    }
+
+    /** Alle aktiven Events neu einlesen und Zeitgeber/Beobachter neu aufsetzen. */
+    pub fn reload(&self, app: &Arc<App>) {
+        self.stop();
+        let subs = {
+            let store = app.store.lock().unwrap();
+            let c = &store.config;
+            let mut subs: Vec<Sub> = c
+                .events
+                .iter()
+                .filter(|e| e.enabled)
+                .map(|e| Sub { key: e.id.clone(), name: e.name.clone(), trigger: e.trigger.clone(), actions: e.actions.clone(), cooldown: e.cooldown, button_id: None })
+                .collect();
+            for b in c.pages.iter().flat_map(|p| &p.buttons) {
+                for e in b.events.iter().filter(|e| e.enabled) {
+                    subs.push(Sub {
+                        key: format!("{}:{}", b.id, e.id),
+                        name: format!("Button „{}“", if b.title.is_empty() { &b.id } else { &b.title }),
+                        trigger: e.trigger.clone(),
+                        actions: e.actions.clone(),
+                        cooldown: 0,
+                        button_id: Some(b.id.clone()),
+                    });
+                }
+            }
+            subs
+        };
+        let has = |kind: &str| subs.iter().any(|s| s.trigger.kind == kind);
+        let mut tasks = Vec::new();
+        let every = |ms: u64, f: Box<dyn Fn() + Send + Sync>| {
+            tokio::spawn(async move {
+                let mut t = tokio::time::interval(Duration::from_millis(ms));
+                t.tick().await;
+                loop {
+                    t.tick().await;
+                    f();
+                }
+            })
+        };
+
+        for sub in subs.iter().filter(|s| s.trigger.kind == "timer") {
+            let secs = js_number(sub.trigger.params.get("seconds"));
+            let secs = if secs.is_nan() || secs == 0.0 { 60.0 } else { secs.max(1.0) };
+            let (a, sub) = (app.clone(), sub.clone());
+            tasks.push(every((secs * 1000.0) as u64, Box::new(move || a.events.run_sub(&a, &sub, &json!({})))));
+        }
+        if has("time_of_day") {
+            let a = app.clone();
+            tasks.push(every(15000, Box::new(move || a.events.check_time_of_day(&a))));
+        }
+        for sub in subs.iter().filter(|s| s.trigger.kind == "file_change") {
+            let path = sub.trigger.params.get("path").map(js_string).unwrap_or_default();
+            if path.is_empty() {
+                continue;
+            }
+            let file = linux::expand_home(&path);
+            let (a, sub) = (app.clone(), sub.clone());
+            let mtime = |f: &std::path::Path| std::fs::metadata(f).and_then(|m| m.modified()).ok();
+            let last: Mutex<Option<SystemTime>> = Mutex::new(mtime(&file));
+            tasks.push(every(
+                1500,
+                Box::new(move || {
+                    let now = mtime(&file);
+                    let changed = std::mem::replace(&mut *last.lock().unwrap(), now) != now;
+                    if changed {
+                        a.events.run_sub(&a, &sub, &json!({ "Datei": file.to_string_lossy() }));
+                    }
+                }),
+            ));
+        }
+        if subs.iter().any(|s| s.trigger.kind.starts_with("obs_")) {
+            // OBS-Verbindung halten, damit Ereignisse ankommen; ohne OBS alle 10 s erneut versuchen.
+            let a = app.clone();
+            tasks.push(tokio::spawn(async move {
+                let mut t = tokio::time::interval(Duration::from_secs(10));
+                loop {
+                    t.tick().await;
+                    let ok = a.obs.connect().await.is_ok();
+                    let was = std::mem::replace(&mut a.events.state.lock().unwrap().obs_connected, ok);
+                    if ok && !was {
+                        a.events.fire(&a, "obs_connection", &json!({ "state": "connected" }));
+                    } else if !ok && was {
+                        a.events.fire(&a, "obs_connection", &json!({ "state": "disconnected" }));
+                    }
+                }
+            }));
+        }
+        if has("steam_game") {
+            let a = app.clone();
+            tasks.push(every(4000, Box::new(move || a.events.check_steam(&a))));
+        }
+        if subs.iter().any(|s| s.trigger.kind.starts_with("discord_")) && app.discord.configured() {
+            // Verbindung zu Discord halten, damit Ereignisse ankommen (Discord kann auch später gestartet werden).
+            let a = app.clone();
+            tasks.push(tokio::spawn(async move {
+                let mut t = tokio::time::interval(Duration::from_secs(10));
+                loop {
+                    t.tick().await;
+                    let _ = a.discord.connect().await;
+                }
+            }));
+        }
+        if has("audio_output") {
+            let a = app.clone();
+            tasks.push(tokio::spawn(async move {
+                let mut t = tokio::time::interval(Duration::from_secs(4));
+                t.tick().await;
+                loop {
+                    t.tick().await;
+                    let Ok(devices) = linux::audio_devices(true).await else { continue };
+                    let sink = devices.into_iter().find(|d| d.is_default).map(|d| d.value);
+                    let before = std::mem::replace(&mut a.events.state.lock().unwrap().sink, sink.clone());
+                    if let (Some(b), Some(s)) = (before, sink)
+                        && b != s
+                    {
+                        a.events.fire(&a, "audio_output", &json!({ "device": s, "Gerät": s }));
+                    }
+                }
+            }));
+        }
+        let types: Vec<String> = subs.iter().map(|s| s.trigger.kind.clone()).collect();
+        app.twitch.set_wanted(&types);
+        app.log.debug("Events", format!("{} Event(s) aktiv", subs.len()));
+        *self.subs.lock().unwrap() = subs;
+        *self.tasks.lock().unwrap() = tasks;
+    }
+
+    /** Ein Ereignis ist eingetreten: alle passenden Events ausführen. */
+    pub fn fire(&self, app: &Arc<App>, kind: &str, data: &Value) {
+        if !known(kind) {
+            return;
+        }
+        let matching: Vec<Sub> = self.subs.lock().unwrap().iter().filter(|s| s.trigger.kind == kind && trigger_matches(kind, &s.trigger.params, data)).cloned().collect();
+        for sub in matching {
+            self.run_sub(app, &sub, data);
+        }
+    }
+
+    fn run_sub(&self, app: &Arc<App>, sub: &Sub, data: &Value) {
+        let depth = CHAIN.try_with(|d| *d).unwrap_or(0);
+        if depth >= MAX_DEPTH {
+            app.log.warn("Events", format!("„{}“ übersprungen: Events lösen sich gegenseitig endlos aus.", sub.name));
+            return;
+        }
+        {
+            let mut last = self.last_run.lock().unwrap();
+            if sub.cooldown > 0 && last.get(&sub.key).is_some_and(|t| t.elapsed() < Duration::from_secs(sub.cooldown as u64)) {
+                app.log.debug("Events", format!("„{}“ wartet noch (Abklingzeit).", sub.name));
+                return;
+            }
+            last.insert(sub.key.clone(), Instant::now());
+        }
+        let event_data: Map<String, Value> = data.as_object().into_iter().flatten().map(|(k, v)| (format!("Event.{k}"), v.clone())).collect();
+        let (a, sub) = (app.clone(), sub.clone());
+        tokio::spawn(CHAIN.scope(depth + 1, async move {
+            let opts = RunOpts { button_id: sub.button_id.clone(), event_data, flow_depth: 0 };
+            let r = run_actions(&a, &sub.actions, opts).await;
+            if r["ok"] == true {
+                a.log.info("Events", format!("„{}“ ausgeführt ({})", sub.name, sub.trigger.kind));
+            } else {
+                a.log.error("Events", format!("„{}“: {}", sub.name, r["error"].as_str().unwrap_or("")));
+            }
+        }));
+    }
+
+    fn check_time_of_day(&self, app: &Arc<App>) {
+        let now = Local::now();
+        let hhmm = format!("{:02}:{:02}", now.hour(), now.minute());
+        let today = now.format("%Y-%m-%d").to_string();
+        let weekend = now.weekday().number_from_monday() >= 6;
+        let subs: Vec<Sub> = self.subs.lock().unwrap().iter().filter(|s| s.trigger.kind == "time_of_day").cloned().collect();
+        for sub in subs {
+            let p = &sub.trigger.params;
+            let time = p.get("time").map(js_string).unwrap_or_default();
+            if time != hhmm || self.last_day.lock().unwrap().get(&sub.key) == Some(&today) {
+                continue;
+            }
+            let days = p.get("days").map(js_string).unwrap_or_default();
+            if (days == "weekdays" && weekend) || (days == "weekend" && !weekend) {
+                continue;
+            }
+            self.last_day.lock().unwrap().insert(sub.key.clone(), today.clone());
+            self.run_sub(app, &sub, &json!({ "Zeit": hhmm }));
+        }
+    }
+
+    fn check_steam(&self, app: &Arc<App>) {
+        let now = steam::running_games();
+        let before = self.state.lock().unwrap().running.replace(now.clone());
+        let Some(before) = before else { return };
+        let games = steam::list_games();
+        let name = |id: &str| games.iter().find(|(v, _)| v == id).map_or_else(|| id.to_string(), |(_, l)| l.clone());
+        for id in now.difference(&before) {
+            self.fire(app, "steam_game", &json!({ "appid": id, "state": "started", "Spiel": name(id) }));
+        }
+        for id in before.difference(&now) {
+            self.fire(app, "steam_game", &json!({ "appid": id, "state": "stopped", "Spiel": name(id) }));
+        }
+    }
+
+    /** Ein Wert hat sich geändert (vom Speicher gemeldet). */
+    pub fn value_changed(&self, app: &Arc<App>, detail: &Value) {
+        let Some(name) = detail["name"].as_str() else { return };
+        let value = detail["value"].clone();
+        let data = json!({ "name": name, "value": value, "Name": name, "Wert": if value.is_null() { json!("") } else { value.clone() }, "Alt": if detail["old"].is_null() { json!("") } else { detail["old"].clone() } });
+        self.fire(app, "value_change", &data);
+    }
+
+    pub fn set_obs_connected(&self, on: bool) {
+        self.state.lock().unwrap().obs_connected = on;
+    }
+
+    pub fn stop(&self) {
+        for t in self.tasks.lock().unwrap().drain(..) {
+            t.abort();
+        }
+    }
+}
+
+const OUTPUT_STATES: [(&str, &str); 4] = [
+    ("OBS_WEBSOCKET_OUTPUT_STARTED", "started"),
+    ("OBS_WEBSOCKET_OUTPUT_STOPPED", "stopped"),
+    ("OBS_WEBSOCKET_OUTPUT_PAUSED", "paused"),
+    ("OBS_WEBSOCKET_OUTPUT_RESUMED", "resumed"),
+];
+
+async fn on_obs(app: &Arc<App>, kind: &str, d: &Value) -> anyhow::Result<()> {
+    let ev = &app.events;
+    match kind {
+        "CurrentProgramSceneChanged" => ev.fire(app, "obs_scene", &json!({ "scene": d["sceneName"], "Szene": d["sceneName"] })),
+        "CurrentPreviewSceneChanged" => ev.fire(app, "obs_preview", &json!({ "scene": d["sceneName"], "Szene": d["sceneName"] })),
+        "StreamStateChanged" | "RecordStateChanged" => {
+            if let Some((_, state)) = OUTPUT_STATES.iter().find(|(k, _)| d["outputState"] == *k) {
+                let trigger = if kind == "StreamStateChanged" { "obs_stream" } else { "obs_record" };
+                ev.fire(app, trigger, &json!({ "state": state, "Status": state }));
+            }
+        }
+        "ReplayBufferSaved" => ev.fire(app, "obs_replay_saved", &json!({ "Datei": d["savedReplayPath"] })),
+        "InputMuteStateChanged" => {
+            let state = if d["inputMuted"] == true { "muted" } else { "unmuted" };
+            ev.fire(app, "obs_mute", &json!({ "input": d["inputName"], "state": state, "Quelle": d["inputName"] }));
+        }
+        "SceneItemEnableStateChanged" => {
+            let r = app.obs.call("GetSceneItemSource", json!({ "sceneName": d["sceneName"], "sceneItemId": d["sceneItemId"] })).await?;
+            let source = r["sourceName"].as_str().unwrap_or("");
+            let scene = d["sceneName"].as_str().unwrap_or("");
+            let state = if d["sceneItemEnabled"] == true { "shown" } else { "hidden" };
+            ev.fire(app, "obs_source", &json!({ "item": format!("{scene}␟{source}"), "state": state, "Quelle": source, "Szene": scene }));
+        }
+        "SourceFilterEnableStateChanged" => {
+            let (source, filter) = (d["sourceName"].as_str().unwrap_or(""), d["filterName"].as_str().unwrap_or(""));
+            let state = if d["filterEnabled"] == true { "on" } else { "off" };
+            ev.fire(app, "obs_filter", &json!({ "filter": format!("{source}␟{filter}"), "state": state, "Filter": filter, "Quelle": source }));
+        }
+        "StudioModeStateChanged" => ev.fire(app, "obs_studio", &json!({ "state": if d["studioModeEnabled"] == true { "on" } else { "off" } })),
+        "CurrentProfileChanged" => ev.fire(app, "obs_profile", &json!({ "kind": "profile", "Name": d["profileName"] })),
+        "CurrentSceneCollectionChanged" => ev.fire(app, "obs_profile", &json!({ "kind": "collection", "Name": d["sceneCollectionName"] })),
+        "ExitStarted" => {
+            ev.set_obs_connected(false);
+            ev.fire(app, "obs_connection", &json!({ "state": "disconnected" }));
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn p(v: Value) -> Map<String, Value> {
+        v.as_object().cloned().unwrap()
+    }
+
+    #[test]
+    fn werte_vergleichen() {
+        let d = json!({ "name": "Zähler", "value": "5" });
+        assert!(trigger_matches("value_change", &p(json!({ "name": "Zähler", "op": "gt", "value": "3" })), &d));
+        assert!(!trigger_matches("value_change", &p(json!({ "name": "Zähler", "op": "lt", "value": "3" })), &d));
+        assert!(trigger_matches("value_change", &p(json!({ "name": "Zähler" })), &d));
+        assert!(!trigger_matches("value_change", &p(json!({ "name": "Anders" })), &d));
+    }
+
+    #[test]
+    fn zustaende_und_chat() {
+        assert!(trigger_matches("obs_stream", &p(json!({ "state": "any" })), &json!({ "state": "started" })));
+        assert!(!trigger_matches("obs_stream", &p(json!({ "state": "stopped" })), &json!({ "state": "started" })));
+        let chat = json!({ "text": "!szene 2", "badges": ["moderator"] });
+        assert!(trigger_matches("twitch_chat", &p(json!({ "mode": "command", "text": "!szene", "who": "mod" })), &chat));
+        assert!(!trigger_matches("twitch_chat", &p(json!({ "mode": "command", "text": "!szene", "who": "sub" })), &chat));
+        assert!(trigger_matches("twitch_sub", &p(json!({ "kind": "gift" })), &json!({ "kind": "gift_received" })));
+        assert!(trigger_matches("twitch_cheer", &p(json!({ "min": 100 })), &json!({ "bits": 100 })));
+        assert!(!trigger_matches("twitch_cheer", &p(json!({ "min": 100 })), &json!({ "bits": 99 })));
+    }
+
+    #[test]
+    fn alle_ausloeser_bekannt() {
+        for t in catalog::TRIGGER_TYPES.as_array().unwrap() {
+            let kind = t["type"].as_str().unwrap();
+            let src = include_str!("events.rs");
+            assert!(src.contains(&format!("\"{kind}\"")), "Auslöser {kind} fehlt");
+        }
+    }
+}
