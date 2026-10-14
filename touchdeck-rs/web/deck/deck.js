@@ -93,6 +93,19 @@ const element = (b) => {
   return el;
 };
 
+/** Ausrichtung aus den Einstellungen: in der App sofort, im Browser nur im Vollbild möglich. */
+let appliedOrientation = null;
+function applyOrientation(mode = 'auto') {
+  if (app?.setOrientation) {
+    if (mode !== appliedOrientation) app.setOrientation(mode);
+    appliedOrientation = mode;
+    return;
+  }
+  if (!document.fullscreenElement || !screen.orientation?.lock) return;
+  if (mode === 'auto') screen.orientation.unlock?.();
+  else screen.orientation.lock(mode).catch(() => {});
+}
+
 function render() {
   if (!state) return;
   const page = state.pages.find((p) => p.id === currentPage) ?? state.pages.find((p) => p.id === state.startPage) ?? state.pages[0];
@@ -105,6 +118,7 @@ function render() {
   currentPage = page.id;
   $('page-name').textContent = page.name;
   $('back').hidden = history_.length === 0;
+  applyOrientation(state.deck.orientation);
   document.body.className = `anim-${state.deck.pressAnimation}${state.deck.showLabels ? '' : ' hide-labels'}${page.cols > page.rows + 1 ? ' wide-page' : ''}`;
   setupGrid(grid, page);
   document.body.style.background = state.overrides?.pages?.[page.id]?.background ?? page.background;
@@ -267,7 +281,7 @@ $('page-menu').addEventListener('click', (e) => {
 });
 $('fullscreen').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen?.().catch(() => toast('Vollbild wird hier nicht unterstützt', true));
+  else document.documentElement.requestFullscreen?.().then(() => applyOrientation(state?.deck.orientation)).catch(() => toast('Vollbild wird hier nicht unterstützt', true));
 });
 
 // ---------- PIN ----------

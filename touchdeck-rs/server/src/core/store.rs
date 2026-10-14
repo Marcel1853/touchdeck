@@ -401,6 +401,13 @@ pub struct DeckSettings {
     pub vibrate: bool,
     pub sound: bool,
     pub show_labels: bool,
+    /// Ausrichtung auf Handy und Tablet: auto, portrait oder landscape.
+    #[serde(default = "default_orientation")]
+    pub orientation: String,
+}
+
+fn default_orientation() -> String {
+    "auto".into()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -496,7 +503,7 @@ fn default_settings(start_page: &str) -> Settings {
         start_page: start_page.into(),
         lan_enabled: true,
         pin: String::new(),
-        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true },
+        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation() },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
         twitch: TwitchSettings {
             client_id: String::new(),
@@ -844,6 +851,9 @@ impl Store {
             }
             if let Some(b) = d["showLabels"].as_bool() {
                 s.deck.show_labels = b;
+            }
+            if let Some(o) = d["orientation"].as_str().filter(|o| ["auto", "portrait", "landscape"].contains(o)) {
+                s.deck.orientation = o.into();
             }
         }
         let o = &patch["obs"];

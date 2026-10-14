@@ -1,5 +1,5 @@
 // Bereich „Einstellungen“: Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen, Integrationen, Icon-Pakete, Backups, Protokoll, Information.
-import { h, api, toast, ask } from '../dom.js';
+import { h, api, toast, ask, segmented } from '../dom.js';
 import { S, render, loadState } from '../state.js';
 import { openPairing } from '../main.js';
 import { iconPacksSection } from './iconpacks.js';
@@ -116,7 +116,10 @@ function deck() {
           [['shrink', 'Schrumpfen'], ['squeeze', 'Quetschen'], ['wobble', 'Wackeln'], ['glow', 'Leuchten'], ['none', 'Keine']].map(([v, l]) => h('option', { value: v }, l)))),
       check('Vibrieren beim Drücken', d.vibrate, (v) => set('vibrate', v)),
       check('Klick-Ton beim Drücken', d.sound, (v) => set('sound', v)),
-      check('Beschriftungen anzeigen', d.showLabels, (v) => set('showLabels', v))),
+      check('Beschriftungen anzeigen', d.showLabels, (v) => set('showLabels', v)),
+      h('div', { class: 'field' }, 'Ausrichtung auf Handy und Tablet',
+        segmented([['auto', 'Automatisch'], ['portrait', 'Hochformat'], ['landscape', 'Querformat']], d.orientation ?? 'auto', (v) => set('orientation', v))),
+      h('p', { class: 'hint-text' }, 'Die Android-App dreht sich sofort in die gewählte Richtung. „Automatisch“ folgt der Drehsperre des Geräts. Im Browser gilt die Einstellung nur im Vollbild.')),
   ];
 }
 

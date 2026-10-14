@@ -18,8 +18,8 @@ android {
         applicationId = "de.touchdeck.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.4.1"
+        versionCode = 3
+        versionName = "0.5.0"
     }
 
     signingConfigs {

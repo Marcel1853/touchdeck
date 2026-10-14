@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Baut die Android-App und legt sie unter downloads/ ab, von wo TouchDeck sie den Handys anbietet.
 set -e
 DIR="$(cd "$(dirname "$0")/.." && pwd)"

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -193,6 +194,18 @@ class DeckActivity : Activity() {
                 getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             }
             vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
+        }
+
+        /** Ausrichtung aus den TouchDeck-Einstellungen: auto (folgt der Drehsperre), portrait, landscape. */
+        @JavascriptInterface
+        fun setOrientation(mode: String) {
+            runOnUiThread {
+                requestedOrientation = when (mode) {
+                    "portrait" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                    "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    else -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+                }
+            }
         }
 
         @JavascriptInterface

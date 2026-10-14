@@ -6,11 +6,15 @@
 !/touchdeck-rs/
 !/android/
 
+# Ideen und Notizen bleiben lokal (zusätzlich zur Liste oben).
+docs/
+
 # PC-Programm
 touchdeck-rs/target/
 touchdeck-rs/data/
 touchdeck-rs/app/gen/
 touchdeck-rs/downloads/*.apk
+touchdeck-rs/.cache/
 
 # Android-App (Signierschlüssel bleibt lokal!)
 android/.gradle/
