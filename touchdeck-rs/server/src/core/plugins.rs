@@ -96,14 +96,54 @@ fn text(v: &Value, max: usize) -> String {
     v.as_str().unwrap_or("").trim().chars().take(max).collect()
 }
 
+/** Sprachkürzel wie „de“, „en“ oder „pt-br“. */
+fn is_language_code(k: &str) -> bool {
+    let b = k.as_bytes();
+    match b.len() {
+        2 => b.iter().all(u8::is_ascii_lowercase),
+        5 => b[2] == b'-' && b[..2].iter().chain(&b[3..]).all(u8::is_ascii_lowercase),
+        _ => false,
+    }
+}
+
+/** Ist das eine Übersetzung wie { "de": "Hallo", "en": "Hello" }? */
+fn is_translation(v: &Value) -> bool {
+    v.as_object().is_some_and(|o| {
+        !o.is_empty() && o.iter().all(|(k, v)| is_language_code(k) && v.is_string())
+    })
+}
+
+/** Text oder Übersetzung übernehmen (gekürzt). */
+fn ltext(v: &Value, max: usize) -> Value {
+    if is_translation(v) {
+        let map: Map<String, Value> = v.as_object().into_iter().flatten().map(|(k, t)| (k.clone(), json!(text(t, max)))).collect();
+        return Value::Object(map);
+    }
+    json!(text(v, max))
+}
+
+/** Übersetzungen in einer Beschreibung auflösen: { "de": …, "en": … } → Text in der gewünschten Sprache
+ * (sonst Englisch, sonst Deutsch, sonst die erste). */
+pub fn localize(v: &Value, lang: &str) -> Value {
+    match v {
+        _ if is_translation(v) => {
+            let o = v.as_object().expect("Übersetzung ist ein Objekt");
+            [lang, "en", "de"].iter().find_map(|l| o.get(*l)).or_else(|| o.values().next()).cloned().unwrap_or_default()
+        }
+        Value::Object(o) => Value::Object(o.iter().map(|(k, x)| (k.clone(), localize(x, lang))).collect()),
+        Value::Array(a) => Value::Array(a.iter().map(|x| localize(x, lang)).collect()),
+        other => other.clone(),
+    }
+}
+
 /** Prüft plugin.json und bringt sie in eine feste Form. */
 pub fn check_manifest(raw: &Value) -> Result<Value> {
     let id = text(&raw["id"], 32);
     if !valid_id(&id) {
         bail!("plugin.json: „id“ muss aus 1–32 Kleinbuchstaben, Ziffern oder Bindestrichen bestehen.");
     }
-    let name = text(&raw["name"], 60);
-    if name.is_empty() {
+    let name = ltext(&raw["name"], 60);
+    if localize(&name, "en").as_str().unwrap_or("").is_empty() {
         bail!("plugin.json: „name“ fehlt.");
     }
     let main = text(&raw["main"], 80);
@@ -131,7 +171,7 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
                 bail!("plugin.json: jede Angabe in „{key}“ braucht eine „id“ (Buchstaben, Ziffern, _ oder -).");
             }
             let fields: Vec<Value> = a["fields"].as_array().into_iter().flatten().filter(|f| f["key"].is_string()).take(20).cloned().collect();
-            out.push(json!({ "id": aid, "label": text(&a["label"], 80).chars().take(80).collect::<String>(), "icon": text(&a["icon"], 8), "fields": fields }));
+            out.push(json!({ "id": aid, "label": ltext(&a["label"], 80), "icon": text(&a["icon"], 8), "fields": fields }));
         }
         Ok(out)
     };
@@ -140,7 +180,8 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "name": name,
         "version": text(&raw["version"], 20),
         "author": text(&raw["author"], 60),
-        "description": text(&raw["description"], 400),
+        "description": ltext(&raw["description"], 400),
+        "license": text(&raw["license"], 100),
         "main": main,
         "permissions": { "http": http, "values": p["values"] == true, "notify": p["notify"] == true },
         "native": if native.is_empty() { Value::Null } else { json!({ "command": native }) },
@@ -675,7 +716,7 @@ impl Plugins {
     }
 
     /** Für den Editor: installierte Plugins mit Beschreibung, Berechtigungen, Status und Einstellungen. */
-    pub fn list(&self) -> Vec<Value> {
+    pub fn list(&self, lang: &str) -> Vec<Value> {
         let advanced = self.advanced();
         let installed = self.read_installed();
         let manifests = self.manifests.lock().unwrap();
@@ -683,7 +724,7 @@ impl Plugins {
         let mut out: Vec<Value> = installed
             .iter()
             .map(|(id, e)| {
-                let m = manifests.get(id).cloned().unwrap_or_else(|| json!({ "id": id, "name": id }));
+                let m = localize(&manifests.get(id).cloned().unwrap_or_else(|| json!({ "id": id, "name": id })), lang);
                 let blocked = is_native(&m) && !advanced;
                 let state = match running.get(id) {
                     _ if blocked => json!({ "state": "blocked", "error": "Gesperrt: braucht den erweiterten Modus." }),
@@ -702,13 +743,14 @@ impl Plugins {
     }
 
     /** Aktionen und Auslöser der eingeschalteten Plugins für den Editor-Katalog. */
-    pub fn catalog(&self) -> (Vec<Value>, Vec<Value>) {
+    pub fn catalog(&self, lang: &str) -> (Vec<Value>, Vec<Value>) {
         let advanced = self.advanced();
         let installed = self.read_installed();
         let manifests = self.manifests.lock().unwrap();
         let (mut actions, mut triggers) = (Vec::new(), Vec::new());
         let usable = |id: &String, m: &Value| installed.get(id).is_some_and(|e| e["enabled"] != false) && (advanced || !is_native(m));
         for (id, m) in manifests.iter().filter(|(id, m)| usable(id, m)) {
+            let m = &localize(m, lang);
             let name = m["name"].as_str().unwrap_or(id);
             for (list, out) in [(&m["actions"], &mut actions), (&m["triggers"], &mut triggers)] {
                 for a in list.as_array().into_iter().flatten() {
@@ -725,10 +767,10 @@ impl Plugins {
         (actions, triggers)
     }
 
-    pub fn label(&self, kind: &str) -> Option<String> {
+    pub fn label(&self, kind: &str, lang: &str) -> Option<String> {
         let (plugin, action) = kind.strip_prefix("plugin:")?.split_once(':')?;
         let manifests = self.manifests.lock().unwrap();
-        let a = manifests.get(plugin)?["actions"].as_array()?.iter().find(|a| a["id"] == action)?.clone();
+        let a = localize(manifests.get(plugin)?["actions"].as_array()?.iter().find(|a| a["id"] == action)?, lang);
         Some(a["label"].as_str().filter(|l| !l.is_empty()).unwrap_or(action).to_string())
     }
 
@@ -771,12 +813,12 @@ impl Plugins {
     // ---------- Installieren ----------
 
     /** Prüft ein GitHub-Repo: öffentlich? plugin.json gültig? Liefert Beschreibung, Berechtigungen, Version und Prüfsumme. */
-    pub async fn preview(&self, repo_input: &str) -> Result<Value> {
+    pub async fn preview(&self, repo_input: &str, lang: &str) -> Result<Value> {
         let (owner, repo) = parse_repo(repo_input)?;
         let (files, git_ref, url) = self.download(&owner, &repo).await?;
         let (m, digest, chosen) = manifest_of(files)?;
         let native = is_native(&m);
-        Ok(json!({ "repo": format!("{owner}/{repo}"), "ref": git_ref, "url": url, "manifest": m, "permissions": describe_permissions(&m),
+        Ok(json!({ "repo": format!("{owner}/{repo}"), "ref": git_ref, "url": url, "manifest": localize(&m, lang), "permissions": describe_permissions(&m),
             "digest": digest, "native": native, "advanced": self.advanced(), "files": chosen.len() }))
     }
 
@@ -919,7 +961,8 @@ impl Plugins {
     }
 
     /** Liste aus dem öffentlichen Marktplatz-Repo. */
-    pub async fn market(&self) -> Result<Value> {
+    pub async fn market(&self, lang: &str) -> Result<Value> {
+        let lang = lang.to_string();
         let url = std::env::var("TOUCHDECK_MARKET").unwrap_or_else(|_| MARKET_URL.into());
         let res = self.http.get(&url).send().await.map_err(|e| anyhow!("Marktplatz nicht erreichbar: {e}"))?;
         if res.status().as_u16() == 404 {
@@ -932,7 +975,13 @@ impl Plugins {
             .flatten()
             .filter_map(|p| {
                 let (owner, repo) = parse_repo(p["repo"].as_str()?).ok()?;
-                Some(json!({ "repo": format!("{owner}/{repo}"), "name": text(&p["name"], 60), "description": text(&p["description"], 300), "author": text(&p["author"], 60) }))
+                Some(json!({
+                    "repo": format!("{owner}/{repo}"),
+                    "name": localize(&ltext(&p["name"], 60), &lang),
+                    "description": localize(&ltext(&p["description"], 300), &lang),
+                    "author": text(&p["author"], 60),
+                    "license": text(&p["license"], 100),
+                }))
             })
             .collect();
         Ok(json!({ "plugins": plugins }))
@@ -967,6 +1016,21 @@ mod tests {
         let n = check_manifest(&json!({ "id": "x", "name": "x", "native": { "command": ["python3", "p.py"] } })).unwrap();
         assert!(is_native(&n));
         assert!(describe_permissions(&n)[0].starts_with("VOLLE RECHTE"));
+    }
+
+    #[test]
+    fn uebersetzungen() {
+        let m = check_manifest(&json!({ "id": "x", "name": { "de": "Licht", "en": "Light" }, "license": "MIT",
+            "actions": [{ "id": "an", "label": { "de": "Einschalten", "en": "Turn on" }, "fields": [{ "key": "z", "label": { "de": "Zimmer", "en": "Room" } }] }] })).unwrap();
+        let en = localize(&m, "en");
+        assert_eq!(en["name"], "Light");
+        assert_eq!(en["actions"][0]["label"], "Turn on");
+        assert_eq!(en["actions"][0]["fields"][0]["label"], "Room");
+        assert_eq!(localize(&m, "fr")["name"], "Light", "fehlende Sprache: Englisch");
+        assert_eq!(m["license"], "MIT");
+        // Gewöhnliche Objekte (Auswahlwerte) bleiben unverändert.
+        assert_eq!(localize(&json!({ "value": "a", "label": "A" }), "en"), json!({ "value": "a", "label": "A" }));
+        assert!(check_manifest(&json!({ "id": "x", "name": { "en": "" } })).is_err());
     }
 
     #[test]

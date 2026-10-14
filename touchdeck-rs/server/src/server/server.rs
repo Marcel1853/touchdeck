@@ -157,7 +157,7 @@ impl App {
     fn editor_state(&self, store: &Store) -> Value {
         let mut state = self.deck_state(store);
         // Aktionen und Auslöser der eingeschalteten Plugins kommen zum festen Katalog dazu.
-        let (plugin_actions, plugin_triggers) = self.plugins.catalog();
+        let (plugin_actions, plugin_triggers) = self.plugins.catalog(&store.settings().language);
         let with_plugins = |base: &Value, extra: Vec<Value>| {
             let mut list = base.as_array().cloned().unwrap_or_default();
             list.extend(extra);
@@ -524,6 +524,11 @@ const ROUTES: [&str; 54] = [
     "GET /api/options/*",
 ];
 
+/** Sprache der Oberfläche (de oder en). */
+fn lang(app: &App) -> String {
+    app.store.lock().unwrap().settings().language.clone()
+}
+
 fn str_of<'a>(body: &'a Value, key: &str) -> &'a str {
     body[key].as_str().unwrap_or("")
 }
@@ -814,37 +819,37 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             Ok(json!({ "ok": true, "stats": stats, "pages": store.config.pages, "revision": store.revision, "updated": updated }))
         }
         // Plugins
-        "GET /api/plugins" => Ok(json!(app.plugins.list())),
+        "GET /api/plugins" => Ok(json!(app.plugins.list(&lang(app)))),
         "GET /api/plugins/config" => Ok(json!({ "advanced": app.plugins.advanced(), "confirm": crate::core::plugins::ADVANCED_CONFIRM })),
         "POST /api/plugins/advanced" => {
             app.plugins.set_advanced(app, body["enabled"] == true, str_of(&body, "confirm")).map_err(bad)?;
-            Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list(&lang(app)) }))
         }
-        "GET /api/plugins/market" => app.plugins.market().await.map_err(user_error),
-        "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo")).await.map_err(user_error),
+        "GET /api/plugins/market" => app.plugins.market(&lang(app)).await.map_err(user_error),
+        "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo"), &lang(app)).await.map_err(user_error),
         "POST /api/plugins/install" => {
             let id = app.plugins.install(app, str_of(&body, "repo"), str_of(&body, "digest"), body["acceptRisk"] == true).await.map_err(user_error)?;
-            Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/dev" => {
             let id = app.plugins.install_local(app, str_of(&body, "path")).map_err(bad)?;
-            Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/reload" => {
             app.plugins.reload(app, str_of(&body, "id")).map_err(bad)?;
-            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/enable" => {
             app.plugins.set_enabled(app, str_of(&body, "id"), body["enabled"] == true).map_err(bad)?;
-            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/settings" => {
             app.plugins.set_settings(app, str_of(&body, "id"), &body["settings"]).map_err(bad)?;
-            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/remove" => {
             app.plugins.remove(app, str_of(&body, "id")).map_err(bad)?;
-            Ok(json!({ "ok": true, "plugins": app.plugins.list() }))
+            Ok(json!({ "ok": true, "plugins": app.plugins.list(&lang(app)) }))
         }
 
         // Icon-Pakete

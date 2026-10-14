@@ -1,5 +1,10 @@
 # TouchDeck-Plugins schreiben
 
+> Die ausführliche, öffentliche Anleitung steht im
+> [Plugin-Wiki](https://github.com/Marcel1853/touchdeck-plugins/wiki), Beispiele zum
+> Kopieren in [touchdeck-plugins](https://github.com/Marcel1853/touchdeck-plugins).
+> Diese Datei ist die Kurzfassung für Entwickler von TouchDeck selbst.
+
 Es gibt zwei Arten: **normale Plugins** (JavaScript, abgeschottet – der Standard) und
 **erweiterte Plugins** (eigene Programme mit vollen Rechten, nur auf eigene Gefahr,
 siehe unten).
@@ -24,7 +29,7 @@ Berechtigung angeben.
 
 ## Entwickeln
 
-1. Ordner mit `plugin.json` und `plugin.js` anlegen (Vorlage: [`plugins/beispiel`](plugins/beispiel)).
+1. Ordner mit `plugin.json` und `plugin.js` anlegen (Vorlage: [`examples/example`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example)).
 2. In TouchDeck: **Plugins › Entwickeln** den Ordner angeben und **Laden**.
    Nach Änderungen bei dem Plugin **Neu laden** klicken. Ausgaben von `td.log`
    erscheinen unter **Logs**.
@@ -64,6 +69,8 @@ Berechtigung angeben.
 | Feld | Bedeutung |
 |---|---|
 | `id` | 1–32 Zeichen: Kleinbuchstaben, Ziffern, Bindestrich. Muss eindeutig sein. |
+| `license` | Lizenz des Plugins, z. B. `MIT` oder `Alle Rechte vorbehalten`. Öffentlich heißt nicht frei: Ohne Lizenz gehört der Code allein dem Autor. |
+| Texte | `name`, `description`, `label` usw. dürfen statt eines Texts eine Übersetzung sein: `{ "en": "Light", "de": "Licht" }`. TouchDeck nimmt die eingestellte Sprache, sonst Englisch. |
 | `permissions.http` | Erlaubte Adressen: genauer Name, `*.domain` für alle Unteradressen, `lan` für Geräte im Heimnetz. Ohne Eintrag kein Netz. |
 | `permissions.values` | TouchDeck-Werte lesen und setzen. |
 | `permissions.notify` | Benachrichtigungen am PC zeigen. |
@@ -107,7 +114,7 @@ Thread; lange Netzanfragen halten TouchDeck nicht auf.
 ## Erweiterte Plugins (volle Rechte)
 
 Wer mehr braucht, als die Abschottung erlaubt, kann ein **eigenes Programm** als
-Plugin schreiben, ähnlich wie bei Touch Portal: in Python, Node.js, Rust oder einer
+Plugin schreiben, wie man es von anderen Makro- und Streaming-Programmen kennt: in Python, Node.js, Rust oder einer
 anderen Sprache. Solche Plugins laufen **nicht** abgeschottet und können alles, was
 der Nutzer am PC kann.
 
@@ -155,8 +162,8 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 | `{"type":"notify","title":"…","body":"…"}` | Benachrichtigung |
 | `{"type":"log","level":"info","message":"…"}` | Protokoll |
 
-Ein vollständiges Beispiel in Python (nur Standardbibliothek):
-[`plugins/beispiel-erweitert`](plugins/beispiel-erweitert).
+Vollständige Beispiele in Python (nur Standardbibliothek) und Node.js:
+[`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) und [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).
 
 ## Marktplatz
 

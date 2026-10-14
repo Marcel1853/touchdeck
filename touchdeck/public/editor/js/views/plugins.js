@@ -57,7 +57,7 @@ async function installFromGitHub(repo) {
   const perms = preview.permissions.length ? preview.permissions.map((p) => `• ${p}`).join('\n') : '• keine besonderen Rechte';
   const existing = plugins?.find((p) => p.id === m.id);
   const answer = await ask(`🧱 ${m.name} ${m.version ? `(${m.version})` : ''}`,
-    `${preview.native ? '⚠️ EIGENES PROGRAMM MIT VOLLEN RECHTEN\n\n' : ''}${m.description || 'Keine Beschreibung.'}\n\nVon: ${m.author || 'unbekannt'}\nQuelle: ${preview.url} (Stand: ${preview.ref})\n\nDas Plugin möchte:\n${perms}\n\n`
+    `${preview.native ? '⚠️ EIGENES PROGRAMM MIT VOLLEN RECHTEN\n\n' : ''}${m.description || 'Keine Beschreibung.'}\n\nVon: ${m.author || 'unbekannt'}\nLizenz: ${m.license || 'keine Angabe (alle Rechte beim Autor)'}\nQuelle: ${preview.url} (Stand: ${preview.ref})\n\nDas Plugin möchte:\n${perms}\n\n`
     + (preview.native ? 'Erweiterte Plugins laufen NICHT abgeschottet.' : 'Plugins laufen abgeschottet und können nur das oben Genannte. Installiere trotzdem nur Plugins, deren Quelle du vertraust.'),
     [{ value: 'install', label: existing ? 'Aktualisieren' : 'Installieren', kind: 'primary' }]);
   if (answer !== 'install') return;
@@ -102,7 +102,7 @@ function pluginCard(p) {
         local && h('span', { class: 'status-badge warn' }, 'Testmodus'),
         p.native && h('span', { class: 'status-badge error' }, 'volle Rechte'),
         h('p', { class: 'hint-text' }, m.description || ''),
-        h('p', { class: 'hint-text' }, [m.author && `Von ${m.author}`, local ? `Ordner: ${p.source.slice(6)}` : null].filter(Boolean).join(' · '),
+        h('p', { class: 'hint-text' }, [m.author && `Von ${m.author}`, m.license && `Lizenz: ${m.license}`, local ? `Ordner: ${p.source.slice(6)}` : null].filter(Boolean).join(' · '),
           !local && p.url && h('span', {}, m.author ? ' · ' : '', h('a', { href: p.url, target: '_blank', rel: 'noopener' }, `${repo} @ ${p.ref}`)))),
       h('label', { class: 'switch-row' }, h('input', { type: 'checkbox', checked: p.enabled,
         onchange: (e) => call('/api/plugins/enable', { id: p.id, enabled: e.target.checked }) }), 'an')),
@@ -144,12 +144,14 @@ function marketTab() {
   return [
     repoInput(),
     market.note && h('p', { class: 'hint-text' }, market.note),
+    !market.note && !market.plugins.length && h('p', { class: 'hint-text' }, 'Im Marktplatz sind noch keine Plugins. Wie du deins einträgst, steht im ',
+      h('a', { href: 'https://github.com/Marcel1853/touchdeck-plugins/wiki/Veröffentlichen', target: '_blank', rel: 'noopener' }, 'Plugin-Wiki'), '.'),
     ...market.plugins.map((p) => {
       const installed = plugins.some((x) => x.source === `github:${p.repo}`);
       return h('div', { class: 'settings-card plugin' },
         h('div', { class: 'plugin-head' },
           h('div', {}, h('b', {}, p.name || p.repo), h('p', { class: 'hint-text' }, p.description),
-            h('p', { class: 'hint-text' }, p.author && `Von ${p.author} · `, h('a', { href: `https://github.com/${p.repo}`, target: '_blank', rel: 'noopener' }, p.repo))),
+            h('p', { class: 'hint-text' }, p.author && `Von ${p.author} · `, p.license && `Lizenz: ${p.license} · `, h('a', { href: `https://github.com/${p.repo}`, target: '_blank', rel: 'noopener' }, p.repo))),
           h('button', { class: `btn small ${installed ? '' : 'primary'}`, onclick: () => installFromGitHub(p.repo) }, installed ? 'Aktualisieren' : 'Installieren')));
     }),
   ];
@@ -180,7 +182,7 @@ function advancedTab() {
   return [
     h('div', { class: `settings-card ${config.advanced ? 'danger-card' : ''}` },
       h('h3', {}, 'Erweiterte Plugins (volle Rechte)'),
-      h('p', {}, 'Normale Plugins laufen abgeschottet. Erweiterte Plugins sind eigene Programme (z. B. in Python oder Node.js), die TouchDeck startet – sie können damit alles, was auch Touch-Portal-Plugins können, aber eben auch Schaden anrichten.'),
+      h('p', {}, 'Normale Plugins laufen abgeschottet. Erweiterte Plugins sind eigene Programme (z. B. in Python oder Node.js), die TouchDeck startet – so mächtig wie Plugins anderer Makro- und Streaming-Programme, aber damit eben auch in der Lage, Schaden anzurichten.'),
       h('p', { class: 'hint-text' }, 'Auch erweiterte Plugins gibt es nur aus öffentlichen GitHub-Repos (oder im Testmodus aus einem eigenen Ordner). Jedes einzelne muss beim Installieren noch einmal bestätigt werden.'),
       h('label', { class: 'switch-row' },
         h('input', { type: 'checkbox', checked: config.advanced, onchange: (e) => setAdvanced(e.target.checked) }),
@@ -200,7 +202,9 @@ function devTab() {
         h('button', { class: 'btn primary small', onclick: () => call('/api/plugins/dev', { path }, 'Plugin im Testmodus geladen ✓').then((r) => r && ((tab = 'installed'), render())) }, 'Laden'))),
     h('div', { class: 'settings-card' },
       h('h3', {}, 'So sieht ein Plugin aus'),
-      h('p', { class: 'hint-text' }, 'Ein Ordner (bzw. ein öffentliches GitHub-Repo) mit plugin.json und plugin.js. Vollständige Beispiele: touchdeck-rs/plugins/beispiel (abgeschottet) und touchdeck-rs/plugins/beispiel-erweitert (Python, volle Rechte, braucht den erweiterten Modus).'),
+      h('p', { class: 'hint-text' }, 'Ein Ordner (bzw. ein öffentliches GitHub-Repo) mit plugin.json und plugin.js. Die vollständige Anleitung mit Beispielen für normale und erweiterte Plugins steht im ',
+        h('a', { href: 'https://github.com/Marcel1853/touchdeck-plugins/wiki', target: '_blank', rel: 'noopener' }, 'Plugin-Wiki'), ', die Beispiele zum Kopieren unter ',
+        h('a', { href: 'https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples', target: '_blank', rel: 'noopener' }, 'touchdeck-plugins/examples'), '.'),
       h('pre', { class: 'code' }, `// plugin.js
 td.action('gruessen', (params, info) => \`Hallo \${params.name}!\`);   // Aktion
 td.every(60000, () => td.values.set('Uhr', new Date().toLocaleTimeString()));  // Zeitgeber

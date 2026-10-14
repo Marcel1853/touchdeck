@@ -26,8 +26,7 @@ touchdeck-rs/
 │       ├── server/         HTTP-Routen, WebSocket, Suche im WLAN
 │       ├── system/         Linux: Programme, Audio, Medien (linux.rs), Tastatur/Maus/Fenster (x11.rs)
 │       └── integrations/   OBS, Steam, Twitch, Discord, Import aus Touch Portal
-├── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart
-└── plugins/                Beispiel-Plugins: beispiel (abgeschottet), beispiel-erweitert (Python, volle Rechte)
+└── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart
 ```
 
 Editor und Bedienfeld (HTML/JS) kommen unverändert aus `../touchdeck/public`
@@ -45,7 +44,7 @@ Erweiterungen in JavaScript, abgeschottet in einer eigenen JS-Engine (QuickJS) m
 festen Grenzen und Berechtigungen; Installation nur aus öffentlichen GitHub-Repos,
 dazu ein Marktplatz und ein Testmodus für Entwickler. Für mehr Möglichkeiten gibt es
 erweiterte Plugins (eigene Programme mit vollen Rechten), die nur nach doppelter
-Bestätigung auf eigene Gefahr laufen. Anleitung: [PLUGINS.md](PLUGINS.md).
+Bestätigung auf eigene Gefahr laufen. Anleitung: [Plugin-Wiki](https://github.com/Marcel1853/touchdeck-plugins/wiki), Beispiele: [touchdeck-plugins](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples), Kurzfassung: [PLUGINS.md](PLUGINS.md).
 
 ## Entwickeln
 

@@ -466,12 +466,27 @@ pub struct Settings {
     pub theme: ThemeSettings,
     pub backups: BackupSettings,
     pub logs: LogSettings,
+    /// Sprache der Oberfläche: de oder en (Standard: Systemsprache).
+    #[serde(default = "default_language")]
+    pub language: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub firewall_opened: Option<bool>,
     /// Unbekannte Einträge bleiben erhalten.
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }
+
+/** Sprache des Systems (LANGUAGE, LC_ALL, LC_MESSAGES, LANG): Deutsch bei de_…, sonst Englisch. */
+pub fn system_language() -> String {
+    let env = ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"].iter().find_map(|k| std::env::var(k).ok().filter(|v| !v.is_empty() && v != "C" && v != "POSIX"));
+    if env.is_some_and(|v| v.to_lowercase().starts_with("de")) { "de".into() } else { "en".into() }
+}
+
+fn default_language() -> String {
+    system_language()
+}
+
+pub const LANGUAGES: [&str; 2] = ["de", "en"];
 
 const SETTING_GROUPS: [&str; 7] = ["deck", "obs", "twitch", "discord", "theme", "backups", "logs"];
 
@@ -505,6 +520,7 @@ fn default_settings(start_page: &str) -> Settings {
         theme: ThemeSettings { mode: "dark".into(), accent: "#7c8cff".into() },
         backups: BackupSettings { auto: true, keep: 10 },
         logs: LogSettings { level: "info".into() },
+        language: default_language(),
         firewall_opened: None,
         extra: Map::new(),
     }
@@ -884,6 +900,9 @@ impl Store {
                 s.backups.auto = a;
             }
             s.backups.keep = clamp(&b["keep"], 1, 100, s.backups.keep);
+        }
+        if let Some(l) = patch["language"].as_str().filter(|l| LANGUAGES.contains(l)) {
+            s.language = l.into();
         }
         if let Some(l) = patch["logs"]["level"].as_str().filter(|l| ["debug", "info", "warn", "error"].contains(l)) {
             s.logs.level = l.into();

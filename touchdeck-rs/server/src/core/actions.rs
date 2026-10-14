@@ -119,7 +119,8 @@ struct Ctx {
 }
 
 fn label(app: &App, kind: &str) -> String {
-    if let Some(l) = app.plugins.label(kind) {
+    let lang = app.store.lock().unwrap().settings().language.clone();
+    if let Some(l) = app.plugins.label(kind, &lang) {
         return l;
     }
     catalog::ACTION_TYPES
