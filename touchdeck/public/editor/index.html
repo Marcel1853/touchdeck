@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TouchDeck Editor</title>
+  <link rel="icon" href="/shared/icon.svg">
+  <link rel="stylesheet" href="/shared/button.css">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">▦</span> TouchDeck</div>
+    <div id="save-state" class="save-state">Lädt …</div>
+    <div class="topbar-actions">
+      <button class="btn ghost" id="undo" title="Rückgängig (Strg+Z)">↶</button>
+      <button class="btn ghost" id="redo" title="Wiederholen (Strg+Y)">↷</button>
+      <button class="btn" id="open-preview">Vorschau</button>
+      <button class="btn primary" id="open-pair">📱 Handy verbinden</button>
+    </div>
+  </header>
+
+  <nav id="rail" class="rail" aria-label="Bereiche"></nav>
+  <main id="view" class="view"></main>
+
+  <dialog id="dlg-pair" class="dialog">
+    <form method="dialog" class="dialog-body">
+      <h2>Handy verbinden</h2>
+      <p><b>Mit der TouchDeck-App:</b> App öffnen – sie findet diesen PC von selbst, du bestätigst hier. <b>Ohne App:</b> diesen Code mit der Handykamera scannen, das Bedienfeld öffnet sich im Browser.</p>
+      <div id="pair-qr" class="qr"></div>
+      <div id="pair-urls" class="pair-urls"></div>
+      <div id="pair-app" class="pair-app"></div>
+      <label class="switch-row"><input type="checkbox" id="pair-lan"> Zugriff aus dem WLAN erlauben</label>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" id="pair-settings">Sicherheit &amp; PIN …</button>
+        <div class="spacer"></div>
+        <button class="btn primary">Fertig</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-picker" class="dialog picker">
+    <form method="dialog" class="dialog-body">
+      <h2>Aktion hinzufügen</h2>
+      <input id="picker-search" class="search" placeholder="Suchen …" autocomplete="off">
+      <div id="picker-list" class="picker-list"></div>
+      <div class="dialog-actions"><div class="spacer"></div><button class="btn">Abbrechen</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-ask" class="dialog">
+    <form method="dialog" class="dialog-body">
+      <h2 id="ask-title"></h2>
+      <p id="ask-text"></p>
+      <div class="dialog-actions" id="ask-buttons"></div>
+    </form>
+  </dialog>
+
+  <div id="toasts" class="toasts"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

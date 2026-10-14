@@ -1,0 +1,97 @@
+{
+  "name": "touchdeck",
+  "version": "0.4.4",
+  "description": "Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy auslösen.",
+  "type": "module",
+  "private": true,
+  "main": "electron/main.js",
+  "bin": {
+    "touchdeck": "src/main.js"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "app": "electron .",
+    "dist": "electron-builder --linux AppImage deb",
+    "test": "node --test test/*.test.js",
+    "android": "scripts/build-android.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "qrcode": "1.5.4",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "allowScripts": {
+    "electron-winstaller": false
+  },
+  "author": {
+    "name": "Marcel",
+    "email": "steegmann27marcel@gmail.com"
+  },
+  "productName": "TouchDeck",
+  "build": {
+    "appId": "de.touchdeck.app",
+    "productName": "TouchDeck",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "package.json",
+      "src/**",
+      "public/**",
+      "helpers/**",
+      "electron/**",
+      "!**/*.test.js",
+      "downloads/**"
+    ],
+    "asarUnpack": [
+      "helpers/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "executableName": "touchdeck",
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "synopsis": "Makro-Fernbedienung: Buttons am PC gestalten, vom Handy auslösen",
+      "description": "TouchDeck verwandelt Handy oder Tablet in ein Bedienfeld für den Linux-PC: Programme, Tastenkürzel, Medien, Lautstärke, Steam-Spiele und OBS Studio per Knopfdruck.",
+      "desktop": {
+        "entry": {
+          "Name": "TouchDeck",
+          "Comment": "Makro-Fernbedienung für Linux",
+          "StartupWMClass": "touchdeck"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "python3"
+      ],
+      "afterInstall": "build/after-install.tpl",
+      "afterRemove": "build/after-remove.tpl"
+    },
+    "appImage": {
+      "artifactName": "TouchDeck-${version}.AppImage"
+    }
+  },
+  "homepage": "https://github.com/Marcel1853",
+  "desktopName": "touchdeck.desktop"
+}

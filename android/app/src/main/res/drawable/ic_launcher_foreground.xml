@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vier Tasten wie im TouchDeck-Logo, innerhalb der sicheren Zone (66 dp). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M35,32h14a3,3 0,0 1,3 3v14a3,3 0,0 1,-3 3h-14a3,3 0,0 1,-3 -3v-14a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#BFFFFFFF" android:pathData="M59,32h14a3,3 0,0 1,3 3v14a3,3 0,0 1,-3 3h-14a3,3 0,0 1,-3 -3v-14a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#BFFFFFFF" android:pathData="M35,56h14a3,3 0,0 1,3 3v14a3,3 0,0 1,-3 3h-14a3,3 0,0 1,-3 -3v-14a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M59,56h14a3,3 0,0 1,3 3v14a3,3 0,0 1,-3 3h-14a3,3 0,0 1,-3 -3v-14a3,3 0,0 1,3 -3z" />
+</vector>

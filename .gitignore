@@ -1,0 +1,24 @@
+# Nur TouchDeck (PC-Programm und Android-App) gehört ins Repository.
+/*
+!/.gitignore
+!/README.md
+!/env.sh
+!/touchdeck/
+!/android/
+
+# PC-Programm
+touchdeck/node_modules/
+touchdeck/data/
+touchdeck/dist/
+touchdeck/downloads/*.apk
+
+# Android-App (Signierschlüssel bleibt lokal!)
+android/.gradle/
+android/.kotlin/
+android/.idea/
+android/build/
+android/app/build/
+android/keystore/
+android/local.properties
+*.jks
+*.keystore

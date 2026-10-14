@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0d0f14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>TouchDeck</title>
+  <link rel="icon" href="/shared/icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="/shared/button.css">
+  <link rel="stylesheet" href="deck.css">
+</head>
+<body>
+  <header id="bar">
+    <button id="back" class="bar-btn" title="Zurück" hidden>‹</button>
+    <button id="page-name" title="Seite wählen">TouchDeck</button>
+    <span id="status" class="dot" title="Verbindung"></span>
+    <button id="fullscreen" class="bar-btn" title="Vollbild">⛶</button>
+  </header>
+  <main id="wrap"><div id="grid" class="td-grid"></div></main>
+  <div id="rotate-hint">↻ Für diese Seite das Handy quer halten</div>
+  <div id="overlay">
+    <div class="overlay-box">
+      <div class="spinner"></div>
+      <div id="overlay-text">Verbinde mit dem PC …</div>
+    </div>
+  </div>
+  <div id="pin-box" hidden>
+    <form id="pin-form" class="overlay-box">
+      <div style="font-size:34px">🔐</div>
+      <div id="pin-hint">Dieser PC ist mit einer PIN geschützt.</div>
+      <input id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="PIN">
+      <button type="submit">Verbinden</button>
+    </form>
+  </div>
+  <div id="page-menu" hidden><div class="menu-box" id="page-menu-list"></div></div>
+  <div id="toast"></div>
+  <script type="module" src="deck.js"></script>
+</body>
+</html>

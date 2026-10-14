@@ -1,0 +1,79 @@
+// Zeichnet Seiten und Buttons – gemeinsam für Editor und Bedienfeld, damit beide gleich aussehen.
+
+export function iconUrl(name) {
+  return `/icons/${encodeURIComponent(name)}`;
+}
+
+/** Ersetzt {Name} in Beschriftungen durch den Wert der Variable. */
+export function fillTitle(title, variables) {
+  if (!variables) return title;
+  return title.replace(/\{([^{}]{1,40})\}/g, (m, name) => (name in variables ? String(variables[name]) : m));
+}
+
+/** Erzeugt das DOM-Element für einen Button. live = { text, on, value } vom Server, variables für {Name}-Platzhalter. */
+export function buttonElement(b, { on = false, live = null, variables = null } = {}) {
+  if (typeof live?.on === 'boolean') on = live.on;
+  const el = document.createElement('div');
+  const isSlider = b.mode === 'slider';
+  const cover = b.iconFit === 'cover' && b.icon?.type === 'image' && b.icon.value;
+  el.className = `td-btn pos-${b.titlePos}${on ? ' is-on' : ''}${b.mode === 'toggle' ? ' is-toggle' : ''}${cover ? ' is-cover' : ''}`;
+  el.dataset.id = b.id;
+  el.style.gridRow = `${b.row + 1} / span ${b.rowSpan}`;
+  el.style.gridColumn = `${b.col + 1} / span ${b.colSpan}`;
+  el.style.setProperty('--bg', on ? b.colorOn : b.color);
+  el.style.setProperty('--fg', b.textColor);
+  el.style.setProperty('--fs', b.fontSize);
+
+  if (cover) el.style.setProperty('--img', `url("${iconUrl(b.icon.value)}")`);
+
+  if (isSlider) {
+    // Regler: hoch, wenn der Button höher als breit ist, sonst quer.
+    const vertical = b.rowSpan >= b.colSpan;
+    const value = Number.isFinite(live?.value) ? live.value : 0;
+    el.classList.add('is-slider', vertical ? 'vertical' : 'horizontal');
+    el.dataset.vertical = vertical ? '1' : '';
+    el.style.setProperty('--val', value);
+    const fill = document.createElement('div');
+    fill.className = 'td-fill';
+    el.append(fill);
+    live = { text: live?.text ?? `${value} %` };
+  }
+
+  const hasIcon = b.icon?.value && !cover;
+  if (hasIcon) {
+    const icon = document.createElement('div');
+    icon.className = 'td-icon';
+    if (b.icon.type === 'image') {
+      const img = document.createElement('img');
+      img.src = iconUrl(b.icon.value);
+      img.alt = '';
+      img.draggable = false;
+      icon.append(img);
+    } else {
+      icon.textContent = b.icon.value;
+    }
+    el.append(icon);
+  }
+  if (live?.text) {
+    const l = document.createElement('div');
+    l.className = 'td-live';
+    l.textContent = live.text;
+    if (live.error) l.title = live.error;
+    el.append(l);
+  }
+  if (b.title && b.titlePos !== 'hidden') {
+    const t = document.createElement('div');
+    t.className = 'td-title';
+    t.textContent = fillTitle(b.title, variables);
+    el.append(t);
+  }
+  if (!hasIcon && !cover && !isSlider && !live?.text && !(b.title && b.titlePos !== 'hidden')) el.classList.add('is-blank');
+  return el;
+}
+
+/** Richtet ein Raster-Element für eine Seite ein. */
+export function setupGrid(grid, page) {
+  grid.style.setProperty('--rows', page.rows);
+  grid.style.setProperty('--cols', page.cols);
+  grid.style.setProperty('--page-bg', page.background);
+}
