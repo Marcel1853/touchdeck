@@ -67,6 +67,10 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
         "audio_output" => empty_or_eq(&g("device"), &d["device"]),
+        "audio_mute" => {
+            let target = if s(&g("target")).is_empty() { "output".to_string() } else { s(&g("target")) };
+            target == s(&d["target"]) && state_matches(&g("state"), &d["state"])
+        }
         "steam_game" => empty_or_eq(&g("game"), &d["appid"]) && state_matches(&g("state"), &d["state"]),
         "obs_scene" | "obs_preview" => empty_or_eq(&g("scene"), &d["scene"]),
         "obs_mute" => empty_or_eq(&g("input"), &d["input"]) && state_matches(&g("state"), &d["state"]),
@@ -120,6 +124,8 @@ struct State {
     obs_connected: bool,
     running: Option<BTreeSet<String>>,
     sink: Option<String>,
+    /// Zuletzt gesehene Stummschaltung von Ausgang und Eingang.
+    muted: (Option<bool>, Option<bool>),
 }
 
 #[derive(Default)]
@@ -280,6 +286,28 @@ impl EventEngine {
                         && b != s
                     {
                         a.events.fire(&a, "audio_output", &json!({ "device": s, "Gerät": s }));
+                    }
+                }
+            }));
+        }
+        if has("audio_mute") {
+            let a = app.clone();
+            tasks.push(tokio::spawn(async move {
+                let mut t = tokio::time::interval(Duration::from_secs(2));
+                loop {
+                    t.tick().await;
+                    for (target, dev) in [("output", linux::SINK), ("input", linux::SOURCE)] {
+                        let Ok(v) = linux::get_volume(dev).await else { continue };
+                        let before = {
+                            let mut st = a.events.state.lock().unwrap();
+                            let slot = if target == "output" { &mut st.muted.0 } else { &mut st.muted.1 };
+                            slot.replace(v.muted)
+                        };
+                        if before.is_some_and(|b| b != v.muted) {
+                            let state = if v.muted { "muted" } else { "unmuted" };
+                            let label = if v.muted { "stumm" } else { "laut" };
+                            a.events.fire(&a, "audio_mute", &json!({ "target": target, "state": state, "Status": label }));
+                        }
                     }
                 }
             }));
@@ -465,6 +493,9 @@ mod tests {
         assert!(!trigger_matches("twitch_chat", &p(json!({ "mode": "command", "text": "!szene", "who": "sub" })), &chat));
         assert!(trigger_matches("twitch_sub", &p(json!({ "kind": "gift" })), &json!({ "kind": "gift_received" })));
         assert!(trigger_matches("twitch_cheer", &p(json!({ "min": 100 })), &json!({ "bits": 100 })));
+        assert!(trigger_matches("audio_mute", &p(json!({ "target": "output", "state": "muted" })), &json!({ "target": "output", "state": "muted" })));
+        assert!(!trigger_matches("audio_mute", &p(json!({ "target": "input", "state": "muted" })), &json!({ "target": "output", "state": "muted" })));
+        assert!(trigger_matches("audio_mute", &p(json!({ "state": "any" })), &json!({ "target": "output", "state": "unmuted" })));
         assert!(!trigger_matches("twitch_cheer", &p(json!({ "min": 100 })), &json!({ "bits": 99 })));
     }
 

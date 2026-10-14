@@ -164,6 +164,9 @@ pub struct Button {
     pub icon: Icon,
     pub color: String,
     pub color_on: String,
+    /// Symbol und Beschriftung, wenn der Button „an“ ist (Umschalter oder Live-Anzeige); leer = wie sonst.
+    pub icon_on: Icon,
+    pub title_on: String,
     pub text_color: String,
     pub font_size: i64,
     pub title_pos: String,
@@ -274,6 +277,13 @@ fn one_of(v: &Value, allowed: &[&str], fallback: &str) -> String {
     v.as_str().filter(|s| allowed.contains(s)).unwrap_or(fallback).to_string()
 }
 
+fn sanitize_icon(icon: &Value) -> Icon {
+    match icon["type"].as_str() {
+        Some(t @ ("emoji" | "image")) if icon.is_object() => Icon { kind: t.into(), value: text(&icon["value"], "", 256) },
+        _ => Icon { kind: "emoji".into(), value: String::new() },
+    }
+}
+
 fn sanitize_button(b: &Value, rows: i64, cols: i64) -> Option<Button> {
     b.as_object()?;
     let row = parse_int(&b["row"])?;
@@ -281,11 +291,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64) -> Option<Button> {
     if !(0..rows).contains(&row) || !(0..cols).contains(&col) {
         return None;
     }
-    let icon = &b["icon"];
-    let icon = match icon["type"].as_str() {
-        Some(t @ ("emoji" | "image")) if icon.is_object() => Icon { kind: t.into(), value: text(&icon["value"], "", 256) },
-        _ => Icon { kind: "emoji".into(), value: String::new() },
-    };
+    let icon = sanitize_icon(&b["icon"]);
     let live = &b["live"];
     let slider = &b["slider"];
     Some(Button {
@@ -298,6 +304,8 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64) -> Option<Button> {
         icon,
         color: color(&b["color"], "#2b2f3a"),
         color_on: color(&b["colorOn"], "#2f9e6b"),
+        icon_on: sanitize_icon(&b["iconOn"]),
+        title_on: text(&b["titleOn"], "", 200),
         text_color: color(&b["textColor"], "#ffffff"),
         font_size: clamp(&b["fontSize"], 8, 64, 14),
         title_pos: one_of(&b["titlePos"], &["top", "center", "bottom", "hidden"], "bottom"),

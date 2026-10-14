@@ -37,6 +37,7 @@ export function newButton(row, col, extra = {}) {
     id: uid('b_'), row, col, rowSpan: 1, colSpan: 1, title: '', icon: { type: 'emoji', value: '' },
     color: '#2b2f3a', colorOn: '#2f9e6b', textColor: '#ffffff', fontSize: 14, titlePos: 'bottom', mode: 'press', iconFit: 'contain',
     actions: [], actionsOff: [], holdActions: [], releaseActions: [], holdRepeat: 0, events: [],
+    iconOn: { type: 'emoji', value: '' }, titleOn: '',
     live: { source: 'none', command: '', variable: '' }, slider: { target: 'volume', input: '', command: '' },
     ...extra,
   };
@@ -508,10 +509,16 @@ function renderInspector() {
 function lookTab(b) {
   const edit = (key, fn, opts) => mutate(fn, { coalesce: `${b.id}:${key}`, ...opts });
   const p = page();
+  // Ein Button ist „an“, wenn er ein eingeschalteter Umschalter ist oder seine Live-Anzeige „an“ meldet.
+  const canBeOn = b.mode === 'toggle' || (b.mode !== 'slider' && b.live.source !== 'none');
+  const onLook = canBeOn && S.lookTarget === 'on';
+  const key = onLook ? 'iconOn' : 'icon';
+  b.iconOn ??= { type: 'emoji', value: '' };
+  const cur = b[key];
 
   const iconBox = h('div', { class: 'icon-box' });
-  if (b.icon.type === 'image' && b.icon.value) iconBox.append(h('img', { src: iconUrl(b.icon.value), alt: '' }));
-  else iconBox.textContent = b.icon.value;
+  if (cur.type === 'image' && cur.value) iconBox.append(h('img', { src: iconUrl(cur.value), alt: '' }));
+  else iconBox.textContent = cur.value;
 
   const upload = h('input', {
     type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml', hidden: true,
@@ -527,7 +534,7 @@ function lookTab(b) {
       try {
         const { name } = await api('POST', '/api/icons', { data });
         S.icons.push(name);
-        mutate(() => (b.icon = { type: 'image', value: name }));
+        mutate(() => (b[key] = { type: 'image', value: name }));
       } catch (err) {
         toast(err.message, 'error');
       }
@@ -546,23 +553,28 @@ function lookTab(b) {
       } })),
 
     h('h3', {}, 'Symbol'),
+    canBeOn && h('div', { class: 'field' },
+      segmented([['normal', 'Normal'], ['on', 'Wenn an']], onLook ? 'on' : 'normal', (v) => { S.lookTarget = v; render(); }),
+      h('p', { class: 'hint-text' }, b.mode === 'toggle' ? '„An“ = Umschalter ist eingeschaltet.' : '„An“ meldet die Live-Anzeige, z. B. Lautstärke: an = stumm.', onLook ? ' Leer lassen = gleiches Symbol wie normal.' : '')),
     h('div', { class: 'icon-preview' },
       iconBox,
-      h('input', { value: b.icon.type === 'emoji' ? b.icon.value : '', maxlength: 16, placeholder: 'Emoji eingeben', style: 'flex:1',
-        oninput: (e) => edit('emoji', () => (b.icon = { type: 'emoji', value: e.target.value.trim() }), { detail: false }) }),
+      h('input', { value: cur.type === 'emoji' ? cur.value : '', maxlength: 16, placeholder: 'Emoji eingeben', style: 'flex:1',
+        oninput: (e) => edit(`emoji-${key}`, () => (b[key] = { type: 'emoji', value: e.target.value.trim() }), { detail: false }) }),
       h('label', { class: 'btn small', title: 'Eigenes Bild hochladen' }, '🖼️ Bild', upload),
-      b.icon.value && h('button', { class: 'btn small ghost', title: 'Symbol entfernen', onclick: () => mutate(() => (b.icon = { type: 'emoji', value: '' })) }, '✕')),
-    b.icon.type === 'image' && b.icon.value && h('label', { class: 'switch-row' },
+      cur.value && h('button', { class: 'btn small ghost', title: 'Symbol entfernen', onclick: () => mutate(() => (b[key] = { type: 'emoji', value: '' })) }, '✕')),
+    !onLook && b.icon.type === 'image' && b.icon.value && h('label', { class: 'switch-row' },
       h('input', { type: 'checkbox', checked: b.iconFit === 'cover', onchange: (e) => mutate(() => (b.iconFit = e.target.checked ? 'cover' : 'contain')) }),
       'Bild füllt den ganzen Button'),
-    h('div', { class: 'emoji-grid' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => mutate(() => (b.icon = { type: 'emoji', value: em })) }, em))),
-    iconPicker(b),
+    h('div', { class: 'emoji-grid' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => mutate(() => (b[key] = { type: 'emoji', value: em })) }, em))),
+    iconPicker(b, key),
+    canBeOn && h('label', { class: 'field' }, 'Beschriftung wenn an (leer = wie normal)',
+      h('input', { value: b.titleOn ?? '', maxlength: 200, placeholder: 'z. B. Stumm', oninput: (e) => edit('titleOn', () => (b.titleOn = e.target.value), { detail: false }) })),
 
     h('h3', {}, 'Farben'),
     h('div', { class: 'colors' },
       h('label', {}, h('input', { type: 'color', value: b.color, oninput: (e) => edit('color', () => (b.color = e.target.value), { detail: false }) }), 'Hintergrund'),
       h('label', {}, h('input', { type: 'color', value: b.textColor, oninput: (e) => edit('tc', () => (b.textColor = e.target.value), { detail: false }) }), 'Text'),
-      b.mode === 'toggle' && h('label', {}, h('input', { type: 'color', value: b.colorOn, oninput: (e) => edit('con', () => (b.colorOn = e.target.value), { detail: false }) }), 'Wenn an')),
+      canBeOn && h('label', {}, h('input', { type: 'color', value: b.colorOn, oninput: (e) => edit('con', () => (b.colorOn = e.target.value), { detail: false }) }), 'Wenn an')),
     h('div', { class: 'swatches' }, SWATCHES.map((c) => h('button', { type: 'button', title: c, style: `background:${c}`, onclick: () => mutate(() => (b.color = c)) }))),
 
     h('h3', {}, 'Größe & Verhalten'),

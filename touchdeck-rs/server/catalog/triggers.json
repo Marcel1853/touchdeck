@@ -208,6 +208,50 @@
   ]
  },
  {
+  "type": "audio_mute",
+  "category": "Audio",
+  "label": "Ton oder Mikrofon stumm/laut geschaltet",
+  "icon": "🔇",
+  "fields": [
+   {
+    "key": "target",
+    "label": "Was?",
+    "type": "select",
+    "default": "output",
+    "options": [
+     {
+      "value": "output",
+      "label": "Ton (Ausgang)"
+     },
+     {
+      "value": "input",
+      "label": "Mikrofon (Eingang)"
+     }
+    ]
+   },
+   {
+    "key": "state",
+    "label": "Zustand",
+    "type": "select",
+    "default": "muted",
+    "options": [
+     {
+      "value": "muted",
+      "label": "stumm"
+     },
+     {
+      "value": "unmuted",
+      "label": "laut"
+     },
+     {
+      "value": "any",
+      "label": "egal"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "type": "steam_game",
   "category": "Steam",
   "label": "Spiel startet/endet",

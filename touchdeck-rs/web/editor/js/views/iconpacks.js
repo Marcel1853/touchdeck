@@ -149,8 +149,8 @@ export function iconPacksSection() {
   ];
 }
 
-/** Bildauswahl beim Button: eigene Bilder und alle Icon-Pakete, mit Suche. */
-export function iconPicker(b) {
+/** Bildauswahl beim Button: eigene Bilder und alle Icon-Pakete, mit Suche. key: icon oder iconOn. */
+export function iconPicker(b, key = 'icon') {
   const sources = [['own', `Eigene Bilder (${S.icons.length})`, S.icons.map((n) => ({ value: n, label: n }))],
     ...S.iconPacks.map((p) => [p.id, `${p.name} (${p.icons.length})`, p.icons.map((i) => ({ value: packIcon(p.id, i), label: i }))])];
   if (!sources.some(([, , list]) => list.length)) return null;
@@ -167,8 +167,8 @@ export function iconPicker(b) {
         h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; render(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
         h('input', { type: 'search', placeholder: 'Suchen …', value: S.iconSearch ?? '', oninput: (e) => { S.iconSearch = e.target.value; render(); } })),
       shown.length
-        ? h('div', { class: 'icon-grid' }, shown.slice(0, MAX).map((i) => h('button', { type: 'button', title: i.label, class: b.icon.value === i.value ? 'active' : '',
-          onclick: () => mutate(() => (b.icon = { type: 'image', value: i.value })) }, h('img', { src: iconUrl(i.value), alt: '', loading: 'lazy' }))))
+        ? h('div', { class: 'icon-grid' }, shown.slice(0, MAX).map((i) => h('button', { type: 'button', title: i.label, class: b[key]?.value === i.value ? 'active' : '',
+          onclick: () => mutate(() => (b[key] = { type: 'image', value: i.value })) }, h('img', { src: iconUrl(i.value), alt: '', loading: 'lazy' }))))
         : h('p', { class: 'hint-text' }, 'Keine Bilder gefunden.'),
       shown.length > MAX && h('p', { class: 'hint-text' }, `${shown.length - MAX} weitere – Suche verfeinern.`)));
 }

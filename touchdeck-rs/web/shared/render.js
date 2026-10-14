@@ -13,6 +13,8 @@ export function fillTitle(title, variables) {
 /** Erzeugt das DOM-Element für einen Button. live = { text, on, value } vom Server, variables für {Name}-Platzhalter. */
 export function buttonElement(b, { on = false, live = null, variables = null } = {}) {
   if (typeof live?.on === 'boolean') on = live.on;
+  // Eigenes Aussehen für „an“ (z. B. 🔇 „Stumm“ statt 🔊 „Ton an“).
+  if (on) b = { ...b, icon: b.iconOn?.value ? b.iconOn : b.icon, title: b.titleOn || b.title };
   const el = document.createElement('div');
   const isSlider = b.mode === 'slider';
   const cover = b.iconFit === 'cover' && b.icon?.type === 'image' && b.icon.value;
