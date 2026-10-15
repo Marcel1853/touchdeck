@@ -1,4 +1,5 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
+import { t as tr } from '/shared/i18n.js';
 import { buttonElement, setupGrid, iconUrl } from '/shared/render.js';
 import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
@@ -49,7 +50,7 @@ export function mountPages(root) {
   root.className = 'view view-pages';
   root.replaceChildren(
     h('aside', { class: 'sidebar' },
-      h('div', { class: 'sidebar-head' }, h('h2', {}, 'Seiten'), h('button', { class: 'btn small', title: 'Neue Seite', onclick: addPage }, '＋')),
+      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('Seiten')), h('button', { class: 'btn small', title: tr('Neue Seite'), onclick: addPage }, '＋')),
       h('ul', { id: 'page-list', class: 'page-list' }),
       h('div', { class: `templates${prefs.get('touchdeck.templatesOpen') === '1' ? '' : ' collapsed'}` },
         h('button', {
@@ -59,23 +60,23 @@ export function mountPages(root) {
             box.classList.toggle('collapsed');
             prefs.set('touchdeck.templatesOpen', box.classList.contains('collapsed') ? '0' : '1');
           },
-        }, h('span', { class: 'chevron' }, '▸'), 'Fertige Seiten'),
-        tplButton('steam', '🎮', 'Steam-Spiele', 'Alle Spiele mit Cover', steamTemplate),
-        tplButton('system', '📊', 'System', 'Uhr, CPU, Audio, Sperren …', systemTemplate),
-        tplButton('obs', '🎬', 'OBS Studio', 'Szenen, Stream, Aufnahme', obsTemplate),
-        tplButton('touchportal', '⤵️', 'Touch Portal', 'Seiten übernehmen', importTouchPortal))),
+        }, h('span', { class: 'chevron' }, '▸'), tr('Fertige Seiten')),
+        tplButton('steam', '🎮', tr('Steam-Spiele'), tr('Alle Spiele mit Cover'), steamTemplate),
+        tplButton('system', '📊', tr('System'), tr('Uhr, CPU, Audio, Sperren …'), systemTemplate),
+        tplButton('obs', '🎬', tr('OBS Studio'), tr('Szenen, Stream, Aufnahme'), obsTemplate),
+        tplButton('touchportal', '⤵️', tr('Touch Portal'), tr('Seiten übernehmen'), importTouchPortal))),
     h('section', { class: 'workspace' },
       h('div', { class: 'page-toolbar' },
-        h('input', { id: 'page-name', class: 'page-name', maxlength: 100, 'aria-label': 'Seitenname',
-          oninput: (e) => mutate(() => (page().name = e.target.value || 'Seite'), { coalesce: `${S.pageId}:name`, detail: false }) }),
-        h('label', { class: 'field-inline' }, 'Spalten', h('input', { id: 'page-cols', type: 'number', min: 1, max: 16, onchange: (e) => resizePage(page().rows, Number(e.target.value)) })),
-        h('label', { class: 'field-inline' }, 'Zeilen', h('input', { id: 'page-rows', type: 'number', min: 1, max: 12, onchange: (e) => resizePage(Number(e.target.value), page().cols) })),
-        h('label', { class: 'field-inline' }, 'Hintergrund', h('input', { id: 'page-bg', type: 'color',
+        h('input', { id: 'page-name', class: 'page-name', maxlength: 100, 'aria-label': tr('Seitenname'),
+          oninput: (e) => mutate(() => (page().name = e.target.value || tr('Seite')), { coalesce: `${S.pageId}:name`, detail: false }) }),
+        h('label', { class: 'field-inline' }, tr('Spalten'), h('input', { id: 'page-cols', type: 'number', min: 1, max: 16, onchange: (e) => resizePage(page().rows, Number(e.target.value)) })),
+        h('label', { class: 'field-inline' }, tr('Zeilen'), h('input', { id: 'page-rows', type: 'number', min: 1, max: 12, onchange: (e) => resizePage(Number(e.target.value), page().cols) })),
+        h('label', { class: 'field-inline' }, tr('Hintergrund'), h('input', { id: 'page-bg', type: 'color',
           oninput: (e) => mutate(() => (page().background = e.target.value), { coalesce: `${S.pageId}:bg`, detail: false }) })),
-        h('button', { class: 'btn small ghost', onclick: duplicatePage }, 'Duplizieren'),
-        h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: deletePage }, 'Löschen')),
+        h('button', { class: 'btn small ghost', onclick: duplicatePage }, tr('Duplizieren')),
+        h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: deletePage }, tr('Löschen'))),
       h('div', { class: 'canvas-wrap' }, h('div', { id: 'canvas', class: 'td-grid canvas' })),
-      h('p', { class: 'hint' }, 'Leeres Feld anklicken = neuer Button · Ziehen verschiebt oder tauscht · Rechtsklick für mehr · Strg+C/X/V kopiert, schneidet aus, fügt ein · Strg+D dupliziert · Entf löscht')),
+      h('p', { class: 'hint' }, tr('Leeres Feld anklicken = neuer Button · Ziehen verschiebt oder tauscht · Rechtsklick für mehr · Strg+C/X/V kopiert, schneidet aus, fügt ein · Strg+D dupliziert · Entf löscht'))),
     h('aside', { id: 'inspector', class: 'inspector' }),
   );
 }
@@ -97,7 +98,7 @@ function renderPageList() {
   $('#page-list').replaceChildren(...S.pages.map((p, i) => h('li', {
     class: p.id === S.pageId ? 'active' : '',
     draggable: 'true',
-    title: 'Ziehen zum Sortieren',
+    title: tr('Ziehen zum Sortieren'),
     onclick: () => selectPage(p.id),
     ondragstart: (e) => {
       dragFrom = i;
@@ -120,7 +121,7 @@ function renderPageList() {
     },
   },
   h('span', { class: 'name' }, p.name),
-  p.id === S.settings.startPage && h('span', { class: 'badge' }, 'Start'),
+  p.id === S.settings.startPage && h('span', { class: 'badge' }, tr('Start')),
   h('span', { class: 'count' }, String(p.buttons.length)))));
 }
 
@@ -128,7 +129,7 @@ function renderTemplateState() {
   for (const btn of document.querySelectorAll('.tpl[data-template]')) {
     const exists = S.pages.some((p) => p.template === btn.dataset.template);
     btn.classList.toggle('exists', exists);
-    btn.title = exists ? 'Schon vorhanden – klicken zum Aktualisieren oder Öffnen' : 'Seite anlegen';
+    btn.title = exists ? tr('Schon vorhanden – klicken zum Aktualisieren oder Öffnen') : tr('Seite anlegen');
   }
 }
 
@@ -168,7 +169,7 @@ function renderCanvas() {
   for (let r = 0; r < p.rows; r++) {
     for (let c = 0; c < p.cols; c++) {
       if (covered.has(`${r}:${c}`)) continue;
-      const cell = h('div', { class: 'cell', style: `grid-row:${r + 1};grid-column:${c + 1}`, title: 'Neuer Button', onclick: () => addButton(r, c),
+      const cell = h('div', { class: 'cell', style: `grid-row:${r + 1};grid-column:${c + 1}`, title: tr('Neuer Button'), onclick: () => addButton(r, c),
         oncontextmenu: (e) => {
           e.preventDefault();
           cellMenu(e.clientX, e.clientY, r, c);
@@ -222,7 +223,7 @@ export function selectPage(id) {
 
 function addPage() {
   const cur = page();
-  const p = { id: uid('p_'), name: 'Neue Seite', rows: cur?.rows ?? 3, cols: cur?.cols ?? 5, background: cur?.background ?? '#14161b', buttons: [] };
+  const p = { id: uid('p_'), name: tr('Neue Seite'), rows: cur?.rows ?? 3, cols: cur?.cols ?? 5, background: cur?.background ?? '#14161b', buttons: [] };
   mutate(() => {
     S.pages.push(p);
     S.pageId = p.id;
@@ -234,7 +235,7 @@ function addPage() {
 function duplicatePage() {
   const copy = structuredClone(page());
   copy.id = uid('p_');
-  copy.name = `${copy.name} (Kopie)`;
+  copy.name = tr('{0} (Kopie)', [copy.name]);
   copy.template = '';
   copy.buttons = copy.buttons.map(cloneButton);
   mutate(() => {
@@ -247,7 +248,7 @@ function duplicatePage() {
 function deletePage() {
   const p = page();
   if (S.pages.length < 2) return;
-  if (p.buttons.length && !confirm(`Seite „${p.name}“ mit ${p.buttons.length} Buttons löschen?`)) return;
+  if (p.buttons.length && !confirm(tr('Seite „{0}“ mit {1} Buttons löschen?', [p.name, p.buttons.length]))) return;
   mutate(() => {
     const i = S.pages.indexOf(p);
     S.pages.splice(i, 1);
@@ -261,7 +262,7 @@ function resizePage(rows, cols) {
   rows = Math.min(12, Math.max(1, rows || p.rows));
   cols = Math.min(16, Math.max(1, cols || p.cols));
   const lost = p.buttons.filter((b) => b.row >= rows || b.col >= cols);
-  if (lost.length && !confirm(`${lost.length} Button(s) liegen außerhalb des neuen Rasters und werden entfernt. Fortfahren?`)) return render({ detail: false });
+  if (lost.length && !confirm(tr('{0} Button(s) liegen außerhalb des neuen Rasters und werden entfernt. Fortfahren?', [lost.length]))) return render({ detail: false });
   mutate(() => {
     p.rows = rows;
     p.cols = cols;
@@ -296,7 +297,7 @@ function moveButton(id, row, col) {
   const p = page();
   const b = p.buttons.find((x) => x.id === id);
   if (!b) return;
-  if (!fits(p, { row, col, rowSpan: b.rowSpan, colSpan: b.colSpan }, [id])) return toast('Der Button passt dort nicht hin.', 'error');
+  if (!fits(p, { row, col, rowSpan: b.rowSpan, colSpan: b.colSpan }, [id])) return toast(tr('Der Button passt dort nicht hin.'), 'error');
   mutate(() => Object.assign(b, { row, col }));
 }
 
@@ -307,7 +308,7 @@ function swapButtons(idA, idB) {
   const b = p.buttons.find((x) => x.id === idB);
   const ra = { row: b.row, col: b.col, rowSpan: a.rowSpan, colSpan: a.colSpan };
   const rb = { row: a.row, col: a.col, rowSpan: b.rowSpan, colSpan: b.colSpan };
-  if (!fits(p, ra, [idA, idB]) || !fits(p, rb, [idA, idB]) || overlaps(ra, rb)) return toast('Die beiden Buttons lassen sich wegen ihrer Größe nicht tauschen.', 'error');
+  if (!fits(p, ra, [idA, idB]) || !fits(p, rb, [idA, idB]) || overlaps(ra, rb)) return toast(tr('Die beiden Buttons lassen sich wegen ihrer Größe nicht tauschen.'), 'error');
   mutate(() => {
     Object.assign(a, { row: ra.row, col: ra.col });
     Object.assign(b, { row: rb.row, col: rb.col });
@@ -318,7 +319,7 @@ export function duplicateButton() {
   const b = sel();
   if (!b) return;
   const spot = freeCell(page());
-  if (!spot) return toast('Auf dieser Seite ist kein Feld mehr frei.', 'error');
+  if (!spot) return toast(tr('Auf dieser Seite ist kein Feld mehr frei.'), 'error');
   const copy = { ...cloneButton(b), ...spot, rowSpan: 1, colSpan: 1 };
   mutate(() => {
     page().buttons.push(copy);
@@ -350,13 +351,13 @@ const readClip = (key) => {
   }
 };
 const findButton = (id) => page().buttons.find((x) => x.id === id);
-const label = (b) => (b.title || b.icon.value ? `„${b.title || b.icon.value}“` : 'Button');
+const label = (b) => (b.title || b.icon.value ? tr('„{0}“', [b.title || b.icon.value]) : tr('Button'));
 
 export function copyButton(id = S.selId, { quiet = false } = {}) {
   const b = findButton(id);
   if (!b) return false;
   prefs.set(CLIP, JSON.stringify(b));
-  if (!quiet) toast(`${label(b)} kopiert – mit Strg+V oder Rechtsklick › Einfügen einsetzen`, 'ok');
+  if (!quiet) toast(tr('{0} kopiert – mit Strg+V oder Rechtsklick › Einfügen einsetzen', [label(b)]), 'ok');
   return true;
 }
 
@@ -367,21 +368,21 @@ export function cutButton(id = S.selId) {
     page().buttons = page().buttons.filter((x) => x !== b);
     if (S.selId === id) S.selId = null;
   });
-  toast(`${label(b)} ausgeschnitten – zum Einsetzen Strg+V oder Rechtsklick › Einfügen`, 'ok');
+  toast(tr('{0} ausgeschnitten – zum Einsetzen Strg+V oder Rechtsklick › Einfügen', [label(b)]), 'ok');
 }
 
 /** Fügt den kopierten Button ein: an row/col, sonst ins erste freie Feld. replace = Button an dieser Stelle ersetzen. */
 export function pasteButton({ row, col, replace } = {}) {
   const src = readClip(CLIP);
-  if (!src) return toast('Nichts zum Einfügen – zuerst einen Button kopieren (Rechtsklick › Kopieren).', 'error');
+  if (!src) return toast(tr('Nichts zum Einfügen – zuerst einen Button kopieren (Rechtsklick › Kopieren).'), 'error');
   const p = page();
   const ignore = replace ? [replace] : [];
   const spot = row === undefined ? freeCell(p) : { row, col };
-  if (!spot) return toast('Auf dieser Seite ist kein Feld mehr frei.', 'error');
+  if (!spot) return toast(tr('Auf dieser Seite ist kein Feld mehr frei.'), 'error');
   // Größe übernehmen, wenn sie dort passt, sonst als einzelnes Feld.
   const big = { ...spot, rowSpan: src.rowSpan ?? 1, colSpan: src.colSpan ?? 1 };
   const rect = fits(p, big, ignore) ? big : { ...spot, rowSpan: 1, colSpan: 1 };
-  if (!fits(p, rect, ignore)) return toast('Der Button passt dort nicht hin.', 'error');
+  if (!fits(p, rect, ignore)) return toast(tr('Der Button passt dort nicht hin.'), 'error');
   const copy = { ...newButton(rect.row, rect.col), ...cloneButton(src), ...rect };
   mutate(() => {
     if (replace) p.buttons = p.buttons.filter((x) => x.id !== replace);
@@ -394,7 +395,7 @@ function copyStyle(id) {
   const b = findButton(id);
   if (!b) return;
   prefs.set(STYLE_CLIP, JSON.stringify(Object.fromEntries(STYLE_KEYS.map((k) => [k, b[k]]))));
-  toast('Aussehen kopiert – mit Rechtsklick › Aussehen einfügen auf andere Buttons übertragen', 'ok');
+  toast(tr('Aussehen kopiert – mit Rechtsklick › Aussehen einfügen auf andere Buttons übertragen'), 'ok');
 }
 
 function pasteStyle(id) {
@@ -413,7 +414,7 @@ function sendToPage(id, targetId, keep) {
   // Gleiche Stelle wie hier, sonst erstes freies Feld.
   const free = freeCell(target);
   const rect = fits(target, big) ? big : free && { ...free, rowSpan: 1, colSpan: 1 };
-  if (!rect) return toast(`Auf „${target.name}“ ist kein Feld mehr frei.`, 'error');
+  if (!rect) return toast(tr('Auf „{0}“ ist kein Feld mehr frei.', [target.name]), 'error');
   mutate(() => {
     target.buttons.push({ ...(keep ? cloneButton(b) : b), ...rect });
     if (!keep) {
@@ -421,7 +422,7 @@ function sendToPage(id, targetId, keep) {
       S.selId = null;
     }
   });
-  toast(`${label(b)} ${keep ? 'kopiert' : 'verschoben'} nach „${target.name}“`, 'ok');
+  toast(tr(keep ? '{0} kopiert nach „{1}“' : '{0} verschoben nach „{1}“', [label(b), target.name]), 'ok');
 }
 
 function buttonMenu(x, y, id) {
@@ -431,27 +432,27 @@ function buttonMenu(x, y, id) {
   const pageItems = (keep) => others.map((p) => ({ icon: '📄', label: p.name, onclick: () => sendToPage(id, p.id, keep) }));
   const hasClip = !!readClip(CLIP);
   contextMenu(x, y, [
-    { icon: '▶️', label: 'Aktionen testen', disabled: !b.actions.length, onclick: () => testActions(b.actions, b.title || 'Button', { buttonId: b.id }) },
+    { icon: '▶️', label: tr('Aktionen testen'), disabled: !b.actions.length, onclick: () => testActions(b.actions, b.title || tr('Button'), { buttonId: b.id }) },
     '-',
-    { icon: '⧉', label: 'Duplizieren', keys: 'Strg+D', onclick: duplicateButton },
-    { icon: '📋', label: 'Kopieren', keys: 'Strg+C', onclick: () => copyButton(id) },
-    { icon: '✂️', label: 'Ausschneiden', keys: 'Strg+X', onclick: () => cutButton(id) },
-    { icon: '📥', label: 'Einfügen (ersetzt diesen)', disabled: !hasClip, onclick: () => pasteButton({ row: b.row, col: b.col, replace: id }) },
+    { icon: '⧉', label: tr('Duplizieren'), keys: 'Strg+D', onclick: duplicateButton },
+    { icon: '📋', label: tr('Kopieren'), keys: 'Strg+C', onclick: () => copyButton(id) },
+    { icon: '✂️', label: tr('Ausschneiden'), keys: 'Strg+X', onclick: () => cutButton(id) },
+    { icon: '📥', label: tr('Einfügen (ersetzt diesen)'), disabled: !hasClip, onclick: () => pasteButton({ row: b.row, col: b.col, replace: id }) },
     '-',
-    { icon: '🎨', label: 'Aussehen kopieren', onclick: () => copyStyle(id) },
-    { icon: '🖌️', label: 'Aussehen einfügen', disabled: !readClip(STYLE_CLIP), onclick: () => pasteStyle(id) },
+    { icon: '🎨', label: tr('Aussehen kopieren'), onclick: () => copyStyle(id) },
+    { icon: '🖌️', label: tr('Aussehen einfügen'), disabled: !readClip(STYLE_CLIP), onclick: () => pasteStyle(id) },
     '-',
-    { icon: '➡️', label: 'Auf Seite verschieben', disabled: !others.length, submenu: pageItems(false) },
-    { icon: '📑', label: 'Auf Seite kopieren', disabled: !others.length, submenu: pageItems(true) },
+    { icon: '➡️', label: tr('Auf Seite verschieben'), disabled: !others.length, submenu: pageItems(false) },
+    { icon: '📑', label: tr('Auf Seite kopieren'), disabled: !others.length, submenu: pageItems(true) },
     '-',
-    { icon: '🗑️', label: 'Löschen', keys: 'Entf', danger: true, onclick: deleteButton },
+    { icon: '🗑️', label: tr('Löschen'), keys: tr('Entf'), danger: true, onclick: deleteButton },
   ]);
 }
 
 function cellMenu(x, y, row, col) {
   contextMenu(x, y, [
-    { icon: '＋', label: 'Neuer Button', onclick: () => addButton(row, col) },
-    { icon: '📥', label: 'Hier einfügen', keys: 'Strg+V', disabled: !readClip(CLIP), onclick: () => pasteButton({ row, col }) },
+    { icon: '＋', label: tr('Neuer Button'), onclick: () => addButton(row, col) },
+    { icon: '📥', label: tr('Hier einfügen'), keys: 'Strg+V', disabled: !readClip(CLIP), onclick: () => pasteButton({ row, col }) },
   ]);
 }
 
@@ -459,7 +460,7 @@ function resizeButton(b, rowSpan, colSpan) {
   const p = page();
   const rect = { row: b.row, col: b.col, rowSpan: Math.max(1, rowSpan || 1), colSpan: Math.max(1, colSpan || 1) };
   if (!fits(p, rect, [b.id])) {
-    toast('So groß passt der Button nicht – andere Buttons oder der Rand sind im Weg.', 'error');
+    toast(tr('So groß passt der Button nicht – andere Buttons oder der Rand sind im Weg.'), 'error');
     return render();
   }
   mutate(() => Object.assign(b, { rowSpan: rect.rowSpan, colSpan: rect.colSpan }));
@@ -472,8 +473,8 @@ function renderInspector() {
   const b = sel();
   if (!b) {
     root.replaceChildren(empty('▦',
-      'Wähle einen Button aus oder klicke auf ein leeres Feld, um einen neuen anzulegen.',
-      'Mit „Vorschau“ siehst du das Bedienfeld so, wie es auf dem Handy erscheint.'));
+      tr('Wähle einen Button aus oder klicke auf ein leeres Feld, um einen neuen anzulegen.'),
+      tr('Mit „Vorschau“ siehst du das Bedienfeld so, wie es auf dem Handy erscheint.')));
     return;
   }
   const counts = {
@@ -491,18 +492,18 @@ function renderInspector() {
   }[S.tab] ?? lookTab;
   root.replaceChildren(
     h('div', { class: 'insp-head' },
-      h('h2', {}, b.title || 'Button'),
-      b.mode !== 'slider' && h('button', { class: 'btn small primary', title: 'Aktionen jetzt auf dem PC ausführen', onclick: () => testActions(b.actions, 'Button', { buttonId: b.id }) }, '▶ Testen')),
+      h('h2', {}, b.title || tr('Button')),
+      b.mode !== 'slider' && h('button', { class: 'btn small primary', title: tr('Aktionen jetzt auf dem PC ausführen'), onclick: () => testActions(b.actions, tr('Button'), { buttonId: b.id }) }, tr('▶ Testen'))),
     h('div', { class: 'tabs' },
-      tab('look', 'Aussehen'),
-      tab('actions', b.mode === 'slider' ? 'Regler' : `Drücken${counts.actions ? ` (${counts.actions})` : ''}`),
-      tab('events', `Event${counts.events ? ` (${counts.events})` : ''}`),
-      b.mode !== 'slider' && tab('hold', `Halten${counts.hold ? ` (${counts.hold})` : ''}`)),
+      tab('look', tr('Aussehen')),
+      tab('actions', b.mode === 'slider' ? tr('Regler') : `${tr('Drücken')}${counts.actions ? ` (${counts.actions})` : ''}`),
+      tab('events', `${tr('Event')}${counts.events ? ` (${counts.events})` : ''}`),
+      b.mode !== 'slider' && tab('hold', `${tr('Halten')}${counts.hold ? ` (${counts.hold})` : ''}`)),
     ...content(b).filter(Boolean),
     h('div', { class: 'insp-footer' },
-      h('button', { class: 'btn small', onclick: duplicateButton }, 'Duplizieren'),
+      h('button', { class: 'btn small', onclick: duplicateButton }, tr('Duplizieren')),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn small ghost danger', onclick: deleteButton }, 'Button löschen')),
+      h('button', { class: 'btn small ghost danger', onclick: deleteButton }, tr('Button löschen'))),
   );
 }
 
@@ -525,7 +526,7 @@ function lookTab(b) {
     onchange: async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) return toast('Das Bild ist größer als 5 MB.', 'error');
+      if (file.size > 5 * 1024 * 1024) return toast(tr('Das Bild ist größer als 5 MB.'), 'error');
       const data = await new Promise((res) => {
         const r = new FileReader();
         r.onload = () => res(r.result);
@@ -542,70 +543,70 @@ function lookTab(b) {
   });
 
   return [
-    h('label', { class: 'field' }, 'Beschriftung ({Wert} zeigt einen Wert an)',
-      h('input', { value: b.title, maxlength: 200, placeholder: 'z. B. Lauter', oninput: (e) => edit('title', () => (b.title = e.target.value), { detail: false }) })),
-    h('div', { class: 'field' }, 'Position der Beschriftung',
-      segmented([['top', 'Oben'], ['center', 'Mitte'], ['bottom', 'Unten'], ['hidden', 'Aus']], b.titlePos, (v) => mutate(() => (b.titlePos = v)))),
-    h('label', { class: 'field' }, `Schriftgröße: ${b.fontSize}`,
+    h('label', { class: 'field' }, tr('Beschriftung ({Wert} zeigt einen Wert an)'),
+      h('input', { value: b.title, maxlength: 200, placeholder: tr('z. B. Lauter'), oninput: (e) => edit('title', () => (b.title = e.target.value), { detail: false }) })),
+    h('div', { class: 'field' }, tr('Position der Beschriftung'),
+      segmented([['top', tr('Oben')], ['center', tr('Mitte')], ['bottom', tr('Unten')], ['hidden', tr('Aus')]], b.titlePos, (v) => mutate(() => (b.titlePos = v)))),
+    h('label', { class: 'field' }, tr('Schriftgröße: {0}', [b.fontSize]),
       h('input', { type: 'range', min: 8, max: 64, value: b.fontSize, oninput: (e) => {
-        e.target.parentElement.firstChild.textContent = `Schriftgröße: ${e.target.value}`;
+        e.target.parentElement.firstChild.textContent = tr('Schriftgröße: {0}', [e.target.value]);
         edit('fs', () => (b.fontSize = Number(e.target.value)), { detail: false });
       } })),
 
-    h('h3', {}, 'Symbol'),
+    h('h3', {}, tr('Symbol')),
     canBeOn && h('div', { class: 'field' },
-      segmented([['normal', 'Normal'], ['on', 'Wenn an']], onLook ? 'on' : 'normal', (v) => { S.lookTarget = v; render(); }),
-      h('p', { class: 'hint-text' }, b.mode === 'toggle' ? '„An“ = Umschalter ist eingeschaltet.' : '„An“ meldet die Live-Anzeige, z. B. Lautstärke: an = stumm.', onLook ? ' Leer lassen = gleiches Symbol wie normal.' : '')),
+      segmented([['normal', tr('Normal')], ['on', tr('Wenn an')]], onLook ? 'on' : 'normal', (v) => { S.lookTarget = v; render(); }),
+      h('p', { class: 'hint-text' }, b.mode === 'toggle' ? tr('„An“ = Umschalter ist eingeschaltet.') : tr('„An“ meldet die Live-Anzeige, z. B. Lautstärke: an = stumm.'), onLook ? tr(' Leer lassen = gleiches Symbol wie normal.') : '')),
     h('div', { class: 'icon-preview' },
       iconBox,
-      h('input', { value: cur.type === 'emoji' ? cur.value : '', maxlength: 16, placeholder: 'Emoji eingeben', style: 'flex:1',
+      h('input', { value: cur.type === 'emoji' ? cur.value : '', maxlength: 16, placeholder: tr('Emoji eingeben'), style: 'flex:1',
         oninput: (e) => edit(`emoji-${key}`, () => (b[key] = { type: 'emoji', value: e.target.value.trim() }), { detail: false }) }),
-      h('label', { class: 'btn small', title: 'Eigenes Bild hochladen' }, '🖼️ Bild', upload),
-      cur.value && h('button', { class: 'btn small ghost', title: 'Symbol entfernen', onclick: () => mutate(() => (b[key] = { type: 'emoji', value: '' })) }, '✕')),
+      h('label', { class: 'btn small', title: tr('Eigenes Bild hochladen') }, tr('🖼️ Bild'), upload),
+      cur.value && h('button', { class: 'btn small ghost', title: tr('Symbol entfernen'), onclick: () => mutate(() => (b[key] = { type: 'emoji', value: '' })) }, '✕')),
     !onLook && b.icon.type === 'image' && b.icon.value && h('label', { class: 'switch-row' },
       h('input', { type: 'checkbox', checked: b.iconFit === 'cover', onchange: (e) => mutate(() => (b.iconFit = e.target.checked ? 'cover' : 'contain')) }),
-      'Bild füllt den ganzen Button'),
+      tr('Bild füllt den ganzen Button')),
     h('div', { class: 'emoji-grid' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => mutate(() => (b[key] = { type: 'emoji', value: em })) }, em))),
     iconPicker(b, key),
-    canBeOn && h('label', { class: 'field' }, 'Beschriftung wenn an (leer = wie normal)',
-      h('input', { value: b.titleOn ?? '', maxlength: 200, placeholder: 'z. B. Stumm', oninput: (e) => edit('titleOn', () => (b.titleOn = e.target.value), { detail: false }) })),
+    canBeOn && h('label', { class: 'field' }, tr('Beschriftung wenn an (leer = wie normal)'),
+      h('input', { value: b.titleOn ?? '', maxlength: 200, placeholder: tr('z. B. Stumm'), oninput: (e) => edit('titleOn', () => (b.titleOn = e.target.value), { detail: false }) })),
 
-    h('h3', {}, 'Farben'),
+    h('h3', {}, tr('Farben')),
     h('div', { class: 'colors' },
-      h('label', {}, h('input', { type: 'color', value: b.color, oninput: (e) => edit('color', () => (b.color = e.target.value), { detail: false }) }), 'Hintergrund'),
-      h('label', {}, h('input', { type: 'color', value: b.textColor, oninput: (e) => edit('tc', () => (b.textColor = e.target.value), { detail: false }) }), 'Text'),
-      canBeOn && h('label', {}, h('input', { type: 'color', value: b.colorOn, oninput: (e) => edit('con', () => (b.colorOn = e.target.value), { detail: false }) }), 'Wenn an')),
+      h('label', {}, h('input', { type: 'color', value: b.color, oninput: (e) => edit('color', () => (b.color = e.target.value), { detail: false }) }), tr('Hintergrund')),
+      h('label', {}, h('input', { type: 'color', value: b.textColor, oninput: (e) => edit('tc', () => (b.textColor = e.target.value), { detail: false }) }), tr('Text')),
+      canBeOn && h('label', {}, h('input', { type: 'color', value: b.colorOn, oninput: (e) => edit('con', () => (b.colorOn = e.target.value), { detail: false }) }), tr('Wenn an'))),
     h('div', { class: 'swatches' }, SWATCHES.map((c) => h('button', { type: 'button', title: c, style: `background:${c}`, onclick: () => mutate(() => (b.color = c)) }))),
 
-    h('h3', {}, 'Größe & Verhalten'),
+    h('h3', {}, tr('Größe & Verhalten')),
     h('div', { class: 'row' },
-      h('label', { class: 'field' }, 'Breite (Felder)',
+      h('label', { class: 'field' }, tr('Breite (Felder)'),
         h('input', { type: 'number', min: 1, max: p.cols - b.col, value: b.colSpan, onchange: (e) => resizeButton(b, b.rowSpan, Number(e.target.value)) })),
-      h('label', { class: 'field' }, 'Höhe (Felder)',
+      h('label', { class: 'field' }, tr('Höhe (Felder)'),
         h('input', { type: 'number', min: 1, max: p.rows - b.row, value: b.rowSpan, onchange: (e) => resizeButton(b, Number(e.target.value), b.colSpan) }))),
-    h('div', { class: 'field' }, 'Art',
-      segmented([['press', 'Drücken'], ['toggle', 'Umschalter'], ['slider', 'Regler']], b.mode, (v) => mutate(() => (b.mode = v)))),
+    h('div', { class: 'field' }, tr('Art'),
+      segmented([['press', tr('Drücken')], ['toggle', tr('Umschalter')], ['slider', tr('Regler')]], b.mode, (v) => mutate(() => (b.mode = v)))),
     b.mode !== 'slider' && liveSection(b),
   ];
 }
 
 function liveSection(b) {
   const hints = {
-    steam_running: 'Leuchtet, solange das Spiel aus der Aktion „Spiel starten“ läuft.',
-    obs_scene: 'Leuchtet, wenn die Szene aus der Aktion „Szene wechseln“ gerade live ist.',
-    temp: 'Leuchtet ab 80 °C.',
-    mic: 'Leuchtet, wenn das Mikrofon stumm ist.',
-    command: 'Die erste Zeile der Ausgabe wird angezeigt (alle 5 Sekunden neu).',
-    variable: 'Leuchtet, wenn der Wert „an“, „ja“, „true“ oder 1 ist. Tipp: In der Beschriftung zeigt {Name} den Wert ebenfalls an.',
+    steam_running: tr('Leuchtet, solange das Spiel aus der Aktion „Spiel starten“ läuft.'),
+    obs_scene: tr('Leuchtet, wenn die Szene aus der Aktion „Szene wechseln“ gerade live ist.'),
+    temp: tr('Leuchtet ab 80 °C.'),
+    mic: tr('Leuchtet, wenn das Mikrofon stumm ist.'),
+    command: tr('Die erste Zeile der Ausgabe wird angezeigt (alle 5 Sekunden neu).'),
+    variable: tr('Leuchtet, wenn der Wert „an“, „ja“, „true“ oder 1 ist. Tipp: In der Beschriftung zeigt {Name} den Wert ebenfalls an.'),
   };
   return h('div', {},
-    h('h3', {}, 'Live-Anzeige'),
-    h('label', { class: 'field' }, 'Wert auf dem Button anzeigen',
+    h('h3', {}, tr('Live-Anzeige')),
+    h('label', { class: 'field' }, tr('Wert auf dem Button anzeigen'),
       h('select', { value: b.live.source, onchange: (e) => mutate(() => (b.live.source = e.target.value)) },
         S.liveSources.map((o) => h('option', { value: o.value }, o.label)))),
-    b.live.source === 'command' && h('label', { class: 'field' }, 'Befehl',
-      h('input', { value: b.live.command, placeholder: 'z. B. uptime -p', oninput: (e) => mutate(() => (b.live.command = e.target.value), { coalesce: `${b.id}:livecmd`, detail: false }) })),
-    b.live.source === 'variable' && dynamicSelect({ label: 'Wert', source: 'variables', allowNew: true }, b.live.variable,
+    b.live.source === 'command' && h('label', { class: 'field' }, tr('Befehl'),
+      h('input', { value: b.live.command, placeholder: tr('z. B. uptime -p'), oninput: (e) => mutate(() => (b.live.command = e.target.value), { coalesce: `${b.id}:livecmd`, detail: false }) })),
+    b.live.source === 'variable' && dynamicSelect({ label: tr('Wert'), source: 'variables', allowNew: true }, b.live.variable,
       (v) => mutate(() => (b.live.variable = v), { coalesce: `${b.id}:livevar`, detail: false })),
     hints[b.live.source] && h('p', { class: 'hint-text' }, hints[b.live.source]));
 }
@@ -613,48 +614,48 @@ function liveSection(b) {
 function pressTab(b) {
   if (b.mode === 'toggle') {
     return [
-      actionList(b, 'actions', 'Beim Einschalten', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
-      actionList(b, 'actionsOff', 'Beim Ausschalten', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
+      actionList(b, 'actions', tr('Beim Einschalten'), { buttonId: b.id, compact: true, context: b.title || tr('Button') }),
+      actionList(b, 'actionsOff', tr('Beim Ausschalten'), { buttonId: b.id, compact: true, context: b.title || tr('Button') }),
     ];
   }
-  return [actionList(b, 'actions', 'Beim Drücken', { buttonId: b.id, compact: true, context: b.title || 'Button', hint: b.holdActions.length ? 'Kurz tippen führt diese Aktionen aus, langes Drücken die unter „Halten“.' : '' })];
+  return [actionList(b, 'actions', tr('Beim Drücken'), { buttonId: b.id, compact: true, context: b.title || tr('Button'), hint: b.holdActions.length ? tr('Kurz tippen führt diese Aktionen aus, langes Drücken die unter „Halten“.') : '' })];
 }
 
 function sliderTab(b) {
   const sl = b.slider;
   const edit = (fn, key) => mutate(fn, { coalesce: key && `${b.id}:${key}`, detail: !key });
   return [
-    h('p', { class: 'hint-text' }, 'Auf dem Handy über den Button wischen, um den Wert einzustellen. Ist der Button höher als breit, ist der Regler senkrecht.'),
-    h('label', { class: 'field' }, 'Was soll der Regler steuern?',
+    h('p', { class: 'hint-text' }, tr('Auf dem Handy über den Button wischen, um den Wert einzustellen. Ist der Button höher als breit, ist der Regler senkrecht.')),
+    h('label', { class: 'field' }, tr('Was soll der Regler steuern?'),
       h('select', { value: sl.target, onchange: (e) => edit(() => (sl.target = e.target.value)) }, S.sliderTargets.map((o) => h('option', { value: o.value }, o.label)))),
-    sl.target === 'obs_volume' && dynamicSelect({ key: 'input', label: 'OBS-Audioquelle', source: 'obs-inputs' }, sl.input, (v) => edit(() => (sl.input = v))),
-    sl.target === 'command' && h('label', { class: 'field' }, 'Befehl ({value} wird durch 0–100 ersetzt)',
-      h('textarea', { value: sl.command, placeholder: 'z. B. ddcutil setvcp 10 {value}', oninput: (e) => edit(() => (sl.command = e.target.value), 'slcmd') })),
+    sl.target === 'obs_volume' && dynamicSelect({ key: 'input', label: tr('OBS-Audioquelle'), source: 'obs-inputs' }, sl.input, (v) => edit(() => (sl.input = v))),
+    sl.target === 'command' && h('label', { class: 'field' }, tr('Befehl ({value} wird durch 0–100 ersetzt)'),
+      h('textarea', { value: sl.command, placeholder: tr('z. B. ddcutil setvcp 10 {value}'), oninput: (e) => edit(() => (sl.command = e.target.value), 'slcmd') })),
   ];
 }
 
 function eventsTab(b) {
   return [
-    h('p', { class: 'hint-text' }, 'Der Button reagiert selbst auf Ereignisse – z. B. Farbe oder Beschriftung ändern („Visuelles“ → „dieser Button“), wenn ein Wert sich ändert oder OBS live geht.'),
+    h('p', { class: 'hint-text' }, tr('Der Button reagiert selbst auf Ereignisse – z. B. Farbe oder Beschriftung ändern („Visuelles“ → „dieser Button“), wenn ein Wert sich ändert oder OBS live geht.')),
     ...b.events.map((ev, i) => h('div', { class: `event-card${ev.enabled ? '' : ' disabled'}` },
       h('div', { class: 'list-title' },
-        h('h3', {}, `Event ${i + 1}`),
+        h('h3', {}, tr('Event {0}', [i + 1])),
         h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: ev.enabled, onchange: (e) => mutate(() => (ev.enabled = e.target.checked)) }), 'aktiv'),
-        h('button', { class: 'btn icon ghost danger', title: 'Event entfernen', onclick: () => mutate(() => b.events.splice(i, 1)) }, '✕')),
+        h('button', { class: 'btn icon ghost danger', title: tr('Event entfernen'), onclick: () => mutate(() => b.events.splice(i, 1)) }, '✕')),
       h('p', { class: 'muted-note' }, triggerSummary(ev.trigger)),
       triggerEditor(ev.trigger),
-      actionList(ev, 'actions', 'Dann …', { buttonId: b.id, compact: true, context: `${b.title || 'Button'} · Event ${i + 1}` }))),
-    h('button', { class: 'btn', onclick: () => mutate(() => b.events.push({ id: uid('e_'), enabled: true, trigger: newTrigger(), actions: [] })) }, '＋ Event hinzufügen'),
+      actionList(ev, 'actions', tr('Dann …'), { buttonId: b.id, compact: true, context: tr('{0} · Event {1}', [b.title || 'Button', i + 1]) }))),
+    h('button', { class: 'btn', onclick: () => mutate(() => b.events.push({ id: uid('e_'), enabled: true, trigger: newTrigger(), actions: [] })) }, tr('＋ Event hinzufügen')),
   ];
 }
 
 function holdTab(b) {
   return [
-    h('p', { class: 'hint-text' }, 'Lange drücken (ab ca. 0,5 s) führt diese Aktionen statt der normalen aus. Beim Loslassen danach laufen die unteren.'),
-    actionList(b, 'holdActions', 'Beim Gedrückthalten', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
-    h('label', { class: 'field' }, 'Wiederholen, solange gedrückt (ms, 0 = nur einmal)',
+    h('p', { class: 'hint-text' }, tr('Lange drücken (ab ca. 0,5 s) führt diese Aktionen statt der normalen aus. Beim Loslassen danach laufen die unteren.')),
+    actionList(b, 'holdActions', tr('Beim Gedrückthalten'), { buttonId: b.id, compact: true, context: b.title || tr('Button') }),
+    h('label', { class: 'field' }, tr('Wiederholen, solange gedrückt (ms, 0 = nur einmal)'),
       h('input', { type: 'number', min: 0, max: 10000, step: 50, value: b.holdRepeat, onchange: (e) => mutate(() => (b.holdRepeat = Math.max(0, Number(e.target.value) || 0))) })),
-    actionList(b, 'releaseActions', 'Beim Loslassen (nach dem Halten)', { buttonId: b.id, compact: true, context: b.title || 'Button' }),
+    actionList(b, 'releaseActions', tr('Beim Loslassen (nach dem Halten)'), { buttonId: b.id, compact: true, context: b.title || tr('Button') }),
   ];
 }
 
@@ -664,16 +665,16 @@ function tplBtn(row, col, title, emoji, actions = [], extra = {}) {
   return newButton(row, col, { title, icon: { type: 'emoji', value: emoji }, actions: actions.map(([type, params = {}]) => ({ id: uid('a_'), type, enabled: true, params })), ...extra });
 }
 
-const TEMPLATE_NAMES = { steam: 'Steam-Spiele', system: 'System', obs: 'OBS', touchportal: 'Touch Portal' };
+const TEMPLATE_NAMES = { steam: tr('Steam-Spiele'), system: tr('System'), obs: 'OBS', touchportal: tr('Touch Portal') };
 
 /** Fragt vor dem Anlegen nach; gibt es die Seite schon: aktualisieren, öffnen oder abbrechen. */
 async function askTemplate(template, createText) {
   const existing = S.pages.filter((p) => p.template === template);
   const name = TEMPLATE_NAMES[template];
-  if (!existing.length) return ask(`Seite „${name}“ anlegen?`, createText, [{ value: 'create', label: 'Anlegen', kind: 'primary' }]);
-  const r = await ask(`„${name}“ gibt es schon`,
-    `${existing.length > 1 ? `Es gibt ${existing.length} Seiten aus dieser Vorlage.` : 'Diese Seite ist schon angelegt.'} Beim Aktualisieren wird sie neu erzeugt – eigene Änderungen daran gehen verloren, Verweise von anderen Seiten bleiben erhalten.`,
-    [{ value: 'open', label: 'Vorhandene öffnen' }, { value: 'update', label: 'Aktualisieren', kind: 'primary' }]);
+  if (!existing.length) return ask(tr('Seite „{0}“ anlegen?', [name]), createText, [{ value: 'create', label: tr('Anlegen'), kind: 'primary' }]);
+  const r = await ask(tr('„{0}“ gibt es schon', [name]),
+    `${existing.length > 1 ? tr('Es gibt {0} Seiten aus dieser Vorlage.', [existing.length]) : tr('Diese Seite ist schon angelegt.')} ${tr('Beim Aktualisieren wird sie neu erzeugt – eigene Änderungen daran gehen verloren, Verweise von anderen Seiten bleiben erhalten.')}`,
+    [{ value: 'open', label: tr('Vorhandene öffnen') }, { value: 'update', label: tr('Aktualisieren'), kind: 'primary' }]);
   if (r === 'open') selectPage(existing[0].id);
   return r === 'update' ? 'update' : null;
 }
@@ -691,38 +692,38 @@ function addTemplatePage(pg, template) {
     S.pageId = pg.id;
     S.selId = null;
   });
-  toast(`Seite „${pg.name}“ ${existing ? 'aktualisiert' : 'angelegt'} ✓`, 'ok');
+  toast(tr(existing ? 'Seite „{0}“ aktualisiert ✓' : 'Seite „{0}“ angelegt ✓', [pg.name]), 'ok');
 }
 
 async function systemTemplate() {
-  if (!(await askTemplate('system', 'Eine Seite mit Uhrzeit, CPU, RAM, Temperatur, Musik, Ton, Mikrofon, Audioausgang, Bildschirmfoto, Nachtlicht, Sperren und einem Lautstärkeregler.'))) return;
+  if (!(await askTemplate('system', tr('Eine Seite mit Uhrzeit, CPU, RAM, Temperatur, Musik, Ton, Mikrofon, Audioausgang, Bildschirmfoto, Nachtlicht, Sperren und einem Lautstärkeregler.')))) return;
   const live = (source) => ({ live: { source, command: '', variable: '' } });
   addTemplatePage({
-    id: uid('p_'), name: 'System', rows: 3, cols: 5, background: '#14161b',
+    id: uid('p_'), name: tr('System'), rows: 3, cols: 5, background: '#14161b',
     buttons: [
-      tplBtn(0, 0, 'Uhrzeit', '🕐', [], live('clock')),
+      tplBtn(0, 0, tr('Uhrzeit'), '🕐', [], live('clock')),
       tplBtn(0, 1, 'CPU', '🧠', [], live('cpu')),
       tplBtn(0, 2, 'RAM', '💾', [], live('ram')),
-      tplBtn(0, 3, 'Temperatur', '🌡️', [], { ...live('temp'), colorOn: '#a33a2a' }),
-      tplBtn(0, 4, 'Lautstärke', '', [], { rowSpan: 3, mode: 'slider', color: '#3b3f8f' }),
-      tplBtn(1, 0, 'Musik', '⏯️', [['media', { op: 'play-pause' }]], { colSpan: 2, ...live('track'), colorOn: '#2f6e4f' }),
-      tplBtn(1, 2, 'Ton aus', '🔇', [['volume', { op: 'mute' }]], { ...live('volume'), colorOn: '#8f3b3b' }),
-      tplBtn(1, 3, 'Mikrofon', '🎙️', [['mic_mute', { op: 'toggle' }]], { ...live('mic'), colorOn: '#8f3b3b' }),
-      tplBtn(2, 0, 'Ausgang', '🎧', [['audio_output', { target: 'next' }]]),
-      tplBtn(2, 1, 'Foto', '📸', [['screenshot', { mode: 'dialog' }]]),
-      tplBtn(2, 2, 'Nachtlicht', '🌙', [['night_light', { mode: 'toggle' }]]),
-      tplBtn(2, 3, 'Sperren', '🔒', [['lock_screen']], { color: '#5b3fa0' }),
+      tplBtn(0, 3, tr('Temperatur'), '🌡️', [], { ...live('temp'), colorOn: '#a33a2a' }),
+      tplBtn(0, 4, tr('Lautstärke'), '', [], { rowSpan: 3, mode: 'slider', color: '#3b3f8f' }),
+      tplBtn(1, 0, tr('Musik'), '⏯️', [['media', { op: 'play-pause' }]], { colSpan: 2, ...live('track'), colorOn: '#2f6e4f' }),
+      tplBtn(1, 2, tr('Ton aus'), '🔇', [['volume', { op: 'mute' }]], { ...live('volume'), colorOn: '#8f3b3b' }),
+      tplBtn(1, 3, tr('Mikrofon'), '🎙️', [['mic_mute', { op: 'toggle' }]], { ...live('mic'), colorOn: '#8f3b3b' }),
+      tplBtn(2, 0, tr('Ausgang'), '🎧', [['audio_output', { target: 'next' }]]),
+      tplBtn(2, 1, tr('Foto'), '📸', [['screenshot', { mode: 'dialog' }]]),
+      tplBtn(2, 2, tr('Nachtlicht'), '🌙', [['night_light', { mode: 'toggle' }]]),
+      tplBtn(2, 3, tr('Sperren'), '🔒', [['lock_screen']], { color: '#5b3fa0' }),
     ],
   }, 'system');
 }
 
 async function obsTemplate() {
-  if (!(await askTemplate('obs', 'Ein Button pro OBS-Szene (leuchtet, wenn live), dazu Stream, Aufnahme, Pause und Clip.'))) return;
+  if (!(await askTemplate('obs', tr('Ein Button pro OBS-Szene (leuchtet, wenn live), dazu Stream, Aufnahme, Pause und Clip.')))) return;
   let scenes = [];
   try {
     scenes = (await api('GET', '/api/options/obs-scenes')).map((o) => o.value);
   } catch (err) {
-    toast(`OBS ist gerade nicht erreichbar – die Szenen-Buttons kannst du später auswählen.\n${err.message}`, 'error');
+    toast(tr('OBS ist gerade nicht erreichbar – die Szenen-Buttons kannst du später auswählen.\n{0}', [err.message]), 'error');
   }
   if (!S.apps) S.apps = await api('GET', '/api/apps').catch(() => []);
   const obsApp = S.apps.find((a) => /obs/i.test(a.name));
@@ -730,17 +731,17 @@ async function obsTemplate() {
   const sceneList = scenes.length ? scenes.slice(0, cols * 2) : [''];
   const sceneRows = Math.ceil(sceneList.length / cols);
   const live = (source) => ({ source, command: '', variable: '' });
-  const buttons = sceneList.map((scene, i) => tplBtn(Math.floor(i / cols), i % cols, scene || 'Szene', '🎬',
+  const buttons = sceneList.map((scene, i) => tplBtn(Math.floor(i / cols), i % cols, scene || tr('Szene'), '🎬',
     [['obs_scene', { scene }]], { live: live('obs_scene'), colorOn: '#2f7a4a' }));
   const r = sceneRows;
   buttons.push(
-    tplBtn(r, 0, 'Stream', '📡', [['obs_stream', { op: 'toggle' }]], { live: live('obs_stream'), colorOn: '#b3262d' }),
-    tplBtn(r, 1, 'Aufnahme', '⏺️', [['obs_record', { op: 'toggle' }]], { live: live('obs_record'), colorOn: '#b3262d' }),
-    tplBtn(r, 2, 'Pause', '⏸️', [['obs_record', { op: 'pause' }]]),
-    tplBtn(r, 3, 'Clip', '⏪', [['obs_replay', { op: 'save' }]]),
+    tplBtn(r, 0, tr('Stream'), '📡', [['obs_stream', { op: 'toggle' }]], { live: live('obs_stream'), colorOn: '#b3262d' }),
+    tplBtn(r, 1, tr('Aufnahme'), '⏺️', [['obs_record', { op: 'toggle' }]], { live: live('obs_record'), colorOn: '#b3262d' }),
+    tplBtn(r, 2, tr('Pause'), '⏸️', [['obs_record', { op: 'pause' }]]),
+    tplBtn(r, 3, tr('Clip'), '⏪', [['obs_replay', { op: 'save' }]]),
     obsApp
-      ? tplBtn(r, 4, 'OBS starten', '🚀', [['launch_app', { app: obsApp.id, appName: obsApp.name }]])
-      : tplBtn(r, 4, 'Virtuelle Kamera', '📷', [['obs_misc', { op: 'virtualcam' }]]),
+      ? tplBtn(r, 4, tr('OBS starten'), '🚀', [['launch_app', { app: obsApp.id, appName: obsApp.name }]])
+      : tplBtn(r, 4, tr('Virtuelle Kamera'), '📷', [['obs_misc', { op: 'virtualcam' }]]),
   );
   addTemplatePage({ id: uid('p_'), name: 'OBS', rows: sceneRows + 1, cols, background: '#14161b', buttons }, 'obs');
 }
@@ -763,19 +764,19 @@ async function serverTemplate(url, apply) {
 }
 
 async function steamTemplate() {
-  if (!(await askTemplate('steam', 'Alle installierten Steam-Spiele mit Cover. Ein Spiel leuchtet, solange es läuft; unten Bibliothek, Downloads, Big Picture und Freunde.'))) return;
+  if (!(await askTemplate('steam', tr('Alle installierten Steam-Spiele mit Cover. Ein Spiel leuchtet, solange es läuft; unten Bibliothek, Downloads, Big Picture und Freunde.')))) return;
   await serverTemplate('/api/steam/pages', (r) => {
     S.pageId = r.created[0];
-    toast(`${r.created.length} Steam-Seite(n) ${r.updated ? 'aktualisiert' : 'angelegt'} ✓\nDie Buttons leuchten grün, solange ein Spiel läuft.`, 'ok');
+    toast(tr(r.updated ? '{0} Steam-Seite(n) aktualisiert ✓\nDie Buttons leuchten grün, solange ein Spiel läuft.' : '{0} Steam-Seite(n) angelegt ✓\nDie Buttons leuchten grün, solange ein Spiel läuft.', [r.created.length]), 'ok');
   });
 }
 
 async function importTouchPortal() {
-  if (!(await askTemplate('touchportal', 'Übernimmt alle Seiten aus Touch Portal (~/.config/TouchPortal) mit Farben, Bildern und Aktionen.'))) return;
+  if (!(await askTemplate('touchportal', tr('Übernimmt alle Seiten aus Touch Portal (~/.config/TouchPortal) mit Farben, Bildern und Aktionen.')))) return;
   await serverTemplate('/api/import/touchportal', (r) => {
     S.pageId = S.pages.find((p) => p.template === 'touchportal')?.id ?? S.pageId;
     const st = r.stats;
     const missing = Object.entries(st.unsupported);
-    toast(`${r.updated ? 'Aktualisiert' : 'Übernommen'}: ${st.pages} Seite(n), ${st.buttons} Buttons, ${st.actions} Aktionen, ${st.icons} Bilder.${missing.length ? `\nNoch nicht unterstützt: ${missing.map(([k, n]) => `${k} (${n}×)`).join(', ')}` : ''}`, 'ok');
+    toast(`${tr(r.updated ? 'Aktualisiert: {0} Seite(n), {1} Buttons, {2} Aktionen, {3} Bilder.' : 'Übernommen: {0} Seite(n), {1} Buttons, {2} Aktionen, {3} Bilder.', [st.pages, st.buttons, st.actions, st.icons])}${missing.length ? `\n${tr('Noch nicht unterstützt: {0}', [missing.map(([k, n]) => `${k} (${n}×)`).join(', ')])}` : ''}`, 'ok');
   });
 }

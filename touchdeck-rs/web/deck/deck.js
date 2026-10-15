@@ -1,4 +1,5 @@
 // Bedienfeld: zeigt die Seiten an und schickt Drücken, Halten und Regler über WebSocket an den PC.
+import { t as tr, getLang } from '/shared/i18n.js';
 import { buttonElement, setupGrid } from '/shared/render.js';
 
 const $ = (id) => document.getElementById(id);
@@ -159,7 +160,7 @@ function goTo(pageId) {
 
 const send = (msg) => {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    toast('Nicht verbunden', true);
+    toast(tr('Nicht verbunden'), true);
     return false;
   }
   ws.send(JSON.stringify({ ...msg, pageId: currentPage }));
@@ -269,7 +270,7 @@ $('page-name').addEventListener('click', () => {
   }));
   if (app) {
     const c = document.createElement('button');
-    c.textContent = '⚙ Verbindung ändern';
+    c.textContent = tr('⚙ Verbindung ändern');
     c.className = 'menu-extra';
     c.onclick = () => app.openConnection();
     $('page-menu-list').append(c);
@@ -281,7 +282,7 @@ $('page-menu').addEventListener('click', (e) => {
 });
 $('fullscreen').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen?.().then(() => applyOrientation(state?.deck.orientation)).catch(() => toast('Vollbild wird hier nicht unterstützt', true));
+  else document.documentElement.requestFullscreen?.().then(() => applyOrientation(state?.deck.orientation)).catch(() => toast(tr('Vollbild wird hier nicht unterstützt'), true));
 });
 
 // ---------- PIN ----------
@@ -289,7 +290,7 @@ $('fullscreen').addEventListener('click', () => {
 function askPin(wrong) {
   return new Promise((resolve) => {
     $('pin-box').hidden = false;
-    $('pin-hint').textContent = wrong ? 'Die PIN stimmt nicht. Bitte noch einmal.' : 'Dieser PC ist mit einer PIN geschützt.';
+    $('pin-hint').textContent = wrong ? tr('Die PIN stimmt nicht. Bitte noch einmal.') : tr('Dieser PC ist mit einer PIN geschützt.');
     const input = $('pin-input');
     input.value = '';
     input.focus();
@@ -331,6 +332,8 @@ async function connect() {
     if (msg.type === 'state') {
       // Neue TouchDeck-Version am PC: einmal neu laden, damit auch das Bedienfeld aktuell ist.
       if (state?.version && msg.version && msg.version !== state.version) return location.reload();
+      // Andere Sprache am PC eingestellt: neu laden, damit alle Texte passen.
+      if (msg.language && msg.language !== getLang()) return location.reload();
       state = msg;
       render();
     } else if (msg.type === 'live') {
@@ -349,8 +352,8 @@ async function connect() {
   };
   ws.onclose = (ev) => {
     const text = ev.code === 1006 && !state && !token
-      ? 'Nicht gekoppelt. Bitte den QR-Code im TouchDeck-Editor am PC scannen.'
-      : 'Verbindung verloren – verbinde neu …';
+      ? tr('Nicht gekoppelt. Bitte den QR-Code im TouchDeck-Editor am PC scannen.')
+      : tr('Verbindung verloren – verbinde neu …');
     setConnected(false, text);
     setTimeout(connect, retryDelay);
     retryDelay = Math.min(retryDelay * 2, 8000);

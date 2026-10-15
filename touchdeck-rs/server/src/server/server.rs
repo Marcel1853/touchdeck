@@ -151,13 +151,15 @@ impl App {
             "live": *self.live.lock().unwrap(),
             "startPage": c.settings.start_page,
             "deck": c.settings.deck,
+            "language": c.settings.language,
         })
     }
 
     fn editor_state(&self, store: &Store) -> Value {
         let mut state = self.deck_state(store);
         // Aktionen und Auslöser der eingeschalteten Plugins kommen zum festen Katalog dazu.
-        let (plugin_actions, plugin_triggers) = self.plugins.catalog(&store.settings().language);
+        let lang = store.settings().language.as_str();
+        let (plugin_actions, plugin_triggers) = self.plugins.catalog(lang);
         let with_plugins = |base: &Value, extra: Vec<Value>| {
             let mut list = base.as_array().cloned().unwrap_or_default();
             list.extend(extra);
@@ -168,10 +170,10 @@ impl App {
             "events": store.config.events,
             "values": store.config.values,
             "settings": store.public_settings(),
-            "actionTypes": with_plugins(&catalog::ACTION_TYPES, plugin_actions),
-            "triggerTypes": with_plugins(&catalog::TRIGGER_TYPES, plugin_triggers),
-            "liveSources": catalog::live_sources(),
-            "sliderTargets": catalog::slider_targets(),
+            "actionTypes": with_plugins(&catalog::localized(&catalog::ACTION_TYPES, lang), plugin_actions),
+            "triggerTypes": with_plugins(&catalog::localized(&catalog::TRIGGER_TYPES, lang), plugin_triggers),
+            "liveSources": catalog::localized(catalog::live_sources(), lang),
+            "sliderTargets": catalog::localized(catalog::slider_targets(), lang),
             "pairingUrls": self.pairing_urls(store),
             "port": self.port,
         });
@@ -706,7 +708,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             probe.reset().await;
             Ok(json!({ "ok": true, "version": v["obsVersion"], "scenes": scenes.len() }))
         }
-        "GET /api/hello" => Ok(json!({ "app": "touchdeck", "name": linux::hostname(), "version": VERSION, "port": app.port })),
+        "GET /api/hello" => Ok(json!({ "app": "touchdeck", "name": linux::hostname(), "version": VERSION, "port": app.port, "language": lang(app) })),
         "POST /api/firewall/open" => {
             linux::open_firewall(app.port).await.map_err(user_error)?;
             app.store.lock().unwrap().set_settings(&json!({ "firewallOpened": true }));
@@ -817,7 +819,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         }
         // Plugins
         "GET /api/plugins" => Ok(json!(app.plugins.list(&lang(app)))),
-        "GET /api/plugins/config" => Ok(json!({ "advanced": app.plugins.advanced(), "confirm": crate::core::plugins::ADVANCED_CONFIRM })),
+        "GET /api/plugins/config" => Ok(json!({ "advanced": app.plugins.advanced(), "confirm": crate::core::plugins::advanced_confirm(&lang(app)) })),
         "POST /api/plugins/advanced" => {
             app.plugins.set_advanced(app, body["enabled"] == true, str_of(&body, "confirm")).map_err(bad)?;
             Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list(&lang(app)) }))

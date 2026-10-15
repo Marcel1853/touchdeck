@@ -1,4 +1,5 @@
 // Aktionslisten, Eingabefelder, Aktionsauswahl und Auslöser-Editor – genutzt von Buttons, Vorlagen und Events.
+import { t as tr, getLang } from '/shared/i18n.js';
 import { $, h, api, toast, uid } from './dom.js';
 import { S, mutate, render, save, onRender } from './state.js';
 
@@ -18,10 +19,10 @@ function describeParams(def, params) {
     const v = params[f.key] ?? f.default;
     if (v === undefined || v === '') continue;
     if (f.type === 'select') parts.push(f.options.find((o) => o.value === v)?.label ?? v);
-    else if (f.type === 'page') parts.push(v === '__back' ? 'Vorherige Seite' : S.pages.find((p) => p.id === v)?.name ?? '⚠ Seite fehlt');
+    else if (f.type === 'page') parts.push(v === '__back' ? tr('Vorherige Seite') : S.pages.find((p) => p.id === v)?.name ?? tr('⚠ Seite fehlt'));
     else if (f.type === 'app') parts.push(params.appName || v);
-    else if (f.source === 'flows') parts.push(S.flows.find((fl) => fl.id === v)?.name ?? '⚠ Vorlage fehlt');
-    else if (f.source === 'buttons') parts.push(v === 'self' ? 'dieser Button' : 'anderer Button');
+    else if (f.source === 'flows') parts.push(S.flows.find((fl) => fl.id === v)?.name ?? tr('⚠ Vorlage fehlt'));
+    else if (f.source === 'buttons') parts.push(v === 'self' ? tr('dieser Button') : tr('anderer Button'));
     else parts.push(String(v).split('\n')[0].replace('␟', ' › '));
   }
   return parts.join(' · ');
@@ -30,8 +31,8 @@ function describeParams(def, params) {
 export function summary(a) {
   const def = S.typeMap.get(a.type);
   if (!def) return a.type;
-  if (a.type === 'unsupported') return `Aus Touch Portal: ${a.params.original}`;
-  return describeParams(def, a.params) || 'Noch nicht eingerichtet';
+  if (a.type === 'unsupported') return tr('Aus Touch Portal: {0}', [a.params.original]);
+  return describeParams(def, a.params) || tr('Noch nicht eingerichtet');
 }
 
 export function triggerSummary(t) {
@@ -44,14 +45,14 @@ export function triggerSummary(t) {
 // ---------- Testen ----------
 
 export async function testActions(actions, label, { buttonId } = {}) {
-  if (!actions.length) return toast('Keine Aktionen zum Testen.', 'error');
+  if (!actions.length) return toast(tr('Keine Aktionen zum Testen.'), 'error');
   await save();
   try {
     const r = await api('POST', '/api/test-actions', { actions, buttonId });
     if (!r.ok) return toast(r.error, 'error');
     const extra = [...r.messages];
-    if (r.navigate) extra.push(`Würde wechseln zu: ${r.navigate === '__back' ? 'vorherige Seite' : S.pages.find((p) => p.id === r.navigate)?.name}`);
-    toast(`${label} ausgeführt ✓${extra.length ? `\n${extra.join('\n')}` : ''}`, 'ok');
+    if (r.navigate) extra.push(tr('Würde wechseln zu: {0}', [r.navigate === '__back' ? tr('vorherige Seite') : S.pages.find((p) => p.id === r.navigate)?.name]));
+    toast(`${tr('{0} ausgeführt ✓', [label])}${extra.length ? `\n${extra.join('\n')}` : ''}`, 'ok');
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -69,11 +70,11 @@ export function actionList(owner, key, title, { hint, buttonId, compact = false,
   return h('div', { class: `action-section${compact ? ' compact' : ''}` },
     h('div', { class: 'list-title' },
       h('h3', {}, title),
-      list.length > 0 && h('button', { class: 'btn small ghost', title: 'Diese Aktionen jetzt ausführen', onclick: () => testActions(list, title, { buttonId }) }, '▶'),
-      h('button', { class: 'btn small', onclick: () => open() }, compact && list.length ? '✎ Bearbeiten' : '＋ Aktion')),
+      list.length > 0 && h('button', { class: 'btn small ghost', title: tr('Diese Aktionen jetzt ausführen'), onclick: () => testActions(list, title, { buttonId }) }, '▶'),
+      h('button', { class: 'btn small', onclick: () => open() }, compact && list.length ? tr('✎ Bearbeiten') : tr('＋ Aktion'))),
     hint && h('p', { class: 'hint-text' }, hint),
     !list.length
-      ? h('button', { type: 'button', class: 'empty-drop', onclick: () => open() }, '＋ Erste Aktion hinzufügen')
+      ? h('button', { type: 'button', class: 'empty-drop', onclick: () => open() }, tr('＋ Erste Aktion hinzufügen'))
       : compact
         ? h('div', { class: 'action-mini-list' }, list.map((a) => miniRow(a, () => open(a.id))))
         : flowList(list, buttonId));
@@ -82,7 +83,7 @@ export function actionList(owner, key, title, { hint, buttonId, compact = false,
 /** Kurze Zeile für die Übersicht: Klick öffnet den Editor mit dieser Aktion. */
 function miniRow(a, onOpen) {
   const def = S.typeMap.get(a.type) ?? { label: a.type, icon: '❔' };
-  return h('button', { type: 'button', class: `mini-row${a.enabled ? '' : ' disabled'}`, title: 'Im Aktions-Editor bearbeiten', onclick: onOpen },
+  return h('button', { type: 'button', class: `mini-row${a.enabled ? '' : ' disabled'}`, title: tr('Im Aktions-Editor bearbeiten'), onclick: onOpen },
     h('span', { class: 'ai' }, def.icon),
     h('span', { class: 'al' }, h('b', {}, def.label), h('span', {}, summary(a))));
 }
@@ -146,13 +147,13 @@ function actionCard(list, a, i, buttonId) {
 
   const body = open && h('div', { class: 'action-body' },
     def.fields.filter((f) => fieldVisible(f, a.params, def)).map((f) => fieldInput(f, a, setParam)),
-    a.type === 'unsupported' && h('p', { class: 'hint-text' }, 'Diese Aktion wurde importiert und hat in TouchDeck noch kein Gegenstück. Deaktiviere oder ersetze sie.'),
-    h('button', { class: 'btn small', onclick: () => testActions([{ ...a, enabled: true }], def.label, { buttonId }) }, '▶ Nur diese Aktion testen'));
+    a.type === 'unsupported' && h('p', { class: 'hint-text' }, tr('Diese Aktion wurde importiert und hat in TouchDeck noch kein Gegenstück. Deaktiviere oder ersetze sie.')),
+    h('button', { class: 'btn small', onclick: () => testActions([{ ...a, enabled: true }], def.label, { buttonId }) }, tr('▶ Nur diese Aktion testen')));
 
   const card = h('div', { class: `action-card${a.enabled ? '' : ' disabled'}${a.type === 'unsupported' ? ' unsupported' : ''}${a.type === 'comment' ? ' comment' : ''}${open ? ' open' : ''}`, 'data-id': a.id },
     h('div', { class: 'action-head', onclick: () => { open ? S.expanded.delete(a.id) : S.expanded.add(a.id); refresh(); } },
       h('span', {
-        class: 'drag-handle', title: 'Ziehen zum Verschieben', draggable: 'true',
+        class: 'drag-handle', title: tr('Ziehen zum Verschieben'), draggable: 'true',
         onclick: (e) => e.stopPropagation(),
         ondragstart: (e) => {
           drag = { kind: 'move', list, index: i };
@@ -168,11 +169,11 @@ function actionCard(list, a, i, buttonId) {
       }, '⠿'),
       h('span', { class: 'ai' }, def.icon),
       h('div', { class: 'al' }, h('b', {}, def.label), sum),
-      h('input', { type: 'checkbox', checked: a.enabled, title: 'Aktiv', onclick: (e) => e.stopPropagation(), onchange: (e) => mutate(() => (a.enabled = e.target.checked)) }),
-      h('button', { class: 'btn icon ghost', title: 'Nach oben', disabled: i === 0, onclick: stop(() => move(-1)) }, '↑'),
-      h('button', { class: 'btn icon ghost', title: 'Nach unten', disabled: i === list.length - 1, onclick: stop(() => move(1)) }, '↓'),
-      h('button', { class: 'btn icon ghost', title: 'Duplizieren', onclick: stop(() => mutate(() => list.splice(i + 1, 0, { ...structuredClone(a), id: uid('a_') }))) }, '⧉'),
-      h('button', { class: 'btn icon ghost danger', title: 'Entfernen', onclick: stop(() => mutate(() => list.splice(i, 1))) }, '✕')),
+      h('input', { type: 'checkbox', checked: a.enabled, title: tr('Aktiv'), onclick: (e) => e.stopPropagation(), onchange: (e) => mutate(() => (a.enabled = e.target.checked)) }),
+      h('button', { class: 'btn icon ghost', title: tr('Nach oben'), disabled: i === 0, onclick: stop(() => move(-1)) }, '↑'),
+      h('button', { class: 'btn icon ghost', title: tr('Nach unten'), disabled: i === list.length - 1, onclick: stop(() => move(1)) }, '↓'),
+      h('button', { class: 'btn icon ghost', title: tr('Duplizieren'), onclick: stop(() => mutate(() => list.splice(i + 1, 0, { ...structuredClone(a), id: uid('a_') }))) }, '⧉'),
+      h('button', { class: 'btn icon ghost danger', title: tr('Entfernen'), onclick: stop(() => mutate(() => list.splice(i, 1))) }, '✕')),
     body);
   return card;
 }
@@ -195,10 +196,10 @@ export function fieldInput(f, obj, setParam) {
       return h('div', { class: 'field' }, f.label,
         h('div', { class: 'hotkey' },
           h('input', { type: 'color', value: v || '#2b2f3a', oninput: (e) => setParam(f.key, e.target.value) }),
-          h('span', { class: 'color-value' }, v || 'unverändert'),
+          h('span', { class: 'color-value' }, v || tr('unverändert')),
           v && h('button', { type: 'button', class: 'btn small ghost', onclick: () => setParam(f.key, '', { structural: true }) }, 'leeren')));
     case 'page': {
-      const options = [h('option', { value: '' }, '– Seite wählen –'), h('option', { value: '__back' }, '↩ Vorherige Seite'), ...S.pages.map((p) => h('option', { value: p.id }, p.name))];
+      const options = [h('option', { value: '' }, tr('– Seite wählen –')), h('option', { value: '__back' }, tr('↩ Vorherige Seite')), ...S.pages.map((p) => h('option', { value: p.id }, p.name))];
       return label(h('select', { value: v, onchange: (e) => setParam(f.key, e.target.value) }, options));
     }
     case 'app': {
@@ -207,9 +208,9 @@ export function fieldInput(f, obj, setParam) {
           S.apps = apps;
           refresh();
         }).catch((err) => toast(err.message, 'error'));
-        return label(h('select', { disabled: true }, h('option', {}, 'Programme werden geladen …')));
+        return label(h('select', { disabled: true }, h('option', {}, tr('Programme werden geladen …'))));
       }
-      const options = [h('option', { value: '' }, '– Programm wählen –'), ...S.apps.map((app) => h('option', { value: app.id, title: app.comment }, app.name))];
+      const options = [h('option', { value: '' }, tr('– Programm wählen –')), ...S.apps.map((app) => h('option', { value: app.id, title: app.comment }, app.name))];
       return label(h('select', { value: v, onchange: (e) => {
         const app = S.apps.find((x) => x.id === e.target.value);
         obj.params.appName = app?.name ?? '';
@@ -220,7 +221,7 @@ export function fieldInput(f, obj, setParam) {
       return dynamicSelect(f, v, (value) => setParam(f.key, value, { structural: !f.allowNew }));
     case 'hotkey': {
       const input = h('input', { value: v, placeholder: f.placeholder, oninput: (e) => setParam(f.key, e.target.value) });
-      const rec = h('button', { type: 'button', class: 'btn small', onclick: () => recordHotkey(input, rec, (combo) => setParam(f.key, combo)) }, '⏺ Aufnehmen');
+      const rec = h('button', { type: 'button', class: 'btn small', onclick: () => recordHotkey(input, rec, (combo) => setParam(f.key, combo)) }, tr('⏺ Aufnehmen'));
       return h('div', { class: 'field' }, f.label, h('div', { class: 'hotkey' }, input, rec));
     }
     default:
@@ -242,25 +243,25 @@ export function dynamicSelect(f, value, onChange) {
       .catch((err) => (S.options[f.source] = { error: err.message }))
       .finally(refresh);
   }
-  if (!entry || entry.loading) return h('label', { class: 'field' }, f.label, h('select', { disabled: true }, h('option', {}, 'Wird geladen …')));
-  const reloadBtn = h('button', { type: 'button', class: 'btn small icon ghost', title: 'Liste neu laden', onclick: reload }, '⟳');
+  if (!entry || entry.loading) return h('label', { class: 'field' }, f.label, h('select', { disabled: true }, h('option', {}, tr('Wird geladen …'))));
+  const reloadBtn = h('button', { type: 'button', class: 'btn small icon ghost', title: tr('Liste neu laden'), onclick: reload }, '⟳');
   if (f.allowNew && !entry.error) {
     // Vorhandenen Namen wählen oder einen neuen eintippen (z. B. für Werte).
     const listId = `dl-${f.source}-${Math.random().toString(36).slice(2, 8)}`;
     return h('div', { class: 'field' }, f.label,
       h('div', { class: 'hotkey' },
-        h('input', { value: value ?? '', list: listId, placeholder: 'Name wählen oder neu eingeben', oninput: (e) => onChange(e.target.value.trim()), onchange: () => delete S.options[f.source] }),
+        h('input', { value: value ?? '', list: listId, placeholder: tr('Name wählen oder neu eingeben'), oninput: (e) => onChange(e.target.value.trim()), onchange: () => delete S.options[f.source] }),
         h('datalist', { id: listId }, entry.items.map((o) => h('option', { value: o.value }))),
         reloadBtn));
   }
   if (entry.error) {
     return h('div', { class: 'field' }, f.label,
-      h('div', { class: 'hotkey' }, h('input', { value, placeholder: 'Von Hand eingeben', oninput: (e) => onChange(e.target.value) }), reloadBtn),
+      h('div', { class: 'hotkey' }, h('input', { value, placeholder: tr('Von Hand eingeben'), oninput: (e) => onChange(e.target.value) }), reloadBtn),
       h('p', { class: 'hint-text error' }, entry.error));
   }
   const items = [...entry.items];
-  if (value && !items.some((o) => o.value === value)) items.push({ value, label: `${value} (nicht gefunden)` });
-  const emptyLabel = /\(leer = /.test(f.label) ? '– jede/jedes –' : items.length ? '– auswählen –' : '– nichts vorhanden –';
+  if (value && !items.some((o) => o.value === value)) items.push({ value, label: tr('{0} (nicht gefunden)', [value]) });
+  const emptyLabel = /\((leer|empty) = /.test(f.label) ? tr('– jede/jedes –') : items.length ? tr('– auswählen –') : tr('– nichts vorhanden –');
   return h('div', { class: 'field' }, f.label,
     h('div', { class: 'hotkey' },
       h('select', { value: value ?? '', onchange: (e) => onChange(e.target.value) },
@@ -268,8 +269,8 @@ export function dynamicSelect(f, value, onChange) {
         items.map((o) => h('option', { value: o.value }, o.label))),
       reloadBtn),
     !entry.items.length && h('p', { class: 'hint-text' }, f.source.startsWith('obs-')
-      ? 'In OBS gibt es dazu noch nichts. Lege es in OBS an und klicke dann auf ⟳.'
-      : 'Nichts gefunden. Mit ⟳ neu laden.'));
+      ? tr('In OBS gibt es dazu noch nichts. Lege es in OBS an und klicke dann auf ⟳.')
+      : tr('Nichts gefunden. Mit ⟳ neu laden.')));
 }
 
 // ---------- Tastenkürzel aufnehmen ----------
@@ -287,8 +288,8 @@ const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'O
 function recordHotkey(input, button, done) {
   input.classList.add('recording');
   input.value = '';
-  input.placeholder = 'Tastenkombination drücken …';
-  button.textContent = '… drücken';
+  input.placeholder = tr('Tastenkombination drücken …');
+  button.textContent = tr('… drücken');
   const onKey = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -304,7 +305,7 @@ function recordHotkey(input, button, done) {
     window.removeEventListener('keydown', onKey, true);
     input.classList.remove('recording');
     input.value = combo;
-    button.textContent = '⏺ Aufnehmen';
+    button.textContent = tr('⏺ Aufnehmen');
     done(combo);
   };
   window.addEventListener('keydown', onKey, true);
@@ -356,14 +357,14 @@ function editorDialog() {
   if (dlg) return dlg;
   dlg = h('dialog', { id: 'dlg-actions', class: 'action-editor' },
     h('div', { class: 'ae-head' },
-      h('div', {}, h('h2', { id: 'ae-title' }), h('p', { class: 'hint-text' }, 'Aktion links anklicken oder in den Ablauf ziehen · im Ablauf am ⠿ ziehen zum Sortieren')),
+      h('div', {}, h('h2', { id: 'ae-title' }), h('p', { class: 'hint-text' }, tr('Aktion links anklicken oder in den Ablauf ziehen · im Ablauf am ⠿ ziehen zum Sortieren'))),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn', id: 'ae-test', onclick: () => ed && testActions(ed.owner[ed.key], ed.title, { buttonId: ed.buttonId }) }, '▶ Ablauf testen'),
-      h('button', { class: 'btn primary', onclick: () => dlg.close() }, 'Fertig')),
+      h('button', { class: 'btn', id: 'ae-test', onclick: () => ed && testActions(ed.owner[ed.key], ed.title, { buttonId: ed.buttonId }) }, tr('▶ Ablauf testen')),
+      h('button', { class: 'btn primary', onclick: () => dlg.close() }, tr('Fertig'))),
     h('div', { class: 'ae-body' },
       h('aside', { class: 'ae-nav' },
         h('input', {
-          id: 'ae-search', class: 'search', placeholder: '🔍 Aktion suchen …', autocomplete: 'off',
+          id: 'ae-search', class: 'search', placeholder: tr('🔍 Aktion suchen …'), autocomplete: 'off',
           oninput: (e) => { edQuery = e.target.value; renderCatalog(); },
           onkeydown: (e) => {
             if (e.key !== 'Enter') return;
@@ -374,7 +375,7 @@ function editorDialog() {
         h('div', { id: 'ae-cats', class: 'ae-cats' })),
       h('section', { class: 'ae-catalog' }, h('h3', { id: 'ae-cat-title' }), h('div', { id: 'ae-tiles', class: 'ae-tiles' })),
       h('section', { class: 'ae-flow' },
-        h('div', { class: 'ae-flow-head' }, h('h3', {}, 'Ablauf'), h('span', { id: 'ae-count', class: 'muted-note' })),
+        h('div', { class: 'ae-flow-head' }, h('h3', {}, tr('Ablauf')), h('span', { id: 'ae-count', class: 'muted-note' })),
         h('div', { id: 'ae-flow' }))));
   dlg.addEventListener('close', () => {
     ed = null;
@@ -412,8 +413,8 @@ function renderCatalog() {
   }, h('span', { class: 'ae-cat-icon' }, icon), h('span', { class: 'ae-cat-label' }, label), count !== undefined && h('span', { class: 'ae-cat-count' }, String(count)));
 
   document.getElementById('ae-cats').replaceChildren(...[
-    rec.length > 0 && navItem('recent', '⭐', 'Zuletzt benutzt', rec.length),
-    navItem('all', '▦', 'Alle Aktionen', visible.length),
+    rec.length > 0 && navItem('recent', '⭐', tr('Zuletzt benutzt'), rec.length),
+    navItem('all', '▦', tr('Alle Aktionen'), visible.length),
     ...groups.flatMap((g) => [
       h('div', { class: 'ae-group' }, g),
       ...[...new Set(visible.filter((t) => t.group === g).map((t) => t.category))].map((c) => {
@@ -428,13 +429,13 @@ function renderCatalog() {
   let heading;
   if (q) {
     shown = visible.filter((t) => `${t.label} ${t.category} ${t.group}`.toLowerCase().includes(q));
-    heading = `Suche: „${edQuery.trim()}“`;
+    heading = tr('Suche: „{0}“', [edQuery.trim()]);
   } else if (edCat === 'recent') {
     shown = rec.map((type) => S.typeMap.get(type)).filter(Boolean);
-    heading = 'Zuletzt benutzt';
+    heading = tr('Zuletzt benutzt');
   } else if (edCat === 'all') {
     shown = visible;
-    heading = 'Alle Aktionen';
+    heading = tr('Alle Aktionen');
   } else {
     const [g, c] = edCat.split('|');
     shown = visible.filter((t) => t.group === g && t.category === c);
@@ -443,7 +444,7 @@ function renderCatalog() {
   document.getElementById('ae-cat-title').textContent = heading;
   const showCategory = q || edCat === 'all' || edCat === 'recent';
   document.getElementById('ae-tiles').replaceChildren(...(shown.length ? shown.map((def) => h('button', {
-    type: 'button', class: 'ae-tile', draggable: 'true', title: `${def.label} – klicken zum Hinzufügen oder in den Ablauf ziehen`,
+    type: 'button', class: 'ae-tile', draggable: 'true', title: tr('{0} – klicken zum Hinzufügen oder in den Ablauf ziehen', [def.label]),
     onclick: () => ed && insertAction(ed.owner[ed.key], def),
     ondragstart: (e) => {
       drag = { kind: 'new', def };
@@ -454,16 +455,16 @@ function renderCatalog() {
   },
   h('span', { class: 'ae-tile-icon' }, def.icon),
   h('span', { class: 'ae-tile-label' }, def.label),
-  showCategory && h('span', { class: 'ae-tile-cat' }, def.category))) : [h('p', { class: 'muted-note' }, 'Keine passende Aktion gefunden.')]));
+  showCategory && h('span', { class: 'ae-tile-cat' }, def.category))) : [h('p', { class: 'muted-note' }, tr('Keine passende Aktion gefunden.'))]));
 }
 
 function renderFlow() {
   if (!ed) return;
   const list = ed.owner[ed.key];
-  document.getElementById('ae-count').textContent = list.length === 1 ? '1 Aktion' : `${list.length} Aktionen`;
+  document.getElementById('ae-count').textContent = list.length === 1 ? tr('1 Aktion') : tr('{0} Aktionen', [list.length]);
   document.getElementById('ae-test').disabled = !list.length;
   const flow = flowList(list, ed.buttonId);
-  if (!list.length) flow.append(h('div', { class: 'ae-empty' }, h('div', { class: 'empty-icon' }, '⬅️'), h('p', {}, 'Klicke links auf eine Aktion oder ziehe sie hierher.')));
+  if (!list.length) flow.append(h('div', { class: 'ae-empty' }, h('div', { class: 'empty-icon' }, '⬅️'), h('p', {}, tr('Klicke links auf eine Aktion oder ziehe sie hierher.'))));
   document.getElementById('ae-flow').replaceChildren(flow);
 }
 
@@ -471,7 +472,7 @@ function renderFlow() {
 onRender(({ detail }) => {
   if (!ed || !document.getElementById('dlg-actions')?.open) return;
   if (detail) renderFlow();
-  else document.getElementById('ae-count').textContent = `${ed.owner[ed.key].length} Aktionen`;
+  else document.getElementById('ae-count').textContent = tr('{0} Aktionen', [ed.owner[ed.key].length]);
 });
 
 // ---------- Auslöser (Events) ----------
@@ -482,7 +483,7 @@ export function triggerEditor(trigger) {
   const setParam = (k, v, { structural = false } = {}) => mutate(() => (trigger.params[k] = v), { coalesce: `trg:${k}`, detail: structural });
   const cats = [...new Set(S.triggerTypes.map((t) => t.category))];
   return h('div', { class: 'trigger-editor' },
-    h('label', { class: 'field' }, 'Wenn …',
+    h('label', { class: 'field' }, tr('Wenn …'),
       h('select', {
         value: trigger.type,
         onchange: (e) => mutate(() => {
@@ -500,10 +501,23 @@ const EVENT_DATA = {
   obs_scene: '{Event.Szene}', obs_preview: '{Event.Szene}', obs_stream: '{Event.Status}', obs_record: '{Event.Status}',
   obs_mute: '{Event.Quelle}', obs_source: '{Event.Quelle}, {Event.Szene}', obs_filter: '{Event.Filter}, {Event.Quelle}',
   obs_profile: '{Event.Name}', obs_replay_saved: '{Event.Datei}', steam_game: '{Event.Spiel}', audio_output: '{Event.Gerät}',
-  device: '{Event.Gerät}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
+  audio_mute: '{Event.Status}', device: '{Event.Gerät}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
+  twitch_follow: '{Event.Nutzer}', twitch_sub: '{Event.Nutzer}, {Event.Stufe}, {Event.Anzahl}, {Event.Monate}, {Event.Nachricht}',
+  twitch_cheer: '{Event.Nutzer}, {Event.Bits}, {Event.Nachricht}', twitch_raid: '{Event.Nutzer}, {Event.Zuschauer}',
+  twitch_redeem: '{Event.Nutzer}, {Event.Belohnung}, {Event.Kosten}, {Event.Eingabe}', twitch_chat: '{Event.Nutzer}, {Event.Nachricht}',
+  twitch_stream: '{Event.Status}', twitch_ad: '{Event.Dauer}', discord_voice: '{Event.Status}', discord_channel: '{Event.Kanal}',
+};
+// Englische Namen der Event-Daten (der Server kennt beide).
+const EVENT_ALIASES = {
+  Nutzer: 'User', Wert: 'Value', Alt: 'Old', Szene: 'Scene', Quelle: 'Source', Gerät: 'Device', Spiel: 'Game', Datei: 'File',
+  Kanal: 'Channel', Nachricht: 'Message', Belohnung: 'Reward', Kosten: 'Cost', Eingabe: 'Input', Zuschauer: 'Viewers',
+  Monate: 'Months', Stufe: 'Tier', Anzahl: 'Count', Dauer: 'Duration', Zeit: 'Time',
 };
 function eventDataHint(type) {
-  return EVENT_DATA[type] ? `In den Aktionen verfügbar: ${EVENT_DATA[type]}` : '';
+  let names = EVENT_DATA[type];
+  if (!names) return '';
+  if (getLang() !== 'de') names = names.replace(/\{Event\.([^}]+)\}/g, (m, k) => `{Event.${EVENT_ALIASES[k] ?? k}}`);
+  return tr('In den Aktionen verfügbar: {0}', [names]);
 }
 
 export function newTrigger(type = 'value_change') {

@@ -11,30 +11,30 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="logo">▦</span> TouchDeck</div>
-    <div id="save-state" class="save-state">Lädt …</div>
+    <div id="save-state" class="save-state" data-i18n>Lädt …</div>
     <div class="topbar-actions">
-      <button class="btn ghost" id="undo" title="Rückgängig (Strg+Z)">↶</button>
-      <button class="btn ghost" id="redo" title="Wiederholen (Strg+Y)">↷</button>
-      <button class="btn" id="open-preview">Vorschau</button>
-      <button class="btn primary" id="open-pair">📱 Handy verbinden</button>
+      <button class="btn ghost" id="undo" title="Rückgängig (Strg+Z)" data-i18n-title>↶</button>
+      <button class="btn ghost" id="redo" title="Wiederholen (Strg+Y)" data-i18n-title>↷</button>
+      <button class="btn" id="open-preview" data-i18n>Vorschau</button>
+      <button class="btn primary" id="open-pair" data-i18n>📱 Handy verbinden</button>
     </div>
   </header>
 
-  <nav id="rail" class="rail" aria-label="Bereiche"></nav>
+  <nav id="rail" class="rail" aria-label="Bereiche" data-i18n-aria-label></nav>
   <main id="view" class="view"></main>
 
   <dialog id="dlg-pair" class="dialog">
     <form method="dialog" class="dialog-body">
-      <h2>Handy verbinden</h2>
-      <p><b>Mit der TouchDeck-App:</b> App öffnen – sie findet diesen PC von selbst, du bestätigst hier. <b>Ohne App:</b> diesen Code mit der Handykamera scannen, das Bedienfeld öffnet sich im Browser.</p>
+      <h2 data-i18n>Handy verbinden</h2>
+      <p><b data-i18n>Mit der TouchDeck-App:</b> <span data-i18n>App öffnen – sie findet diesen PC von selbst, du bestätigst hier.</span> <b data-i18n>Ohne App:</b> <span data-i18n>diesen Code mit der Handykamera scannen, das Bedienfeld öffnet sich im Browser.</span></p>
       <div id="pair-qr" class="qr"></div>
       <div id="pair-urls" class="pair-urls"></div>
       <div id="pair-app" class="pair-app"></div>
-      <label class="switch-row"><input type="checkbox" id="pair-lan"> Zugriff aus dem WLAN erlauben</label>
+      <label class="switch-row"><input type="checkbox" id="pair-lan"> <span data-i18n>Zugriff aus dem WLAN erlauben</span></label>
       <div class="dialog-actions">
-        <button type="button" class="btn ghost" id="pair-settings">Sicherheit &amp; PIN …</button>
+        <button type="button" class="btn ghost" id="pair-settings" data-i18n>Sicherheit &amp; PIN …</button>
         <div class="spacer"></div>
-        <button class="btn primary">Fertig</button>
+        <button class="btn primary" data-i18n>Fertig</button>
       </div>
     </form>
   </dialog>
@@ -48,6 +48,6 @@
   </dialog>
 
   <div id="toasts" class="toasts"></div>
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="/shared/boot.js" data-main="/editor/js/main.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 // Einstieg des Editors: Navigation zwischen den Bereichen, Kopplungsdialog, Tastenkürzel, Start.
+import { t as tr } from '/shared/i18n.js';
 import { $, h, api, toast, ask, resizer } from './dom.js';
 import { S, setRenderer, render, loadState, watchServer, undo, redo, sel, onPairRequest } from './state.js';
 import { mountPages, renderPages, duplicateButton, deleteButton, select, copyButton, cutButton, pasteButton } from './views/pages.js';
@@ -11,13 +12,13 @@ import { mountPlugins, renderPlugins } from './views/plugins.js';
 import { mountSettings, renderSettings, applyTheme, updateSettings, resetSettingsCache } from './views/settings.js';
 
 const VIEWS = {
-  pages: { icon: '▦', label: 'Seiten', mount: mountPages, render: renderPages },
-  values: { icon: '🏷️', label: 'Werte', mount: mountValues, render: renderValues },
-  events: { icon: '⚡', label: 'Events', mount: mountEvents, render: renderEvents },
-  flows: { icon: '🧩', label: 'Vorlagen', mount: mountFlows, render: renderFlows },
-  logs: { icon: '📜', label: 'Logs', mount: mountLogs, render: renderLogs, unmount: unmountLogs },
-  plugins: { icon: '🧱', label: 'Plugins', mount: mountPlugins, render: renderPlugins },
-  settings: { icon: '⚙️', label: 'Einstellungen', mount: mountSettings, render: renderSettings },
+  pages: { icon: '▦', label: tr('Seiten'), mount: mountPages, render: renderPages },
+  values: { icon: '🏷️', label: tr('Werte'), mount: mountValues, render: renderValues },
+  events: { icon: '⚡', label: tr('Events'), mount: mountEvents, render: renderEvents },
+  flows: { icon: '🧩', label: tr('Vorlagen'), mount: mountFlows, render: renderFlows },
+  logs: { icon: '📜', label: tr('Logs'), mount: mountLogs, render: renderLogs, unmount: unmountLogs },
+  plugins: { icon: '🧱', label: tr('Plugins'), mount: mountPlugins, render: renderPlugins },
+  settings: { icon: '⚙️', label: tr('Einstellungen'), mount: mountSettings, render: renderSettings },
 };
 
 export function showView(name) {
@@ -61,32 +62,32 @@ async function refreshPairing() {
     $('#pair-qr').hidden = !(r.qr && r.lanEnabled);
     $('#pair-app').replaceChildren(...(r.apkQr && r.lanEnabled
       ? [h('div', { class: 'qr small' }), h('div', {},
-        h('b', {}, 'Android-App'),
-        h('p', { class: 'hint-text' }, 'QR-Code scannen, App herunterladen und installieren (einmalig „Unbekannte Apps installieren“ erlauben). Die App findet diesen PC dann von selbst.'),
+        h('b', {}, tr('Android-App')),
+        h('p', { class: 'hint-text' }, tr('QR-Code scannen, App herunterladen und installieren (einmalig „Unbekannte Apps installieren“ erlauben). Die App findet diesen PC dann von selbst.')),
         h('code', {}, r.apkUrl))]
       : []));
     if (r.apkQr && r.lanEnabled) $('#pair-app .qr').innerHTML = r.apkQr;
     $('#pair-urls').replaceChildren(...(r.lanEnabled
-      ? [...(r.urls.length ? r.urls.map((u) => h('code', {}, u)) : [h('p', {}, 'Kein Netzwerk gefunden. Ist der PC mit dem WLAN/LAN verbunden?')]),
-        r.pin && h('p', { class: 'hint-text' }, '🔐 Eine PIN ist gesetzt – das Handy fragt beim ersten Verbinden danach.'),
+      ? [...(r.urls.length ? r.urls.map((u) => h('code', {}, u)) : [h('p', {}, tr('Kein Netzwerk gefunden. Ist der PC mit dem WLAN/LAN verbunden?'))]),
+        r.pin && h('p', { class: 'hint-text' }, tr('🔐 Eine PIN ist gesetzt – das Handy fragt beim ersten Verbinden danach.')),
         r.firewall && h('div', { class: 'firewall-hint' },
-          h('b', {}, '🧱 Die Firewall (ufw) ist aktiv.'),
-          h('p', {}, 'Damit Handys TouchDeck finden und erreichen, muss sie fürs Heimnetz geöffnet werden. Das geht mit einem Klick (fragt dein Passwort ab) – oder von Hand im Terminal:'),
+          h('b', {}, tr('🧱 Die Firewall (ufw) ist aktiv.')),
+          h('p', {}, tr('Damit Handys TouchDeck finden und erreichen, muss sie fürs Heimnetz geöffnet werden. Das geht mit einem Klick (fragt dein Passwort ab) – oder von Hand im Terminal:')),
           h('button', { type: 'button', class: 'btn primary small', onclick: async (e) => {
             e.target.disabled = true;
-            e.target.textContent = 'Warte auf Passwort …';
+            e.target.textContent = tr('Warte auf Passwort …');
             try {
               await api('POST', '/api/firewall/open', {});
-              toast('Firewall fürs Heimnetz geöffnet ✓', 'ok');
+              toast(tr('Firewall fürs Heimnetz geöffnet ✓'), 'ok');
               refreshPairing();
             } catch (err) {
               toast(err.message, 'error');
               e.target.disabled = false;
-              e.target.textContent = 'Jetzt freigeben';
+              e.target.textContent = tr('Jetzt freigeben');
             }
-          } }, 'Jetzt freigeben'),
+          } }, tr('Jetzt freigeben')),
           h('code', { style: 'margin-top:8px' }, r.firewall))].filter(Boolean)
-      : [h('p', {}, 'Der Zugriff aus dem WLAN ist ausgeschaltet.')]));
+      : [h('p', {}, tr('Der Zugriff aus dem WLAN ist ausgeschaltet.'))]));
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -142,10 +143,10 @@ function bind() {
   matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
   // Ein Handy möchte sich verbinden: hier bestätigen.
   onPairRequest(async (r) => {
-    const answer = await ask('📱 Neues Gerät', `„${r.device}“ (${r.ip}) möchte sich mit TouchDeck verbinden. Erlauben?`,
-      [{ value: 'deny', label: 'Ablehnen' }, { value: 'allow', label: 'Erlauben', kind: 'primary' }]);
+    const answer = await ask(tr('📱 Neues Gerät'), tr('„{0}“ ({1}) möchte sich mit TouchDeck verbinden. Erlauben?', [r.device, r.ip]),
+      [{ value: 'deny', label: tr('Ablehnen') }, { value: 'allow', label: tr('Erlauben'), kind: 'primary' }]);
     await api('POST', '/api/pair/answer', { id: r.id, allow: answer === 'allow' }).catch((err) => toast(err.message, 'error'));
-    if (answer === 'allow') toast(`${r.device} ist jetzt verbunden ✓`, 'ok');
+    if (answer === 'allow') toast(tr('{0} ist jetzt verbunden ✓', [r.device]), 'ok');
   });
 }
 
@@ -168,7 +169,7 @@ async function init() {
     window.addEventListener('hashchange', onHash);
     onHash();
   } catch (err) {
-    $('#save-state').textContent = `Verbindung zum Server fehlgeschlagen: ${err.message}`;
+    $('#save-state').textContent = tr('Verbindung zum Server fehlgeschlagen: {0}', [err.message]);
     $('#save-state').classList.add('error');
   }
 }

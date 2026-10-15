@@ -21,8 +21,9 @@ pub fn fill_variables(text: &str, variables: &Map<String, Value>, extra: &Map<St
     let builtin = |name: &str| -> Option<String> {
         match name {
             _ if extra.contains_key(name) => Some(js_string(&extra[name])),
-            "Zeit" => Some(format!("{:02}:{:02}", now.hour(), now.minute())),
+            "Zeit" | "Time" => Some(format!("{:02}:{:02}", now.hour(), now.minute())),
             "Datum" => Some(format!("{}.{}.{}", now.day(), now.month(), now.year())),
+            "Date" => Some(format!("{}-{:02}-{:02}", now.year(), now.month(), now.day())),
             _ => None,
         }
     };

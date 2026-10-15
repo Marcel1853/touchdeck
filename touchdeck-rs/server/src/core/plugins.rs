@@ -37,8 +37,13 @@ const MAX_TOTAL: u64 = 10 * 1024 * 1024;
 const NATIVE_MAX_FILE: u64 = 30 * 1024 * 1024;
 const NATIVE_MAX_TOTAL: u64 = 80 * 1024 * 1024;
 const MAX_FILES: usize = 3000;
-/** Diesen Satz muss der Nutzer zum Einschalten des erweiterten Modus bestätigen. */
+/** Diesen Satz muss der Nutzer zum Einschalten des erweiterten Modus eintippen (je Sprache). */
 pub const ADVANCED_CONFIRM: &str = "AUF EIGENE GEFAHR";
+pub const ADVANCED_CONFIRM_EN: &str = "AT MY OWN RISK";
+
+pub fn advanced_confirm(lang: &str) -> &'static str {
+    if lang == "de" { ADVANCED_CONFIRM } else { ADVANCED_CONFIRM_EN }
+}
 const ALLOWED_EXT: [&str; 7] = ["js", "json", "md", "txt", "png", "svg", "jpg"];
 pub const MARKET_URL: &str = "https://raw.githubusercontent.com/Marcel1853/touchdeck-plugins/main/plugins.json";
 
@@ -619,7 +624,7 @@ impl Plugins {
 
     /** Erweiterten Modus ein- oder ausschalten; einschalten nur mit dem Bestätigungssatz. */
     pub fn set_advanced(&self, app: &Arc<App>, on: bool, confirm: &str) -> Result<()> {
-        if on && confirm.trim() != ADVANCED_CONFIRM {
+        if on && ![ADVANCED_CONFIRM, ADVANCED_CONFIRM_EN].contains(&confirm.trim()) {
             bail!("Zum Einschalten bitte „{ADVANCED_CONFIRM}“ bestätigen.");
         }
         std::fs::write(self.dir.join("config.json"), serde_json::to_string_pretty(&json!({ "advanced": on }))?)?;

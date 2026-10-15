@@ -1,4 +1,5 @@
 // Zustand des Editors, Rückgängig/Wiederholen, automatisches Speichern und Abgleich mit dem Server.
+import { t as tr } from '/shared/i18n.js';
 import { $, api, toast } from './dom.js';
 
 export const S = {
@@ -112,7 +113,7 @@ function setSaveState(text, isError = false) {
 
 function scheduleSave() {
   dirty = true;
-  setSaveState('Speichert gleich …');
+  setSaveState(tr('Speichert gleich …'));
   clearTimeout(saveTimer);
   saveTimer = setTimeout(save, 400);
 }
@@ -125,17 +126,17 @@ export async function save() {
   saving = api('PUT', '/api/pages', { pages: S.pages, flows: S.flows, events: S.events, values: S.values, revision: S.revision })
     .then((r) => {
       S.revision = r.revision;
-      setSaveState(dirty ? 'Speichert gleich …' : 'Alle Änderungen gespeichert ✓');
+      setSaveState(dirty ? tr('Speichert gleich …') : tr('Alle Änderungen gespeichert ✓'));
     })
     .catch(async (err) => {
       if (err.status === 409) {
         // Ein anderes Fenster war schneller: dessen Stand übernehmen statt ihn zu überschreiben.
         await loadState();
-        toast('Es wurde in einem anderen Fenster etwas geändert. Der aktuelle Stand wurde geladen – deine letzte Änderung bitte wiederholen.', 'error');
+        toast(tr('Es wurde in einem anderen Fenster etwas geändert. Der aktuelle Stand wurde geladen – deine letzte Änderung bitte wiederholen.'), 'error');
         return;
       }
       dirty = true;
-      setSaveState(`Speichern fehlgeschlagen: ${err.message}`, true);
+      setSaveState(tr('Speichern fehlgeschlagen: {0}', [err.message]), true);
     })
     .finally(() => (saving = null));
   await saving;
@@ -165,7 +166,7 @@ export async function loadState({ keepUndo = false } = {}) {
     undoStack.length = 0;
     redoStack.length = 0;
   }
-  setSaveState('Alle Änderungen gespeichert ✓');
+  setSaveState(tr('Alle Änderungen gespeichert ✓'));
   render();
 }
 

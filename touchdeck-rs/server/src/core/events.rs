@@ -353,7 +353,13 @@ impl EventEngine {
             }
             last.insert(sub.key.clone(), Instant::now());
         }
-        let event_data: Map<String, Value> = data.as_object().into_iter().flatten().map(|(k, v)| (format!("Event.{k}"), v.clone())).collect();
+        let mut event_data: Map<String, Value> = data.as_object().into_iter().flatten().map(|(k, v)| (format!("Event.{k}"), v.clone())).collect();
+        // Englische Namen zusätzlich, damit {Event.User} genauso funktioniert wie {Event.Nutzer}.
+        for (de, en) in catalog::EVENT_ALIASES {
+            if let Some(v) = data.get(de) {
+                event_data.entry(format!("Event.{en}")).or_insert_with(|| v.clone());
+            }
+        }
         let (a, sub) = (app.clone(), sub.clone());
         tokio::spawn(CHAIN.scope(depth + 1, async move {
             let opts = RunOpts { button_id: sub.button_id.clone(), event_data, flow_depth: 0 };

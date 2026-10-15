@@ -1,8 +1,9 @@
 // Bereich „Logs“: was TouchDeck getan hat – Buttons, Events, Geräte, Fehler. Live.
+import { t as tr } from '/shared/i18n.js';
 import { h, api, toast } from '../dom.js';
 import { S, onLog } from '../state.js';
 
-const LEVELS = { debug: 'Details', info: 'Info', warn: 'Warnung', error: 'Fehler' };
+const LEVELS = { debug: tr('Details'), info: tr('Info'), warn: tr('Warnung'), error: tr('Fehler') };
 let level = 'all';
 let query = '';
 let follow = true;
@@ -38,18 +39,18 @@ export function mountLogs(root) {
   root.replaceChildren(
     h('div', { class: 'list-page logs-page' },
       h('div', { class: 'list-page-head' },
-        h('div', {}, h('h1', {}, 'Logs'), h('p', { class: 'hint-text' }, 'Alles, was TouchDeck tut – live. Fehler von Aktionen und Events findest du hier zuerst.')),
+        h('div', {}, h('h1', {}, tr('Logs')), h('p', { class: 'hint-text' }, tr('Alles, was TouchDeck tut – live. Fehler von Aktionen und Events findest du hier zuerst.'))),
         h('div', { class: 'spacer' }),
-        h('input', { class: 'search', placeholder: 'Suchen …', value: query, oninput: (e) => { query = e.target.value; renderLogs(); } }),
+        h('input', { class: 'search', placeholder: tr('Suchen …'), value: query, oninput: (e) => { query = e.target.value; renderLogs(); } }),
         h('select', { value: level, onchange: (e) => { level = e.target.value; renderLogs(); } },
-          h('option', { value: 'all' }, 'Alle'), h('option', { value: 'problems' }, 'Nur Probleme'),
+          h('option', { value: 'all' }, tr('Alle')), h('option', { value: 'problems' }, tr('Nur Probleme')),
           Object.entries(LEVELS).map(([v, l]) => h('option', { value: v }, l))),
         h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: follow, onchange: (e) => { follow = e.target.checked; scrollDown(); } }), 'mitlaufen'),
         h('button', { class: 'btn', onclick: async () => {
           await api('POST', '/api/logs/clear', {}).catch((err) => toast(err.message, 'error'));
           S.logs = [];
           renderLogs();
-        } }, 'Leeren')),
+        } }, tr('Leeren'))),
       h('div', { id: 'log-box', class: 'log-box' }, h('table', { class: 'log-table' }, h('tbody', { id: 'log-rows' })))),
   );
   api('GET', '/api/logs').then((entries) => {
@@ -66,6 +67,6 @@ export function renderLogs() {
   const rows = document.getElementById('log-rows');
   if (!rows) return;
   const shown = S.logs.filter(matches);
-  rows.replaceChildren(...(shown.length ? shown.map(row) : [h('tr', {}, h('td', { colspan: 4, class: 'muted-note' }, 'Keine Einträge.'))]));
+  rows.replaceChildren(...(shown.length ? shown.map(row) : [h('tr', {}, h('td', { colspan: 4, class: 'muted-note' }, tr('Keine Einträge.')))]));
   scrollDown();
 }

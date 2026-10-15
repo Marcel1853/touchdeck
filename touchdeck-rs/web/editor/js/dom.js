@@ -42,7 +42,7 @@ export function ask(title, text, buttons) {
   $('#ask-title').textContent = title;
   $('#ask-text').textContent = text;
   $('#ask-buttons').replaceChildren(
-    h('button', { value: '', class: 'btn ghost' }, 'Abbrechen'),
+    h('button', { value: '', class: 'btn ghost' }, tr('Abbrechen')),
     h('div', { class: 'spacer' }),
     ...buttons.map((b) => h('button', { value: b.value, class: `btn ${b.kind ?? ''}` }, b.label)),
   );
@@ -59,7 +59,7 @@ export async function prompt(title, text, initial = '') {
   $('#ask-title').textContent = title;
   $('#ask-text').replaceChildren(text, input);
   $('#ask-buttons').replaceChildren(
-    h('button', { value: '', class: 'btn ghost' }, 'Abbrechen'),
+    h('button', { value: '', class: 'btn ghost' }, tr('Abbrechen')),
     h('div', { class: 'spacer' }),
     h('button', { value: 'ok', class: 'btn primary' }, 'OK'),
   );
@@ -172,7 +172,7 @@ export const prefs = store;
 export function resizer(root, panel, varName, { min = 160, max = 640, invert = false, key }) {
   const saved = Number(store.get(key));
   if (saved) root.style.setProperty(varName, `${saved}px`);
-  const el = h('div', { class: 'resizer', role: 'separator', title: 'Ziehen zum Verbreitern · Doppelklick: Standardbreite' });
+  const el = h('div', { class: 'resizer', role: 'separator', title: tr('Ziehen zum Verbreitern · Doppelklick: Standardbreite') });
   el.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     try {
@@ -203,4 +203,5 @@ export function resizer(root, panel, varName, { min = 160, max = 640, invert = f
     store.set(key, null);
   });
   return el;
-}
+}import { t as tr } from '/shared/i18n.js';
+

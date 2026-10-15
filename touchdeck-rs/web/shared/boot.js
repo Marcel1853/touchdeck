@@ -1,0 +1,14 @@
+// Start von Editor und Bedienfeld: erst die Sprache holen, dann die eigentliche Oberfläche laden.
+// So sind auch Texte übersetzt, die beim Laden der Module schon feststehen.
+import { setLang, translateDom } from '/shared/i18n.js';
+
+const main = document.currentScript?.dataset.main ?? document.querySelector('script[data-main]').dataset.main;
+try {
+  const hello = await fetch('/api/hello', { cache: 'no-store' }).then((r) => r.json());
+  setLang(hello.language ?? 'de');
+} catch {
+  // Ohne Verbindung zunächst nach der Sprache des Browsers.
+  setLang(navigator.language?.startsWith('de') ? 'de' : 'en');
+}
+translateDom();
+await import(main);
