@@ -11,6 +11,7 @@
 //
 // Daneben gibt es erweiterte Plugins (native_plugins.rs): eigene Programme mit vollen Rechten. Die laufen
 // nur, wenn der Nutzer den erweiterten Modus bewusst mit doppelter Bestätigung eingeschaltet hat.
+use crate::t;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
@@ -145,35 +146,35 @@ pub fn localize(v: &Value, lang: &str) -> Value {
 pub fn check_manifest(raw: &Value) -> Result<Value> {
     let id = text(&raw["id"], 32);
     if !valid_id(&id) {
-        bail!("plugin.json: „id“ muss aus 1–32 Kleinbuchstaben, Ziffern oder Bindestrichen bestehen.");
+        bail!(t!("plugins.pluginJsonIdMust"));
     }
     let name = ltext(&raw["name"], 60);
     if localize(&name, "en").as_str().unwrap_or("").is_empty() {
-        bail!("plugin.json: „name“ fehlt.");
+        bail!(t!("plugins.pluginJsonNameIs"));
     }
     let main = text(&raw["main"], 80);
     let main = if main.is_empty() { "plugin.js".to_string() } else { main };
     if !main.ends_with(".js") || main.contains('/') || main.contains('\\') {
-        bail!("plugin.json: „main“ muss eine .js-Datei im Hauptordner sein.");
+        bail!(t!("plugins.pluginJsonMainMust"));
     }
     let p = &raw["permissions"];
     let http: Vec<String> = p["http"].as_array().into_iter().flatten().filter_map(|h| h.as_str()).map(|h| h.trim().to_lowercase()).filter(|h| !h.is_empty()).take(20).collect();
     for h in &http {
         let host = h.strip_prefix("*.").unwrap_or(h);
         if h != "lan" && (host.is_empty() || !host.contains('.') || !host.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')) {
-            bail!("plugin.json: ungültige Adresse in permissions.http: „{h}“ (Beispiele: api.example.com, *.example.com, lan).");
+            bail!(t!("plugins.pluginJsonInvalidAddress", h));
         }
     }
     let native: Vec<String> = raw["native"]["command"].as_array().into_iter().flatten().filter_map(|c| c.as_str()).map(String::from).take(20).collect();
     if raw["native"].is_object() && native.first().is_none_or(|c| c.trim().is_empty()) {
-        bail!("plugin.json: „native.command“ muss den Startbefehl als Liste enthalten, z. B. [\"python3\", \"plugin.py\"].");
+        bail!(t!("plugins.pluginJsonNativeCommand"));
     }
     let items = |key: &str| -> Result<Vec<Value>> {
         let mut out = Vec::new();
         for a in raw[key].as_array().into_iter().flatten().take(50) {
             let aid = text(&a["id"], 24);
             if !short_id(&aid) {
-                bail!("plugin.json: jede Angabe in „{key}“ braucht eine „id“ (Buchstaben, Ziffern, _ oder -).");
+                bail!(t!("plugins.pluginJsonEveryEntry", key));
             }
             let fields: Vec<Value> = a["fields"].as_array().into_iter().flatten().filter(|f| f["key"].is_string()).take(20).cloned().collect();
             out.push(json!({ "id": aid, "label": ltext(&a["label"], 80), "icon": text(&a["icon"], 8), "fields": fields }));
@@ -199,7 +200,7 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
 /** Lesbare Liste der Berechtigungen (für die Anzeige vor dem Installieren). */
 pub fn describe_permissions(m: &Value) -> Vec<String> {
     if is_native(m) {
-        return vec!["VOLLE RECHTE: eigenes Programm – kann alles, was du am PC kannst (Dateien, Programme, Internet)".into()];
+        return vec![t!("plugins.fullRightsOwnProgram").into()];
     }
     let p = &m["permissions"];
     let mut out: Vec<String> = p["http"]
@@ -207,13 +208,13 @@ pub fn describe_permissions(m: &Value) -> Vec<String> {
         .into_iter()
         .flatten()
         .filter_map(|h| h.as_str())
-        .map(|h| if h == "lan" { "Geräte im Heimnetz ansprechen".to_string() } else { format!("Internet: {h}") })
+        .map(|h| if h == "lan" { t!("plugins.talkToDevicesOn").to_string() } else { format!("Internet: {h}") })
         .collect();
     if p["values"] == true {
-        out.push("TouchDeck-Werte lesen und ändern".into());
+        out.push(t!("plugins.readAndChangeTouchdeck").into());
     }
     if p["notify"] == true {
-        out.push("Benachrichtigungen anzeigen".into());
+        out.push(t!("plugins.showNotifications").into());
     }
     out
 }
@@ -255,7 +256,7 @@ pub fn http_allowed(allowed: &[String], url: &str) -> bool {
 /** Nur die eigentliche Meldung, ohne JS-Stacktrace und „Error: “ davor. */
 fn clean_error(e: impl std::fmt::Display) -> String {
     let text = e.to_string();
-    let first = text.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("Fehler im Plugin");
+    let first = text.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or(t!("plugins.errorInPlugin"));
     first.strip_prefix("Error: ").unwrap_or(first).to_string()
 }
 
@@ -330,7 +331,7 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
             let req: Value = serde_json::from_str(&req).unwrap_or_default();
             let url = req["url"].as_str().unwrap_or("").to_string();
             if !http_allowed(&h.http, &url) {
-                return Err(js_err(&ctx, format!("Keine Erlaubnis für {url} (plugin.json → permissions.http).")));
+                return Err(js_err(&ctx, t!("plugins.noPermissionForPlugin", url)));
             }
             let result = h.rt.block_on(async {
                 let method = reqwest::Method::from_bytes(req["method"].as_str().unwrap_or("GET").to_uppercase().as_bytes())?;
@@ -361,9 +362,9 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
         "__getValue",
         Function::new(ctx.clone(), move |ctx: rquickjs::Ctx<'_>, name: String| -> rquickjs::Result<Option<String>> {
             if !h.values {
-                return Err(js_err(&ctx, "Keine Erlaubnis für Werte (plugin.json → permissions.values)."));
+                return Err(js_err(&ctx, t!("plugins.noPermissionForValues")));
             }
-            let app = h.app.upgrade().ok_or_else(|| js_err(&ctx, "TouchDeck wird beendet."))?;
+            let app = h.app.upgrade().ok_or_else(|| js_err(&ctx, t!("plugins.touchdeckIsShuttingDown")))?;
             Ok(app.store.lock().unwrap().config.variables.get(&name).map(js_string))
         })?,
     )?;
@@ -373,9 +374,9 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
         "__setValue",
         Function::new(ctx.clone(), move |ctx: rquickjs::Ctx<'_>, name: String, value: String| -> rquickjs::Result<()> {
             if !h.values {
-                return Err(js_err(&ctx, "Keine Erlaubnis für Werte (plugin.json → permissions.values)."));
+                return Err(js_err(&ctx, t!("plugins.noPermissionForValues")));
             }
-            let app = h.app.upgrade().ok_or_else(|| js_err(&ctx, "TouchDeck wird beendet."))?;
+            let app = h.app.upgrade().ok_or_else(|| js_err(&ctx, t!("plugins.touchdeckIsShuttingDown")))?;
             let r = app.store.lock().unwrap().set_variable(&name, &json!(value));
             r.map_err(|e| js_err(&ctx, e.to_string()))
         })?,
@@ -397,7 +398,7 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
         "__notify",
         Function::new(ctx.clone(), move |ctx: rquickjs::Ctx<'_>, title: String, body: String| -> rquickjs::Result<()> {
             if !h.notify {
-                return Err(js_err(&ctx, "Keine Erlaubnis für Benachrichtigungen (plugin.json → permissions.notify)."));
+                return Err(js_err(&ctx, t!("plugins.noPermissionForNotifications")));
             }
             let _ = std::process::Command::new("notify-send").args(["-a", "TouchDeck", &title, &body]).spawn();
             Ok(())
@@ -409,7 +410,7 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
 /** Startet ein Plugin in einem eigenen Thread mit eigener JS-Engine. */
 fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) -> Result<Running> {
     let source = std::fs::read_to_string(dir.join(manifest["main"].as_str().unwrap_or("plugin.js")))
-        .map_err(|_| anyhow!("Die Datei {} fehlt im Plugin.", manifest["main"]))?;
+        .map_err(|_| anyhow!(t!("plugins.fileIsMissingFrom", manifest["main"])))?;
     let (tx, rx) = mpsc::channel::<Msg>();
     let error = Arc::new(Mutex::new(None));
     let err = error.clone();
@@ -435,14 +436,14 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
             rt: rt.clone(),
             depth: std::cell::Cell::new(0),
         });
-        let Ok(runtime) = Runtime::new() else { return report("JS-Engine konnte nicht starten.".into()) };
+        let Ok(runtime) = Runtime::new() else { return report(t!("plugins.jsEngineCouldNot").into()) };
         runtime.set_memory_limit(MEMORY_LIMIT);
         runtime.set_max_stack_size(512 * 1024);
         // Endlosschleifen abbrechen: jeder Aufruf hat höchstens 5 Sekunden.
         let deadline = Arc::new(AtomicI64::new(i64::MAX));
         let d = deadline.clone();
         runtime.set_interrupt_handler(Some(Box::new(move || chrono::Utc::now().timestamp_millis() > d.load(Ordering::Relaxed))));
-        let Ok(context) = Context::full(&runtime) else { return report("JS-Engine konnte nicht starten.".into()) };
+        let Ok(context) = Context::full(&runtime) else { return report(t!("plugins.jsEngineCouldNot").into()) };
         let start = |deadline: &AtomicI64| deadline.store(chrono::Utc::now().timestamp_millis() + CALL_LIMIT_MS, Ordering::Relaxed);
 
         // Laden: Hilfen, dann das Plugin selbst.
@@ -450,7 +451,7 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
         let loaded: Result<Vec<u64>, String> = context.with(|ctx| {
             install_host(&ctx, host.clone(), &manifest, &settings).map_err(|e| e.to_string())?;
             ctx.eval::<(), _>(PRELUDE).catch(&ctx).map_err(|e| e.to_string())?;
-            ctx.eval::<(), _>(source).catch(&ctx).map_err(|e| format!("Fehler im Plugin: {}", clean_error(e)))?;
+            ctx.eval::<(), _>(source).catch(&ctx).map_err(|e| t!("plugins.errorInPlugin2", clean_error(e)))?;
             let count: u32 = ctx.globals().get::<_, Function>("__timerCount").and_then(|f| f.call(())).unwrap_or(0);
             let ms: Function = ctx.globals().get("__timerMs").map_err(|e| e.to_string())?;
             Ok((0..count.min(20)).map(|i| ms.call::<_, f64>((i,)).unwrap_or(1000.0) as u64).collect())
@@ -461,7 +462,7 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
             Err(e) => return report(e),
         };
         if let Some(app) = weak.upgrade() {
-            app.log.info(&format!("Plugin {id}"), "gestartet");
+            app.log.info(&format!("Plugin {id}"), t!("plugins.started"));
         }
         let mut next: Vec<Instant> = intervals.iter().map(|ms| Instant::now() + Duration::from_millis(*ms)).collect();
 
@@ -477,7 +478,7 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
                         f.call::<_, Option<String>>((action, params.to_string(), info.to_string())).catch(&ctx).map_err(clean_error)
                     });
                     deadline.store(i64::MAX, Ordering::Relaxed);
-                    let r = r.map_err(|e| if e.contains("interrupted") { "Das Plugin hat zu lange gerechnet (über 5 s) und wurde gestoppt.".into() } else { e });
+                    let r = r.map_err(|e| if e.contains("interrupted") { t!("plugins.pluginTookTooLong").into() } else { e });
                     let _ = reply.send(r);
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {
@@ -527,10 +528,10 @@ pub fn parse_repo(input: &str) -> Result<(String, String)> {
     let s = s.strip_prefix("www.").unwrap_or(s);
     let s = s.strip_prefix("github.com/").unwrap_or(s);
     let mut parts = s.split('/');
-    let (Some(owner), Some(repo)) = (parts.next(), parts.next()) else { bail!("Bitte das GitHub-Repo als „besitzer/name“ oder als github.com-Adresse angeben.") };
+    let (Some(owner), Some(repo)) = (parts.next(), parts.next()) else { bail!(t!("plugins.pleaseEnterGithubRepo")) };
     let ok = |p: &str| !p.is_empty() && p.len() <= 100 && p.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c));
     if !ok(owner) || !ok(repo) {
-        bail!("Ungültiger Repo-Name.");
+        bail!(t!("plugins.invalidRepoName"));
     }
     Ok((owner.into(), repo.into()))
 }
@@ -540,7 +541,7 @@ pub type PluginFile = (String, Vec<u8>, bool);
 
 /** Alle Dateien aus einem GitHub-ZIP: Hauptordner abschneiden, keine versteckten Ordner, Größen begrenzt. */
 fn unpack(bytes: &[u8]) -> Result<Vec<PluginFile>> {
-    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!("Download ist kein gültiges ZIP."))?;
+    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!(t!("plugins.downloadIsNotValid")))?;
     let mut files = Vec::new();
     let mut total = 0;
     for i in 0..zip.len() {
@@ -557,7 +558,7 @@ fn unpack(bytes: &[u8]) -> Result<Vec<PluginFile>> {
         }
         total += f.size();
         if total > NATIVE_MAX_TOTAL || files.len() >= MAX_FILES {
-            bail!("Das Plugin ist zu groß.");
+            bail!(t!("plugins.pluginIsTooLarge2"));
         }
         let exec = f.unix_mode().is_some_and(|m| m & 0o111 != 0);
         let mut data = Vec::new();
@@ -569,8 +570,8 @@ fn unpack(bytes: &[u8]) -> Result<Vec<PluginFile>> {
 
 /** Beschreibung prüfen und die Dateien auswählen, die installiert werden. Liefert auch eine Prüfsumme über alle davon. */
 fn manifest_of(files: Vec<PluginFile>) -> Result<(Value, String, Vec<PluginFile>)> {
-    let raw = files.iter().find(|(n, _, _)| n == "plugin.json").ok_or_else(|| anyhow!("Im Repo fehlt die Datei plugin.json im Hauptordner."))?;
-    let value: Value = serde_json::from_slice(&raw.1).map_err(|e| anyhow!("plugin.json ist kein gültiges JSON: {e}"))?;
+    let raw = files.iter().find(|(n, _, _)| n == "plugin.json").ok_or_else(|| anyhow!(t!("plugins.repoHasNoPlugin")))?;
+    let value: Value = serde_json::from_slice(&raw.1).map_err(|e| anyhow!(t!("plugins.pluginJsonIsNot", e)))?;
     let m = check_manifest(&value)?;
     let mut chosen: Vec<PluginFile> = if is_native(&m) {
         files
@@ -585,12 +586,12 @@ fn manifest_of(files: Vec<PluginFile>) -> Result<(Value, String, Vec<PluginFile>
             }
             total += f.1.len() as u64;
             if total > MAX_TOTAL {
-                bail!("Das Plugin ist zu groß (mehr als 10 MB).");
+                bail!(t!("plugins.pluginIsTooLarge"));
             }
             out.push((f.0, f.1, false));
         }
         if !out.iter().any(|(n, _, _)| *n == m["main"]) {
-            bail!("Die Datei {} fehlt im Repo.", m["main"]);
+            bail!(t!("plugins.fileIsMissingFrom2", m["main"]));
         }
         out
     };
@@ -625,7 +626,7 @@ impl Plugins {
     /** Erweiterten Modus ein- oder ausschalten; einschalten nur mit dem Bestätigungssatz. */
     pub fn set_advanced(&self, app: &Arc<App>, on: bool, confirm: &str) -> Result<()> {
         if on && ![ADVANCED_CONFIRM, ADVANCED_CONFIRM_EN].contains(&confirm.trim()) {
-            bail!("Zum Einschalten bitte „{ADVANCED_CONFIRM}“ bestätigen.");
+            bail!(t!("plugins.toTurnItOn", ADVANCED_CONFIRM));
         }
         std::fs::write(self.dir.join("config.json"), serde_json::to_string_pretty(&json!({ "advanced": on }))?)?;
         let natives: Vec<String> = self.manifests.lock().unwrap().iter().filter(|(_, m)| is_native(m)).map(|(id, _)| id.clone()).collect();
@@ -638,7 +639,7 @@ impl Plugins {
             }
         }
         if on {
-            app.log.warn("Plugins", "Erweiterter Modus eingeschaltet – Plugins mit vollen Rechten sind erlaubt.");
+            app.log.warn("Plugins", t!("plugins.advancedModeTurnedOn"));
         } else {
             app.log.info("Plugins", "Erweiterter Modus ausgeschaltet.");
         }
@@ -735,7 +736,7 @@ impl Plugins {
                     _ if blocked => json!({ "state": "blocked", "error": "Gesperrt: braucht den erweiterten Modus." }),
                     Some(r) => r.error.lock().unwrap().clone().map_or_else(|| json!({ "state": "running" }), |e| json!({ "state": "error", "error": e })),
                     None if e["enabled"] == false => json!({ "state": "off" }),
-                    None => json!({ "state": "error", "error": "Konnte nicht geladen werden (siehe Logs)." }),
+                    None => json!({ "state": "error", "error": t!("plugins.couldNotBeLoaded") }),
                 };
                 json!({
                     "id": id, "manifest": m, "permissions": describe_permissions(&m), "enabled": e["enabled"] != false, "native": is_native(&m),
@@ -786,32 +787,32 @@ impl Plugins {
 
     /** Eine Plugin-Aktion ausführen (Typ plugin:<id>:<aktion>). */
     pub async fn run_action(&self, kind: &str, params: &Map<String, Value>, info: Value, depth: u32) -> Result<Option<String>> {
-        let (plugin, action) = kind.strip_prefix("plugin:").and_then(|k| k.split_once(':')).ok_or_else(|| anyhow!("Unbekannte Plugin-Aktion."))?;
+        let (plugin, action) = kind.strip_prefix("plugin:").and_then(|k| k.split_once(':')).ok_or_else(|| anyhow!(t!("plugins.unknownPluginAction")))?;
         let (reply, wait) = oneshot::channel();
         {
             let running = self.running.lock().unwrap();
             let r = running.get(plugin).ok_or_else(|| {
                 if self.manifests.lock().unwrap().get(plugin).is_some_and(is_native) && !self.advanced() {
-                    anyhow!("Das Plugin „{plugin}“ braucht den erweiterten Modus (Plugins › Erweitert).")
+                    anyhow!(t!("plugins.pluginNeedsAdvancedMode", plugin))
                 } else {
-                    anyhow!("Das Plugin „{plugin}“ ist nicht installiert oder ausgeschaltet.")
+                    anyhow!(t!("plugins.pluginIsNotInstalled", plugin))
                 }
             })?;
             if let Some(e) = r.error.lock().unwrap().as_ref() {
-                bail!("Das Plugin „{plugin}“ läuft nicht: {e}");
+                bail!(t!("plugins.pluginIsNotRunning3", plugin, e));
             }
             let sent = match &r.tx {
                 Channel::Js(tx) => tx.send(Msg::Action { id: action.into(), params: Value::Object(params.clone()), info, depth, reply }).is_ok(),
                 Channel::Native(tx) => tx.send(NativeCmd::Action { id: action.into(), params: Value::Object(params.clone()), info, depth, reply }).is_ok(),
             };
             if !sent {
-                bail!("Das Plugin „{plugin}“ läuft nicht.");
+                bail!(t!("plugins.pluginIsNotRunning2", plugin));
             }
         }
         match tokio::time::timeout(Duration::from_secs(30), wait).await {
             Ok(Ok(r)) => r.map_err(|e| anyhow!(e)),
-            Ok(Err(_)) => bail!("Das Plugin „{plugin}“ wurde beendet."),
-            Err(_) => bail!("Das Plugin „{plugin}“ antwortet nicht."),
+            Ok(Err(_)) => bail!(t!("plugins.pluginHasExited", plugin)),
+            Err(_) => bail!(t!("plugins.pluginIsNotResponding", plugin)),
         }
     }
 
@@ -835,11 +836,11 @@ impl Plugins {
         let api = format!("https://api.github.com/repos/{owner}/{repo}");
         let res = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?;
         if res.status().as_u16() == 404 {
-            bail!("Das Repo {owner}/{repo} gibt es nicht oder es ist privat. Plugins müssen öffentlich auf GitHub liegen.");
+            bail!(t!("plugins.repoDoesNotExist", owner, repo));
         }
         let info: Value = res.error_for_status()?.json().await?;
         if info["private"] != false || info["visibility"].as_str().is_some_and(|v| v != "public") {
-            bail!("Das Repo ist nicht öffentlich. Plugins müssen öffentlich auf GitHub liegen, damit jeder den Quelltext prüfen kann.");
+            bail!(t!("plugins.repoIsNotPublic"));
         }
         let url = info["html_url"].as_str().unwrap_or("").to_string();
         let release = self.http.get(format!("{api}/releases/latest")).header("Accept", "application/vnd.github+json").send().await?;
@@ -855,7 +856,7 @@ impl Plugins {
         };
         let zip = self.http.get(format!("https://codeload.github.com/{owner}/{repo}/zip/{zip_ref}")).send().await?.error_for_status()?.bytes().await?;
         if zip.len() as u64 > NATIVE_MAX_TOTAL {
-            bail!("Das Repo ist zu groß für ein Plugin.");
+            bail!(t!("plugins.repoIsTooLarge"));
         }
         Ok((unpack(&zip)?, git_ref, url))
     }
@@ -866,19 +867,19 @@ impl Plugins {
         let (files, git_ref, url) = self.download(&owner, &repo).await?;
         let (m, d, files) = manifest_of(files)?;
         if d != digest {
-            bail!("Das Plugin hat sich seit der Vorschau geändert. Bitte noch einmal prüfen.");
+            bail!(t!("plugins.pluginHasChangedSince"));
         }
         if is_native(&m) && !self.advanced() {
-            bail!("Dieses Plugin hat volle Rechte und braucht den erweiterten Modus (Plugins › Erweitert).");
+            bail!(t!("plugins.thisPluginHasFull"));
         }
         if is_native(&m) && !accept_risk {
-            bail!("Bitte bestätigen, dass du dem Plugin volle Rechte gibst.");
+            bail!(t!("plugins.pleaseConfirmThatYou"));
         }
         let id = m["id"].as_str().unwrap_or("").to_string();
         let mut installed = self.read_installed();
         if let Some(other) = installed.get(&id).and_then(|e| e["source"].as_str()).filter(|s| *s != format!("github:{owner}/{repo}"))
         {
-            bail!("Ein anderes Plugin mit der ID „{id}“ ist schon installiert ({other}).");
+            bail!(t!("plugins.anotherPluginWithId", id, other));
         }
         self.stop(&id);
         let dir = self.dir.join(&id);
@@ -905,10 +906,10 @@ impl Plugins {
     /** Testmodus: Plugin direkt aus einem lokalen Ordner laden (zum Entwickeln, bevor es veröffentlicht ist). */
     pub fn install_local(&self, app: &Arc<App>, path: &str) -> Result<String> {
         let dir = crate::system::linux::expand_home(path.trim());
-        let dir = dir.canonicalize().map_err(|_| anyhow!("Den Ordner {} gibt es nicht.", dir.display()))?;
+        let dir = dir.canonicalize().map_err(|_| anyhow!(t!("plugins.folderDoesNotExist", dir.display())))?;
         let m = Self::load_manifest(&dir)?;
         if is_native(&m) && !self.advanced() {
-            bail!("Dieses Plugin hat volle Rechte und braucht den erweiterten Modus (Plugins › Erweitert).");
+            bail!(t!("plugins.thisPluginHasFull"));
         }
         let id = m["id"].as_str().unwrap_or("").to_string();
         let mut installed = self.read_installed();
@@ -972,11 +973,11 @@ impl Plugins {
     pub async fn market(&self, lang: &str) -> Result<Value> {
         let lang = lang.to_string();
         let url = std::env::var("TOUCHDECK_MARKET").unwrap_or_else(|_| MARKET_URL.into());
-        let res = self.http.get(&url).send().await.map_err(|e| anyhow!("Marktplatz nicht erreichbar: {e}"))?;
+        let res = self.http.get(&url).send().await.map_err(|e| anyhow!(t!("plugins.marketplaceNotReachable", e)))?;
         if res.status().as_u16() == 404 {
-            return Ok(json!({ "plugins": [], "note": "Der Marktplatz ist noch leer." }));
+            return Ok(json!({ "plugins": [], "note": t!("plugins.marketplaceIsStillEmpty") }));
         }
-        let v: Value = res.error_for_status()?.json().await.map_err(|_| anyhow!("Die Marktplatz-Liste ist beschädigt."))?;
+        let v: Value = res.error_for_status()?.json().await.map_err(|_| anyhow!(t!("plugins.marketplaceListIsDamaged")))?;
         let plugins: Vec<Value> = v["plugins"]
             .as_array()
             .into_iter()

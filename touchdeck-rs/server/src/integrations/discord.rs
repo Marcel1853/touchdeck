@@ -1,5 +1,6 @@
 // Discord: Steuerung des Discord-Programms am PC über dessen lokale Schnittstelle (RPC über Unix-Socket)
 // und Nachrichten per Webhook. Für die Sprachsteuerung braucht jeder Nutzer eine eigene Discord-Anwendung.
+use crate::t;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -181,16 +182,16 @@ impl DiscordClient {
         }
         self.0.authenticated.store(false, Ordering::Relaxed);
         for (_, p) in self.0.pending.lock().unwrap().drain() {
-            let _ = p.send(Err("Verbindung zu Discord getrennt.".into()));
+            let _ = p.send(Err(t!("discord.disconnectedFromDiscord").into()));
         }
     }
 
     async fn open(&self) -> Result<Conn> {
         let client_id = self.auth().client_id;
         if client_id.is_empty() {
-            bail!("Bitte zuerst die Discord-Anwendung in den Einstellungen eintragen.");
+            bail!(t!("discord.pleaseEnterDiscordApplication"));
         }
-        let Some(path) = (self.0.paths)().into_iter().find(|p| p.exists()) else { bail!("Discord läuft nicht (oder ist nicht installiert).") };
+        let Some(path) = (self.0.paths)().into_iter().find(|p| p.exists()) else { bail!(t!("discord.discordIsNotRunning")) };
         let sock = UnixStream::connect(&path).await.map_err(|e| anyhow!("Discord: {e}"))?;
         let (mut reader, mut writer) = sock.into_split();
         let alive = Arc::new(AtomicBool::new(true));
@@ -228,7 +229,7 @@ impl DiscordClient {
                     OP_CLOSE => {
                         if let Some(r) = ready_tx.take() {
                             let reason = msg["message"].as_str().map_or_else(|| msg["code"].to_string(), String::from);
-                            let _ = r.send(Err(format!("Discord lehnt ab: {reason} (stimmt die Client-ID?)")));
+                            let _ = r.send(Err(t!("discord.discordRefusedIsClient", reason)));
                         }
                         break;
                     }
@@ -241,7 +242,7 @@ impl DiscordClient {
                             me.on_dispatch(msg["evt"].as_str().unwrap_or(""), &msg["data"]);
                         } else if let Some(p) = msg["nonce"].as_str().and_then(|n| me.0.pending.lock().unwrap().remove(n)) {
                             let _ = p.send(if msg["evt"] == "ERROR" {
-                                Err(format!("Discord: {}", msg["data"]["message"].as_str().unwrap_or("Fehler")))
+                                Err(format!("Discord: {}", msg["data"]["message"].as_str().unwrap_or(t!("common.error"))))
                             } else {
                                 Ok(if msg["data"].is_null() { json!({}) } else { msg["data"].clone() })
                             });
@@ -253,15 +254,15 @@ impl DiscordClient {
             a.store(false, Ordering::Relaxed);
             me.0.authenticated.store(false, Ordering::Relaxed);
             for (_, p) in me.0.pending.lock().unwrap().drain() {
-                let _ = p.send(Err("Verbindung zu Discord getrennt.".into()));
+                let _ = p.send(Err(t!("discord.disconnectedFromDiscord").into()));
             }
         });
         let _ = tx.send(encode(OP_HANDSHAKE, &json!({ "v": 1, "client_id": client_id })));
         match tokio::time::timeout(Duration::from_secs(5), ready_rx).await {
             Ok(Ok(Ok(()))) => Ok(Conn { tx, alive }),
             Ok(Ok(Err(msg))) => bail!("{msg}"),
-            Ok(Err(_)) => bail!("Discord hat die Verbindung beendet."),
-            Err(_) => bail!("Discord antwortet nicht."),
+            Ok(Err(_)) => bail!(t!("discord.discordClosedConnection")),
+            Err(_) => bail!(t!("discord.discordIsNotResponding2")),
         }
     }
 
@@ -276,28 +277,28 @@ impl DiscordClient {
         }
         if tx.send(encode(OP_FRAME, &frame)).is_err() {
             self.0.pending.lock().unwrap().remove(&nonce);
-            bail!("Nicht mit Discord verbunden.");
+            bail!(t!("discord.notConnectedToDiscord2"));
         }
         let timeout = Duration::from_secs(if cmd == "AUTHORIZE" { 120 } else { 8 });
         match tokio::time::timeout(timeout, wait).await {
             Ok(Ok(Ok(v))) => Ok(v),
             Ok(Ok(Err(e))) => Err(anyhow!(e)),
-            Ok(Err(_)) => bail!("Verbindung zu Discord getrennt."),
+            Ok(Err(_)) => bail!(t!("discord.disconnectedFromDiscord")),
             Err(_) => {
                 self.0.pending.lock().unwrap().remove(&nonce);
-                bail!("Discord antwortet nicht auf {cmd}.")
+                bail!(t!("discord.discordIsNotResponding", cmd))
             }
         }
     }
 
     async fn sender(&self) -> Result<mpsc::UnboundedSender<Vec<u8>>> {
-        self.0.conn.lock().await.as_ref().filter(|c| c.alive.load(Ordering::Relaxed)).map(|c| c.tx.clone()).ok_or_else(|| anyhow!("Nicht mit Discord verbunden."))
+        self.0.conn.lock().await.as_ref().filter(|c| c.alive.load(Ordering::Relaxed)).map(|c| c.tx.clone()).ok_or_else(|| anyhow!(t!("discord.notConnectedToDiscord2")))
     }
 
     /** Verbinden (falls nötig) und Befehl ausführen. */
     pub async fn call(&self, cmd: &str, args: Value) -> Result<Value> {
         if self.auth().access_token.is_empty() {
-            bail!("Nicht mit Discord verbunden (Einstellungen → Integrationen → Discord).");
+            bail!(t!("discord.notConnectedToDiscord"));
         }
         self.connect().await?;
         let tx = self.sender().await?;
@@ -310,7 +311,7 @@ impl DiscordClient {
     pub async fn login(&self) -> Result<()> {
         let a = self.auth();
         if a.client_id.is_empty() || a.client_secret.is_empty() {
-            bail!("Bitte Client-ID und Client-Secret deiner Discord-Anwendung eintragen.");
+            bail!(t!("discord.pleaseEnterClientId"));
         }
         let mut guard = self.0.conn.lock().await;
         self.close_conn(&mut guard);
@@ -382,7 +383,7 @@ impl DiscordClient {
                 self.save(|s| {
                     s.access_token.clear();
                     s.refresh_token.clear();
-                    s.last_error = json!("Discord-Anmeldung abgelaufen. Bitte neu verbinden.");
+                    s.last_error = json!(t!("discord.discordLoginExpiredPlease"));
                 });
                 return Err(err);
             }
@@ -401,7 +402,7 @@ impl DiscordClient {
             }
             .await;
             if let Err(err) = r {
-                me.0.log.warn("Discord", format!("Ereignisse nicht verfügbar: {err}"));
+                me.0.log.warn("Discord", t!("discord.eventsNotAvailable", err));
             }
         });
         Ok(())
@@ -462,7 +463,7 @@ impl DiscordClient {
             s.user.clear();
             s.last_error = Value::Null;
         });
-        self.0.log.info("Discord", "Verbindung getrennt");
+        self.0.log.info("Discord", t!("common.disconnected"));
     }
 
     // ---------- Hilfen für Aktionen ----------
@@ -498,7 +499,7 @@ impl DiscordClient {
 /** Nachricht über einen Discord-Webhook senden (ohne Anmeldung, nur mit der Webhook-Adresse). */
 pub async fn send_webhook(url: &str, content: &str, username: &str) -> Result<()> {
     if !valid_webhook(url) {
-        bail!("Ungültige Webhook-Adresse (Discord: Kanal bearbeiten → Integrationen → Webhooks → Webhook-URL kopieren).");
+        bail!(t!("discord.invalidWebhookAddressDiscord"));
     }
     let mut body = json!({ "content": content.chars().take(2000).collect::<String>() });
     if !username.is_empty() {
@@ -512,7 +513,7 @@ pub async fn send_webhook(url: &str, content: &str, username: &str) -> Result<()
         .send()
         .await?;
     if !res.status().is_success() {
-        bail!("Discord-Webhook: Fehler {}", res.status().as_u16());
+        bail!(t!("discord.discordWebhookError", res.status().as_u16()));
     }
     Ok(())
 }

@@ -1,4 +1,5 @@
 // HTTP- und WebSocket-Server: Editor (nur lokal) und Bedienfeld fürs Handy (mit Kopplungsschlüssel und optional PIN).
+use crate::t;
 use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::net::{IpAddr, SocketAddr};
@@ -25,7 +26,7 @@ use super::discovery;
 use super::http::{ApiResult, HttpError, error_response, json_response, safe_equal, serve_file, text_response};
 use crate::core::actions::{RunOpts, option_source, run_actions};
 use crate::core::backup::Backups;
-use crate::core::catalog;
+use crate::core::catalog::{self, Section};
 use crate::core::events::EventEngine;
 use crate::core::iconpacks::IconPacks;
 use crate::core::plugins::Plugins;
@@ -170,10 +171,10 @@ impl App {
             "events": store.config.events,
             "values": store.config.values,
             "settings": store.public_settings(),
-            "actionTypes": with_plugins(&catalog::localized(&catalog::ACTION_TYPES, lang), plugin_actions),
-            "triggerTypes": with_plugins(&catalog::localized(&catalog::TRIGGER_TYPES, lang), plugin_triggers),
-            "liveSources": catalog::localized(catalog::live_sources(), lang),
-            "sliderTargets": catalog::localized(catalog::slider_targets(), lang),
+            "actionTypes": with_plugins(&catalog::localized(&catalog::ACTION_TYPES, Section::Actions, lang), plugin_actions),
+            "triggerTypes": with_plugins(&catalog::localized(&catalog::TRIGGER_TYPES, Section::Triggers, lang), plugin_triggers),
+            "liveSources": catalog::localized(catalog::live_sources(), Section::LiveSources, lang),
+            "sliderTargets": catalog::localized(catalog::slider_targets(), Section::SliderTargets, lang),
             "pairingUrls": self.pairing_urls(store),
             "port": self.port,
         });
@@ -241,7 +242,7 @@ async fn run(app: &Arc<App>, actions: &[Action], button_id: Option<String>, sour
     let r = run_actions(app, actions, RunOpts { button_id, ..Default::default() }).await;
     if r["ok"] != true {
         let prefix = if source.is_empty() { String::new() } else { format!("{source}: ") };
-        app.log.error("Aktion", format!("{prefix}{}", r["error"].as_str().unwrap_or("")));
+        app.log.error(t!("server.action"), format!("{prefix}{}", r["error"].as_str().unwrap_or("")));
     }
     r
 }
@@ -270,13 +271,13 @@ async fn press(app: &Arc<App>, page_id: &str, button_id: &str) -> Value {
             (format!("{page_name} › {}", button_title(&b)), actions, toggled)
         })
     };
-    let Some((label, actions, toggled)) = found else { return json!({ "ok": false, "error": "Button nicht gefunden." }) };
+    let Some((label, actions, toggled)) = found else { return json!({ "ok": false, "error": t!("server.buttonNotFound") }) };
     if let Some(on) = toggled {
         app.events.fire(app, "button_toggle", &json!({ "buttonId": button_id, "state": if on { "on" } else { "off" } }));
     }
     let result = run(app, &actions, Some(button_id.into()), &label).await;
     if result["ok"] == true {
-        app.log.info("Button", format!("{label} gedrückt"));
+        app.log.info("Button", t!("server.pressed", label));
     }
     result
 }
@@ -403,17 +404,17 @@ fn refresh_live(app: &Arc<App>) {
 // Die App fragt an, am PC wird bestätigt, erst dann bekommt die App den Schlüssel.
 fn pair_request(app: &App, device: &Value, ip: String) -> ApiResult {
     let id = new_id("pr_");
-    let name: String = device.as_str().unwrap_or("Handy").chars().filter(|c| c.is_alphanumeric() || " ._()-".contains(*c)).take(60).collect();
-    let name = if name.is_empty() { "Handy".to_string() } else { name };
+    let name: String = device.as_str().unwrap_or(t!("server.phone")).chars().filter(|c| c.is_alphanumeric() || " ._()-".contains(*c)).take(60).collect();
+    let name = if name.is_empty() { t!("server.phone").to_string() } else { name };
     {
         let mut pairings = app.pairings.lock().unwrap();
         pairings.retain(|_, p| p.created.elapsed() <= PAIR_TIMEOUT && p.ip != ip);
         if pairings.len() >= 5 {
-            return Err(HttpError::new(429, "Zu viele offene Anfragen. Bitte kurz warten."));
+            return Err(HttpError::new(429, t!("server.tooManyOpenRequests")));
         }
         pairings.insert(id.clone(), Pairing { device: name.clone(), ip: ip.clone(), created: Instant::now(), state: "pending" });
     }
-    app.log.info("Gerät", format!("{name} ({ip}) möchte sich verbinden"));
+    app.log.info(t!("server.device"), t!("server.wantsToConnect", name, ip));
     app.broadcast(Some(Role::Editor), &json!({ "type": "pair-request", "id": id, "device": name, "ip": ip }));
     if let Some(cb) = &app.on_pair_request {
         cb(PairRequest { id: id.clone(), device: name, ip });
@@ -555,7 +556,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "PUT /api/pages" => {
             let mut store = app.store.lock().unwrap();
             if !body["revision"].is_null() && body["revision"].as_u64() != Some(store.revision) {
-                return Err(HttpError::new(409, "Die Seiten wurden inzwischen in einem anderen Fenster geändert."));
+                return Err(HttpError::new(409, t!("server.pagesWereChangedIn")));
             }
             store.set_project(&body).map_err(bad)?;
             Ok(json!({ "ok": true, "revision": store.revision }))
@@ -613,12 +614,12 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         }
         "POST /api/backups/restore" => {
             let (cfg, from) = match (&body["config"], body["name"].as_str()) {
-                (c, _) if !c.is_null() => (c.clone(), "hochgeladene Datei".to_string()),
+                (c, _) if !c.is_null() => (c.clone(), t!("server.uploadedFile").to_string()),
                 (_, Some(name)) => (app.backups.read(name)?, name.to_string()),
                 _ => return Err(HttpError::new(404, "Unbekannte Sicherung.")),
             };
             if !cfg["pages"].is_array() {
-                return Err(HttpError::new(400, "Das ist keine TouchDeck-Sicherung."));
+                return Err(HttpError::new(400, t!("server.thisIsNotTouchdeck")));
             }
             {
                 let mut store = app.store.lock().unwrap();
@@ -712,7 +713,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "POST /api/firewall/open" => {
             linux::open_firewall(app.port).await.map_err(user_error)?;
             app.store.lock().unwrap().set_settings(&json!({ "firewallOpened": true }));
-            app.log.info("Server", "Firewall für das Heimnetz freigegeben");
+            app.log.info("Server", t!("server.firewallOpenedForHome"));
             Ok(json!({ "ok": true }))
         }
         "POST /api/pair/request" => pair_request(app, &body["device"], ip),
@@ -721,11 +722,11 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let allow = body["allow"] == true;
             let device = {
                 let mut pairings = app.pairings.lock().unwrap();
-                let p = pairings.get_mut(str_of(&body, "id")).ok_or_else(|| HttpError::new(404, "Die Anfrage ist abgelaufen."))?;
+                let p = pairings.get_mut(str_of(&body, "id")).ok_or_else(|| HttpError::new(404, t!("server.requestHasExpired")))?;
                 p.state = if allow { "approved" } else { "denied" };
                 p.device.clone()
             };
-            app.log.info("Gerät", format!("{device}: {}", if allow { "erlaubt" } else { "abgelehnt" }));
+            app.log.info(t!("server.device"), format!("{device}: {}", if allow { t!("server.allowed") } else { t!("server.denied") }));
             Ok(json!({ "ok": true }))
         }
         "GET /api/discord/status" => Ok(app.discord.status()),
@@ -794,8 +795,8 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let data = str_of(&body, "data");
             let parsed = data.strip_prefix("data:").and_then(|d| d.split_once(";base64,"));
             let ext = parsed.and_then(|(mime, _)| ICON_TYPES.iter().find(|(m, _)| *m == mime).map(|(_, e)| *e));
-            let (Some((_, b64)), Some(ext)) = (parsed, ext) else { return Err(HttpError::new(400, "Nur PNG, JPG, GIF, WebP oder SVG.")) };
-            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, "Das Bild ist beschädigt."))?;
+            let (Some((_, b64)), Some(ext)) = (parsed, ext) else { return Err(HttpError::new(400, t!("server.onlyPngJpgGif"))) };
+            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.imageIsDamaged")))?;
             let name = format!("{}.{ext}", new_id("i_"));
             let dir = app.store.lock().unwrap().icon_dir.clone();
             std::fs::write(dir.join(&name), bytes).map_err(|e| HttpError::from(anyhow::Error::from(e)))?;
@@ -811,7 +812,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let updated = !existing.is_empty();
             let (pages, stats) = touchportal::import(&dir, &icon_dir, &existing).map_err(user_error)?;
             if pages.is_empty() {
-                return Err(HttpError::new(404, "Keine Seiten gefunden."));
+                return Err(HttpError::new(404, t!("server.noPagesFound")));
             }
             let mut store = app.store.lock().unwrap();
             store.replace_template_pages("touchportal", pages).map_err(bad)?;
@@ -873,7 +874,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "POST /api/iconpacks/import" => {
             let data = str_of(&body, "data");
             let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
-            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, "Die Datei ist beschädigt."))?;
+            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?;
             let fallback = str_of(&body, "fileName").trim_end_matches(".tdicons").trim_end_matches(".zip").to_string();
             let (id, count) = app.iconpacks.import(&bytes, &fallback).map_err(bad)?;
             app.log.info("Icons", format!("Icon-Paket importiert ({count} Bilder)"));
@@ -912,22 +913,22 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
             return json_response(401, &json!({ "error": "PIN erforderlich", "pin": true }));
         }
         if !pairing && (who.is_none() || (who == Some(Who::Device) && !DEVICE_ROUTES.contains(&route))) {
-            return error_response(401, "Nicht gekoppelt");
+            return error_response(401, t!("server.notPaired"));
         }
         // Schutz gegen fremde Webseiten: Schreibzugriffe brauchen einen eigenen Header (erzwingt CORS-Prüfung).
         if method != Method::GET && headers.get("x-touchdeck").is_none_or(|v| v != "1") {
-            return error_response(403, "Fehlender Header");
+            return error_response(403, t!("server.missingHeader"));
         }
         let body = if method == Method::GET {
             json!({})
         } else {
             let limit = if who == Some(Who::Local) && route.starts_with("POST /api/iconpacks") { MAX_UPLOAD } else { MAX_BODY };
             match axum::body::to_bytes(req.into_body(), limit).await {
-                Err(_) => return error_response(413, "Anfrage zu groß"),
+                Err(_) => return error_response(413, t!("server.requestTooLarge")),
                 Ok(b) if b.is_empty() => json!({}),
                 Ok(b) => match serde_json::from_slice(&b) {
                     Ok(v) => v,
-                    Err(_) => return error_response(400, "Ungültiges JSON"),
+                    Err(_) => return error_response(400, t!("server.invalidJson")),
                 },
             }
         };
@@ -949,7 +950,7 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
     let index = |p: &str| if p.ends_with('/') { format!("{p}index.html") } else { p.to_string() };
     if path.starts_with("/editor/") {
         if who != Some(Who::Local) {
-            return text_response(403, "Der Editor ist nur auf diesem PC erreichbar.");
+            return text_response(403, t!("server.editorIsOnlyReachable"));
         }
         return serve_file(&app.public_dir, &index(&path), &[]).await;
     }
@@ -995,7 +996,7 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
             Err(err) => error_response(err.status, &err.message),
         };
     }
-    text_response(404, "Nicht gefunden")
+    text_response(404, t!("server.notFound"))
 }
 
 // ---------- WebSocket: Bedienfelder und Editor ----------
@@ -1004,7 +1005,7 @@ async fn ws_upgrade(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<
     let query: HashMap<String, String> = Query::try_from_uri(&uri).map(|Query(q)| q).unwrap_or_default();
     let who = app.auth(&addr, &query, &headers);
     if !matches!(who, Some(Who::Local | Who::Device)) {
-        return text_response(401, "Nicht gekoppelt");
+        return text_response(401, t!("server.notPaired"));
     }
     // Der Editor meldet sich mit role=editor; alles andere ist ein Bedienfeld.
     let role = if who == Some(Who::Local) && query.get("role").is_some_and(|r| r == "editor") { Role::Editor } else { Role::Device };
@@ -1017,7 +1018,7 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
     let id = app.next_client.fetch_add(1, Ordering::Relaxed);
     app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None });
     if role == Role::Device {
-        app.log.info("Gerät", format!("verbunden: {ip}"));
+        app.log.info(t!("server.device"), t!("server.connected", ip));
         app.events.fire(&app, "device", &json!({ "state": "connected", "Gerät": ip }));
     }
     let state = with_type(app.deck_state(&app.store.lock().unwrap()), "state");
@@ -1065,7 +1066,7 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
     }
     writer.abort();
     if role == Role::Device {
-        app.log.info("Gerät", format!("getrennt: {ip}"));
+        app.log.info(t!("server.device"), t!("server.disconnected", ip));
         app.events.fire(&app, "device", &json!({ "state": "disconnected", "Gerät": ip }));
     }
 }
@@ -1143,7 +1144,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
     tokio::spawn(async move {
         let _ = axum::serve(listener, router.into_make_service_with_connect_info::<SocketAddr>()).await;
     });
-    app.log.info("Server", format!("TouchDeck {VERSION} läuft auf Port {}", opts.port));
+    app.log.info("Server", t!("server.touchdeckIsRunningOn", opts.port, VERSION));
 
     // Wert geändert: Events sofort auslösen (im selben Ablauf, damit Endlosketten erkannt werden).
     let weak = Arc::downgrade(&app);
@@ -1173,7 +1174,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
             if change == "security" {
                 // Neuer Schlüssel, PIN geändert oder WLAN aus: gekoppelte Geräte trennen, damit sie sich neu anmelden.
                 for c in a.clients.lock().unwrap().values().filter(|c| c.role == Role::Device) {
-                    let _ = c.tx.send(Message::Close(Some(CloseFrame { code: 4001, reason: "Einstellungen geändert".into() })));
+                    let _ = c.tx.send(Message::Close(Some(CloseFrame { code: 4001, reason: t!("server.settingsChanged").into() })));
                 }
                 continue;
             }

@@ -1,110 +1,84 @@
 {
  "liveSources": [
   {
-   "value": "none",
-   "label": "Keine"
+   "value": "none"
   },
   {
-   "value": "clock",
-   "label": "Uhrzeit"
+   "value": "clock"
   },
   {
-   "value": "date",
-   "label": "Datum"
+   "value": "date"
   },
   {
-   "value": "cpu",
-   "label": "CPU-Auslastung"
+   "value": "cpu"
   },
   {
-   "value": "ram",
-   "label": "Arbeitsspeicher"
+   "value": "ram"
   },
   {
-   "value": "temp",
-   "label": "CPU-Temperatur"
+   "value": "temp"
   },
   {
-   "value": "volume",
-   "label": "Lautstärke"
+   "value": "volume"
   },
   {
-   "value": "mic",
-   "label": "Mikrofon stumm?"
+   "value": "mic"
   },
   {
-   "value": "track",
-   "label": "Aktueller Musiktitel"
+   "value": "track"
   },
   {
-   "value": "steam_updates",
-   "label": "Steam-Updates"
+   "value": "steam_updates"
   },
   {
-   "value": "steam_running",
-   "label": "Spiel läuft (aus Aktion)"
+   "value": "steam_running"
   },
   {
-   "value": "obs_stream",
-   "label": "OBS: Stream läuft?"
+   "value": "obs_stream"
   },
   {
-   "value": "obs_record",
-   "label": "OBS: Aufnahme läuft?"
+   "value": "obs_record"
   },
   {
-   "value": "obs_scene",
-   "label": "OBS: Szene aktiv? (aus Aktion)"
+   "value": "obs_scene"
   },
   {
-   "value": "twitch_live",
-   "label": "Twitch: live?"
+   "value": "twitch_live"
   },
   {
-   "value": "twitch_viewers",
-   "label": "Twitch: Zuschauer"
+   "value": "twitch_viewers"
   },
   {
-   "value": "twitch_followers",
-   "label": "Twitch: Follower"
+   "value": "twitch_followers"
   },
   {
-   "value": "discord_mute",
-   "label": "Discord: stumm?"
+   "value": "discord_mute"
   },
   {
-   "value": "discord_deaf",
-   "label": "Discord: taub?"
+   "value": "discord_deaf"
   },
   {
-   "value": "discord_channel",
-   "label": "Discord: Sprachkanal"
+   "value": "discord_channel"
   },
   {
-   "value": "variable",
-   "label": "Wert einer Variable"
+   "value": "variable"
   },
   {
-   "value": "command",
-   "label": "Ausgabe eines Befehls"
+   "value": "command"
   }
  ],
  "sliderTargets": [
   {
-   "value": "volume",
-   "label": "Lautstärke (PC)"
+   "value": "volume"
   },
   {
-   "value": "mic",
-   "label": "Mikrofon-Pegel"
+   "value": "mic"
   },
   {
-   "value": "obs_volume",
-   "label": "OBS-Audioquelle"
+   "value": "obs_volume"
   },
   {
-   "value": "command",
-   "label": "Eigener Befehl ({value} = 0–100)"
+   "value": "command"
   }
  ]
 }

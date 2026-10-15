@@ -1,4 +1,5 @@
 // Sicherungen der Konfiguration (Seiten, Werte, Vorlagen, Events, Einstellungen) im Ordner backups/.
+use crate::t;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
@@ -113,7 +114,7 @@ impl Backups {
         let unknown = || HttpError::new(404, "Unbekannte Sicherung.");
         parse_name(name).ok_or_else(unknown)?;
         let raw = fs::read_to_string(self.dir.join(name)).map_err(|_| unknown())?;
-        serde_json::from_str(&raw).map_err(|_| HttpError::new(400, "Die Sicherung ist beschädigt."))
+        serde_json::from_str(&raw).map_err(|_| HttpError::new(400, t!("backup.backupIsDamaged")))
     }
 
     pub fn remove(&self, name: &str) -> Result<(), HttpError> {

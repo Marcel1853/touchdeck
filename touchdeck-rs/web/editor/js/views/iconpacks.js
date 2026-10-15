@@ -24,7 +24,7 @@ export async function loadIconPacks() {
 const readDataUrl = (file) => new Promise((resolve, reject) => {
   const r = new FileReader();
   r.onload = () => resolve(r.result);
-  r.onerror = () => reject(new Error(tr('„{0}“ lässt sich nicht lesen.', [file.name])));
+  r.onerror = () => reject(new Error(tr('iconpacks.cannotBeRead', [file.name])));
   r.readAsDataURL(file);
 });
 
@@ -39,7 +39,7 @@ async function uploadImages(pack, fileList) {
       S.iconPacks = r.packs;
       saved += r.saved.length;
     }
-    toast(`${tr(saved === 1 ? '1 Bild zu „{1}“ hinzugefügt' : '{0} Bilder zu „{1}“ hinzugefügt', [saved, pack.name])}${skipped ? ` ${tr('({0} größer als 5 MB übersprungen)', [skipped])}` : ''} ✓`, 'ok');
+    toast(`${tr(saved === 1 ? 'iconpacks.oneImageAddedTo' : 'iconpacks.imagesAddedTo', [saved, pack.name])}${skipped ? ` ${tr('iconpacks.largerThan5Mb', [skipped])}` : ''} ✓`, 'ok');
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -51,7 +51,7 @@ async function importPack(file) {
     const r = await api('POST', '/api/iconpacks/import', { data: await readDataUrl(file), fileName: file.name });
     S.iconPacks = r.packs;
     S.openPack = r.id;
-    toast(tr('Icon-Paket mit {0} Bildern importiert ✓', [r.count]), 'ok');
+    toast(tr('iconpacks.iconPackWithImages', [r.count]), 'ok');
     render();
   } catch (err) {
     toast(err.message, 'error');
@@ -63,10 +63,10 @@ function packForm(pack, onSave) {
   const input = (key, label, placeholder) => h('label', { class: 'field' }, label,
     h('input', { value: f[key], placeholder, maxlength: key === 'link' ? 300 : 120, oninput: (e) => (f[key] = e.target.value) }));
   return h('div', { class: 'pack-form' },
-    input('name', tr('Name'), tr('z. B. Mein Streaming-Set')),
-    h('div', { class: 'row' }, input('author', tr('Von (optional)'), tr('dein Name')), input('license', tr('Lizenz (optional)'), tr('z. B. CC0, CC BY 4.0, nur privat'))),
-    input('link', tr('Link (optional)'), 'https://…'),
-    h('button', { class: 'btn primary small', onclick: () => onSave(f) }, pack ? tr('Speichern') : tr('Paket anlegen')));
+    input('name', tr('common.name'), tr('iconpacks.exampleMyStreamingSet')),
+    h('div', { class: 'row' }, input('author', tr('iconpacks.byOptional'), tr('iconpacks.yourName')), input('license', tr('iconpacks.licenseOptional'), tr('iconpacks.exampleCc0CcBy'))),
+    input('link', tr('iconpacks.linkOptional'), 'https://…'),
+    h('button', { class: 'btn primary small', onclick: () => onSave(f) }, pack ? tr('common.save') : tr('iconpacks.createPack')));
 }
 
 function packCard(pack) {
@@ -77,21 +77,21 @@ function packCard(pack) {
     h('div', { class: 'pack-preview' }, pack.icons.slice(0, 4).map((i) => h('img', { src: iconUrl(packIcon(pack.id, i)), alt: '', loading: 'lazy' }))),
     h('div', { class: 'pack-title' },
       h('b', {}, pack.name),
-      h('small', {}, [tr('{0} Bilder', [pack.icons.length]), pack.author && tr('von {0}', [pack.author]), pack.license].filter(Boolean).join(' · '))),
+      h('small', {}, [tr('iconpacks.images', [pack.icons.length]), pack.author && tr('iconpacks.by', [pack.author]), pack.license].filter(Boolean).join(' · '))),
     h('span', { class: 'chevron' }, open ? '▾' : '▸'));
   if (!open) return h('div', { class: 'settings-card pack' }, head);
 
   return h('div', { class: 'settings-card pack open' },
     head,
     h('div', { class: 'pack-actions' },
-      h('label', { class: 'btn small primary' }, tr('＋ Bilder hinzufügen'), upload),
-      h('a', { class: 'btn small', href: `/iconpacks/export?id=${encodeURIComponent(pack.id)}`, download: '' }, tr('📤 Exportieren')),
-      h('button', { class: 'btn small ghost', onclick: () => { S.editPack = S.editPack === pack.id ? null : pack.id; render(); } }, tr('✏️ Beschreibung')),
+      h('label', { class: 'btn small primary' }, tr('iconpacks.addImages'), upload),
+      h('a', { class: 'btn small', href: `/iconpacks/export?id=${encodeURIComponent(pack.id)}`, download: '' }, tr('iconpacks.export')),
+      h('button', { class: 'btn small ghost', onclick: () => { S.editPack = S.editPack === pack.id ? null : pack.id; render(); } }, tr('iconpacks.description')),
       h('div', { class: 'spacer' }),
       h('button', { class: 'btn small ghost danger', onclick: async () => {
         const used = usage(pack.id);
-        const answer = await ask(tr('Icon-Paket löschen?'), `${tr('„{0}“ mit {1} Bildern wird gelöscht.', [pack.name, pack.icons.length])}${used ? ` ${tr('{0} Button(s) nutzen Bilder daraus und zeigen danach kein Bild mehr.', [used])}` : ''}`,
-          [{ value: 'delete', label: tr('Löschen'), kind: 'danger' }]);
+        const answer = await ask(tr('iconpacks.deleteIconPack'), `${tr('iconpacks.withImagesWillBe', [pack.name, pack.icons.length])}${used ? ` ${tr('iconpacks.buttonSUseImages', [used])}` : ''}`,
+          [{ value: 'delete', label: tr('common.delete'), kind: 'danger' }]);
         if (answer !== 'delete') return;
         try {
           S.iconPacks = (await api('POST', '/api/iconpacks/delete', { id: pack.id })).packs;
@@ -99,7 +99,7 @@ function packCard(pack) {
         } catch (err) {
           toast(err.message, 'error');
         }
-      } }, tr('🗑️ Paket löschen'))),
+      } }, tr('iconpacks.deletePack'))),
     S.editPack === pack.id && packForm(pack, async (f) => {
       try {
         S.iconPacks = (await api('POST', '/api/iconpacks/update', { id: pack.id, ...f })).packs;
@@ -113,7 +113,7 @@ function packCard(pack) {
     pack.icons.length
       ? h('div', { class: 'icon-grid pack-icons' }, pack.icons.map((i) => h('div', { class: 'pack-icon', title: i },
         h('img', { src: iconUrl(packIcon(pack.id, i)), alt: '', loading: 'lazy' }),
-        h('button', { class: 'remove', title: tr('Bild entfernen'), onclick: async () => {
+        h('button', { class: 'remove', title: tr('iconpacks.removeImage'), onclick: async () => {
           try {
             S.iconPacks = (await api('POST', '/api/iconpacks/remove-icon', { id: pack.id, file: i })).packs;
             render();
@@ -121,20 +121,20 @@ function packCard(pack) {
             toast(err.message, 'error');
           }
         } }, '✕'))))
-      : h('p', { class: 'hint-text' }, tr('Noch leer – mit „Bilder hinzufügen“ mehrere Bilder auf einmal auswählen.')));
+      : h('p', { class: 'hint-text' }, tr('iconpacks.stillEmptyUseAdd')));
 }
 
 /** Bereich in den Einstellungen. */
 export function iconPacksSection() {
-  const title = [h('h1', {}, tr('Icon-Pakete')), h('p', { class: 'hint-text' },
-    tr('Eigene Bildersammlungen für deine Buttons. Lege Pakete an, füge Bilder hinzu und gib sie als .tdicons-Datei weiter – oder importiere Pakete von anderen. Bitte nur Bilder verwenden, die du nutzen darfst (selbst erstellt oder mit passender Lizenz).'))];
+  const title = [h('h1', {}, tr('common.iconPacks')), h('p', { class: 'hint-text' },
+    tr('iconpacks.yourOwnImageCollections'))];
   const importInput = h('input', { type: 'file', hidden: true, accept: '.tdicons,.zip,application/zip', onchange: (e) => e.target.files[0] && importPack(e.target.files[0]) });
   return [
     ...title,
     h('div', { class: 'settings-card' },
       h('div', { class: 'pack-actions' },
-        h('button', { class: 'btn primary small', onclick: () => { S.newPack = !S.newPack; render(); } }, tr('＋ Neues Paket')),
-        h('label', { class: 'btn small' }, tr('📥 Paket importieren (.tdicons / .zip)'), importInput)),
+        h('button', { class: 'btn primary small', onclick: () => { S.newPack = !S.newPack; render(); } }, tr('iconpacks.newPack')),
+        h('label', { class: 'btn small' }, tr('iconpacks.importPackTdiconsZip'), importInput)),
       S.newPack && packForm(null, async (f) => {
         try {
           const r = await api('POST', '/api/iconpacks', f);
@@ -146,13 +146,13 @@ export function iconPacksSection() {
           toast(err.message, 'error');
         }
       })),
-    ...(S.iconPacks.length ? S.iconPacks.map(packCard) : [h('p', { class: 'hint-text' }, tr('Noch keine Icon-Pakete.'))]),
+    ...(S.iconPacks.length ? S.iconPacks.map(packCard) : [h('p', { class: 'hint-text' }, tr('iconpacks.noIconPacksYet'))]),
   ];
 }
 
 /** Bildauswahl beim Button: eigene Bilder und alle Icon-Pakete, mit Suche. key: icon oder iconOn. */
 export function iconPicker(b, key = 'icon') {
-  const sources = [['own', tr('Eigene Bilder ({0})', [S.icons.length]), S.icons.map((n) => ({ value: n, label: n }))],
+  const sources = [['own', tr('iconpacks.ownImages', [S.icons.length]), S.icons.map((n) => ({ value: n, label: n }))],
     ...S.iconPacks.map((p) => [p.id, `${p.name} (${p.icons.length})`, p.icons.map((i) => ({ value: packIcon(p.id, i), label: i }))])];
   if (!sources.some(([, , list]) => list.length)) return null;
   if (!sources.some(([id]) => id === S.iconSource)) S.iconSource = sources.find(([, , l]) => l.length)?.[0] ?? 'own';
@@ -162,14 +162,14 @@ export function iconPicker(b, key = 'icon') {
   const MAX = 240;
   return h('div', {},
     h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S.showIcons = !S.showIcons; render(); } },
-      tr('{0} Bilder & Icon-Pakete', [S.showIcons ? '▾' : '▸'])),
+      tr('iconpacks.imagesIconPacks', [S.showIcons ? '▾' : '▸'])),
     S.showIcons && h('div', { class: 'picker' },
       h('div', { class: 'row' },
         h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; render(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
-        h('input', { type: 'search', placeholder: tr('Suchen …'), value: S.iconSearch ?? '', oninput: (e) => { S.iconSearch = e.target.value; render(); } })),
+        h('input', { type: 'search', placeholder: tr('common.search'), value: S.iconSearch ?? '', oninput: (e) => { S.iconSearch = e.target.value; render(); } })),
       shown.length
         ? h('div', { class: 'icon-grid' }, shown.slice(0, MAX).map((i) => h('button', { type: 'button', title: i.label, class: b[key]?.value === i.value ? 'active' : '',
           onclick: () => mutate(() => (b[key] = { type: 'image', value: i.value })) }, h('img', { src: iconUrl(i.value), alt: '', loading: 'lazy' }))))
-        : h('p', { class: 'hint-text' }, tr('Keine Bilder gefunden.')),
-      shown.length > MAX && h('p', { class: 'hint-text' }, tr('{0} weitere – Suche verfeinern.', [shown.length - MAX]))));
+        : h('p', { class: 'hint-text' }, tr('iconpacks.noImagesFound')),
+      shown.length > MAX && h('p', { class: 'hint-text' }, tr('iconpacks.moreRefineSearch', [shown.length - MAX]))));
 }

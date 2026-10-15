@@ -1,6 +1,7 @@
 // Icon-Pakete: eigene Bildersammlungen, die jeder selbst anlegt, füllt und als Datei (.tdicons) weitergeben kann.
 // Ablage: <Datenordner>/icons/packs/<id>/pack.json plus die Bilder. Buttons verweisen auf „packs/<id>/<datei>“,
 // damit Bedienfeld und Handy-App die Bilder wie alle anderen über /icons/… laden.
+use crate::t;
 use std::fs;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
@@ -77,7 +78,7 @@ impl IconPacks {
     fn pack_dir(&self, id: &str) -> Result<PathBuf> {
         let d = self.dir.join(id);
         if !valid_id(id) || !d.join("pack.json").is_file() {
-            bail!("Das Icon-Paket gibt es nicht (mehr).");
+            bail!(t!("iconpacks.iconPackDoesNot"));
         }
         Ok(d)
     }
@@ -131,11 +132,11 @@ impl IconPacks {
     fn meta_from(body: &Value) -> Result<Value> {
         let name = text(&body["name"], 80);
         if name.is_empty() {
-            bail!("Bitte einen Namen für das Icon-Paket angeben.");
+            bail!(t!("iconpacks.pleaseEnterNameFor"));
         }
         let link = text(&body["link"], 300);
         if !link.is_empty() && !(link.starts_with("https://") || link.starts_with("http://")) {
-            bail!("Der Link muss mit https:// beginnen.");
+            bail!(t!("iconpacks.linkMustStartWith"));
         }
         Ok(json!({ "name": name, "author": text(&body["author"], 80), "link": link, "license": text(&body["license"], 200) }))
     }
@@ -167,15 +168,15 @@ impl IconPacks {
         let existing = Self::icons_of(&dir).len();
         let mut saved = Vec::new();
         for (count, f) in (existing..).zip(files.as_array().into_iter().flatten()) {
-            let name = clean_file_name(f["name"].as_str().unwrap_or("")).ok_or_else(|| anyhow!("„{}“ ist kein Bild (PNG, JPG, GIF, WebP oder SVG).", f["name"].as_str().unwrap_or("?")))?;
+            let name = clean_file_name(f["name"].as_str().unwrap_or("")).ok_or_else(|| anyhow!(t!("iconpacks.isNotImagePng", f["name"].as_str().unwrap_or("?"))))?;
             let data = f["data"].as_str().unwrap_or("");
-            let b64 = data.split_once(";base64,").map(|(_, b)| b).ok_or_else(|| anyhow!("„{name}“ ist beschädigt."))?;
-            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| anyhow!("„{name}“ ist beschädigt."))?;
+            let b64 = data.split_once(";base64,").map(|(_, b)| b).ok_or_else(|| anyhow!(t!("iconpacks.isDamaged", name)))?;
+            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| anyhow!(t!("iconpacks.isDamaged", name)))?;
             if bytes.len() as u64 > MAX_IMAGE {
-                bail!("„{name}“ ist größer als 5 MB.");
+                bail!(t!("iconpacks.isLargerThan5", name));
             }
             if count >= MAX_ICONS {
-                bail!("Ein Paket kann höchstens {MAX_ICONS} Bilder enthalten.");
+                bail!(t!("iconpacks.packCanContainAt", MAX_ICONS));
             }
             let target = free_name(&dir, &name);
             fs::write(dir.join(&target), bytes)?;
@@ -211,7 +212,7 @@ impl IconPacks {
 
     /** Paket aus einer ZIP-Datei übernehmen (.tdicons oder ein ZIP mit Bildern). Liefert die neue ID und die Anzahl der Bilder. */
     pub fn import(&self, bytes: &[u8], fallback_name: &str) -> Result<(String, usize)> {
-        let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!("Die Datei ist kein gültiges Icon-Paket (ZIP)."))?;
+        let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!(t!("iconpacks.fileIsNotValid")))?;
         let mut meta = json!({});
         let mut images: Vec<(String, Vec<u8>)> = Vec::new();
         let mut total = 0u64;
@@ -227,7 +228,7 @@ impl IconPacks {
             }
             total += f.size();
             if total > MAX_TOTAL {
-                bail!("Das Paket ist zu groß (mehr als 100 MB).");
+                bail!(t!("iconpacks.packIsTooLarge"));
             }
             if base == "pack.json" {
                 let mut t = String::new();
@@ -235,7 +236,7 @@ impl IconPacks {
                 meta = serde_json::from_str(&t).unwrap_or_else(|_| json!({}));
             } else if let Some(name) = clean_file_name(&base) {
                 if images.len() >= MAX_ICONS {
-                    bail!("Das Paket enthält mehr als {MAX_ICONS} Bilder.");
+                    bail!(t!("iconpacks.packContainsMoreThan", MAX_ICONS));
                 }
                 let mut data = Vec::with_capacity(f.size() as usize);
                 f.read_to_end(&mut data)?;
@@ -243,7 +244,7 @@ impl IconPacks {
             }
         }
         if images.is_empty() {
-            bail!("In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).");
+            bail!(t!("iconpacks.fileContainsNoImages"));
         }
         if meta["name"].as_str().is_none_or(str::is_empty) {
             meta["name"] = json!(if fallback_name.is_empty() { "Importiertes Paket" } else { fallback_name });

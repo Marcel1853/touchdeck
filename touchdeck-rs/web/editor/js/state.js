@@ -113,7 +113,7 @@ function setSaveState(text, isError = false) {
 
 function scheduleSave() {
   dirty = true;
-  setSaveState(tr('Speichert gleich …'));
+  setSaveState(tr('editor.savingShortly'));
   clearTimeout(saveTimer);
   saveTimer = setTimeout(save, 400);
 }
@@ -126,17 +126,17 @@ export async function save() {
   saving = api('PUT', '/api/pages', { pages: S.pages, flows: S.flows, events: S.events, values: S.values, revision: S.revision })
     .then((r) => {
       S.revision = r.revision;
-      setSaveState(dirty ? tr('Speichert gleich …') : tr('Alle Änderungen gespeichert ✓'));
+      setSaveState(dirty ? tr('editor.savingShortly') : tr('editor.allChangesSaved'));
     })
     .catch(async (err) => {
       if (err.status === 409) {
         // Ein anderes Fenster war schneller: dessen Stand übernehmen statt ihn zu überschreiben.
         await loadState();
-        toast(tr('Es wurde in einem anderen Fenster etwas geändert. Der aktuelle Stand wurde geladen – deine letzte Änderung bitte wiederholen.'), 'error');
+        toast(tr('editor.somethingWasChangedIn'), 'error');
         return;
       }
       dirty = true;
-      setSaveState(tr('Speichern fehlgeschlagen: {0}', [err.message]), true);
+      setSaveState(tr('editor.savingFailed', [err.message]), true);
     })
     .finally(() => (saving = null));
   await saving;
@@ -166,7 +166,7 @@ export async function loadState({ keepUndo = false } = {}) {
     undoStack.length = 0;
     redoStack.length = 0;
   }
-  setSaveState(tr('Alle Änderungen gespeichert ✓'));
+  setSaveState(tr('editor.allChangesSaved'));
   render();
 }
 

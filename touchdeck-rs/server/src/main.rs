@@ -1,4 +1,5 @@
 // Startet TouchDeck ohne Fenster: lädt die Daten, startet den Server und öffnet den Editor im Browser.
+use touchdeck_server::t;
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
 use std::time::Duration;
@@ -42,7 +43,7 @@ fn parse_args() -> Args {
         match a.as_str() {
             "--port" => {
                 args.port = value("--port").parse().unwrap_or_else(|_| {
-                    eprintln!("--port: keine gültige Zahl");
+                    eprintln!("{}", t!("cli.portNotValidNumber"));
                     std::process::exit(2)
                 })
             }
@@ -104,17 +105,17 @@ async fn main() {
         }
         // Läuft TouchDeck schon (z. B. per Autostart), nur dessen Editor öffnen.
         if !touchdeck_running(args.port).await {
-            eprintln!("Port {} ist von einem anderen Programm belegt. Anderen Port wählen: --port <n>", args.port);
+            eprintln!("{}", t!("cli.portIsUsedBy", args.port));
             std::process::exit(1)
         }
-        println!("TouchDeck läuft bereits – öffne den Editor: {editor_url}");
+        println!("{}", t!("cli.touchdeckIsAlreadyRunning", editor_url));
         if args.open {
             let _ = linux::open_with_default(&editor_url);
         }
         return;
     }
 
-    println!("TouchDeck läuft.\n  Editor:  {editor_url}\n  Daten:   {}", data.display());
+    println!("{}", t!("cli.touchdeckIsRunningEditor", data.display(), editor_url));
     if args.open {
         let _ = linux::open_with_default(&editor_url);
     }

@@ -160,7 +160,7 @@ function goTo(pageId) {
 
 const send = (msg) => {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    toast(tr('Nicht verbunden'), true);
+    toast(tr('deck.notConnected'), true);
     return false;
   }
   ws.send(JSON.stringify({ ...msg, pageId: currentPage }));
@@ -270,7 +270,7 @@ $('page-name').addEventListener('click', () => {
   }));
   if (app) {
     const c = document.createElement('button');
-    c.textContent = tr('⚙ Verbindung ändern');
+    c.textContent = tr('deck.changeConnection');
     c.className = 'menu-extra';
     c.onclick = () => app.openConnection();
     $('page-menu-list').append(c);
@@ -282,7 +282,7 @@ $('page-menu').addEventListener('click', (e) => {
 });
 $('fullscreen').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen?.().then(() => applyOrientation(state?.deck.orientation)).catch(() => toast(tr('Vollbild wird hier nicht unterstützt'), true));
+  else document.documentElement.requestFullscreen?.().then(() => applyOrientation(state?.deck.orientation)).catch(() => toast(tr('deck.fullscreenIsNotSupported'), true));
 });
 
 // ---------- PIN ----------
@@ -290,7 +290,7 @@ $('fullscreen').addEventListener('click', () => {
 function askPin(wrong) {
   return new Promise((resolve) => {
     $('pin-box').hidden = false;
-    $('pin-hint').textContent = wrong ? tr('Die PIN stimmt nicht. Bitte noch einmal.') : tr('Dieser PC ist mit einer PIN geschützt.');
+    $('pin-hint').textContent = wrong ? tr('deck.pinIsWrongPlease') : tr('deck.thisPcIsProtected');
     const input = $('pin-input');
     input.value = '';
     input.focus();
@@ -352,8 +352,8 @@ async function connect() {
   };
   ws.onclose = (ev) => {
     const text = ev.code === 1006 && !state && !token
-      ? tr('Nicht gekoppelt. Bitte den QR-Code im TouchDeck-Editor am PC scannen.')
-      : tr('Verbindung verloren – verbinde neu …');
+      ? tr('deck.notPairedPleaseScan')
+      : tr('deck.connectionLostReconnecting');
     setConnected(false, text);
     setTimeout(connect, retryDelay);
     retryDelay = Math.min(retryDelay * 2, 8000);

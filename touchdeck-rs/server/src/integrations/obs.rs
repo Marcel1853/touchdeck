@@ -1,4 +1,5 @@
 // Anbindung an OBS Studio über obs-websocket 5 (ab OBS 28 eingebaut, Werkzeuge → WebSocket-Servereinstellungen).
+use crate::t;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -80,7 +81,7 @@ impl ObsClient {
         {
             bail!("{err}");
         }
-        match tokio::time::timeout(Duration::from_secs(4), self.open()).await.unwrap_or_else(|_| Err(anyhow!("OBS antwortet nicht."))) {
+        match tokio::time::timeout(Duration::from_secs(4), self.open()).await.unwrap_or_else(|_| Err(anyhow!(t!("obs.obsIsNotResponding2")))) {
             Ok(conn) => {
                 *self.last_failure.lock().unwrap() = None;
                 let tx = conn.tx.clone();
@@ -101,7 +102,7 @@ impl ObsClient {
         let (ws, _) = tokio_tungstenite::connect_async(&url).await.map_err(|e| {
             let msg = e.to_string();
             if msg.contains("refused") || msg.contains("Connection refused") {
-                anyhow!("OBS ist nicht erreichbar. Läuft OBS und ist der WebSocket-Server eingeschaltet (Werkzeuge → WebSocket-Servereinstellungen)?")
+                anyhow!(t!("obs.obsIsNotReachable"))
             } else {
                 anyhow!("OBS-Verbindung: {msg}")
             }
@@ -118,7 +119,7 @@ impl ObsClient {
         let auth = &hello["d"]["authentication"];
         if auth.is_object() {
             if s.password.is_empty() {
-                bail!("OBS verlangt ein Passwort. Bitte in den TouchDeck-Einstellungen eintragen.");
+                bail!(t!("obs.obsRequiresPasswordPlease"));
             }
             let secret = sha256_b64(&format!("{}{}", s.password, auth["salt"].as_str().unwrap_or("")));
             identify["authentication"] = json!(sha256_b64(&format!("{secret}{}", auth["challenge"].as_str().unwrap_or(""))));
@@ -126,7 +127,7 @@ impl ObsClient {
         sink.send(Message::Text(json!({ "op": 1, "d": identify }).to_string().into())).await?;
         let ready = next_json(&mut stream).await?;
         if ready["op"] != 2 {
-            bail!("OBS-Verbindung: Anmeldung fehlgeschlagen.");
+            bail!(t!("obs.obsConnectionLoginFailed"));
         }
 
         let alive = Arc::new(AtomicBool::new(true));
@@ -155,7 +156,7 @@ impl ObsClient {
                         let _ = p.send(if st["result"] == true {
                             Ok(d.get("responseData").cloned().unwrap_or(json!({})))
                         } else {
-                            Err(format!("OBS: {}", st["comment"].as_str().map_or_else(|| format!("Fehler {}", st["code"]), String::from)))
+                            Err(format!("OBS: {}", st["comment"].as_str().map_or_else(|| t!("obs.error", st["code"]), String::from)))
                         });
                     }
                     _ => {}
@@ -164,7 +165,7 @@ impl ObsClient {
             a.store(false, Ordering::Relaxed);
             // Offene Anfragen mit Fehler beenden.
             for (_, p) in pending.lock().unwrap().drain() {
-                let _ = p.send(Err("OBS-Verbindung getrennt.".into()));
+                let _ = p.send(Err(t!("obs.disconnectedFromObs").into()));
             }
         });
         Ok(Conn { tx, alive })
@@ -178,15 +179,15 @@ impl ObsClient {
         let msg = json!({ "op": 6, "d": { "requestType": request_type, "requestId": id, "requestData": data } });
         if tx.send(Message::Text(msg.to_string().into())).is_err() {
             self.pending.lock().unwrap().remove(&id);
-            bail!("OBS-Verbindung getrennt.");
+            bail!(t!("obs.disconnectedFromObs"));
         }
         match tokio::time::timeout(Duration::from_secs(5), wait).await {
             Ok(Ok(Ok(v))) => Ok(v),
             Ok(Ok(Err(e))) => Err(anyhow!(e)),
-            Ok(Err(_)) => bail!("OBS-Verbindung getrennt."),
+            Ok(Err(_)) => bail!(t!("obs.disconnectedFromObs")),
             Err(_) => {
                 self.pending.lock().unwrap().remove(&id);
-                bail!("OBS antwortet nicht auf {request_type}.")
+                bail!(t!("obs.obsIsNotResponding", request_type))
             }
         }
     }
@@ -222,7 +223,7 @@ impl ObsClient {
     }
 
     pub async fn set_source_visible(&self, target: &str, mode: &str) -> Result<bool> {
-        let Some((scene, source)) = target.split_once('␟') else { bail!("Keine Quelle ausgewählt.") };
+        let Some((scene, source)) = target.split_once('␟') else { bail!(t!("common.noSourceSelected")) };
         let id = self.call("GetSceneItemId", json!({ "sceneName": scene, "sourceName": source })).await?["sceneItemId"].clone();
         let enabled = if mode == "toggle" {
             self.call("GetSceneItemEnabled", json!({ "sceneName": scene, "sceneItemId": id })).await?["sceneItemEnabled"] != true
@@ -261,7 +262,7 @@ impl ObsClient {
     }
 
     pub async fn set_filter(&self, target: &str, mode: &str) -> Result<bool> {
-        let Some((source, filter)) = target.split_once('␟') else { bail!("Kein Filter ausgewählt.") };
+        let Some((source, filter)) = target.split_once('␟') else { bail!(t!("obs.noFilterSelected")) };
         let enabled = if mode == "toggle" {
             self.call("GetSourceFilter", json!({ "sourceName": source, "filterName": filter })).await?["filterEnabled"] != true
         } else {
@@ -302,13 +303,13 @@ where
             Some(Ok(Message::Text(t))) => return Ok(serde_json::from_str(&t)?),
             Some(Ok(Message::Close(frame))) => {
                 if frame.is_some_and(|f| u16::from(f.code) == 4009) {
-                    bail!("OBS lehnt das Passwort ab. Bitte in den TouchDeck-Einstellungen prüfen.");
+                    bail!(t!("obs.obsRejectsPasswordPlease"));
                 }
-                bail!("OBS hat die Verbindung beendet.");
+                bail!(t!("obs.obsClosedConnection"));
             }
             Some(Ok(_)) => continue,
             Some(Err(e)) => bail!("OBS-Verbindung: {e}"),
-            None => bail!("OBS hat die Verbindung beendet."),
+            None => bail!(t!("obs.obsClosedConnection")),
         }
     }
 }
@@ -321,7 +322,7 @@ pub fn read_local_config() -> Result<Value> {
     let file = candidates
         .iter()
         .find(|f| f.exists())
-        .ok_or_else(|| anyhow!("Keine OBS-Konfiguration gefunden. Ist OBS installiert und wurde es schon einmal gestartet?"))?;
+        .ok_or_else(|| anyhow!(t!("obs.noObsConfigurationFound")))?;
     let cfg: Value = serde_json::from_str(&std::fs::read_to_string(file)?)?;
     Ok(json!({
         "port": cfg["server_port"].as_u64().unwrap_or(4455),

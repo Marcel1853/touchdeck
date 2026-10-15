@@ -1,0 +1,1417 @@
+{
+  "categories": {
+    "run": "Run",
+    "input": "Input",
+    "media": "Media",
+    "audio": "Audio",
+    "navigation": "Navigation",
+    "logic": "Logic",
+    "services": "Services",
+    "http": "HTTP",
+    "steam": "Steam",
+    "obsStudio": "OBS Studio",
+    "soundboard": "Soundboard",
+    "files": "Files",
+    "values": "Values",
+    "twitch": "Twitch",
+    "discord": "Discord",
+    "visuals": "Visuals",
+    "other": "Other",
+    "general": "General"
+  },
+  "groups": {
+    "general": "General",
+    "audioMusicMedia": "Audio, music & media",
+    "games": "Games",
+    "streaming": "Streaming",
+    "communication": "Communication",
+    "other": "Other"
+  },
+  "actions": {
+    "open_url": {
+      "label": "Open website",
+      "fields": {
+        "url": {
+          "label": "Address",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "open_path": {
+      "label": "Open file or folder",
+      "fields": {
+        "path": {
+          "label": "Path",
+          "placeholder": "~/Documents"
+        }
+      }
+    },
+    "launch_app": {
+      "label": "Start program",
+      "fields": {
+        "app": {
+          "label": "Program"
+        }
+      }
+    },
+    "run_command": {
+      "label": "Run command",
+      "fields": {
+        "command": {
+          "label": "Command",
+          "placeholder": "e.g. gnome-screenshot -i"
+        },
+        "wait": {
+          "label": "Wait for it to finish and show the output"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Press keyboard shortcut",
+      "fields": {
+        "keys": {
+          "label": "Keyboard shortcut",
+          "placeholder": "ctrl+shift+s"
+        }
+      }
+    },
+    "type_text": {
+      "label": "Type text",
+      "fields": {
+        "text": {
+          "label": "Text"
+        }
+      }
+    },
+    "media": {
+      "label": "Media control",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "play-pause": "Play / pause",
+            "next": "Next track",
+            "previous": "Previous track",
+            "stop": "Stop"
+          }
+        }
+      }
+    },
+    "volume": {
+      "label": "Volume",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "up": "Louder",
+            "down": "Quieter",
+            "set": "Set to value",
+            "mute": "Mute on/off"
+          }
+        },
+        "step": {
+          "label": "Step in %"
+        },
+        "value": {
+          "label": "Volume in %"
+        }
+      }
+    },
+    "mic_mute": {
+      "label": "Mute microphone",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "mute": "Muted",
+            "unmute": "Unmuted"
+          }
+        }
+      }
+    },
+    "go_page": {
+      "label": "Switch page",
+      "fields": {
+        "page": {
+          "label": "Target page"
+        }
+      }
+    },
+    "delay": {
+      "label": "Wait",
+      "fields": {
+        "ms": {
+          "label": "Milliseconds"
+        }
+      }
+    },
+    "notify": {
+      "label": "Show notification",
+      "fields": {
+        "title": {
+          "label": "Title"
+        },
+        "body": {
+          "label": "Text"
+        }
+      }
+    },
+    "http": {
+      "label": "HTTP request",
+      "fields": {
+        "method": {
+          "label": "Method",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "Address",
+          "placeholder": "http://…"
+        },
+        "headers": {
+          "label": "Headers (one line per header: Name: Value)"
+        },
+        "body": {
+          "label": "Body"
+        }
+      }
+    },
+    "audio_output": {
+      "label": "Switch audio output",
+      "fields": {
+        "target": {
+          "label": "Output"
+        }
+      }
+    },
+    "audio_input": {
+      "label": "Switch microphone",
+      "fields": {
+        "target": {
+          "label": "Input"
+        }
+      }
+    },
+    "screenshot": {
+      "label": "Screenshot",
+      "fields": {
+        "mode": {
+          "label": "Area",
+          "options": {
+            "dialog": "Open dialog",
+            "full": "Whole screen",
+            "window": "Active window",
+            "area": "Select area"
+          }
+        }
+      }
+    },
+    "lock_screen": {
+      "label": "Lock screen"
+    },
+    "power": {
+      "label": "Power",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "suspend": "Suspend",
+            "logout": "Log out",
+            "reboot": "Restart",
+            "poweroff": "Shut down"
+          }
+        }
+      }
+    },
+    "night_light": {
+      "label": "Night light",
+      "fields": {
+        "mode": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "On",
+            "off": "Off"
+          }
+        }
+      }
+    },
+    "dark_mode": {
+      "label": "Light / dark",
+      "fields": {
+        "mode": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "Dark",
+            "off": "Light"
+          }
+        }
+      }
+    },
+    "wake_on_lan": {
+      "label": "Wake computer (Wake-on-LAN)",
+      "fields": {
+        "mac": {
+          "label": "MAC address",
+          "placeholder": "00:11:22:33:44:55"
+        }
+      }
+    },
+    "steam_game": {
+      "label": "Start game",
+      "fields": {
+        "game": {
+          "label": "Game"
+        }
+      }
+    },
+    "steam_open": {
+      "label": "Open Steam",
+      "fields": {
+        "view": {
+          "label": "Area",
+          "options": {
+            "library": "Library",
+            "downloads": "Downloads & updates",
+            "bigpicture": "Big Picture",
+            "friends": "Friends",
+            "store": "Store",
+            "screenshots": "Screenshots"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "Switch scene",
+      "fields": {
+        "scene": {
+          "label": "Scene"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "Stream",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Start / stop",
+            "start": "Start",
+            "stop": "Stop"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "Recording",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Start / stop",
+            "start": "Start",
+            "stop": "Stop",
+            "pause": "Pause on/off"
+          }
+        }
+      }
+    },
+    "obs_replay": {
+      "label": "Replay buffer",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "save": "Save clip",
+            "toggle": "Buffer on/off"
+          }
+        }
+      }
+    },
+    "obs_mute": {
+      "label": "Mute audio source",
+      "fields": {
+        "input": {
+          "label": "Audio source"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "mute": "Muted",
+            "unmute": "Unmuted"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "Show/hide source",
+      "fields": {
+        "item": {
+          "label": "Source"
+        },
+        "mode": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "show": "Show",
+            "hide": "Hide"
+          }
+        }
+      }
+    },
+    "obs_misc": {
+      "label": "Studio mode / virtual camera",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "virtualcam": "Virtual camera on/off",
+            "studio": "Studio mode on/off"
+          }
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "Set preview scene (studio mode)",
+      "fields": {
+        "scene": {
+          "label": "Scene"
+        }
+      }
+    },
+    "obs_transition": {
+      "label": "Transition",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "take": "Send preview to program (studio mode)",
+            "set": "Choose transition"
+          }
+        },
+        "transition": {
+          "label": "Transition"
+        },
+        "duration": {
+          "label": "Duration in ms (0 = unchanged)"
+        }
+      }
+    },
+    "obs_volume": {
+      "label": "Volume of an audio source",
+      "fields": {
+        "input": {
+          "label": "Audio source"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "up": "Louder",
+            "down": "Quieter",
+            "set": "Set to value"
+          }
+        },
+        "step": {
+          "label": "Step in dB"
+        },
+        "value": {
+          "label": "Volume in %"
+        }
+      }
+    },
+    "obs_media": {
+      "label": "Control media source",
+      "fields": {
+        "input": {
+          "label": "Media source"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "playpause": "Play / pause",
+            "restart": "Restart",
+            "stop": "Stop",
+            "next": "Next",
+            "previous": "Previous"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "Turn filter on/off",
+      "fields": {
+        "filter": {
+          "label": "Filter"
+        },
+        "mode": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "Turn on",
+            "off": "Turn off"
+          }
+        }
+      }
+    },
+    "obs_text": {
+      "label": "Set text of a text source",
+      "fields": {
+        "input": {
+          "label": "Text source"
+        },
+        "text": {
+          "label": "Text ({Variable} is replaced)"
+        }
+      }
+    },
+    "obs_browser": {
+      "label": "Browser source",
+      "fields": {
+        "input": {
+          "label": "Browser source"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "reload": "Reload",
+            "url": "Change address"
+          }
+        },
+        "url": {
+          "label": "Address",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "obs_image": {
+      "label": "Change image of an image source",
+      "fields": {
+        "input": {
+          "label": "Image source"
+        },
+        "file": {
+          "label": "Image file",
+          "placeholder": "~/Pictures/…png"
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "Switch profile / scene collection",
+      "fields": {
+        "kind": {
+          "label": "What to switch?",
+          "options": {
+            "profile": "Profile",
+            "collection": "Scene collection"
+          }
+        },
+        "profile": {
+          "label": "Profile"
+        },
+        "collection": {
+          "label": "Scene collection"
+        }
+      }
+    },
+    "obs_hotkey": {
+      "label": "Trigger OBS hotkey",
+      "fields": {
+        "hotkey": {
+          "label": "Function"
+        }
+      }
+    },
+    "obs_screenshot": {
+      "label": "Screenshot of a scene/source",
+      "fields": {
+        "source": {
+          "label": "Scene or source"
+        },
+        "folder": {
+          "label": "Folder",
+          "placeholder": "~/Pictures"
+        }
+      }
+    },
+    "obs_raw": {
+      "label": "Custom OBS request (advanced)",
+      "fields": {
+        "request": {
+          "label": "Request (requestType)",
+          "placeholder": "e.g. SetInputMute"
+        },
+        "data": {
+          "label": "Data as JSON",
+          "placeholder": "{\"inputName\": \"Mic/Aux\", \"inputMuted\": true}"
+        }
+      }
+    },
+    "mouse_click": {
+      "label": "Mouse click",
+      "fields": {
+        "button": {
+          "label": "Button",
+          "options": {
+            "left": "Left",
+            "double": "Double-click left",
+            "right": "Right",
+            "middle": "Middle",
+            "scrollup": "Wheel up",
+            "scrolldown": "Wheel down"
+          }
+        }
+      }
+    },
+    "mouse_move": {
+      "label": "Move mouse",
+      "fields": {
+        "mode": {
+          "label": "Type",
+          "options": {
+            "abs": "To screen position",
+            "rel": "Move by distance"
+          }
+        },
+        "x": {
+          "label": "X"
+        },
+        "y": {
+          "label": "Y"
+        }
+      }
+    },
+    "key_hold": {
+      "label": "Hold key",
+      "fields": {
+        "keys": {
+          "label": "Key(s)",
+          "placeholder": "w"
+        },
+        "ms": {
+          "label": "Duration in ms"
+        }
+      }
+    },
+    "window_activate": {
+      "label": "Bring window to front",
+      "fields": {
+        "window": {
+          "label": "Program (window class or part of the title)"
+        }
+      }
+    },
+    "kill_app": {
+      "label": "Quit program",
+      "fields": {
+        "name": {
+          "label": "Process name",
+          "placeholder": "e.g. firefox"
+        },
+        "force": {
+          "label": "Force immediately (without saving)"
+        }
+      }
+    },
+    "sound_play": {
+      "label": "Play sound",
+      "fields": {
+        "file": {
+          "label": "Audio file (WAV, OGG, FLAC, MP3)",
+          "placeholder": "~/Music/sound.mp3"
+        },
+        "volume": {
+          "label": "Volume in %"
+        },
+        "exclusive": {
+          "label": "Stop other sounds first"
+        }
+      }
+    },
+    "sound_stop": {
+      "label": "Stop all sounds"
+    },
+    "file_write": {
+      "label": "Write to file",
+      "fields": {
+        "path": {
+          "label": "File",
+          "placeholder": "~/notes.txt"
+        },
+        "mode": {
+          "label": "Type",
+          "options": {
+            "append": "Append as new line",
+            "write": "Overwrite file"
+          }
+        },
+        "text": {
+          "label": "Text ({Variable} and {Time} are replaced)"
+        }
+      }
+    },
+    "var_set": {
+      "label": "Set variable",
+      "fields": {
+        "name": {
+          "label": "Variable"
+        },
+        "value": {
+          "label": "Value ({Variable} and {Time} are replaced)"
+        }
+      }
+    },
+    "var_change": {
+      "label": "Change counter",
+      "fields": {
+        "name": {
+          "label": "Variable"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "add": "Increase",
+            "sub": "Decrease",
+            "reset": "Set to start value"
+          }
+        },
+        "amount": {
+          "label": "By / start value"
+        }
+      }
+    },
+    "var_toggle": {
+      "label": "Toggle variable on/off",
+      "fields": {
+        "name": {
+          "label": "Variable"
+        }
+      }
+    },
+    "condition": {
+      "label": "Condition: only continue if …",
+      "fields": {
+        "name": {
+          "label": "Variable"
+        },
+        "op": {
+          "label": "Comparison",
+          "options": {
+            "eq": "is equal to",
+            "ne": "is not equal to",
+            "gt": "is greater than",
+            "lt": "is less than",
+            "contains": "contains",
+            "empty": "is empty"
+          }
+        },
+        "value": {
+          "label": "Value"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "Send chat message",
+      "fields": {
+        "message": {
+          "label": "Message ({Value} and {Event.X} possible)"
+        }
+      }
+    },
+    "twitch_announcement": {
+      "label": "Chat announcement",
+      "fields": {
+        "message": {
+          "label": "Text"
+        },
+        "color": {
+          "label": "Color",
+          "options": {
+            "primary": "Channel color",
+            "blue": "Blue",
+            "green": "Green",
+            "orange": "Orange",
+            "purple": "Purple"
+          }
+        }
+      }
+    },
+    "twitch_clip": {
+      "label": "Create clip"
+    },
+    "twitch_marker": {
+      "label": "Set stream marker",
+      "fields": {
+        "description": {
+          "label": "Description (optional)"
+        }
+      }
+    },
+    "twitch_channel": {
+      "label": "Change title / category",
+      "fields": {
+        "title": {
+          "label": "New title (empty = unchanged)"
+        },
+        "game": {
+          "label": "New category/game (empty = unchanged)",
+          "placeholder": "e.g. RimWorld"
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "Start ad",
+      "fields": {
+        "length": {
+          "label": "Length",
+          "options": {
+            "30": "30 seconds",
+            "60": "60 seconds",
+            "90": "90 seconds",
+            "120": "120 seconds",
+            "150": "150 seconds",
+            "180": "180 seconds"
+          }
+        }
+      }
+    },
+    "twitch_chat_mode": {
+      "label": "Toggle chat mode",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "emote_mode": "Emotes only",
+            "follower_mode": "Followers only",
+            "subscriber_mode": "Subscribers only",
+            "slow_mode": "Slow mode",
+            "unique_chat_mode": "Unique chat"
+          }
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "On",
+            "off": "Off"
+          }
+        }
+      }
+    },
+    "twitch_shoutout": {
+      "label": "Shoutout",
+      "fields": {
+        "user": {
+          "label": "Channel (Twitch name, {Event.User} possible)"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "Start / cancel raid",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "start": "Start raid",
+            "cancel": "Cancel raid"
+          }
+        },
+        "user": {
+          "label": "Target channel (Twitch name)"
+        }
+      }
+    },
+    "twitch_reward": {
+      "label": "Channel points reward on/off",
+      "fields": {
+        "reward": {
+          "label": "Reward (only rewards created by TouchDeck can be changed)"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Enable/disable",
+            "pause": "Pause/resume"
+          }
+        }
+      }
+    },
+    "twitch_info": {
+      "label": "Write channel info to values"
+    },
+    "discord_mute": {
+      "label": "Mute microphone (Discord)",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "Muted",
+            "off": "Unmuted"
+          }
+        }
+      }
+    },
+    "discord_deafen": {
+      "label": "Deafen (Discord)",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "Deafened",
+            "off": "Listening"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "Join / leave voice channel",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "join": "Join",
+            "toggle": "Join / leave",
+            "leave": "Leave"
+          }
+        },
+        "channel": {
+          "label": "Voice channel"
+        }
+      }
+    },
+    "discord_volume": {
+      "label": "Volume (Discord)",
+      "fields": {
+        "target": {
+          "label": "What?",
+          "options": {
+            "output": "Output (hearing others)",
+            "input": "Input (own microphone)"
+          }
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "up": "Louder",
+            "down": "Quieter",
+            "set": "Set to value"
+          }
+        },
+        "step": {
+          "label": "Step"
+        },
+        "value": {
+          "label": "Value (output 0–200, input 0–100)"
+        }
+      }
+    },
+    "discord_mode": {
+      "label": "Voice mode (push-to-talk)",
+      "fields": {
+        "op": {
+          "label": "Mode",
+          "options": {
+            "toggle": "Toggle",
+            "PUSH_TO_TALK": "Push-to-talk",
+            "VOICE_ACTIVITY": "Voice activity"
+          }
+        }
+      }
+    },
+    "discord_webhook": {
+      "label": "Send message to channel (webhook)",
+      "fields": {
+        "url": {
+          "label": "Webhook URL (edit channel → Integrations → Webhooks)",
+          "placeholder": "https://discord.com/api/webhooks/…"
+        },
+        "message": {
+          "label": "Message ({Value} and {Event.X} possible)"
+        },
+        "username": {
+          "label": "Sender name (optional)"
+        }
+      }
+    },
+    "run_flow": {
+      "label": "Run flow",
+      "fields": {
+        "flow": {
+          "label": "Flow"
+        },
+        "times": {
+          "label": "How often? (repeat)"
+        }
+      }
+    },
+    "stop": {
+      "label": "Stop (cancel remaining actions)"
+    },
+    "comment": {
+      "label": "Comment (does nothing)",
+      "fields": {
+        "text": {
+          "label": "Note"
+        }
+      }
+    },
+    "change_visuals": {
+      "label": "Change look of a button",
+      "fields": {
+        "target": {
+          "label": "Button"
+        },
+        "title": {
+          "label": "New label (empty = unchanged, {Value} possible)"
+        },
+        "color": {
+          "label": "New background color (empty = unchanged)"
+        },
+        "textColor": {
+          "label": "New text color (empty = unchanged)"
+        },
+        "icon": {
+          "label": "New emoji (empty = unchanged)"
+        }
+      }
+    },
+    "restore_visuals": {
+      "label": "Restore original look",
+      "fields": {
+        "target": {
+          "label": "Button"
+        }
+      }
+    },
+    "page_background": {
+      "label": "Change page background",
+      "fields": {
+        "page": {
+          "label": "Page"
+        },
+        "color": {
+          "label": "Color (empty = original)"
+        }
+      }
+    },
+    "unsupported": {
+      "label": "Not supported"
+    }
+  },
+  "triggers": {
+    "value_change": {
+      "label": "Value changes",
+      "fields": {
+        "name": {
+          "label": "Value"
+        },
+        "op": {
+          "label": "When?",
+          "options": {
+            "any": "on every change",
+            "eq": "becomes equal",
+            "ne": "becomes unequal",
+            "gt": "becomes greater than",
+            "lt": "becomes less than",
+            "contains": "contains"
+          }
+        },
+        "value": {
+          "label": "Comparison value"
+        }
+      }
+    },
+    "app_start": {
+      "label": "TouchDeck starts"
+    },
+    "timer": {
+      "label": "Timer (regular)",
+      "fields": {
+        "seconds": {
+          "label": "Every … seconds"
+        }
+      }
+    },
+    "time_of_day": {
+      "label": "Time of day reached",
+      "fields": {
+        "time": {
+          "label": "Time (HH:MM)",
+          "placeholder": "18:30"
+        },
+        "days": {
+          "label": "Days",
+          "options": {
+            "all": "daily",
+            "weekdays": "Mon–Fri",
+            "weekend": "Sat and Sun"
+          }
+        }
+      }
+    },
+    "file_change": {
+      "label": "File changes",
+      "fields": {
+        "path": {
+          "label": "File",
+          "placeholder": "~/status.txt"
+        }
+      }
+    },
+    "device": {
+      "label": "Phone connects/disconnects",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "connected": "connected",
+            "disconnected": "disconnected",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "button_toggle": {
+      "label": "Toggle is switched on/off",
+      "fields": {
+        "button": {
+          "label": "Button"
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "on": "on",
+            "off": "off",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "audio_output": {
+      "label": "Audio output changes",
+      "fields": {
+        "device": {
+          "label": "To device (empty = any)"
+        }
+      }
+    },
+    "audio_mute": {
+      "label": "Sound or microphone muted/unmuted",
+      "fields": {
+        "target": {
+          "label": "What?",
+          "options": {
+            "output": "Sound (output)",
+            "input": "Microphone (input)"
+          }
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "muted": "muted",
+            "unmuted": "unmuted",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "steam_game": {
+      "label": "Game starts/ends",
+      "fields": {
+        "game": {
+          "label": "Game (empty = any)"
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "started": "starts",
+            "stopped": "ends",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "Scene changes",
+      "fields": {
+        "scene": {
+          "label": "To scene (empty = any)"
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "Preview scene changes",
+      "fields": {
+        "scene": {
+          "label": "To scene (empty = any)"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "Stream starts/stops",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "started": "starts",
+            "stopped": "stops",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "Recording starts/stops/pauses",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "started": "starts",
+            "stopped": "stops",
+            "paused": "pauses",
+            "resumed": "resumes",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_replay_saved": {
+      "label": "Clip saved"
+    },
+    "obs_mute": {
+      "label": "Audio source muted/unmuted",
+      "fields": {
+        "input": {
+          "label": "Audio source (empty = any)"
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "muted": "muted",
+            "unmuted": "unmuted",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "Source shown/hidden",
+      "fields": {
+        "item": {
+          "label": "Source"
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "shown": "shown",
+            "hidden": "hidden",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "Filter on/off",
+      "fields": {
+        "filter": {
+          "label": "Filter"
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "on": "on",
+            "off": "off",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_studio": {
+      "label": "Studio mode on/off",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "on": "on",
+            "off": "off",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "Profile/scene collection changes",
+      "fields": {
+        "kind": {
+          "label": "What?",
+          "options": {
+            "any": "any",
+            "profile": "Profile",
+            "collection": "Scene collection"
+          }
+        }
+      }
+    },
+    "obs_connection": {
+      "label": "OBS connected/disconnected",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "connected": "connected",
+            "disconnected": "disconnected",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "twitch_follow": {
+      "label": "New follower"
+    },
+    "twitch_sub": {
+      "label": "Subscription (new, renewed, gifted)",
+      "fields": {
+        "kind": {
+          "label": "Type",
+          "options": {
+            "any": "any",
+            "new": "new subscription",
+            "resub": "renewed",
+            "gift": "gifted"
+          }
+        }
+      }
+    },
+    "twitch_cheer": {
+      "label": "Bits",
+      "fields": {
+        "min": {
+          "label": "From how many bits?"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "Raid",
+      "fields": {
+        "min": {
+          "label": "From how many viewers?"
+        }
+      }
+    },
+    "twitch_redeem": {
+      "label": "Channel points redeemed",
+      "fields": {
+        "reward": {
+          "label": "Reward (title, empty = any)"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "Chat message / command",
+      "fields": {
+        "mode": {
+          "label": "When?",
+          "options": {
+            "command": "Message starts with",
+            "contains": "Message contains",
+            "any": "any message"
+          }
+        },
+        "text": {
+          "label": "Text (e.g. !scene)"
+        },
+        "who": {
+          "label": "From whom?",
+          "options": {
+            "all": "everyone",
+            "mod": "only moderators and you",
+            "sub": "only subscribers"
+          }
+        }
+      }
+    },
+    "twitch_stream": {
+      "label": "Stream goes online/offline",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "online": "online",
+            "offline": "offline",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "Ad break starts"
+    },
+    "discord_voice": {
+      "label": "Muted / deafened",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "muted": "muted",
+            "unmuted": "Microphone back on",
+            "deafened": "deafened",
+            "undeafened": "hearing again",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "Join / leave voice channel",
+      "fields": {
+        "state": {
+          "label": "State",
+          "options": {
+            "joined": "joined",
+            "left": "left",
+            "any": "any"
+          }
+        }
+      }
+    }
+  },
+  "liveSources": {
+    "none": "None",
+    "clock": "Clock",
+    "date": "Date",
+    "cpu": "CPU usage",
+    "ram": "Memory",
+    "temp": "CPU temperature",
+    "volume": "Volume",
+    "mic": "Microphone muted?",
+    "track": "Current music track",
+    "steam_updates": "Steam updates",
+    "steam_running": "Game running (from action)",
+    "obs_stream": "OBS: stream running?",
+    "obs_record": "OBS: recording running?",
+    "obs_scene": "OBS: scene active? (from action)",
+    "twitch_live": "Twitch: live?",
+    "twitch_viewers": "Twitch: viewers",
+    "twitch_followers": "Twitch: followers",
+    "discord_mute": "Discord: muted?",
+    "discord_deaf": "Discord: deafened?",
+    "discord_channel": "Discord: voice channel",
+    "variable": "Value of a variable",
+    "command": "Output of a command"
+  },
+  "sliderTargets": {
+    "volume": "Volume (PC)",
+    "mic": "Microphone level",
+    "obs_volume": "OBS audio source",
+    "command": "Own command ({value} = 0–100)"
+  }
+}

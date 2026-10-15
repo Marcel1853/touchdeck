@@ -1,5 +1,6 @@
 // Anbindung an den Linux-Desktop: Programme, Medien (MPRIS), Lautstärke (PipeWire), Systemwerte, Firewall.
 // Tastatur, Maus und Fenster stehen in x11.rs.
+use crate::t;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -44,7 +45,7 @@ pub fn lan_addresses() -> Vec<String> {
 }
 
 fn not_installed(cmd: &str, err: std::io::Error) -> anyhow::Error {
-    if err.kind() == std::io::ErrorKind::NotFound { anyhow!("Programm „{cmd}“ ist nicht installiert.") } else { anyhow!("{cmd}: {err}") }
+    if err.kind() == std::io::ErrorKind::NotFound { anyhow!(t!("system.programIsNotInstalled", cmd)) } else { anyhow!("{cmd}: {err}") }
 }
 
 /** Führt ein Programm aus und liefert die Ausgabe; Fehlertext ist die Fehlerausgabe des Programms. */
@@ -59,12 +60,12 @@ pub async fn run_with(cmd: &str, args: &[&str], timeout: Duration, input: Option
     }
     let out = match tokio::time::timeout(timeout, child.wait_with_output()).await {
         Ok(out) => out?,
-        Err(_) => bail!("{cmd}: Zeitüberschreitung"),
+        Err(_) => bail!(t!("system.timedOut", cmd)),
     };
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
         let code = out.status.code().map_or_else(|| "Signal".into(), |c| c.to_string());
-        bail!("{}", if err.is_empty() { format!("{cmd} beendet mit Code {code}") } else { err });
+        bail!("{}", if err.is_empty() { t!("system.exitedWithCode", cmd, code) } else { err });
     }
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
@@ -110,11 +111,11 @@ pub async fn shell(command: &str, wait: bool, timeout: Duration) -> Result<Strin
         .output();
     let out = match tokio::time::timeout(timeout, child).await {
         Ok(out) => out?,
-        Err(_) => bail!("Befehl dauert zu lange (Zeitüberschreitung)."),
+        Err(_) => bail!(t!("system.commandTakesTooLong")),
     };
     let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)).trim().to_string();
     if !out.status.success() {
-        bail!("{}", if text.is_empty() { format!("Befehl beendet mit Code {}", out.status.code().unwrap_or(-1)) } else { text });
+        bail!("{}", if text.is_empty() { t!("system.commandExitedWithCode", out.status.code().unwrap_or(-1)) } else { text });
     }
     Ok(text)
 }
@@ -183,7 +184,7 @@ pub async fn media(op: &str) -> Result<String> {
         "pause" => "Pause",
         _ => bail!("Unbekannte Medienaktion: {op}"),
     };
-    let Some((player, _)) = pick_player(true).await? else { bail!("Kein Mediaplayer gefunden.") };
+    let Some((player, _)) = pick_player(true).await? else { bail!(t!("system.noMediaPlayerFound")) };
     run(
         "gdbus",
         &["call", "--session", "--dest", &player, "--object-path", "/org/mpris/MediaPlayer2", "--method", &format!("org.mpris.MediaPlayer2.Player.{method}")],
@@ -260,7 +261,7 @@ pub async fn volume(op: &str, step: f64, value: f64) -> Result<Volume> {
         "down" => run("wpctl", &["set-volume", SINK, &format!("{s}%-")]).await?,
         "set" => run("wpctl", &["set-volume", SINK, &format!("{}%", if value.is_finite() { value.clamp(0.0, 100.0) } else { 0.0 })]).await?,
         "mute" => run("wpctl", &["set-mute", SINK, "toggle"]).await?,
-        _ => bail!("Unbekannte Lautstärke-Aktion: {op}"),
+        _ => bail!(t!("system.unknownVolumeAction", op)),
     };
     get_volume(SINK).await
 }
@@ -324,13 +325,13 @@ pub async fn audio_devices(sinks: bool) -> Result<Vec<AudioDevice>> {
 pub async fn set_default_audio(sinks: bool, target: &str) -> Result<String> {
     let devices = audio_devices(sinks).await?;
     if devices.is_empty() {
-        bail!("Keine Audiogeräte gefunden.");
+        bail!(t!("system.noAudioDevicesFound"));
     }
     let next = if target == "next" {
         let i = devices.iter().position(|d| d.is_default).map_or(0, |i| i + 1);
         &devices[i % devices.len()]
     } else {
-        devices.iter().find(|d| d.value == target).ok_or_else(|| anyhow!("Das gewählte Audiogerät ist gerade nicht vorhanden."))?
+        devices.iter().find(|d| d.value == target).ok_or_else(|| anyhow!(t!("system.selectedAudioDeviceIs")))?
     };
     run("wpctl", &["set-default", &next.id]).await?;
     Ok(next.label.clone())
@@ -449,7 +450,7 @@ pub async fn open_firewall(port: u16) -> Result<()> {
         Err(err) => {
             let msg = err.to_string().to_lowercase();
             if ["dismissed", "not authorized", "126", "127"].iter().any(|m| msg.contains(m)) {
-                bail!("Abgebrochen – die Firewall wurde nicht geändert.")
+                bail!(t!("system.cancelledFirewallWasNot"))
             }
             Err(err)
         }
@@ -518,7 +519,7 @@ pub async fn power(op: &str) -> Result<()> {
     match op {
         "suspend" | "reboot" | "poweroff" => run("systemctl", &[op]).await.map(|_| ()),
         "logout" => spawn_detached("cinnamon-session-quit", &["--logout"], None),
-        _ => bail!("Unbekannte Energie-Aktion: {op}"),
+        _ => bail!(t!("system.unknownPowerAction", op)),
     }
 }
 
@@ -566,7 +567,7 @@ pub async fn dark_mode(mode: &str) -> Result<bool> {
 pub async fn wake_on_lan(mac: &str) -> Result<()> {
     let hex: String = mac.chars().filter(char::is_ascii_hexdigit).collect();
     if hex.len() != 12 {
-        bail!("Ungültige MAC-Adresse (Beispiel: 00:11:22:33:44:55).");
+        bail!(t!("system.invalidMacAddressExample"));
     }
     let mac = hex::decode(hex)?;
     let mut packet = vec![0xffu8; 6];
@@ -583,9 +584,9 @@ pub async fn wake_on_lan(mac: &str) -> Result<()> {
 pub async fn kill_process(name: &str, force: bool) -> Result<()> {
     let valid = (1..=64).contains(&name.chars().count()) && name.chars().all(|c| c.is_alphanumeric() || " _.+-".contains(c));
     if !valid {
-        bail!("Ungültiger Programmname.");
+        bail!(t!("system.invalidProgramName"));
     }
-    run("pkill", &[if force { "-KILL" } else { "-TERM" }, "-x", name]).await.map_err(|_| anyhow!("Kein laufendes Programm „{name}“ gefunden."))?;
+    run("pkill", &[if force { "-KILL" } else { "-TERM" }, "-x", name]).await.map_err(|_| anyhow!(t!("system.noRunningProgramFound", name)))?;
     Ok(())
 }
 
@@ -597,7 +598,7 @@ static SOUNDS: LazyLock<Mutex<HashSet<u32>>> = LazyLock::new(|| Mutex::new(HashS
 pub fn play_sound(file: &str, volume: f64, exclusive: bool) -> Result<()> {
     let f = expand_home(file);
     if file.is_empty() || !f.exists() {
-        bail!("Audiodatei nicht gefunden: {file}");
+        bail!(t!("system.audioFileNotFound", file));
     }
     if exclusive {
         stop_sounds();
@@ -634,7 +635,7 @@ pub fn stop_sounds() {
 
 pub fn write_file(file: &str, text: &str, mode: &str) -> Result<()> {
     if file.is_empty() {
-        bail!("Kein Dateipfad angegeben.");
+        bail!(t!("system.noFilePathGiven"));
     }
     let f = expand_home(file);
     if let Some(dir) = f.parent() {

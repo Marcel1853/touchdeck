@@ -12,13 +12,13 @@ import { mountPlugins, renderPlugins } from './views/plugins.js';
 import { mountSettings, renderSettings, applyTheme, updateSettings, resetSettingsCache } from './views/settings.js';
 
 const VIEWS = {
-  pages: { icon: '▦', label: tr('Seiten'), mount: mountPages, render: renderPages },
-  values: { icon: '🏷️', label: tr('Werte'), mount: mountValues, render: renderValues },
-  events: { icon: '⚡', label: tr('Events'), mount: mountEvents, render: renderEvents },
-  flows: { icon: '🧩', label: tr('Vorlagen'), mount: mountFlows, render: renderFlows },
-  logs: { icon: '📜', label: tr('Logs'), mount: mountLogs, render: renderLogs, unmount: unmountLogs },
-  plugins: { icon: '🧱', label: tr('Plugins'), mount: mountPlugins, render: renderPlugins },
-  settings: { icon: '⚙️', label: tr('Einstellungen'), mount: mountSettings, render: renderSettings },
+  pages: { icon: '▦', label: tr('common.pages'), mount: mountPages, render: renderPages },
+  values: { icon: '🏷️', label: tr('common.values'), mount: mountValues, render: renderValues },
+  events: { icon: '⚡', label: tr('common.events'), mount: mountEvents, render: renderEvents },
+  flows: { icon: '🧩', label: tr('common.flows'), mount: mountFlows, render: renderFlows },
+  logs: { icon: '📜', label: tr('common.logs'), mount: mountLogs, render: renderLogs, unmount: unmountLogs },
+  plugins: { icon: '🧱', label: tr('common.plugins'), mount: mountPlugins, render: renderPlugins },
+  settings: { icon: '⚙️', label: tr('common.settings'), mount: mountSettings, render: renderSettings },
 };
 
 export function showView(name) {
@@ -62,32 +62,32 @@ async function refreshPairing() {
     $('#pair-qr').hidden = !(r.qr && r.lanEnabled);
     $('#pair-app').replaceChildren(...(r.apkQr && r.lanEnabled
       ? [h('div', { class: 'qr small' }), h('div', {},
-        h('b', {}, tr('Android-App')),
-        h('p', { class: 'hint-text' }, tr('QR-Code scannen, App herunterladen und installieren (einmalig „Unbekannte Apps installieren“ erlauben). Die App findet diesen PC dann von selbst.')),
+        h('b', {}, tr('editor.androidApp')),
+        h('p', { class: 'hint-text' }, tr('editor.scanQrCodeDownload')),
         h('code', {}, r.apkUrl))]
       : []));
     if (r.apkQr && r.lanEnabled) $('#pair-app .qr').innerHTML = r.apkQr;
     $('#pair-urls').replaceChildren(...(r.lanEnabled
-      ? [...(r.urls.length ? r.urls.map((u) => h('code', {}, u)) : [h('p', {}, tr('Kein Netzwerk gefunden. Ist der PC mit dem WLAN/LAN verbunden?'))]),
-        r.pin && h('p', { class: 'hint-text' }, tr('🔐 Eine PIN ist gesetzt – das Handy fragt beim ersten Verbinden danach.')),
+      ? [...(r.urls.length ? r.urls.map((u) => h('code', {}, u)) : [h('p', {}, tr('editor.noNetworkFoundIs'))]),
+        r.pin && h('p', { class: 'hint-text' }, tr('editor.pinIsSetPhone')),
         r.firewall && h('div', { class: 'firewall-hint' },
-          h('b', {}, tr('🧱 Die Firewall (ufw) ist aktiv.')),
-          h('p', {}, tr('Damit Handys TouchDeck finden und erreichen, muss sie fürs Heimnetz geöffnet werden. Das geht mit einem Klick (fragt dein Passwort ab) – oder von Hand im Terminal:')),
+          h('b', {}, tr('editor.firewallUfwIsActive')),
+          h('p', {}, tr('editor.forPhonesToFind')),
           h('button', { type: 'button', class: 'btn primary small', onclick: async (e) => {
             e.target.disabled = true;
-            e.target.textContent = tr('Warte auf Passwort …');
+            e.target.textContent = tr('editor.waitingForPassword');
             try {
               await api('POST', '/api/firewall/open', {});
-              toast(tr('Firewall fürs Heimnetz geöffnet ✓'), 'ok');
+              toast(tr('editor.firewallOpenedForHome'), 'ok');
               refreshPairing();
             } catch (err) {
               toast(err.message, 'error');
               e.target.disabled = false;
-              e.target.textContent = tr('Jetzt freigeben');
+              e.target.textContent = tr('editor.allowNow');
             }
-          } }, tr('Jetzt freigeben')),
+          } }, tr('editor.allowNow')),
           h('code', { style: 'margin-top:8px' }, r.firewall))].filter(Boolean)
-      : [h('p', {}, tr('Der Zugriff aus dem WLAN ist ausgeschaltet.'))]));
+      : [h('p', {}, tr('editor.accessFromWiFi'))]));
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -143,10 +143,10 @@ function bind() {
   matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
   // Ein Handy möchte sich verbinden: hier bestätigen.
   onPairRequest(async (r) => {
-    const answer = await ask(tr('📱 Neues Gerät'), tr('„{0}“ ({1}) möchte sich mit TouchDeck verbinden. Erlauben?', [r.device, r.ip]),
-      [{ value: 'deny', label: tr('Ablehnen') }, { value: 'allow', label: tr('Erlauben'), kind: 'primary' }]);
+    const answer = await ask(tr('editor.newDevice'), tr('editor.wantsToConnectTo', [r.device, r.ip]),
+      [{ value: 'deny', label: tr('editor.deny') }, { value: 'allow', label: tr('editor.allow'), kind: 'primary' }]);
     await api('POST', '/api/pair/answer', { id: r.id, allow: answer === 'allow' }).catch((err) => toast(err.message, 'error'));
-    if (answer === 'allow') toast(tr('{0} ist jetzt verbunden ✓', [r.device]), 'ok');
+    if (answer === 'allow') toast(tr('editor.isNowConnected', [r.device]), 'ok');
   });
 }
 
@@ -169,7 +169,7 @@ async function init() {
     window.addEventListener('hashchange', onHash);
     onHash();
   } catch (err) {
-    $('#save-state').textContent = tr('Verbindung zum Server fehlgeschlagen: {0}', [err.message]);
+    $('#save-state').textContent = tr('editor.connectionToServerFailed', [err.message]);
     $('#save-state').classList.add('error');
   }
 }

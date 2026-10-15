@@ -1,4 +1,5 @@
 // Kleine HTTP-Hilfen: Antworten senden, Dateien ausliefern, Fehler mit Statuscode.
+use crate::t;
 use std::path::{Component, Path, PathBuf};
 
 use axum::body::Body;
@@ -84,7 +85,7 @@ pub fn safe_join(root: &Path, rel: &str) -> Option<PathBuf> {
 
 /** Liefert eine Datei aus; rel ist bereits URL-dekodiert. */
 pub async fn serve_file(root: &Path, rel: &str, extra: &[(&'static str, String)]) -> Response {
-    let Some(file) = safe_join(root, rel) else { return text_response(403, "Verboten") };
+    let Some(file) = safe_join(root, rel) else { return text_response(403, t!("server.forbidden")) };
     match tokio::fs::read(&file).await {
         Ok(bytes) => {
             let mut b = Response::builder()
@@ -96,7 +97,7 @@ pub async fn serve_file(root: &Path, rel: &str, extra: &[(&'static str, String)]
             }
             b.body(Body::from(bytes)).expect("gültige Antwort")
         }
-        Err(_) => text_response(404, "Nicht gefunden"),
+        Err(_) => text_response(404, t!("server.notFound")),
     }
 }
 

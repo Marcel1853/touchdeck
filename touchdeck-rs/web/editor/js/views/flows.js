@@ -14,13 +14,13 @@ function usages(id) {
       check(where, [...b.actions, ...b.actionsOff, ...(b.holdActions ?? []), ...(b.releaseActions ?? []), ...(b.events ?? []).flatMap((e) => e.actions)]);
     }
   }
-  for (const e of S.events) check(tr('Event „{0}“', [e.name]), e.actions);
-  for (const f of S.flows) if (f.id !== id) check(tr('Vorlage „{0}“', [f.name]), f.actions);
+  for (const e of S.events) check(tr('common.event2', [e.name]), e.actions);
+  for (const f of S.flows) if (f.id !== id) check(tr('common.flow', [f.name]), f.actions);
   return found;
 }
 
 async function addFlow() {
-  const name = await prompt(tr('Neue Vorlage'), tr('Name der Vorlage (z. B. „Stream starten“):'));
+  const name = await prompt(tr('flows.newFlow'), tr('flows.nameOfFlowStart'));
   if (!name) return;
   const flow = { id: uid('f_'), name, actions: [] };
   mutate(() => {
@@ -31,7 +31,7 @@ async function addFlow() {
 
 function deleteFlow(flow) {
   const used = usages(flow.id);
-  if (!confirm(used.length ? tr('„{0}“ wird noch benutzt von:\n{1}\n\nTrotzdem löschen?', [flow.name, used.join('\n')]) : tr('Vorlage „{0}“ löschen?', [flow.name]))) return;
+  if (!confirm(used.length ? tr('flows.isStillUsedBy', [flow.name, used.join('\n')]) : tr('flows.deleteFlow', [flow.name]))) return;
   mutate(() => {
     S.flows = S.flows.filter((f) => f !== flow);
     S.flowId = S.flows[0]?.id ?? null;
@@ -42,7 +42,7 @@ export function mountFlows(root) {
   root.className = 'view view-master';
   root.replaceChildren(
     h('aside', { class: 'sidebar' },
-      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('Vorlagen')), h('button', { class: 'btn small', title: tr('Neue Vorlage'), onclick: addFlow }, '＋')),
+      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.flows')), h('button', { class: 'btn small', title: tr('flows.newFlow'), onclick: addFlow }, '＋')),
       h('ul', { id: 'flow-list', class: 'page-list' })),
     h('section', { id: 'flow-detail', class: 'detail' }),
   );
@@ -57,19 +57,19 @@ export function renderFlows({ detail = true } = {}) {
   const root = document.getElementById('flow-detail');
   if (!flow) {
     root.replaceChildren(empty('🧩',
-      tr('Vorlagen sind Aktionslisten, die du einmal baust und überall wiederverwendest.'),
-      tr('Ein Button oder Event ruft sie mit „Logik › Vorlage ausführen“ auf – auch mehrfach hintereinander (Wiederholen).')),
-    h('div', { class: 'center' }, h('button', { class: 'btn primary', onclick: addFlow }, tr('＋ Erste Vorlage anlegen'))));
+      tr('flows.flowsAreActionLists'),
+      tr('flows.buttonOrEventCalls')),
+    h('div', { class: 'center' }, h('button', { class: 'btn primary', onclick: addFlow }, tr('flows.createFirstFlow'))));
     return;
   }
   const used = usages(flow.id);
   root.replaceChildren(
     h('div', { class: 'detail-head' },
-      h('input', { class: 'page-name', value: flow.name, maxlength: 100, oninput: (e) => mutate(() => (flow.name = e.target.value || tr('Vorlage')), { coalesce: `${flow.id}:name`, detail: false }) }),
+      h('input', { class: 'page-name', value: flow.name, maxlength: 100, oninput: (e) => mutate(() => (flow.name = e.target.value || tr('flows.flow')), { coalesce: `${flow.id}:name`, detail: false }) }),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn primary small', onclick: () => testActions(flow.actions, flow.name) }, tr('▶ Ausführen')),
-      h('button', { class: 'btn ghost danger small', onclick: () => deleteFlow(flow) }, tr('Löschen'))),
-    h('p', { class: 'hint-text' }, used.length ? tr('Benutzt von: {0}', [used.join(', ')]) : tr('Noch nirgends benutzt. Füge in einem Button oder Event „Vorlage ausführen“ hinzu.')),
-    actionList(flow, 'actions', tr('Aktionen'), { context: tr('Vorlage „{0}“', [flow.name]) }),
+      h('button', { class: 'btn primary small', onclick: () => testActions(flow.actions, flow.name) }, tr('flows.run')),
+      h('button', { class: 'btn ghost danger small', onclick: () => deleteFlow(flow) }, tr('common.delete'))),
+    h('p', { class: 'hint-text' }, used.length ? tr('flows.usedBy', [used.join(', ')]) : tr('flows.notUsedAnywhereYet')),
+    actionList(flow, 'actions', tr('flows.actions'), { context: tr('common.flow', [flow.name]) }),
   );
 }

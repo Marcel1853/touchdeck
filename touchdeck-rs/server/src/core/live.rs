@@ -1,4 +1,5 @@
 // Live-Werte auf Buttons (Uhrzeit, CPU, Lautstärke, Stream-Status …) und Schieberegler.
+use crate::t;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::{Duration, Instant};
@@ -8,6 +9,7 @@ use chrono::{Datelike, Local, Timelike};
 use serde_json::{Map, Value, json};
 use tokio::sync::OnceCell;
 
+use crate::core::i18n;
 use crate::core::store::{Button, Page, js_string};
 use crate::integrations::steam;
 use crate::server::App;
@@ -66,6 +68,8 @@ fn truthy(v: &Value) -> bool {
 
 const WEEKDAYS: [&str; 7] = ["Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa.", "So."];
 const MONTHS: [&str; 12] = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+const WEEKDAYS_EN: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MONTHS_EN: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 fn text(t: impl Into<String>) -> Value {
     json!({ "text": t.into() })
@@ -76,13 +80,16 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
     let now = Local::now();
     Ok(Some(match live.source.as_str() {
         "clock" => text(format!("{:02}:{:02}", now.hour(), now.minute())),
-        "date" => text(format!("{}, {}. {}", WEEKDAYS[now.weekday().num_days_from_monday() as usize], now.day(), MONTHS[now.month0() as usize])),
+        "date" => {
+            let (day, month) = (now.weekday().num_days_from_monday() as usize, now.month0() as usize);
+            text(if i18n::is_english() { format!("{}, {} {}", WEEKDAYS_EN[day], MONTHS_EN[month], now.day()) } else { format!("{}, {}. {}", WEEKDAYS[day], now.day(), MONTHS[month]) })
+        }
         "cpu" => {
             let v = *snap.cpu.get_or_init(|| async { linux::cpu_usage() }).await;
             json!({ "text": v.map_or_else(|| "…".into(), |v| format!("{v} %")), "value": v })
         }
         "ram" => {
-            let v = snap.ram.get_or_init(|| async { linux::ram_percent() }).await.ok_or_else(|| anyhow!("Arbeitsspeicher nicht lesbar"))?;
+            let v = snap.ram.get_or_init(|| async { linux::ram_percent() }).await.ok_or_else(|| anyhow!(t!("live.memoryUsageNotReadable")))?;
             json!({ "text": format!("{v} %"), "value": v })
         }
         "temp" => {
@@ -92,18 +99,18 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         "volume" => {
             let v = snap.sink().await?;
             let vol = v.volume.map_or_else(|| "?".into(), |x| x.to_string());
-            json!({ "text": if v.muted { "Stumm".into() } else { format!("{vol} %") }, "on": v.muted, "value": v.volume })
+            json!({ "text": if v.muted { t!("common.muted").into() } else { format!("{vol} %") }, "on": v.muted, "value": v.volume })
         }
         "mic" => {
             let v = snap.source().await?;
-            json!({ "text": if v.muted { "Stumm" } else { "An" }, "on": v.muted })
+            json!({ "text": if v.muted { t!("common.muted") } else { t!("live.on") }, "on": v.muted })
         }
         "track" => {
             let t = cloned(snap.track.get_or_init(|| async { linux::current_track().await.map_err(|e| e.to_string()) }).await)?;
             match t {
                 Some(t) => {
                     let label = [t.title.as_str(), t.artist.as_str()].iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" – ");
-                    json!({ "text": if label.is_empty() { "Unbekannt".into() } else { label }, "on": t.playing })
+                    json!({ "text": if label.is_empty() { t!("live.unknown").into() } else { label }, "on": t.playing })
                 }
                 None => text("Keine Wiedergabe"),
             }
@@ -111,7 +118,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         "steam_updates" => {
             let (pending, running) = snap.steam_updates.get_or_init(|| async { steam::update_status() }).await;
             if !running.is_empty() {
-                json!({ "text": format!("Lädt {}", running.len()), "on": true })
+                json!({ "text": t!("live.downloading", running.len()), "on": true })
             } else if pending.is_empty() {
                 json!({ "text": "Aktuell", "on": false })
             } else {
@@ -122,7 +129,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             let game = first_param(button, "steam_game", "game");
             let running = snap.running.get_or_init(|| async { steam::running_games() }).await;
             let on = game.is_some_and(|g| running.contains(&g));
-            json!({ "text": if on { "Läuft" } else { "" }, "on": on })
+            json!({ "text": if on { t!("live.running") } else { "" }, "on": on })
         }
         src @ ("obs_stream" | "obs_record") => {
             let s = snap.obs_status.get_or_init(|| async { app.obs.status().await.map_err(|e| e.to_string()) }).await;
@@ -130,9 +137,9 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
                 Err(_) => text("OBS aus"),
                 Ok((streaming, recording, paused)) => {
                     if src == "obs_stream" {
-                        json!({ "text": if *streaming { "LIVE" } else { "Offline" }, "on": streaming })
+                        json!({ "text": if *streaming { "LIVE" } else { t!("live.offline") }, "on": streaming })
                     } else {
-                        json!({ "text": if *paused { "Pause" } else if *recording { "REC" } else { "Aus" }, "on": recording })
+                        json!({ "text": if *paused { t!("live.paused") } else if *recording { "REC" } else { t!("live.off") }, "on": recording })
                     }
                 }
             }
@@ -147,14 +154,14 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
                 Err(_) => text(""),
                 Ok(cur) => {
                     let on = *cur == want;
-                    json!({ "text": if on { "Aktiv" } else { "" }, "on": on })
+                    json!({ "text": if on { t!("live.active") } else { "" }, "on": on })
                 }
             }
         }
         "command" => text(if live.command.is_empty() { String::new() } else { command_output(&live.command).await? }),
         src @ ("twitch_live" | "twitch_viewers" | "twitch_followers") => {
             if !app.twitch.connected() {
-                return Ok(Some(text("Twitch aus")));
+                return Ok(Some(text(t!("live.twitchOff"))));
             }
             if src == "twitch_followers" {
                 return Ok(Some(text(app.twitch.followers().await?.to_string())));
@@ -162,7 +169,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             let s = app.twitch.stream().await?;
             let live = !s.is_null();
             if src == "twitch_live" {
-                json!({ "text": if live { "LIVE" } else { "Offline" }, "on": live })
+                json!({ "text": if live { "LIVE" } else { t!("live.offline") }, "on": live })
             } else {
                 json!({ "text": if live { format!("{} 👁", s["viewer_count"]) } else { "–".into() }, "on": live })
             }
@@ -170,20 +177,20 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         src @ ("discord_mute" | "discord_deaf" | "discord_channel") => {
             let d = &app.discord;
             if !d.configured() || d.connect().await.is_err() {
-                return Ok(Some(text("Discord aus")));
+                return Ok(Some(text(t!("live.discordOff"))));
             }
             if src == "discord_channel" {
                 let ch = d.channel();
-                return Ok(Some(json!({ "text": ch.as_ref().map_or("kein Kanal", |(_, n)| n.as_str()), "on": ch.is_some() })));
+                return Ok(Some(json!({ "text": ch.as_ref().map_or(t!("live.noChannel"), |(_, n)| n.as_str()), "on": ch.is_some() })));
             }
             let v = match d.voice() {
                 Some(v) => v,
                 None => d.voice_settings().await?,
             };
             if src == "discord_mute" {
-                json!({ "text": if v["mute"] == true { "Stumm" } else { "An" }, "on": v["mute"] == true })
+                json!({ "text": if v["mute"] == true { t!("common.muted") } else { t!("live.on") }, "on": v["mute"] == true })
             } else {
-                json!({ "text": if v["deaf"] == true { "Taub" } else { "Hört" }, "on": v["deaf"] == true })
+                json!({ "text": if v["deaf"] == true { t!("live.deafened") } else { t!("live.listening") }, "on": v["deaf"] == true })
             }
         }
         "variable" => match variables.get(&live.variable) {
@@ -241,7 +248,7 @@ pub async fn apply_slider(app: &Arc<App>, button: &Button, value: f64) -> Result
         "mic" => linux::set_volume_percent(linux::SOURCE, v).await,
         "obs_volume" => {
             if s.input.is_empty() {
-                bail!("Keine OBS-Audioquelle gewählt.");
+                bail!(t!("live.noObsAudioSource"));
             }
             // Quadratische Kurve: fühlt sich gleichmäßiger an als die lineare Verstärkung.
             let mul = (v as f64 / 100.0).powi(2);
@@ -249,11 +256,11 @@ pub async fn apply_slider(app: &Arc<App>, button: &Button, value: f64) -> Result
         }
         "command" => {
             if s.command.is_empty() {
-                bail!("Kein Befehl angegeben.");
+                bail!(t!("common.noCommandGiven"));
             }
             // Auf das Ende warten, damit Befehle nacheinander laufen und der letzte Wert gewinnt.
             linux::shell(&s.command.replace("{value}", &v.to_string()), true, Duration::from_secs(10)).await.map(|_| ())
         }
-        _ => bail!("Unbekanntes Ziel für den Regler."),
+        _ => bail!(t!("live.unknownTargetForSlider")),
     }
 }

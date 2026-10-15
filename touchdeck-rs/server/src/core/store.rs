@@ -1,5 +1,6 @@
 // Speichert Seiten, Buttons, Werte, Vorlagen, Events und Einstellungen als JSON im Datenordner.
 // Gleiches Format wie die bisherige Version: config.json kann zwischen beiden hin- und hergetauscht werden.
+use crate::t;
 use std::fs;
 use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
@@ -338,7 +339,7 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
     let cols = clamp(&p["cols"], 1, 16, 5);
     let mut page = Page {
         id: id_or_new(&p["id"], "p_"),
-        name: text_or(&p["name"], "Seite", 100),
+        name: text_or(&p["name"], t!("store.page"), 100),
         rows,
         cols,
         background: color(&p["background"], "#14161b"),
@@ -363,7 +364,7 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
 
 fn sanitize_flow(f: &Value) -> Option<Flow> {
     f.as_object()?;
-    Some(Flow { id: id_or_new(&f["id"], "f_"), name: text_or(&f["name"], "Vorlage", 100), actions: action_list(&f["actions"]) })
+    Some(Flow { id: id_or_new(&f["id"], "f_"), name: text_or(&f["name"], t!("store.template"), 100), actions: action_list(&f["actions"]) })
 }
 
 fn sanitize_event(e: &Value) -> Option<Event> {
@@ -568,7 +569,7 @@ fn merge_settings(saved: &Value, start_page: &str) -> Settings {
             s
         }
         Err(err) => {
-            eprintln!("Einstellungen beschädigt, nutze Standardwerte: {err}");
+            eprintln!("{}", t!("store.settingsDamagedUsingDefaults", err));
             let mut s = defaults;
             // Den Kopplungsschlüssel möglichst behalten, damit Handys verbunden bleiben.
             if let Some(t) = saved["token"].as_str().filter(|t| !t.is_empty()) {
@@ -612,14 +613,14 @@ fn sample_pages() -> Vec<Page> {
     let page = json!({
         "name": "Start", "rows": 3, "cols": 5,
         "buttons": [
-            btn(0, 0, "Abspielen", "⏯️", "#3b3f8f", "media", json!({ "op": "play-pause" })),
-            btn(0, 1, "Zurück", "⏮️", "#2b2f3a", "media", json!({ "op": "previous" })),
-            btn(0, 2, "Weiter", "⏭️", "#2b2f3a", "media", json!({ "op": "next" })),
-            btn(1, 0, "Leiser", "🔉", "#2b2f3a", "volume", json!({ "op": "down", "step": 5 })),
-            btn(1, 1, "Lauter", "🔊", "#2b2f3a", "volume", json!({ "op": "up", "step": 5 })),
-            btn(1, 2, "Stumm", "🔇", "#8f3b3b", "volume", json!({ "op": "mute" })),
+            btn(0, 0, t!("store.play"), "⏯️", "#3b3f8f", "media", json!({ "op": "play-pause" })),
+            btn(0, 1, t!("common.back"), "⏮️", "#2b2f3a", "media", json!({ "op": "previous" })),
+            btn(0, 2, t!("common.next"), "⏭️", "#2b2f3a", "media", json!({ "op": "next" })),
+            btn(1, 0, t!("store.quieter"), "🔉", "#2b2f3a", "volume", json!({ "op": "down", "step": 5 })),
+            btn(1, 1, t!("store.louder"), "🔊", "#2b2f3a", "volume", json!({ "op": "up", "step": 5 })),
+            btn(1, 2, t!("common.muted"), "🔇", "#8f3b3b", "volume", json!({ "op": "mute" })),
             btn(2, 0, "Terminal", "🖥️", "#2b2f3a", "hotkey", json!({ "keys": "ctrl+alt+t" })),
-            btn(2, 1, "Dateien", "📁", "#2b2f3a", "open_path", json!({ "path": "~" })),
+            btn(2, 1, t!("store.files"), "📁", "#2b2f3a", "open_path", json!({ "path": "~" })),
         ],
     });
     vec![sanitize_page(&page).expect("Beispielseite ist gültig")]
@@ -644,7 +645,7 @@ impl Config {
 
     /** Liest eine Konfiguration (Datei oder Sicherung) und bringt sie in Ordnung. */
     pub fn from_value(cfg: &Value) -> Result<Self> {
-        let Some(obj) = cfg.as_object() else { bail!("Die Konfiguration ist kein JSON-Objekt.") };
+        let Some(obj) = cfg.as_object() else { bail!(t!("store.configurationIsNotJson")) };
         let mut pages = list(&cfg["pages"], sanitize_page);
         if pages.is_empty() {
             pages = sample_pages();
@@ -718,6 +719,7 @@ impl Store {
         fs::create_dir_all(&icon_dir).with_context(|| format!("Datenordner {} anlegen", data_dir.display()))?;
         let file = data_dir.join("config.json");
         let config = Self::load(&file)?;
+        super::i18n::set_lang(&config.settings.language);
         Ok(Store {
             data_dir: data_dir.to_path_buf(),
             icon_dir,
@@ -736,7 +738,7 @@ impl Store {
             return Ok(cfg);
         }
         let raw = fs::read_to_string(file).with_context(|| format!("{} lesen", file.display()))?;
-        let value: Value = serde_json::from_str(&raw).with_context(|| format!("{} ist kein gültiges JSON", file.display()))?;
+        let value: Value = serde_json::from_str(&raw).with_context(|| t!("store.isNotValidJson", file.display()))?;
         Config::from_value(&value)
     }
 
@@ -779,7 +781,7 @@ impl Store {
             None => self.config.pages.clone(),
         };
         if pages.is_empty() {
-            bail!("Mindestens eine Seite wird benötigt.");
+            bail!(t!("store.atLeastOnePage"));
         }
         let cfg = &mut self.config;
         cfg.pages = pages;
@@ -921,6 +923,7 @@ impl Store {
         }
         if let Some(l) = patch["language"].as_str().filter(|l| LANGUAGES.contains(l)) {
             s.language = l.into();
+            super::i18n::set_lang(l);
         }
         if let Some(l) = patch["logs"]["level"].as_str().filter(|l| ["debug", "info", "warn", "error"].contains(l)) {
             s.logs.level = l.into();

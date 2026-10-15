@@ -1,4 +1,5 @@
 // Alle Aktionstypen: Ausführung auf dem PC. Die Beschreibungen für den Editor stehen in catalog/actions.json.
+use crate::t;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -124,14 +125,7 @@ fn label(app: &App, kind: &str) -> String {
     if let Some(l) = app.plugins.label(kind, &lang) {
         return l;
     }
-    catalog::ACTION_TYPES
-        .as_array()
-        .into_iter()
-        .flatten()
-        .find(|a| a["type"] == kind)
-        .and_then(|a| a["label"].as_str())
-        .unwrap_or(kind)
-        .to_string()
+    catalog::action_label(kind, &lang).unwrap_or_else(|| kind.to_string())
 }
 
 fn known(kind: &str) -> bool {
@@ -144,7 +138,7 @@ pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) 
         let mut ctx = Ctx { opts, navigate: None, stop: false };
         let mut messages: Vec<String> = Vec::new();
         for action in actions.iter().filter(|a| a.enabled) {
-            let result = if known(&action.kind) { run_action(app, action, &mut ctx).await } else { Err(anyhow!("Unbekannte Aktion: {}", action.kind)) };
+            let result = if known(&action.kind) { run_action(app, action, &mut ctx).await } else { Err(anyhow!(t!("actions.unknownAction", action.kind))) };
             match result {
                 Ok(Some(msg)) if !msg.is_empty() => messages.push(msg),
                 Ok(_) => {}
@@ -192,12 +186,12 @@ fn enc(s: &str) -> String {
 
 fn resolve_button(app: &App, target: &str, ctx: &Ctx) -> Result<String> {
     let id = if target.is_empty() || target == "self" {
-        ctx.opts.button_id.clone().ok_or_else(|| anyhow!("„Dieser Button“ geht nur in Aktionen eines Buttons."))?
+        ctx.opts.button_id.clone().ok_or_else(|| anyhow!(t!("actions.thisButtonOnlyWorks")))?
     } else {
         target.to_string()
     };
     if app.store.lock().unwrap().find_button(&id).is_none() {
-        bail!("Den Button gibt es nicht mehr.");
+        bail!(t!("actions.buttonNoLongerExists"));
     }
     Ok(id)
 }
@@ -221,7 +215,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 c.next().is_some_and(|f| f.is_ascii_alphabetic()) && c.all(|c| c.is_ascii_alphanumeric() || "+.-".contains(c))
             });
             if !scheme_ok {
-                bail!("Bitte eine vollständige Adresse mit https:// angeben.");
+                bail!(t!("actions.pleaseEnterFullAddress"));
             }
             linux::open_with_default(&url)?;
             none
@@ -229,7 +223,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "open_path" => {
             let path = p.s("path");
             if path.is_empty() {
-                bail!("Kein Pfad angegeben.");
+                bail!(t!("actions.noPathGiven"));
             }
             linux::open_with_default(&linux::expand_home(&path).to_string_lossy())?;
             none
@@ -237,7 +231,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "launch_app" => {
             let id = p.s("app");
             if id.is_empty() {
-                bail!("Kein Programm ausgewählt.");
+                bail!(t!("actions.noProgramSelected"));
             }
             linux::launch_app(&id)?;
             none
@@ -245,7 +239,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "run_command" => {
             let cmd = p.s("command");
             if cmd.trim().is_empty() {
-                bail!("Kein Befehl angegeben.");
+                bail!(t!("common.noCommandGiven"));
             }
             let wait = p.t("wait");
             let out = linux::shell(&cmd, wait, Duration::from_secs(30)).await?;
@@ -254,7 +248,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "hotkey" => {
             let keys = p.s("keys");
             if keys.is_empty() {
-                bail!("Kein Tastenkürzel angegeben.");
+                bail!(t!("actions.noShortcutGiven"));
             }
             x11::send_hotkey(&keys).await?;
             none
@@ -269,16 +263,16 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "media" => Ok(Some(format!("Player: {}", linux::media(&p.or("op", "play-pause")).await?))),
         "volume" => {
             let v = linux::volume(&p.or("op", "up"), p.n("step"), p.n("value")).await?;
-            Ok(Some(if v.muted { "Stumm".into() } else { format!("Lautstärke {} %", v.volume.map_or_else(|| "?".into(), |v| v.to_string())) }))
+            Ok(Some(if v.muted { t!("common.muted").into() } else { t!("actions.volume", v.volume.map_or_else(|| "?".into(), |v| v.to_string())) }))
         }
         "mic_mute" => {
             let v = linux::mic(&p.or("op", "toggle")).await?;
-            Ok(Some(if v.muted { "Mikrofon stumm" } else { "Mikrofon an" }.into()))
+            Ok(Some(if v.muted { t!("actions.microphoneMuted") } else { t!("actions.microphoneOn") }.into()))
         }
         "go_page" => {
             let page = p.s("page");
             if page != "__back" && app.store.lock().unwrap().page(&page).is_none() {
-                bail!("Die Zielseite gibt es nicht mehr.");
+                bail!(t!("actions.targetPageNoLonger"));
             }
             ctx.navigate = Some(page);
             none
@@ -296,7 +290,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let url = p.s("url");
             let lower = url.to_lowercase();
             if !(lower.starts_with("http://") || lower.starts_with("https://")) {
-                bail!("Adresse muss mit http:// oder https:// beginnen.");
+                bail!(t!("actions.addressMustStartWith"));
             }
             let method = p.or("method", "GET");
             let mut req = reqwest::Client::new().request(reqwest::Method::from_bytes(method.as_bytes())?, &url).timeout(Duration::from_secs(15));
@@ -326,11 +320,11 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             linux::power(&p.or("op", "suspend")).await?;
             none
         }
-        "night_light" => Ok(Some(if linux::night_light(&p.or("mode", "toggle")).await? { "Nachtlicht an" } else { "Nachtlicht aus" }.into())),
+        "night_light" => Ok(Some(if linux::night_light(&p.or("mode", "toggle")).await? { t!("actions.nightLightOn") } else { t!("actions.nightLightOff") }.into())),
         "dark_mode" => Ok(Some(if linux::dark_mode(&p.or("mode", "toggle")).await? { "Dunkles Design" } else { "Helles Design" }.into())),
         "wake_on_lan" => {
             linux::wake_on_lan(&p.s("mac")).await?;
-            Ok(Some("Weckpaket gesendet".into()))
+            Ok(Some(t!("actions.wakePacketSent").into()))
         }
 
         // ---------- Steam ----------
@@ -347,7 +341,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_scene" | "obs_preview" => {
             let scene = p.s("scene");
             if scene.is_empty() {
-                bail!("Keine Szene ausgewählt.");
+                bail!(t!("actions.noSceneSelected"));
             }
             let req = if action.kind == "obs_scene" { "SetCurrentProgramScene" } else { "SetCurrentPreviewScene" };
             app.obs.call(req, json!({ "sceneName": scene })).await?;
@@ -375,12 +369,12 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_replay" => {
             let toggle = p.s("op") == "toggle";
             app.obs.call0(if toggle { "ToggleReplayBuffer" } else { "SaveReplayBuffer" }).await?;
-            Ok((!toggle).then(|| "Clip gespeichert".into()))
+            Ok((!toggle).then(|| t!("actions.clipSaved").into()))
         }
         "obs_mute" => {
             let input = p.s("input");
             if input.is_empty() {
-                bail!("Keine Audioquelle ausgewählt.");
+                bail!(t!("actions.noAudioSourceSelected"));
             }
             match p.s("op").as_str() {
                 op @ ("mute" | "unmute") => app.obs.call("SetInputMute", json!({ "inputName": input, "inputMuted": op == "mute" })).await?,
@@ -388,7 +382,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             };
             none
         }
-        "obs_source" => Ok(Some(if app.obs.set_source_visible(&p.s("item"), &p.or("mode", "toggle")).await? { "Eingeblendet" } else { "Ausgeblendet" }.into())),
+        "obs_source" => Ok(Some(if app.obs.set_source_visible(&p.s("item"), &p.or("mode", "toggle")).await? { t!("actions.shown") } else { t!("actions.hidden") }.into())),
         "obs_misc" => {
             if p.s("op") == "studio" {
                 let on = app.obs.call0("GetStudioModeEnabled").await?["studioModeEnabled"] == true;
@@ -402,7 +396,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if p.s("op") == "set" {
                 let t = p.s("transition");
                 if t.is_empty() {
-                    bail!("Kein Übergang ausgewählt.");
+                    bail!(t!("actions.noTransitionSelected"));
                 }
                 app.obs.call("SetCurrentSceneTransition", json!({ "transitionName": t })).await?;
                 let d = p.n("duration");
@@ -417,7 +411,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_volume" => {
             let input = p.s("input");
             if input.is_empty() {
-                bail!("Keine Audioquelle ausgewählt.");
+                bail!(t!("actions.noAudioSourceSelected"));
             }
             if p.s("op") == "set" {
                 let v = clamp(p.n("value"), 0.0, 100.0) / 100.0;
@@ -434,7 +428,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_media" => {
             let input = p.s("input");
             if input.is_empty() {
-                bail!("Keine Medienquelle ausgewählt.");
+                bail!(t!("actions.noMediaSourceSelected"));
             }
             let action = match p.s("op").as_str() {
                 "restart" => "RESTART".to_string(),
@@ -449,11 +443,11 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             app.obs.call("TriggerMediaInputAction", json!({ "inputName": input, "mediaAction": format!("OBS_WEBSOCKET_MEDIA_INPUT_ACTION_{action}") })).await?;
             none
         }
-        "obs_filter" => Ok(Some(if app.obs.set_filter(&p.s("filter"), &p.or("mode", "toggle")).await? { "Filter an" } else { "Filter aus" }.into())),
+        "obs_filter" => Ok(Some(if app.obs.set_filter(&p.s("filter"), &p.or("mode", "toggle")).await? { t!("actions.filterOn") } else { t!("actions.filterOff") }.into())),
         "obs_text" => {
             let input = p.s("input");
             if input.is_empty() {
-                bail!("Keine Textquelle ausgewählt.");
+                bail!(t!("actions.noTextSourceSelected"));
             }
             let text = fill(app, ctx, &p.s("text"));
             app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "text": text } })).await?;
@@ -462,7 +456,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_browser" => {
             let input = p.s("input");
             if input.is_empty() {
-                bail!("Keine Browserquelle ausgewählt.");
+                bail!(t!("actions.noBrowserSourceSelected"));
             }
             if p.s("op") == "url" {
                 app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "url": p.s("url") } })).await?;
@@ -474,7 +468,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_image" => {
             let (input, file) = (p.s("input"), p.s("file"));
             if input.is_empty() || file.is_empty() {
-                bail!("Bildquelle und Datei angeben.");
+                bail!(t!("actions.specifyImageSourceAnd"));
             }
             app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "file": linux::expand_home(&file) } })).await?;
             none
@@ -490,7 +484,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_hotkey" => {
             let hk = p.s("hotkey");
             if hk.is_empty() {
-                bail!("Keine Funktion ausgewählt.");
+                bail!(t!("actions.noFunctionSelected"));
             }
             app.obs.call("TriggerHotkeyByName", json!({ "hotkeyName": hk })).await?;
             none
@@ -498,7 +492,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_screenshot" => {
             let source = p.s("source");
             if source.is_empty() {
-                bail!("Keine Quelle ausgewählt.");
+                bail!(t!("common.noSourceSelected"));
             }
             let stamp = Local::now().format("%Y-%m-%d %H-%M-%S");
             let file = linux::expand_home(&p.or("folder", "~/Bilder")).join(format!("OBS {source} {stamp}.png"));
@@ -508,13 +502,13 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "obs_raw" => {
             let request = p.s("request");
             if request.is_empty() {
-                bail!("Keine Anfrage angegeben.");
+                bail!(t!("actions.noRequestGiven"));
             }
             let raw = p.s("data");
             let data: Value = if raw.trim().is_empty() {
                 json!({})
             } else {
-                serde_json::from_str(&raw).map_err(|_| anyhow!("Die Daten sind kein gültiges JSON."))?
+                serde_json::from_str(&raw).map_err(|_| anyhow!(t!("actions.dataIsNotValid")))?
             };
             let r = app.obs.call(&request, data).await?;
             Ok(r.as_object().filter(|o| !o.is_empty()).map(|_| truncate(&r.to_string(), 300)))
@@ -536,7 +530,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "key_hold" => {
             let keys = p.s("keys");
             if keys.is_empty() {
-                bail!("Keine Taste angegeben.");
+                bail!(t!("actions.noKeyGiven"));
             }
             x11::hold_keys(&keys, p.n_or("ms", 1000.0).max(0.0) as u64).await?;
             none
@@ -544,7 +538,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "window_activate" => {
             let w = p.s("window");
             if w.is_empty() {
-                bail!("Kein Fenster ausgewählt.");
+                bail!(t!("actions.noWindowSelected"));
             }
             Ok(Some(format!("Aktiviert: {}", x11::activate_window(&w).await?)))
         }
@@ -621,7 +615,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let msg = truncate(&fill(app, ctx, &p.s("message")), 500);
             let r = t.api("POST", "/chat/messages", Some(json!({ "broadcaster_id": me, "sender_id": me, "message": msg }))).await?;
             if r["data"][0]["is_sent"] == false {
-                bail!("{}", r["data"][0]["drop_reason"]["message"].as_str().unwrap_or("Nachricht wurde nicht gesendet."));
+                bail!("{}", r["data"][0]["drop_reason"]["message"].as_str().unwrap_or(t!("actions.messageWasNotSent")));
             }
             none
         }
@@ -638,7 +632,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             match r["data"][0]["id"].as_str() {
                 Some(id) => {
                     set_variable(app, "Twitch.Clip", &format!("https://clips.twitch.tv/{id}"))?;
-                    Ok(Some("Clip erstellt – Link im Wert „Twitch.Clip“".into()))
+                    Ok(Some(t!("actions.clipCreatedLinkIn").into()))
                 }
                 None => none,
             }
@@ -647,7 +641,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let me = app.twitch.me()?;
             let desc = truncate(&fill(app, ctx, &p.s("description")), 140);
             app.twitch.api("POST", "/streams/markers", Some(json!({ "user_id": me, "description": desc }))).await?;
-            Ok(Some("Marker gesetzt".into()))
+            Ok(Some(t!("actions.markerSet").into()))
         }
         "twitch_channel" => {
             let me = app.twitch.me()?;
@@ -658,11 +652,11 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if p.t("game") {
                 let game = p.s("game");
                 let g = app.twitch.api("GET", &format!("/games?name={}", enc(&game)), None).await?;
-                let id = g["data"][0]["id"].as_str().ok_or_else(|| anyhow!("Kategorie „{game}“ nicht gefunden (genauen Namen wie auf Twitch angeben)."))?;
+                let id = g["data"][0]["id"].as_str().ok_or_else(|| anyhow!(t!("actions.categoryNotFoundUse", game)))?;
                 body.insert("game_id".into(), json!(id));
             }
             if body.is_empty() {
-                bail!("Weder Titel noch Kategorie angegeben.");
+                bail!(t!("actions.neitherTitleNorCategory"));
             }
             app.twitch.api("PATCH", &format!("/channels?broadcaster_id={me}"), Some(Value::Object(body))).await?;
             none
@@ -670,7 +664,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         "twitch_ad" => {
             let me = app.twitch.me()?;
             let r = app.twitch.api("POST", "/channels/commercial", Some(json!({ "broadcaster_id": me, "length": p.n_or("length", 60.0) }))).await?;
-            Ok(Some(r["data"][0]["message"].as_str().filter(|m| !m.is_empty()).unwrap_or("Werbung gestartet").to_string()))
+            Ok(Some(r["data"][0]["message"].as_str().filter(|m| !m.is_empty()).unwrap_or(t!("actions.adStarted")).to_string()))
         }
         "twitch_chat_mode" => {
             let me = app.twitch.me()?;
@@ -685,7 +679,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let mut body = Map::new();
             body.insert(mode, json!(on));
             app.twitch.api("PATCH", &format!("/chat/settings?{q}"), Some(Value::Object(body))).await?;
-            Ok(Some(if on { "Modus an" } else { "Modus aus" }.into()))
+            Ok(Some(if on { t!("actions.modeOn") } else { t!("actions.modeOff") }.into()))
         }
         "twitch_shoutout" => {
             let me = app.twitch.me()?;
@@ -701,18 +695,18 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             }
             let to = app.twitch.user_id(&fill(app, ctx, &p.s("user"))).await?;
             app.twitch.api("POST", &format!("/raids?from_broadcaster_id={me}&to_broadcaster_id={to}"), None).await?;
-            Ok(Some("Raid läuft – in 90 s geht es los".into()))
+            Ok(Some(t!("actions.raidRunningStartsIn").into()))
         }
         "twitch_reward" => {
             let me = app.twitch.me()?;
             let reward = p.s("reward");
             if reward.is_empty() {
-                bail!("Keine Belohnung ausgewählt.");
+                bail!(t!("actions.noRewardSelected"));
             }
             let q = format!("broadcaster_id={me}&id={reward}");
             let cur = app.twitch.api("GET", &format!("/channel_points/custom_rewards?{q}&only_manageable_rewards=true"), None).await?["data"][0].clone();
             if cur.is_null() {
-                bail!("Belohnung nicht gefunden.");
+                bail!(t!("actions.rewardNotFound"));
             }
             let key = if p.s("op") == "pause" { "is_paused" } else { "is_enabled" };
             let mut body = Map::new();
@@ -731,7 +725,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             set("Titel", &ch["title"])?;
             set("Kategorie", &ch["game_name"])?;
             set("Follower", &json!(followers))?;
-            Ok(Some("Werte Twitch.Live, Twitch.Zuschauer, Twitch.Titel, Twitch.Kategorie, Twitch.Follower aktualisiert".into()))
+            Ok(Some(t!("actions.updatedValuesTwitchLive").into()))
         }
 
         // ---------- Discord ----------
@@ -748,10 +742,10 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             app.discord.set_voice(Value::Object(patch)).await?;
             Ok(Some(
                 match (key, on) {
-                    ("mute", true) => "Discord: stumm",
-                    ("mute", false) => "Discord: Mikrofon an",
-                    (_, true) => "Discord: taub",
-                    _ => "Discord: hört wieder",
+                    ("mute", true) => t!("actions.discordMuted"),
+                    ("mute", false) => t!("actions.discordMicrophoneOn"),
+                    (_, true) => t!("actions.discordDeafened"),
+                    _ => t!("actions.discordListeningAgain"),
                 }
                 .into(),
             ))
@@ -762,10 +756,10 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let leave = op == "leave" || (op == "toggle" && current.as_deref() == Some(channel.as_str()));
             if leave {
                 app.discord.call("SELECT_VOICE_CHANNEL", json!({ "channel_id": null })).await?;
-                return Ok(Some("Sprachkanal verlassen".into()));
+                return Ok(Some(t!("actions.leftVoiceChannel").into()));
             }
             if channel.is_empty() {
-                bail!("Kein Sprachkanal ausgewählt.");
+                bail!(t!("actions.noVoiceChannelSelected"));
             }
             app.discord.call("SELECT_VOICE_CHANNEL", json!({ "channel_id": channel, "force": true })).await?;
             none
@@ -785,7 +779,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let mut patch = Map::new();
             patch.insert(target.into(), json!({ "volume": next }));
             app.discord.set_voice(Value::Object(patch)).await?;
-            Ok(Some(format!("Discord {}: {next}", if target == "input" { "Eingabe" } else { "Ausgabe" })))
+            Ok(Some(format!("Discord {}: {next}", if target == "input" { t!("actions.input") } else { t!("actions.output") })))
         }
         "discord_mode" => {
             let v = app.discord.voice_settings().await?;
@@ -796,20 +790,20 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 op
             };
             app.discord.set_voice(json!({ "mode": { "type": kind } })).await?;
-            Ok(Some(if kind == "PUSH_TO_TALK" { "Push-to-Talk" } else { "Sprachaktivierung" }.into()))
+            Ok(Some(if kind == "PUSH_TO_TALK" { "Push-to-Talk" } else { t!("actions.voiceActivity") }.into()))
         }
         "discord_webhook" => {
             discord::send_webhook(&p.s("url"), &fill(app, ctx, &p.s("message")), &p.s("username")).await?;
-            Ok(Some("Nachricht gesendet".into()))
+            Ok(Some(t!("actions.messageSent").into()))
         }
 
         // ---------- Logik ----------
         "run_flow" => {
             let id = p.s("flow");
             let flow = app.store.lock().unwrap().config.flows.iter().find(|f| f.id == id).cloned();
-            let flow = flow.ok_or_else(|| anyhow!("Die Vorlage gibt es nicht mehr."))?;
+            let flow = flow.ok_or_else(|| anyhow!(t!("actions.templateNoLongerExists")))?;
             if ctx.opts.flow_depth >= 8 {
-                bail!("Vorlagen rufen sich gegenseitig zu oft auf.");
+                bail!(t!("actions.templatesCallEachOther"));
             }
             let times = clamp(p.n_or("times", 1.0), 1.0, 100.0) as u32;
             let mut messages: Vec<String> = Vec::new();
@@ -821,7 +815,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 }
                 messages.extend(r["messages"].as_array().into_iter().flatten().filter_map(|m| m.as_str().map(String::from)));
                 if r["ok"] != true {
-                    bail!("Vorlage „{}“: {}", flow.name, r["error"].as_str().unwrap_or(""));
+                    bail!(t!("actions.template", flow.name, r["error"].as_str().unwrap_or("")));
                 }
             }
             Ok((!messages.is_empty()).then(|| messages.join(" · ")))
@@ -860,7 +854,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let page = p.s("page");
             let mut store = app.store.lock().unwrap();
             if store.page(&page).is_none() {
-                bail!("Keine Seite ausgewählt.");
+                bail!(t!("actions.noPageSelected"));
             }
             let c = p.s("color");
             let patch = hex_color(&c).then(|| {
@@ -871,8 +865,8 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             store.set_override(true, &page, patch.as_ref());
             none
         }
-        "unsupported" => bail!("Die Aktion „{}“ wird noch nicht unterstützt.", p.s("original")),
-        other => bail!("Unbekannte Aktion: {other}"),
+        "unsupported" => bail!(t!("actions.actionIsNotSupported", p.s("original"))),
+        other => bail!(t!("actions.unknownAction", other)),
     }
 }
 
@@ -899,7 +893,7 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
         "steam-games" => Ok(steam::games_as_options()),
         "audio-sinks" | "audio-sources" => {
             let sinks = name == "audio-sinks";
-            let first = json!({ "value": "next", "label": if sinks { "↻ Immer zum nächsten Ausgang" } else { "↻ Immer zum nächsten Eingang" } });
+            let first = json!({ "value": "next", "label": if sinks { t!("actions.alwaysNextOutput") } else { t!("actions.alwaysNextInput") } });
             linux::audio_devices(sinks).await.map(|d| {
                 let mut list = vec![first];
                 list.extend(d.into_iter().map(|d| json!(d)));
@@ -929,10 +923,10 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
         "flows" => Ok(opts(app.store.lock().unwrap().config.flows.iter().map(|f| (f.id.clone(), f.name.clone())))),
         "buttons" => {
             let store = app.store.lock().unwrap();
-            let mut list = vec![("self".to_string(), "⟲ Dieser Button".to_string())];
+            let mut list = vec![("self".to_string(), t!("actions.thisButton").to_string())];
             for pg in &store.config.pages {
                 for b in &pg.buttons {
-                    let name = [&b.title, &b.icon.value].into_iter().find(|t| !t.is_empty()).cloned().unwrap_or_else(|| format!("Feld {}/{}", b.row + 1, b.col + 1));
+                    let name = [&b.title, &b.icon.value].into_iter().find(|t| !t.is_empty()).cloned().unwrap_or_else(|| t!("actions.field", b.row + 1, b.col + 1));
                     list.push((b.id.clone(), format!("{} › {name}", pg.name)));
                 }
             }

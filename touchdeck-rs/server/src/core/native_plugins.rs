@@ -15,6 +15,7 @@
 //   {"type":"setValue","name":"…","value":"…"}   {"type":"getValue","requestId":"…","name":"…"}
 //   {"type":"fire","trigger":"<id>","data":{…}}   {"type":"notify","title":"…","body":"…"}
 //   {"type":"log","level":"info|warn|error","message":"…"}
+use crate::t;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -62,19 +63,19 @@ pub fn spawn_native(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Val
         loop {
             match run_once(&weak, &id, &dir, &command, &manifest, &settings, version, &mut rx).await {
                 Ok(Stopped::ByTouchDeck) => return,
-                Ok(Stopped::Exited(code)) => log(&weak, &id, "warn", &format!("Programm beendet (Code {code})")),
+                Ok(Stopped::Exited(code)) => log(&weak, &id, "warn", &t!("plugins.programExitedCode", code)),
                 Err(e) => log(&weak, &id, "error", &e.to_string()),
             }
             restarts.retain(|t| t.elapsed() < Duration::from_secs(60));
             if restarts.len() >= 3 {
-                let msg = "Das Plugin-Programm ist mehrfach abgestürzt und wurde angehalten.".to_string();
+                let msg = t!("plugins.pluginProgramCrashedSeveral").to_string();
                 log(&weak, &id, "error", &msg);
                 *error.lock().unwrap() = Some(msg);
                 // Anfragen weiterhin beantworten, damit niemand hängen bleibt.
                 while let Some(cmd) = rx.recv().await {
                     match cmd {
                         NativeCmd::Action { reply, .. } => {
-                            let _ = reply.send(Err("Das Plugin läuft nicht (mehrfach abgestürzt).".into()));
+                            let _ = reply.send(Err(t!("plugins.pluginIsNotRunning").into()));
                         }
                         NativeCmd::Stop => return,
                     }
@@ -119,7 +120,7 @@ async fn run_once(
         .stderr(Stdio::piped())
         .kill_on_drop(true)
         .spawn()
-        .map_err(|e| anyhow::anyhow!("Plugin-Programm „{program}“ lässt sich nicht starten: {e}"))?;
+        .map_err(|e| anyhow::anyhow!(t!("plugins.cannotStartPluginProgram", program, e)))?;
     let mut stdin = child.stdin.take().expect("stdin angefordert");
     let mut stdout = BufReader::new(child.stdout.take().expect("stdout angefordert")).lines();
     let mut stderr = BufReader::new(child.stderr.take().expect("stderr angefordert")).lines();
@@ -127,7 +128,7 @@ async fn run_once(
 
     let start = json!({ "type": "start", "plugin": { "id": manifest["id"], "name": manifest["name"], "version": manifest["version"] }, "settings": settings, "touchdeck": version });
     stdin.write_all(send(start).as_bytes()).await?;
-    log(app, id, "info", "gestartet");
+    log(app, id, "info", t!("plugins.started"));
 
     let mut pending: Pending = HashMap::new();
     // Verkettungstiefe der zuletzt ausgeführten Aktion (für Auslöser, die das Plugin daraufhin meldet).
@@ -146,7 +147,7 @@ async fn run_once(
                     "result" => {
                         if let Some(reply) = msg["requestId"].as_str().and_then(|r| pending.remove(r)) {
                             let _ = reply.send(if msg["ok"] == false {
-                                Err(msg["error"].as_str().unwrap_or("Fehler im Plugin").to_string())
+                                Err(msg["error"].as_str().unwrap_or(t!("plugins.errorInPlugin")).to_string())
                             } else {
                                 Ok(msg["message"].as_str().filter(|m| !m.is_empty()).map(String::from))
                             });
@@ -194,7 +195,7 @@ async fn run_once(
                     last_depth = (depth, Instant::now());
                     let msg = json!({ "type": "action", "requestId": request, "id": action, "params": params, "info": info });
                     if stdin.write_all(send(msg).as_bytes()).await.is_err() {
-                        let _ = reply.send(Err("Das Plugin-Programm reagiert nicht.".into()));
+                        let _ = reply.send(Err(t!("plugins.pluginProgramIsNot").into()));
                     } else {
                         pending.insert(request, reply);
                     }
@@ -203,7 +204,7 @@ async fn run_once(
         }
     };
     for (_, reply) in pending.drain() {
-        let _ = reply.send(Err("Das Plugin-Programm wurde beendet.".into()));
+        let _ = reply.send(Err(t!("plugins.pluginProgramHasExited").into()));
     }
     result
 }

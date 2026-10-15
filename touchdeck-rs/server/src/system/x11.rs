@@ -1,6 +1,7 @@
 // Tastatur, Maus und Fenster unter X11 steuern (XTest und EWMH).
 // Lädt libX11 und libXtst erst zur Laufzeit – die sind auf jedem X11-Desktop vorhanden.
 // Alle Funktionen blockieren (Warten zwischen Tastendrücken) und laufen daher in spawn_blocking.
+use crate::t;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_int, c_long, c_uchar, c_ulong};
 use std::ptr;
@@ -98,7 +99,7 @@ impl Keyboard {
         unsafe {
             let dpy = (x.XOpenDisplay)(ptr::null());
             if dpy.is_null() {
-                bail!("Keine Verbindung zum X-Server (DISPLAY nicht gesetzt?)");
+                bail!(t!("system.noConnectionToX"));
             }
             let (mut lo, mut hi) = (0, 0);
             (x.XDisplayKeycodes)(dpy, &mut lo, &mut hi);
@@ -158,7 +159,7 @@ impl Keyboard {
 
     /** Belegt kurzzeitig einen freien Keycode, falls ein Zeichen nicht im Layout ist. */
     fn with_temp_code(&self, sym: KeySym, f: impl FnOnce(c_int) -> Result<()>) -> Result<()> {
-        let spare = self.spare.ok_or_else(|| anyhow!("Kein freier Keycode für Sonderzeichen gefunden"))?;
+        let spare = self.spare.ok_or_else(|| anyhow!(t!("system.noFreeKeycodeFound")))?;
         let mut syms = vec![0; self.per as usize];
         syms[0] = sym;
         if syms.len() > 1 {
@@ -194,7 +195,7 @@ impl Keyboard {
     }
 
     fn code_of(&self, sym: KeySym) -> Result<c_int> {
-        self.locate(sym).map(|(c, _)| c).ok_or_else(|| anyhow!("Taste ist im aktuellen Layout nicht vorhanden"))
+        self.locate(sym).map(|(c, _)| c).ok_or_else(|| anyhow!(t!("system.keyDoesNotExist")))
     }
 
     /** Drückt ein Keysym, gehalten zusammen mit den Modifikator-Keysyms extra_mods. */
@@ -231,7 +232,7 @@ impl Keyboard {
 
     fn hotkey(&self, combo: &str) -> Result<()> {
         let syms = Self::parts(combo).into_iter().map(|p| self.name_sym(p)).collect::<Result<Vec<_>>>()?;
-        let Some((last, mods)) = syms.split_last() else { bail!("Leeres Tastenkürzel") };
+        let Some((last, mods)) = syms.split_last() else { bail!(t!("system.emptyShortcut")) };
         self.press_sym(*last, mods)
     }
 
@@ -362,7 +363,7 @@ impl Keyboard {
             .find(|w| w.class.to_lowercase() == q)
             .or_else(|| wins.iter().find(|w| w.class.to_lowercase().contains(&q)))
             .or_else(|| wins.iter().find(|w| w.title.to_lowercase().contains(&q)))
-            .ok_or_else(|| anyhow!("Kein offenes Fenster gefunden für „{query}“"))?;
+            .ok_or_else(|| anyhow!(t!("system.noOpenWindowFound", query)))?;
         // SAFETY: Ereignis wird vollständig initialisiert und an das Wurzelfenster geschickt.
         unsafe {
             let mut ev: xlib::XEvent = std::mem::zeroed();

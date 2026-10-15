@@ -1,4 +1,5 @@
 // Erzeugt Seiten mit allen installierten Steam-Spielen (Coverbild, Start-Aktion, „läuft“-Anzeige).
+use crate::t;
 use std::path::Path;
 
 use serde_json::{Value, json};
@@ -38,7 +39,7 @@ fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path
 pub fn build_steam_pages(icon_dir: &Path, reuse_ids: &[String]) -> Result<Vec<Page>, HttpError> {
     let games = steam::list_games();
     if games.is_empty() {
-        return Err(HttpError::new(404, "Keine Steam-Spiele gefunden."));
+        return Err(HttpError::new(404, t!("steam.noSteamGamesFound")));
     }
     // Letzte Zeile jeder Seite: Navigation und Steam-Funktionen.
     let per_page = COLS * (MAX_ROWS - 1);
@@ -59,15 +60,15 @@ pub fn build_steam_pages(icon_dir: &Path, reuse_ids: &[String]) -> Result<Vec<Pa
                 }
                 buttons.push(b);
             };
-            tool(0, "Bibliothek", "📚", vec![action("steam_open", json!({ "view": "library" }))], json!({}));
+            tool(0, t!("steam.library"), "📚", vec![action("steam_open", json!({ "view": "library" }))], json!({}));
             tool(1, "Downloads", "⬇️", vec![action("steam_open", json!({ "view": "downloads" }))], json!({ "live": { "source": "steam_updates" }, "colorOn": "#a3501d" }));
             tool(2, "Big Picture", "📺", vec![action("steam_open", json!({ "view": "bigpicture" }))], json!({}));
-            tool(3, "Freunde", "👥", vec![action("steam_open", json!({ "view": "friends" }))], json!({}));
+            tool(3, t!("steam.friends"), "👥", vec![action("steam_open", json!({ "view": "friends" }))], json!({}));
             if n > 0 {
-                tool(4, "Zurück", "◀️", vec![action("go_page", json!({ "page": ids[n - 1] }))], json!({}));
+                tool(4, t!("common.back"), "◀️", vec![action("go_page", json!({ "page": ids[n - 1] }))], json!({}));
             }
             if n < chunks.len() - 1 {
-                tool(5, "Weiter", "▶️", vec![action("go_page", json!({ "page": ids[n + 1] }))], json!({}));
+                tool(5, t!("common.next"), "▶️", vec![action("go_page", json!({ "page": ids[n + 1] }))], json!({}));
             }
             sanitize_page(&json!({
                 "id": ids[n],

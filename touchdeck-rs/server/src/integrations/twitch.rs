@@ -1,4 +1,5 @@
 // Twitch: Anmeldung per Geräte-Code (jeder Nutzer mit eigener Client-ID), Helix-API und EventSub-Ereignisse.
+use crate::t;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -140,7 +141,7 @@ impl TwitchClient {
     pub async fn start_device_login(&self) -> Result<Value> {
         let client_id = self.auth().client_id;
         if client_id.is_empty() {
-            bail!("Bitte zuerst die Client-ID deiner Twitch-Anwendung eintragen.");
+            bail!(t!("twitch.pleaseEnterClientId"));
         }
         let scopes = SCOPES.join(" ");
         let res = self
@@ -156,7 +157,7 @@ impl TwitchClient {
         let d: Value = res.json().await.unwrap_or_default();
         if !ok {
             let msg = d["message"].as_str().map_or_else(|| status.to_string(), String::from);
-            bail!("Twitch lehnt ab: {msg}. Ist die Client-ID richtig und die Anwendung „Öffentlich“?");
+            bail!(t!("twitch.twitchRefusedIsClient", msg));
         }
         let seq = {
             let mut s = self.0.device_seq.lock().unwrap();
@@ -225,7 +226,7 @@ impl TwitchClient {
         }
         if self.device_active(seq) {
             *self.0.device.lock().unwrap() = None;
-            self.save(|t| t.last_error = json!("Der Code ist abgelaufen. Bitte noch einmal verbinden."));
+            self.save(|t| t.last_error = json!(t!("twitch.codeHasExpiredPlease")));
         }
     }
 
@@ -263,7 +264,7 @@ impl TwitchClient {
             res = check().await?;
         }
         if !res.status().is_success() {
-            bail!("Twitch-Anmeldung ungültig. Bitte in den Einstellungen neu verbinden.");
+            bail!(t!("twitch.twitchLoginInvalidPlease"));
         }
         let d: Value = res.json().await?;
         let user_id = d["user_id"].as_str().unwrap_or("").to_string();
@@ -307,7 +308,7 @@ impl TwitchClient {
     async fn do_refresh(&self) -> Result<()> {
         let a = self.auth();
         if a.refresh_token.is_empty() {
-            bail!("Nicht mit Twitch verbunden.");
+            bail!(t!("twitch.notConnectedToTwitch2"));
         }
         let body = form(&[("client_id", &a.client_id), ("grant_type", "refresh_token"), ("refresh_token", &a.refresh_token)]);
         // Netz weg: Anmeldung behalten und später erneut versuchen.
@@ -319,21 +320,21 @@ impl TwitchClient {
             .body(body)
             .send()
             .await
-            .map_err(|e| anyhow!("Twitch nicht erreichbar: {e}"))?;
+            .map_err(|e| anyhow!(t!("twitch.twitchNotReachable", e)))?;
         let status = res.status().as_u16();
         let d: Value = res.json().await.unwrap_or_default();
         if !(200..300).contains(&status) {
-            self.0.log.warn("Twitch", format!("Erneuern abgelehnt ({status}): {}", d["message"].as_str().unwrap_or("ohne Begründung")));
+            self.0.log.warn("Twitch", t!("twitch.refreshRejected", status, d["message"].as_str().unwrap_or(t!("twitch.noReasonGiven"))));
             // Nur bei echter Ablehnung abmelden, nicht bei Serverproblemen von Twitch.
             if status == 400 || status == 401 {
                 self.save(|t| {
                     t.access_token.clear();
                     t.refresh_token.clear();
-                    t.last_error = json!("Twitch-Anmeldung abgelaufen. Bitte neu verbinden.");
+                    t.last_error = json!(t!("twitch.twitchLoginExpiredPlease2"));
                 });
                 self.close_events();
             }
-            bail!("Twitch-Anmeldung abgelaufen. Bitte in den Einstellungen neu verbinden.");
+            bail!(t!("twitch.twitchLoginExpiredPlease"));
         }
         self.store_tokens(&d);
         self.0.log.debug("Twitch", "Zugang erneuert");
@@ -357,7 +358,7 @@ impl TwitchClient {
             t.expires_at = json!(0);
             t.last_error = Value::Null;
         });
-        self.0.log.info("Twitch", "Verbindung getrennt");
+        self.0.log.info("Twitch", t!("common.disconnected"));
     }
 
     // ---------- Helix-API ----------
@@ -370,7 +371,7 @@ impl TwitchClient {
         async move {
             let a = self.auth();
             if a.access_token.is_empty() {
-                bail!("Nicht mit Twitch verbunden (Einstellungen → Integrationen).");
+                bail!(t!("twitch.notConnectedToTwitch"));
             }
             if self.expiring() {
                 self.refresh().await?;
@@ -392,7 +393,7 @@ impl TwitchClient {
             }
             let d: Value = res.json().await.unwrap_or_default();
             if !status.is_success() {
-                bail!("Twitch: {}", d["message"].as_str().unwrap_or(status.canonical_reason().unwrap_or("Fehler")));
+                bail!("Twitch: {}", d["message"].as_str().unwrap_or(status.canonical_reason().unwrap_or(t!("common.error"))));
             }
             Ok(d)
         }
@@ -401,17 +402,17 @@ impl TwitchClient {
 
     pub fn me(&self) -> Result<String> {
         let id = self.auth().user_id;
-        if id.is_empty() { Err(anyhow!("Nicht mit Twitch verbunden (Einstellungen → Integrationen).")) } else { Ok(id) }
+        if id.is_empty() { Err(anyhow!(t!("twitch.notConnectedToTwitch"))) } else { Ok(id) }
     }
 
     pub async fn user_id(&self, login: &str) -> Result<String> {
         let name = login.trim().trim_start_matches('@').to_lowercase();
         if name.is_empty() {
-            bail!("Kein Twitch-Name angegeben.");
+            bail!(t!("twitch.noTwitchNameGiven"));
         }
         let enc = percent_encoding::utf8_percent_encode(&name, percent_encoding::NON_ALPHANUMERIC);
         let d = self.api("GET", &format!("/users?login={enc}"), None).await?;
-        d["data"][0]["id"].as_str().map(String::from).ok_or_else(|| anyhow!("Twitch-Nutzer „{name}“ nicht gefunden."))
+        d["data"][0]["id"].as_str().map(String::from).ok_or_else(|| anyhow!(t!("twitch.twitchUserNotFound", name)))
     }
 
     /** Kurz zwischengespeicherte Abfragen (Live-Anzeigen fragen sonst alle 2 s). */
@@ -528,7 +529,7 @@ impl TwitchClient {
                 let body = json!({ "type": kind, "version": version, "condition": condition, "transport": { "method": "websocket", "session_id": session } });
                 match self.api("POST", "/eventsub/subscriptions", Some(body)).await {
                     Ok(_) => ok += 1,
-                    Err(err) => self.0.log.warn("Twitch", format!("Ereignis {kind} nicht verfügbar: {err}")),
+                    Err(err) => self.0.log.warn("Twitch", t!("twitch.eventNotAvailable", kind, err)),
                 }
             }
         }

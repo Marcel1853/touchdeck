@@ -1,4 +1,5 @@
 // Steam: installierte Spiele aus allen Bibliotheken lesen, Coverbilder finden, Updates und laufende Spiele erkennen.
+use crate::t;
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -149,7 +150,7 @@ pub fn running_games() -> BTreeSet<String> {
 
 pub fn run_game(appid: &str) -> Result<()> {
     if appid.is_empty() || !appid.chars().all(|c| c.is_ascii_digit()) {
-        bail!("Kein Spiel ausgewählt.");
+        bail!(t!("steam.noGameSelected"));
     }
     linux::open_with_default(&format!("steam://rungameid/{appid}"))
 }

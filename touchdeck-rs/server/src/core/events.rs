@@ -1,5 +1,6 @@
 // Events: „Wenn <Auslöser>, dann <Aktionen>“ – global (Bereich Events) und je Button („Bei Event“).
 // Die Beschreibungen der Auslöser für den Editor stehen in catalog/triggers.json.
+use crate::t;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
@@ -187,7 +188,7 @@ impl EventEngine {
                 for e in b.events.iter().filter(|e| e.enabled) {
                     subs.push(Sub {
                         key: format!("{}:{}", b.id, e.id),
-                        name: format!("Button „{}“", if b.title.is_empty() { &b.id } else { &b.title }),
+                        name: t!("events.button", if b.title.is_empty() { &b.id } else { &b.title }),
                         trigger: e.trigger.clone(),
                         actions: e.actions.clone(),
                         cooldown: 0,
@@ -342,13 +343,13 @@ impl EventEngine {
 
     fn run_sub_at(&self, app: &Arc<App>, sub: &Sub, data: &Value, depth: u32) {
         if depth >= MAX_DEPTH {
-            app.log.warn("Events", format!("„{}“ übersprungen: Events lösen sich gegenseitig endlos aus.", sub.name));
+            app.log.warn("Events", t!("events.skippedEventsKeepTriggering", sub.name));
             return;
         }
         {
             let mut last = self.last_run.lock().unwrap();
             if sub.cooldown > 0 && last.get(&sub.key).is_some_and(|t| t.elapsed() < Duration::from_secs(sub.cooldown as u64)) {
-                app.log.debug("Events", format!("„{}“ wartet noch (Abklingzeit).", sub.name));
+                app.log.debug("Events", t!("events.isStillWaitingCooldown", sub.name));
                 return;
             }
             last.insert(sub.key.clone(), Instant::now());
@@ -365,9 +366,9 @@ impl EventEngine {
             let opts = RunOpts { button_id: sub.button_id.clone(), event_data, flow_depth: 0 };
             let r = run_actions(&a, &sub.actions, opts).await;
             if r["ok"] == true {
-                a.log.info("Events", format!("„{}“ ausgeführt ({})", sub.name, sub.trigger.kind));
+                a.log.info("Events", t!("events.ran", sub.name, sub.trigger.kind));
             } else {
-                a.log.error("Events", format!("„{}“: {}", sub.name, r["error"].as_str().unwrap_or("")));
+                a.log.error("Events", t!("events.format", sub.name, r["error"].as_str().unwrap_or("")));
             }
         }));
     }
