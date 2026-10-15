@@ -83,17 +83,17 @@ class ConnectActivity : Activity() {
             })
             addView(text("TouchDeck", 26f, bold = true))
         })
-        column.addView(text("Handy und PC müssen im selben WLAN sein, und TouchDeck muss am PC laufen.", 15f, Ui.MUTED).apply {
+        column.addView(text(getString(R.string.connect_hint), 15f, Ui.MUTED).apply {
             setPadding(0, dp(14), 0, dp(10))
         })
 
-        savedTitle = sectionTitle("Meine PCs")
+        savedTitle = sectionTitle(getString(R.string.my_pcs))
         column.addView(savedTitle)
         savedList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         column.addView(savedList)
 
-        column.addView(sectionTitle("Im WLAN gefunden"))
-        status = text("Suche nach TouchDeck …", 14f, Ui.MUTED)
+        column.addView(sectionTitle(getString(R.string.found_in_wifi)))
+        status = text(getString(R.string.searching), 14f, Ui.MUTED)
         column.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -104,10 +104,10 @@ class ConnectActivity : Activity() {
         foundList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         column.addView(foundList)
 
-        column.addView(sectionTitle("Oder"))
-        column.addView(button("📷  QR-Code vom PC scannen") { scanQr() }, fullWidth())
-        column.addView(button("⌨️  Adresse von Hand eingeben") { manualDialog() }, fullWidth(top = 10))
-        column.addView(text("Am PC: TouchDeck öffnen → „Handy verbinden“. Dort stehen QR-Code und Adresse.", 13f, Ui.MUTED).apply {
+        column.addView(sectionTitle(getString(R.string.or)))
+        column.addView(button(getString(R.string.scan_qr)) { scanQr() }, fullWidth())
+        column.addView(button(getString(R.string.enter_address)) { manualDialog() }, fullWidth(top = 10))
+        column.addView(text(getString(R.string.where_on_pc), 13f, Ui.MUTED).apply {
             setPadding(0, dp(18), 0, 0)
         })
 
@@ -155,10 +155,10 @@ class ConnectActivity : Activity() {
         val saved = prefs.servers
         savedTitle.visibility = if (saved.isEmpty()) View.GONE else View.VISIBLE
         for (server in saved) {
-            val sub = "${server.host}:${server.port}" + if (server.isPaired) " · gekoppelt" else " · neu koppeln nötig"
+            val sub = "${server.host}:${server.port}" + getString(if (server.isPaired) R.string.paired else R.string.needs_pairing)
             savedList.addView(card("🖥️  ${server.name}", sub, { connectSaved(server) }, { savedMenu(server) }), fullWidth(top = if (savedList.childCount > 0) 10 else 0))
         }
-        if (saved.isNotEmpty()) savedList.addView(text("Lange drücken: umbenennen oder entfernen", 12f, Ui.MUTED).apply { setPadding(dp(4), dp(8), 0, 0) })
+        if (saved.isNotEmpty()) savedList.addView(text(getString(R.string.long_press_hint), 12f, Ui.MUTED).apply { setPadding(dp(4), dp(8), 0, 0) })
         // Gefundene, die schon gespeichert sind, nicht doppelt zeigen.
         renderFound()
     }
@@ -175,14 +175,14 @@ class ConnectActivity : Activity() {
     private fun savedMenu(server: Server) {
         AlertDialog.Builder(this)
             .setTitle(server.name)
-            .setItems(arrayOf("Umbenennen", "Neu koppeln", "Entfernen")) { _, which ->
+            .setItems(arrayOf(getString(R.string.rename), getString(R.string.pair_again), getString(R.string.remove))) { _, which ->
                 when (which) {
                     0 -> renameDialog(server)
                     1 -> pair(server)
                     2 -> AlertDialog.Builder(this)
-                        .setMessage("„${server.name}“ aus der Liste entfernen?")
-                        .setPositiveButton("Entfernen") { _, _ -> prefs.remove(server); renderSaved() }
-                        .setNegativeButton("Abbrechen", null)
+                        .setMessage(getString(R.string.remove_question, server.name))
+                        .setPositiveButton(R.string.remove) { _, _ -> prefs.remove(server); renderSaved() }
+                        .setNegativeButton(R.string.cancel, null)
                         .show()
                 }
             }
@@ -192,14 +192,14 @@ class ConnectActivity : Activity() {
     private fun renameDialog(server: Server) {
         val input = EditText(this).apply { setText(server.name); setSelection(server.name.length) }
         AlertDialog.Builder(this)
-            .setTitle("Name des PCs")
+            .setTitle(R.string.pc_name)
             .setView(LinearLayout(this).apply { setPadding(dp(22), dp(8), dp(22), 0); addView(input, fullWidth()) })
-            .setPositiveButton("Speichern") { _, _ ->
+            .setPositiveButton(R.string.save) { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) prefs.rename(server, name)
                 renderSaved()
             }
-            .setNegativeButton("Abbrechen", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -218,12 +218,12 @@ class ConnectActivity : Activity() {
         foundList.removeAllViews()
         for (server in fresh) {
             val sub = "${server.host}:${server.port}" + if (server.version.isNotEmpty()) " · TouchDeck ${server.version}" else ""
-            foundList.addView(card("🖥️  ${server.name}", "$sub · antippen zum Koppeln", { pair(server) }), fullWidth(top = if (foundList.childCount > 0) 10 else 0))
+            foundList.addView(card("🖥️  ${server.name}", getString(R.string.tap_to_pair, sub), { pair(server) }), fullWidth(top = if (foundList.childCount > 0) 10 else 0))
         }
         status.text = when {
-            fresh.isNotEmpty() -> if (fresh.size == 1) "1 neuer PC gefunden" else "${fresh.size} neue PCs gefunden"
-            found.isNotEmpty() -> "Keine weiteren PCs – alle gefundenen sind schon gespeichert"
-            else -> "Suche nach TouchDeck …"
+            fresh.isNotEmpty() -> if (fresh.size == 1) getString(R.string.one_new_pc) else getString(R.string.new_pcs, fresh.size)
+            found.isNotEmpty() -> getString(R.string.no_more_pcs)
+            else -> getString(R.string.searching)
         }
     }
 
@@ -235,9 +235,9 @@ class ConnectActivity : Activity() {
     /** Kopplung anfragen und warten, bis am PC „Erlauben“ gedrückt wird. */
     private fun pair(server: Server) {
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Am PC bestätigen")
-            .setMessage("Auf „${server.name}“ erscheint jetzt:\n„${deviceName()} möchte sich verbinden“.\n\nBitte dort auf „Erlauben“ klicken.")
-            .setNegativeButton("Abbrechen") { _, _ -> pairing = null }
+            .setTitle(R.string.confirm_on_pc)
+            .setMessage(getString(R.string.confirm_on_pc_text, server.name, deviceName()))
+            .setNegativeButton(R.string.cancel) { _, _ -> pairing = null }
             .setCancelable(false)
             .show()
         thread {
@@ -259,11 +259,11 @@ class ConnectActivity : Activity() {
                             runOnUiThread { dialog.dismiss(); openDeck() }
                             return@thread
                         }
-                        "denied" -> throw IllegalStateException("Am PC wurde die Verbindung abgelehnt.")
-                        "expired" -> throw IllegalStateException("Die Anfrage ist abgelaufen. Bitte noch einmal versuchen.")
+                        "denied" -> throw IllegalStateException(getString(R.string.denied))
+                        "expired" -> throw IllegalStateException(getString(R.string.expired))
                     }
                 }
-                throw IllegalStateException("Keine Antwort vom PC. Ist das TouchDeck-Fenster am PC geöffnet?")
+                throw IllegalStateException(getString(R.string.no_answer))
             } catch (e: Exception) {
                 if (!cancelled) runOnUiThread {
                     dialog.dismiss()
@@ -277,28 +277,29 @@ class ConnectActivity : Activity() {
 
     private fun friendly(e: Exception): String = when (e) {
         is java.net.ConnectException, is java.net.SocketTimeoutException, is java.net.NoRouteToHostException ->
-            "Der PC antwortet nicht. Läuft TouchDeck dort, und lässt die Firewall Verbindungen zu?"
-        else -> e.message ?: "Verbindung fehlgeschlagen."
+            getString(R.string.pc_not_responding)
+        is Net.PcError -> getString(R.string.pc_error_code, e.status)
+        else -> e.message ?: getString(R.string.connection_failed)
     }
 
     private fun manualDialog() {
         val last = prefs.servers.firstOrNull()
-        val host = EditText(this).apply { hint = "IP-Adresse des PCs, z. B. 192.168.178.35"; inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI; setText(last?.host ?: "") }
-        val port = EditText(this).apply { hint = "Port"; inputType = InputType.TYPE_CLASS_NUMBER; setText((last?.port ?: Prefs.DEFAULT_PORT).toString()) }
+        val host = EditText(this).apply { hint = getString(R.string.ip_hint); inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI; setText(last?.host ?: "") }
+        val port = EditText(this).apply { hint = getString(R.string.port); inputType = InputType.TYPE_CLASS_NUMBER; setText((last?.port ?: Prefs.DEFAULT_PORT).toString()) }
         AlertDialog.Builder(this)
-            .setTitle("Adresse eingeben")
+            .setTitle(R.string.enter_address_title)
             .setView(LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dp(22), dp(8), dp(22), 0)
                 addView(host)
                 addView(port)
             })
-            .setPositiveButton("Verbinden") { _, _ ->
+            .setPositiveButton(R.string.connect) { _, _ ->
                 val h = host.text.toString().trim().removePrefix("http://").substringBefore('/').substringBefore(':')
                 val p = port.text.toString().toIntOrNull() ?: Prefs.DEFAULT_PORT
                 if (h.isNotEmpty()) pair(prefs.servers.find { it.host == h && it.port == p } ?: Server(h, p))
             }
-            .setNegativeButton("Abbrechen", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -307,7 +308,7 @@ class ConnectActivity : Activity() {
     private fun scanQr() {
         IntentIntegrator(this)
             .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            .setPrompt("Den QR-Code aus „Handy verbinden“ am PC scannen")
+            .setPrompt(getString(R.string.scan_prompt))
             .setBeepEnabled(false)
             .setOrientationLocked(false)
             .initiateScan()
@@ -325,7 +326,7 @@ class ConnectActivity : Activity() {
         val host = uri.host
         val token = uri.getQueryParameter("token")
         if (host.isNullOrEmpty() || token.isNullOrEmpty()) {
-            showMessage("Das ist kein TouchDeck-QR-Code. Am PC unter „Handy verbinden“ steht der richtige.")
+            showMessage(getString(R.string.not_touchdeck_qr))
             return
         }
         val port = if (uri.port > 0) uri.port else Prefs.DEFAULT_PORT

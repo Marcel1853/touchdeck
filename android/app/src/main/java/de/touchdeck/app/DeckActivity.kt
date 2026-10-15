@@ -72,8 +72,8 @@ class DeckActivity : Activity() {
             visibility = View.GONE
             addView(text("📡", 44f).apply { gravity = Gravity.CENTER })
             addView(offlineText, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12); bottomMargin = dp(20) })
-            addView(button("Erneut versuchen", primary = true) { load() })
-            addView(button("Verbindung ändern") { backToConnect(null) }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+            addView(button(getString(R.string.retry), primary = true) { load() })
+            addView(button(getString(R.string.change_connection)) { backToConnect(null) }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
         }
         setContentView(FrameLayout(this).apply {
             addView(web)
@@ -120,7 +120,7 @@ class DeckActivity : Activity() {
                 val r = Net.checkToken(server)
                 if (r.status == 401 && !r.body.optBoolean("pin")) {
                     prefs.forgetToken(server)
-                    runOnUiThread { backToConnect("Die Kopplung mit „${server.name}“ gilt nicht mehr (z. B. neuer Schlüssel am PC). Bitte neu verbinden.") }
+                    runOnUiThread { backToConnect(getString(R.string.pairing_invalid, server.name)) }
                 }
             } catch (_: Exception) {
                 // Nicht erreichbar – das zeigt die Seite selbst an.
@@ -129,7 +129,7 @@ class DeckActivity : Activity() {
     }
 
     private fun showOffline() {
-        offlineText.text = "„${server.name}“ ist gerade nicht erreichbar.\nLäuft TouchDeck am PC, und ist das Handy im selben WLAN?\n\nNeuer Versuch in wenigen Sekunden …"
+        offlineText.text = getString(R.string.offline, server.name)
         offline.visibility = View.VISIBLE
         main.postDelayed(retry, 4000)
     }

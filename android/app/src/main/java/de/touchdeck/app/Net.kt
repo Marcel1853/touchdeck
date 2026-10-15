@@ -7,6 +7,9 @@ import java.net.URLEncoder
 
 /** Kleine HTTP-Aufrufe an den TouchDeck-Server (Koppeln, Schlüssel prüfen). */
 object Net {
+    /** Der PC hat mit einem Fehlercode geantwortet, ohne eigene Meldung. */
+    class PcError(val status: Int) : Exception()
+
     class Response(val status: Int, val body: JSONObject)
 
     fun call(method: String, url: String, body: JSONObject? = null, timeout: Int = 5000): Response {
@@ -36,7 +39,7 @@ object Net {
     /** Fragt am PC an; dort erscheint „Gerät … möchte sich verbinden“. Liefert die Anfrage-ID. */
     fun requestPairing(server: Server, deviceName: String): String {
         val r = call("POST", "${base(server)}/api/pair/request", JSONObject().put("device", deviceName))
-        if (r.status != 200) throw IllegalStateException(r.body.optString("error", "PC antwortet nicht (Fehler ${r.status})."))
+        if (r.status != 200) throw r.body.optString("error").takeIf { it.isNotEmpty() }?.let { IllegalStateException(it) } ?: PcError(r.status)
         return r.body.getString("id")
     }
 

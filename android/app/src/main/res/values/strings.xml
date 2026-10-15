@@ -1,4 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Texte der App auf Englisch (Standard, wenn das Handy nicht auf Deutsch steht). -->
 <resources>
-    <string name="app_name">TouchDeck</string>
+    <string name="app_name" translatable="false">TouchDeck</string>
+    <string name="connect_hint">Phone and PC must be on the same Wi-Fi, and TouchDeck must be running on the PC.</string>
+    <string name="my_pcs">My PCs</string>
+    <string name="found_in_wifi">Found on Wi-Fi</string>
+    <string name="searching">Looking for TouchDeck …</string>
+    <string name="or">Or</string>
+    <string name="scan_qr">📷  Scan QR code from the PC</string>
+    <string name="enter_address">⌨️  Enter address manually</string>
+    <string name="where_on_pc">On the PC: open TouchDeck → “Connect phone”. The QR code and address are shown there.</string>
+    <string name="paired"> · paired</string>
+    <string name="needs_pairing"> · needs pairing again</string>
+    <string name="long_press_hint">Long press: rename or remove</string>
+    <string name="rename">Rename</string>
+    <string name="pair_again">Pair again</string>
+    <string name="remove">Remove</string>
+    <string name="remove_question">Remove “%1$s” from the list?</string>
+    <string name="cancel">Cancel</string>
+    <string name="pc_name">Name of the PC</string>
+    <string name="save">Save</string>
+    <string name="tap_to_pair">%1$s · tap to pair</string>
+    <string name="one_new_pc">1 new PC found</string>
+    <string name="new_pcs">%1$d new PCs found</string>
+    <string name="no_more_pcs">No more PCs – all found ones are already saved</string>
+    <string name="confirm_on_pc">Confirm on the PC</string>
+    <string name="confirm_on_pc_text">“%1$s” now shows:\n“%2$s wants to connect”.\n\nPlease click “Allow” there.</string>
+    <string name="denied">The connection was denied on the PC.</string>
+    <string name="expired">The request has expired. Please try again.</string>
+    <string name="no_answer">No answer from the PC. Is the TouchDeck window open on the PC?</string>
+    <string name="pc_not_responding">The PC is not responding. Is TouchDeck running there, and does the firewall allow connections?</string>
+    <string name="connection_failed">Connection failed.</string>
+    <string name="pc_error_code">PC is not responding (error %1$d).</string>
+    <string name="ip_hint">IP address of the PC, e.g. 192.168.178.35</string>
+    <string name="port">Port</string>
+    <string name="enter_address_title">Enter address</string>
+    <string name="connect">Connect</string>
+    <string name="scan_prompt">Scan the QR code from “Connect phone” on the PC</string>
+    <string name="not_touchdeck_qr">This is not a TouchDeck QR code. The right one is under “Connect phone” on the PC.</string>
+    <string name="retry">Try again</string>
+    <string name="change_connection">Change connection</string>
+    <string name="pairing_invalid">The pairing with “%1$s” is no longer valid (e.g. new key on the PC). Please connect again.</string>
+    <string name="offline">“%1$s” cannot be reached right now.\nIs TouchDeck running on the PC, and is the phone on the same Wi-Fi?\n\nTrying again in a few seconds …</string>
 </resources>
