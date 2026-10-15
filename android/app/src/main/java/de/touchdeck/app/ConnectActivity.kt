@@ -5,6 +5,7 @@ package de.touchdeck.app
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -41,9 +42,15 @@ class ConnectActivity : Activity() {
     private val discovery = Discovery { addFound(it) }
     @Volatile private var pairing: String? = null
 
+    /** Sprache, in der der Bildschirm aufgebaut wurde. */
+    private var shownLanguage: String? = null
+
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(Lang.wrap(newBase))
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
+        shownLanguage = prefs.language
         if (prefs.current != null && !intent.getBooleanExtra(EXTRA_MANUAL, false)) {
             openDeck()
             return
@@ -55,6 +62,8 @@ class ConnectActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        // Inzwischen andere Sprache am PC eingestellt: Bildschirm in der neuen Sprache aufbauen.
+        if (::foundList.isInitialized && prefs.language != shownLanguage) return recreate()
         if (::foundList.isInitialized) discovery.start()
     }
 
@@ -155,7 +164,7 @@ class ConnectActivity : Activity() {
         val saved = prefs.servers
         savedTitle.visibility = if (saved.isEmpty()) View.GONE else View.VISIBLE
         for (server in saved) {
-            val sub = "${server.host}:${server.port}" + getString(if (server.isPaired) R.string.paired else R.string.needs_pairing)
+            val sub = "${server.host}:${server.port} " + getString(if (server.isPaired) R.string.paired else R.string.needs_pairing)
             savedList.addView(card("🖥️  ${server.name}", sub, { connectSaved(server) }, { savedMenu(server) }), fullWidth(top = if (savedList.childCount > 0) 10 else 0))
         }
         if (saved.isNotEmpty()) savedList.addView(text(getString(R.string.long_press_hint), 12f, Ui.MUTED).apply { setPadding(dp(4), dp(8), 0, 0) })
@@ -206,6 +215,11 @@ class ConnectActivity : Activity() {
     // ---------- Gefundene PCs ----------
 
     private fun addFound(server: Server) {
+        // Noch nie verbunden: die Sprache des ersten gefundenen PCs übernehmen.
+        if (prefs.language == null && server.language in Lang.SUPPORTED) {
+            prefs.language = server.language
+            if (server.language != shownLanguage) return recreate()
+        }
         if (found.containsKey(server.key)) return
         found[server.key] = server
         renderFound()

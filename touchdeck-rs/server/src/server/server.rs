@@ -616,7 +616,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let (cfg, from) = match (&body["config"], body["name"].as_str()) {
                 (c, _) if !c.is_null() => (c.clone(), t!("server.uploadedFile").to_string()),
                 (_, Some(name)) => (app.backups.read(name)?, name.to_string()),
-                _ => return Err(HttpError::new(404, "Unbekannte Sicherung.")),
+                _ => return Err(HttpError::new(404, t!("common.unknownBackup"))),
             };
             if !cfg["pages"].is_array() {
                 return Err(HttpError::new(400, t!("server.thisIsNotTouchdeck")));

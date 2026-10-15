@@ -11,6 +11,8 @@ data class Server(
     val name: String = host,
     val version: String = "",
     val token: String = "",
+    /** Sprache des TouchDeck am PC (nur aus der Suche im WLAN, wird nicht gespeichert). */
+    val language: String = "",
     val lastUsed: Long = 0,
 ) {
     val key: String get() = "$host:$port"
@@ -40,6 +42,13 @@ class Prefs(context: Context) {
     init {
         migrate()
     }
+
+    /** Sprache vom PC (de oder en); null, solange die App noch nie eine erfahren hat. */
+    var language: String?
+        get() = prefs.getString("language", null)?.takeIf { it in Lang.SUPPORTED }
+        set(value) {
+            if (value in Lang.SUPPORTED) prefs.edit().putString("language", value).apply()
+        }
 
     /** Alle gespeicherten PCs, zuletzt benutzter zuerst. */
     val servers: List<Server>

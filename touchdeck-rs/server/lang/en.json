@@ -6,11 +6,14 @@
     "muted": "Muted",
     "next": "Next",
     "noCommandGiven": "No command given.",
-    "noSourceSelected": "No source selected."
+    "noSourceSelected": "No source selected.",
+    "obsConnection": "OBS connection: {0}",
+    "unknownBackup": "Unknown backup."
   },
   "server": {
     "action": "Action",
     "allowed": "allowed",
+    "answeringDiscovery": "Answering discovery requests (UDP {0})",
     "automaticDiscoveryNotAvailable": "Automatic discovery not available: {0}",
     "buttonNotFound": "Button not found.",
     "connected": "connected: {0}",
@@ -250,7 +253,8 @@
     "obsIsNotResponding": "OBS is not responding to {0}.",
     "obsIsNotResponding2": "OBS is not responding.",
     "obsRejectsPasswordPlease": "OBS rejects the password. Please check it in the TouchDeck settings.",
-    "obsRequiresPasswordPlease": "OBS requires a password. Please enter it in the TouchDeck settings."
+    "obsRequiresPasswordPlease": "OBS requires a password. Please enter it in the TouchDeck settings.",
+    "unexpectedAnswer": "OBS connection: unexpected answer."
   },
   "steam": {
     "friends": "Friends",

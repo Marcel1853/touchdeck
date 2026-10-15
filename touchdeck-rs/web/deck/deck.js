@@ -334,6 +334,8 @@ async function connect() {
       if (state?.version && msg.version && msg.version !== state.version) return location.reload();
       // Andere Sprache am PC eingestellt: neu laden, damit alle Texte passen.
       if (msg.language && msg.language !== getLang()) return location.reload();
+      // Der App die Sprache sagen, damit auch ihr Verbinden-Bildschirm passt.
+      if (msg.language) app?.setLanguage?.(msg.language);
       state = msg;
       render();
     } else if (msg.type === 'live') {

@@ -108,6 +108,7 @@ class Discovery(private val onFound: (Server) -> Unit) {
                                 port = json.optInt("port", Prefs.DEFAULT_PORT),
                                 name = json.optString("name", packet.address.hostAddress ?: ""),
                                 version = json.optString("version"),
+                                language = json.optString("language"),
                             )
                             main.post { if (running) onFound(server) }
                         } catch (_: SocketTimeoutException) {

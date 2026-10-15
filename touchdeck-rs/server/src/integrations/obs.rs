@@ -104,7 +104,7 @@ impl ObsClient {
             if msg.contains("refused") || msg.contains("Connection refused") {
                 anyhow!(t!("obs.obsIsNotReachable"))
             } else {
-                anyhow!("OBS-Verbindung: {msg}")
+                anyhow!(t!("common.obsConnection", msg))
             }
         })?;
         let (mut sink, mut stream) = ws.split();
@@ -112,7 +112,7 @@ impl ObsClient {
         // Begrüßung (op 0) → Anmeldung (op 1) → bestätigt (op 2).
         let hello = next_json(&mut stream).await?;
         if hello["op"] != 0 {
-            bail!("OBS-Verbindung: unerwartete Antwort.");
+            bail!(t!("obs.unexpectedAnswer"));
         }
         // Alle Ereignisse außer den sehr häufigen (Pegel, aktive Quellen).
         let mut identify = json!({ "rpcVersion": 1, "eventSubscriptions": 0x7ff });
@@ -308,7 +308,7 @@ where
                 bail!(t!("obs.obsClosedConnection"));
             }
             Some(Ok(_)) => continue,
-            Some(Err(e)) => bail!("OBS-Verbindung: {e}"),
+            Some(Err(e)) => bail!(t!("common.obsConnection", e)),
             None => bail!(t!("obs.obsClosedConnection")),
         }
     }

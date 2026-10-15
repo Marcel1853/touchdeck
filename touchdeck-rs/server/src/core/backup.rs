@@ -111,14 +111,14 @@ impl Backups {
     }
 
     pub fn read(&self, name: &str) -> Result<Value, HttpError> {
-        let unknown = || HttpError::new(404, "Unbekannte Sicherung.");
+        let unknown = || HttpError::new(404, t!("common.unknownBackup"));
         parse_name(name).ok_or_else(unknown)?;
         let raw = fs::read_to_string(self.dir.join(name)).map_err(|_| unknown())?;
         serde_json::from_str(&raw).map_err(|_| HttpError::new(400, t!("backup.backupIsDamaged")))
     }
 
     pub fn remove(&self, name: &str) -> Result<(), HttpError> {
-        parse_name(name).ok_or_else(|| HttpError::new(404, "Unbekannte Sicherung."))?;
+        parse_name(name).ok_or_else(|| HttpError::new(404, t!("common.unknownBackup")))?;
         let _ = fs::remove_file(self.dir.join(name));
         Ok(())
     }

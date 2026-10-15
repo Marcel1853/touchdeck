@@ -28,7 +28,7 @@ pub fn start(app: Arc<App>) {
             Ok(s) => s,
             Err(err) => return app.log.warn(t!("server.discovery"), t!("server.automaticDiscoveryNotAvailable", err)),
         };
-        app.log.debug(t!("server.discovery"), format!("Antworte auf Suchanfragen (UDP {DISCOVERY_PORT})"));
+        app.log.debug(t!("server.discovery"), t!("server.answeringDiscovery", DISCOVERY_PORT));
         let mut buf = [0u8; 256];
         loop {
             let Ok((n, from)) = sock.recv_from(&mut buf).await else { continue };
@@ -36,7 +36,8 @@ pub fn start(app: Arc<App>) {
             if !lan || String::from_utf8_lossy(&buf[..n]).trim() != QUESTION {
                 continue;
             }
-            let answer = json!({ "app": "touchdeck", "name": system::hostname(), "port": app.port, "version": app.version });
+            let language = app.store.lock().unwrap().settings().language.clone();
+            let answer = json!({ "app": "touchdeck", "name": system::hostname(), "port": app.port, "version": app.version, "language": language });
             let _ = sock.send_to(answer.to_string().as_bytes(), from).await;
         }
     });

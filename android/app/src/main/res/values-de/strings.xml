@@ -10,8 +10,8 @@
     <string name="scan_qr">📷  QR-Code vom PC scannen</string>
     <string name="enter_address">⌨️  Adresse von Hand eingeben</string>
     <string name="where_on_pc">Am PC: TouchDeck öffnen → „Handy verbinden“. Dort stehen QR-Code und Adresse.</string>
-    <string name="paired"> · gekoppelt</string>
-    <string name="needs_pairing"> · neu koppeln nötig</string>
+    <string name="paired">· gekoppelt</string>
+    <string name="needs_pairing">· neu koppeln nötig</string>
     <string name="long_press_hint">Lange drücken: umbenennen oder entfernen</string>
     <string name="rename">Umbenennen</string>
     <string name="pair_again">Neu koppeln</string>

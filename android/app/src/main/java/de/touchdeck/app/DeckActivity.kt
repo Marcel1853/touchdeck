@@ -35,11 +35,15 @@ import kotlin.concurrent.thread
  * Die App ergänzt Vollbild, wach bleibenden Bildschirm, Vibration und die Zurück-Taste.
  */
 class DeckActivity : Activity() {
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(Lang.wrap(newBase))
+
     private lateinit var prefs: Prefs
     private lateinit var server: Server
     private lateinit var web: WebView
     private lateinit var offline: LinearLayout
     private lateinit var offlineText: android.widget.TextView
+    private lateinit var retryButton: android.widget.TextView
+    private lateinit var changeButton: android.widget.TextView
     private val main = Handler(Looper.getMainLooper())
     private var failed = false
     private val retry = Runnable { load() }
@@ -72,8 +76,10 @@ class DeckActivity : Activity() {
             visibility = View.GONE
             addView(text("📡", 44f).apply { gravity = Gravity.CENTER })
             addView(offlineText, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12); bottomMargin = dp(20) })
-            addView(button(getString(R.string.retry), primary = true) { load() })
-            addView(button(getString(R.string.change_connection)) { backToConnect(null) }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+            retryButton = button(getString(R.string.retry), primary = true) { load() }
+            changeButton = button(getString(R.string.change_connection)) { backToConnect(null) }
+            addView(retryButton)
+            addView(changeButton, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
         }
         setContentView(FrameLayout(this).apply {
             addView(web)
@@ -129,7 +135,7 @@ class DeckActivity : Activity() {
     }
 
     private fun showOffline() {
-        offlineText.text = getString(R.string.offline, server.name)
+        offlineText.text = Lang.wrap(this).getString(R.string.offline, server.name)
         offline.visibility = View.VISIBLE
         main.postDelayed(retry, 4000)
     }
@@ -205,6 +211,18 @@ class DeckActivity : Activity() {
                     "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                     else -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
                 }
+            }
+        }
+
+        /** Sprache aus den TouchDeck-Einstellungen; gilt dann auch für den Verbinden-Bildschirm. */
+        @JavascriptInterface
+        fun setLanguage(lang: String) {
+            if (lang !in Lang.SUPPORTED || lang == prefs.language) return
+            prefs.language = lang
+            runOnUiThread {
+                val texts = Lang.wrap(this@DeckActivity)
+                retryButton.text = texts.getString(R.string.retry)
+                changeButton.text = texts.getString(R.string.change_connection)
             }
         }
 

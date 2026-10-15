@@ -10,8 +10,8 @@
     <string name="scan_qr">📷  Scan QR code from the PC</string>
     <string name="enter_address">⌨️  Enter address manually</string>
     <string name="where_on_pc">On the PC: open TouchDeck → “Connect phone”. The QR code and address are shown there.</string>
-    <string name="paired"> · paired</string>
-    <string name="needs_pairing"> · needs pairing again</string>
+    <string name="paired">· paired</string>
+    <string name="needs_pairing">· needs pairing again</string>
     <string name="long_press_hint">Long press: rename or remove</string>
     <string name="rename">Rename</string>
     <string name="pair_again">Pair again</string>
