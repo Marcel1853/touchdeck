@@ -93,8 +93,8 @@ impl Drop for Keyboard {
 
 impl Keyboard {
     fn open() -> Result<Self> {
-        let x = Xlib::open().map_err(|e| anyhow!("libX11 fehlt: {e}"))?;
-        let t = XTest::open().map_err(|e| anyhow!("libXtst fehlt: {e}"))?;
+        let x = Xlib::open().map_err(|e| anyhow!(t!("system.libMissing", "libX11", e)))?;
+        let t = XTest::open().map_err(|e| anyhow!(t!("system.libMissing", "libXtst", e)))?;
         // SAFETY: Aufrufe der Xlib mit gültigen Zeigern; die Tastaturbelegung wird kopiert und danach freigegeben.
         unsafe {
             let dpy = (x.XOpenDisplay)(ptr::null());
@@ -120,7 +120,7 @@ impl Keyboard {
         let c = CString::new(name)?;
         // SAFETY: c ist ein gültiger, nullterminierter Text.
         let sym = unsafe { (self.x.XStringToKeysym)(c.as_ptr()) };
-        if sym == 0 { Err(anyhow!("Unbekannte Taste: {name}")) } else { Ok(sym) }
+        if sym == 0 { Err(anyhow!(t!("system.unknownKey", name))) } else { Ok(sym) }
     }
 
     /** Liefert (Keycode, nötige Umschalttasten) für ein Keysym. */
@@ -451,6 +451,108 @@ pub async fn open_windows() -> Result<Vec<(String, String)>> {
     Ok(out)
 }
 
+// ---------- Globale Tastenkürzel ----------
+
+/** Kürzel in einheitlicher Form: Umschalttasten in fester Reihenfolge (wie der Editor), Taste zuletzt. */
+pub fn normalize_combo(combo: &str) -> String {
+    let lower = combo.to_lowercase();
+    let parts = Keyboard::parts(&lower);
+    let alias = |p: &str| match p {
+        "control" => "ctrl".to_string(),
+        "meta" | "win" => "super".to_string(),
+        other => other.to_string(),
+    };
+    let parts: Vec<String> = parts.iter().map(|p| alias(p)).collect();
+    let mut out: Vec<String> = ["ctrl", "alt", "shift", "super", "altgr"].iter().filter(|m| parts.iter().any(|p| p == *m)).map(|m| m.to_string()).collect();
+    out.extend(parts.into_iter().filter(|p| !["ctrl", "alt", "shift", "super", "altgr"].contains(&p.as_str())));
+    out.join("+")
+}
+
+static GRAB_FAILED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/** X-Fehler (z. B. „Kürzel schon belegt“) nur merken, statt das Programm zu beenden. */
+unsafe extern "C" fn on_x_error(_dpy: *mut Display, _ev: *mut xlib::XErrorEvent) -> c_int {
+    GRAB_FAILED.store(true, std::sync::atomic::Ordering::Relaxed);
+    0
+}
+
+/**
+ * Hört global auf Tastenkürzel (X11, auch wenn TouchDeck nicht im Vordergrund ist), bis `stop` gesetzt wird.
+ * Ruft `on_press` mit dem Kürzel in einheitlicher Form auf; `on_busy` für Kürzel, die ein anderes Programm belegt.
+ */
+pub fn listen_hotkeys(combos: &[String], stop: &std::sync::atomic::AtomicBool, on_press: impl Fn(&str), on_busy: impl Fn(&str)) -> Result<()> {
+    use std::sync::atomic::Ordering;
+    let kb = Keyboard::open()?;
+    let x = &kb.x;
+    let mods = |m: &str| -> Option<u32> {
+        Some(match m {
+            "ctrl" => xlib::ControlMask,
+            "alt" => xlib::Mod1Mask,
+            "shift" => xlib::ShiftMask,
+            "super" => xlib::Mod4Mask,
+            "altgr" => xlib::Mod5Mask,
+            _ => return None,
+        })
+    };
+    let relevant = xlib::ControlMask | xlib::Mod1Mask | xlib::ShiftMask | xlib::Mod4Mask | xlib::Mod5Mask;
+    // Kürzel auch bei aktivem Num- oder Feststelltaste erkennen.
+    let locks = [0, xlib::LockMask, xlib::Mod2Mask, xlib::LockMask | xlib::Mod2Mask];
+    let mut grabbed: Vec<(c_int, u32, String)> = Vec::new();
+    // SAFETY: Xlib-Aufrufe mit offener Verbindung; der Fehler-Handler gibt nur 0 zurück.
+    unsafe {
+        (x.XSetErrorHandler)(Some(on_x_error));
+        let root = (x.XDefaultRootWindow)(kb.dpy);
+        for combo in combos {
+            let norm = normalize_combo(combo);
+            let parts: Vec<&str> = norm.split('+').collect();
+            let Some((key, modifiers)) = parts.split_last() else { continue };
+            let mask = modifiers.iter().filter_map(|m| mods(m)).fold(0, |a, b| a | b);
+            let Ok(code) = kb.name_sym(key).and_then(|sym| kb.code_of(sym)) else {
+                on_busy(&norm);
+                continue;
+            };
+            GRAB_FAILED.store(false, Ordering::Relaxed);
+            for lock in locks {
+                (x.XGrabKey)(kb.dpy, code, mask | lock, root, 0, xlib::GrabModeAsync, xlib::GrabModeAsync);
+            }
+            (x.XSync)(kb.dpy, 0);
+            if GRAB_FAILED.load(Ordering::Relaxed) {
+                on_busy(&norm);
+            }
+            grabbed.push((code, mask, norm));
+        }
+        (x.XSync)(kb.dpy, 0);
+        let mut last: Option<(String, std::time::Instant)> = None;
+        while !stop.load(Ordering::Relaxed) {
+            while (x.XPending)(kb.dpy) > 0 {
+                let mut ev: xlib::XEvent = std::mem::zeroed();
+                (x.XNextEvent)(kb.dpy, &mut ev);
+                if ev.get_type() != xlib::KeyPress {
+                    continue;
+                }
+                let k = ev.key;
+                let state = k.state & relevant;
+                if let Some((_, _, combo)) = grabbed.iter().find(|(c, m, _)| *c == k.keycode as c_int && *m == state) {
+                    // Gedrückt halten wiederholt die Taste: höchstens alle 0,3 s auslösen.
+                    let repeat = last.as_ref().is_some_and(|(c, t)| c == combo && t.elapsed() < Duration::from_millis(300));
+                    last = Some((combo.clone(), std::time::Instant::now()));
+                    if !repeat {
+                        on_press(combo);
+                    }
+                }
+            }
+            sleep(Duration::from_millis(25));
+        }
+        for (code, mask, _) in &grabbed {
+            for lock in locks {
+                (x.XUngrabKey)(kb.dpy, *code, mask | lock, root);
+            }
+        }
+        (x.XSync)(kb.dpy, 0);
+    }
+    Ok(())
+}
+
 /** Name eines Keysyms (für Tests und Fehlermeldungen). */
 #[allow(dead_code)]
 fn keysym_name(x: &Xlib, sym: KeySym) -> Option<String> {
@@ -476,5 +578,12 @@ mod tests {
     fn kuerzel_teile() {
         assert_eq!(Keyboard::parts("ctrl + shift+s"), vec!["ctrl", "shift", "s"]);
         assert_eq!(key_name("pageup"), Some("Prior"));
+    }
+
+    #[test]
+    fn kuerzel_einheitlich() {
+        assert_eq!(normalize_combo("Shift+Ctrl+F5"), "ctrl+shift+f5");
+        assert_eq!(normalize_combo("win + alt + a"), "alt+super+a");
+        assert_eq!(normalize_combo("ctrl+alt+plus"), "ctrl+alt+plus");
     }
 }

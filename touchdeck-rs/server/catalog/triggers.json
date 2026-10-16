@@ -184,6 +184,17 @@
   ]
  },
  {
+  "type": "hotkey",
+  "category": "general",
+  "icon": "⌨️",
+  "fields": [
+   {
+    "key": "keys",
+    "type": "hotkey"
+   }
+  ]
+ },
+ {
   "type": "button_toggle",
   "category": "general",
   "icon": "🔘",

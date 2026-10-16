@@ -130,7 +130,9 @@
     "isStillWaitingCooldown": "„{0}“ wartet noch (Abklingzeit).",
     "page": "Seite „{0}“",
     "ran": "„{0}“ ausgeführt ({1})",
-    "skippedEventsKeepTriggering": "„{0}“ übersprungen: Events lösen sich gegenseitig endlos aus."
+    "skippedEventsKeepTriggering": "„{0}“ übersprungen: Events lösen sich gegenseitig endlos aus.",
+    "hotkeyBusy": "Tastenkürzel {0} ist schon von einem anderen Programm belegt oder unbekannt.",
+    "hotkeysUnavailable": "Globale Tastenkürzel gehen nicht (nur unter X11): {0}"
   },
   "live": {
     "active": "Aktiv",
@@ -269,7 +271,9 @@
     "selectedAudioDeviceIs": "Das gewählte Audiogerät ist gerade nicht vorhanden.",
     "timedOut": "{0}: Zeitüberschreitung",
     "unknownPowerAction": "Unbekannte Energie-Aktion: {0}",
-    "unknownVolumeAction": "Unbekannte Lautstärke-Aktion: {0}"
+    "unknownVolumeAction": "Unbekannte Lautstärke-Aktion: {0}",
+    "libMissing": "{0} fehlt: {1}",
+    "unknownKey": "Unbekannte Taste: {0}"
   },
   "obs": {
     "disconnectedFromObs": "OBS-Verbindung getrennt.",

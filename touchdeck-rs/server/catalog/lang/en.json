@@ -1166,6 +1166,17 @@
           "label": "At most this many decimals"
         }
       }
+    },
+    "key_sequence": {
+      "label": "Key sequence (recorded)",
+      "fields": {
+        "steps": {
+          "label": "Keys and pauses, one line per step (e.g. ctrl+c, 250ms, ctrl+v)"
+        },
+        "speed": {
+          "label": "Speed in % (200 = twice as fast)"
+        }
+      }
     }
   },
   "triggers": {
@@ -1573,6 +1584,14 @@
       "fields": {
         "name": {
           "label": "Timer name (empty = any)"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Shortcut pressed on the PC",
+      "fields": {
+        "keys": {
+          "label": "Shortcut (works anywhere on the PC under X11, even with TouchDeck in the background; placeholder {Event.Keys})"
         }
       }
     }

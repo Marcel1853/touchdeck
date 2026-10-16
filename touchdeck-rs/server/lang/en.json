@@ -130,7 +130,9 @@
     "isStillWaitingCooldown": "“{0}” is still waiting (cooldown).",
     "page": "Page “{0}”",
     "ran": "Ran “{0}” ({1})",
-    "skippedEventsKeepTriggering": "Skipped “{0}”: events keep triggering each other."
+    "skippedEventsKeepTriggering": "Skipped “{0}”: events keep triggering each other.",
+    "hotkeyBusy": "Shortcut {0} is already taken by another program or unknown.",
+    "hotkeysUnavailable": "Global shortcuts are not available (X11 only): {0}"
   },
   "live": {
     "active": "Active",
@@ -269,7 +271,9 @@
     "selectedAudioDeviceIs": "The selected audio device is not available right now.",
     "timedOut": "{0}: timed out",
     "unknownPowerAction": "Unknown power action: {0}",
-    "unknownVolumeAction": "Unknown volume action: {0}"
+    "unknownVolumeAction": "Unknown volume action: {0}",
+    "libMissing": "{0} is missing: {1}",
+    "unknownKey": "Unknown key: {0}"
   },
   "obs": {
     "disconnectedFromObs": "Disconnected from OBS.",

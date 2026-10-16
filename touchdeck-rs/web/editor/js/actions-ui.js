@@ -245,6 +245,15 @@ export function fieldInput(f, obj, setParam) {
         setParam(f.key, e.target.value);
       } }, options));
     }
+    case 'keySequence': {
+      const area = h('textarea', { value: v, rows: 6, placeholder: 'ctrl+c\n250ms\nctrl+v', oninput: (e) => setParam(f.key, e.target.value) });
+      const rec = h('button', { type: 'button', class: 'btn small', onclick: (e) => {
+        if (area.classList.contains('recording')) return;
+        e.stopPropagation();
+        recordSequence(area, rec, (steps) => setParam(f.key, steps));
+      } }, tr('actions.recordSequence'));
+      return h('div', { class: 'field' }, f.label, area, h('div', {}, rec));
+    }
     case 'flowInputs': {
       // Eine Zeile je Eingabe der gewählten Vorlage; leer = Standardwert der Vorlage.
       const flow = S.flows.find((fl) => fl.id === obj.params.flow);
@@ -322,6 +331,50 @@ const CODE_NAMES = {
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'OS']);
 
 /** Nimmt ein Tastenkürzel auf. Zeichen kommen aus e.key, damit das deutsche Layout (z/y, ü …) stimmt. */
+/** Tastendruck als Kürzel wie „ctrl+shift+s“. */
+function comboOf(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push('ctrl');
+  if (e.altKey) parts.push('alt');
+  if (e.shiftKey) parts.push('shift');
+  if (e.metaKey) parts.push('super');
+  parts.push(CODE_NAMES[e.code] ?? (/^F\d+$/.test(e.code) ? e.code.toLowerCase() : e.key === '+' ? 'plus' : e.key.toLowerCase()));
+  return parts.join('+');
+}
+
+/** Nimmt Tasten mit den echten Pausen dazwischen auf, bis erneut auf den Knopf geklickt wird. */
+function recordSequence(area, button, done) {
+  const steps = [];
+  let last = 0;
+  const onKey = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.repeat || MODIFIER_KEYS.has(e.key)) return;
+    const now = performance.now();
+    const gap = Math.round((now - last) / 10) * 10;
+    if (last && gap >= 30) steps.push(`${Math.min(gap, 60000)}ms`);
+    last = now;
+    steps.push(comboOf(e));
+    area.value = steps.join('\n');
+  };
+  const stop = (e) => {
+    // Sonst startet der normale Klick auf den Knopf gleich die nächste Aufnahme.
+    e?.stopImmediatePropagation();
+    window.removeEventListener('keydown', onKey, true);
+    button.removeEventListener('click', stop, true);
+    area.classList.remove('recording');
+    button.textContent = tr('actions.recordSequence');
+    if (steps.length) done(steps.join('\n'));
+  };
+  area.classList.add('recording');
+  area.value = '';
+  area.placeholder = tr('actions.typeKeysNow');
+  button.textContent = tr('actions.stopRecording');
+  window.addEventListener('keydown', onKey, true);
+  // Erst nach diesem Klick auf „Stopp“ hören.
+  setTimeout(() => button.addEventListener('click', stop, true), 0);
+}
+
 function recordHotkey(input, button, done) {
   input.classList.add('recording');
   input.value = '';
@@ -331,14 +384,7 @@ function recordHotkey(input, button, done) {
     e.preventDefault();
     e.stopPropagation();
     if (MODIFIER_KEYS.has(e.key)) return;
-    const parts = [];
-    if (e.ctrlKey) parts.push('ctrl');
-    if (e.altKey) parts.push('alt');
-    if (e.shiftKey) parts.push('shift');
-    if (e.metaKey) parts.push('super');
-    const key = CODE_NAMES[e.code] ?? (/^F\d+$/.test(e.code) ? e.code.toLowerCase() : e.key === '+' ? 'plus' : e.key.toLowerCase());
-    parts.push(key);
-    const combo = parts.join('+');
+    const combo = comboOf(e);
     window.removeEventListener('keydown', onKey, true);
     input.classList.remove('recording');
     input.value = combo;
@@ -540,7 +586,7 @@ const EVENT_DATA = {
   obs_scene: '{Event.Szene}', obs_preview: '{Event.Szene}', obs_stream: '{Event.Status}', obs_record: '{Event.Status}',
   obs_mute: '{Event.Quelle}', obs_source: '{Event.Quelle}, {Event.Szene}', obs_filter: '{Event.Filter}, {Event.Quelle}',
   obs_profile: '{Event.Name}', obs_replay_saved: '{Event.Datei}', steam_game: '{Event.Spiel}', audio_output: '{Event.Gerät}',
-  audio_mute: '{Event.Status}', device: '{Event.Gerät}', page_view: '{Event.Seite}', timer_done: '{Event.Name}', app_focus: '{Event.Programm}, {Event.Titel}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
+  audio_mute: '{Event.Status}', device: '{Event.Gerät}', page_view: '{Event.Seite}', timer_done: '{Event.Name}', app_focus: '{Event.Programm}, {Event.Titel}', hotkey: '{Event.Tasten}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
   twitch_follow: '{Event.Nutzer}', twitch_sub: '{Event.Nutzer}, {Event.Stufe}, {Event.Anzahl}, {Event.Monate}, {Event.Nachricht}',
   twitch_cheer: '{Event.Nutzer}, {Event.Bits}, {Event.Nachricht}', twitch_raid: '{Event.Nutzer}, {Event.Zuschauer}',
   twitch_redeem: '{Event.Nutzer}, {Event.Belohnung}, {Event.Kosten}, {Event.Eingabe}', twitch_chat: '{Event.Nutzer}, {Event.Nachricht}',
@@ -549,7 +595,7 @@ const EVENT_DATA = {
 // Englische Namen der Event-Daten (der Server kennt beide).
 const EVENT_ALIASES = {
   Nutzer: 'User', Wert: 'Value', Alt: 'Old', Szene: 'Scene', Quelle: 'Source', Gerät: 'Device', Spiel: 'Game', Datei: 'File',
-  Kanal: 'Channel', Nachricht: 'Message', Belohnung: 'Reward', Kosten: 'Cost', Eingabe: 'Input', Zuschauer: 'Viewers',
+  Tasten: 'Keys', Kanal: 'Channel', Nachricht: 'Message', Belohnung: 'Reward', Kosten: 'Cost', Eingabe: 'Input', Zuschauer: 'Viewers',
   Monate: 'Months', Stufe: 'Tier', Anzahl: 'Count', Dauer: 'Duration', Zeit: 'Time', Seite: 'Page', Programm: 'Program', Titel: 'Title',
 };
 function eventDataHint(type) {

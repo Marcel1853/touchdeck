@@ -27,6 +27,10 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - New trigger "Shortcut pressed on the PC": a key combination anywhere on the PC (X11) starts
+      events, also with TouchDeck in the background; shortcuts taken by other programs are logged.
+    - New action "Key sequence (recorded)": record keys with their real pauses in the editor, edit
+      them as a list (e.g. ctrl+c, 250ms, ctrl+v) and play them back at an adjustable speed.
     - New action "Calculate value": + − × ÷ %, powers, brackets and round/floor/ceil/abs/sqrt/
       min/max with placeholders, e.g. ({Goals} + 1) * 2; decimal commas from values are understood.
     - "HTTP request" can save the response – or one field of a JSON response such as data.0.name –

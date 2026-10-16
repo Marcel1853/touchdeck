@@ -585,6 +585,19 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             x11::send_hotkey(&keys).await?;
             none
         }
+        "key_sequence" => {
+            // Eine Zeile je Schritt: Kürzel („ctrl+c“) oder Pause („250ms“); das Tempo teilt die Pausen.
+            let speed = clamp(p.n_or("speed", 100.0), 10.0, 1000.0) / 100.0;
+            let steps: Vec<String> = p.s("steps").lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).take(500).collect();
+            for step in steps {
+                if let Some(ms) = step.strip_suffix("ms").and_then(|n| n.trim().parse::<f64>().ok()) {
+                    tokio::time::sleep(Duration::from_millis((ms.clamp(0.0, 60_000.0) / speed) as u64)).await;
+                } else {
+                    x11::send_hotkey(&step).await.map_err(|e| anyhow!("{step}: {e}"))?;
+                }
+            }
+            none
+        }
         "type_text" => {
             let text = p.s("text");
             if !text.is_empty() {

@@ -1166,6 +1166,17 @@
           "label": "Höchstens so viele Nachkommastellen"
         }
       }
+    },
+    "key_sequence": {
+      "label": "Tastenfolge (aufgenommen)",
+      "fields": {
+        "steps": {
+          "label": "Tasten und Pausen, eine Zeile je Schritt (z. B. ctrl+c, 250ms, ctrl+v)"
+        },
+        "speed": {
+          "label": "Tempo in % (200 = doppelt so schnell)"
+        }
+      }
     }
   },
   "triggers": {
@@ -1573,6 +1584,14 @@
       "fields": {
         "name": {
           "label": "Name des Timers (leer = jeder)"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Tastenkürzel am PC gedrückt",
+      "fields": {
+        "keys": {
+          "label": "Tastenkürzel (gilt überall am PC unter X11, auch mit TouchDeck im Hintergrund; Platzhalter {Event.Tasten})"
         }
       }
     }

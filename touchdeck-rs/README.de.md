@@ -137,6 +137,9 @@ Beispiele für die neueren Aktionen und Auslöser:
 - **Timer (Countdown / Stoppuhr)** mit Starten, Anhalten und Zurücksetzen; die
   Live-Anzeige **Timer** zeigt die Restzeit, der Auslöser **Timer abgelaufen**
   reagiert, wenn er abläuft.
+- **Tastenkürzel am PC gedrückt** (Auslöser) reagiert auf eine Tastenkombination
+  irgendwo am PC (X11); **Tastenfolge (aufgenommen)** spielt im Editor
+  aufgenommene Tasten mit ihren echten Pausen ab.
 - **Programm im Vordergrund** + **Seite auf allen Geräten anzeigen**: z. B. wechseln
   Handy und Tablet von selbst zur OBS-Seite, sobald OBS vorn ist.
 - **Seitenanzeige (●○○)** als Live-Anzeige zeigt die Position der Seite in der

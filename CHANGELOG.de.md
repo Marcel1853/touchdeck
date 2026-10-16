@@ -28,6 +28,11 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Neuer Auslöser „Tastenkürzel am PC gedrückt“: eine Tastenkombination irgendwo am PC (X11)
+      startet Events, auch wenn TouchDeck im Hintergrund ist; von anderen Programmen belegte Kürzel
+      stehen im Protokoll.
+    - Neue Aktion „Tastenfolge (aufgenommen)“: Tasten mit ihren echten Pausen im Editor aufnehmen,
+      als Liste bearbeiten (z. B. ctrl+c, 250ms, ctrl+v) und mit einstellbarem Tempo abspielen.
     - Neue Aktion „Wert berechnen“: + − × ÷ %, Potenzen, Klammern und round/floor/ceil/abs/sqrt/
       min/max mit Platzhaltern, z. B. ({Tore} + 1) * 2; Kommazahlen aus Werten werden verstanden.
     - „HTTP-Anfrage“ kann die Antwort – oder ein Feld einer JSON-Antwort wie data.0.name – in einem

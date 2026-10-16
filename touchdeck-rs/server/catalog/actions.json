@@ -1079,6 +1079,25 @@
   ]
  },
  {
+  "type": "key_sequence",
+  "category": "input",
+  "group": "general",
+  "icon": "🎹",
+  "fields": [
+   {
+    "key": "steps",
+    "type": "keySequence"
+   },
+   {
+    "key": "speed",
+    "type": "number",
+    "default": 100,
+    "min": 10,
+    "max": 1000
+   }
+  ]
+ },
+ {
   "type": "window_activate",
   "category": "run",
   "group": "general",

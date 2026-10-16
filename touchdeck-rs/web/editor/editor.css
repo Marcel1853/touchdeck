@@ -247,7 +247,7 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .list-title { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 8px; }
 .list-title h3 { margin: 0; }
 .hotkey { display: flex; gap: 6px; }
-.hotkey input.recording { outline: 2px solid var(--danger); }
+.hotkey input.recording, textarea.recording { outline: 2px solid var(--danger); }
 
 .insp-footer { display: flex; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 

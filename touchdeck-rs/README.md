@@ -130,6 +130,9 @@ Examples of the newer actions and triggers:
 - **Timer (countdown / stopwatch)** with start, pause and reset; the live display
   **Timer** shows the time left, the trigger **Timer finished** reacts when it runs
   out.
+- **Shortcut pressed on the PC** (trigger) reacts to a key combination anywhere on
+  the PC (X11); **Key sequence (recorded)** plays back keys recorded in the editor
+  with their real pauses.
 - **Program in the foreground** + **Show page on all devices**: e.g. phone and tablet
   switch to the OBS page by themselves as soon as OBS is in front.
 - **Page indicator (●○○)** as a live display shows the position of the page in the page

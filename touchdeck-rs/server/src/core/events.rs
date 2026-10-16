@@ -69,6 +69,7 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
         "page_view" => empty_or_eq(&g("page"), &d["pageId"]) && state_matches(&g("state"), &d["state"]),
         "timer_done" => empty_or_eq(&g("name"), &d["name"]),
+        "hotkey" => x11::normalize_combo(&s(&g("keys"))) == s(&d["keys"]),
         "app_focus" => {
             let want = s(&g("app")).to_lowercase();
             want.is_empty() || s(&d["app"]).to_lowercase().contains(&want)
@@ -144,6 +145,8 @@ pub struct EventEngine {
     last_run: Mutex<HashMap<String, Instant>>,
     last_day: Mutex<HashMap<String, String>>,
     state: Mutex<State>,
+    /** Stopp-Signal für den Thread mit den globalen Tastenkürzeln. */
+    hotkeys: Mutex<Option<Arc<std::sync::atomic::AtomicBool>>>,
 }
 
 impl EventEngine {
@@ -346,6 +349,28 @@ impl EventEngine {
                 }
             }));
         }
+        let combos: Vec<String> = {
+            let mut c: Vec<String> = subs.iter().filter(|s| s.trigger.kind == "hotkey").map(|s| x11::normalize_combo(&s.trigger.params.get("keys").map(js_string).unwrap_or_default())).filter(|c| !c.is_empty()).collect();
+            c.sort();
+            c.dedup();
+            c
+        };
+        if !combos.is_empty() {
+            // Globale Tastenkürzel in einem eigenen Thread (Xlib blockiert); stop() beendet ihn.
+            let flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            *self.hotkeys.lock().unwrap() = Some(flag.clone());
+            let (a, rt) = (app.clone(), tokio::runtime::Handle::current());
+            std::thread::spawn(move || {
+                let _rt = rt.enter();
+                // Der vorige Hörer gibt seine Tasten innerhalb von 25 ms frei; erst danach selbst belegen.
+                std::thread::sleep(Duration::from_millis(150));
+                let fire = |combo: &str| a.events.fire(&a, "hotkey", &json!({ "keys": combo, "Tasten": combo }));
+                let busy = |combo: &str| a.log.warn("Events", t!("events.hotkeyBusy", combo));
+                if let Err(err) = x11::listen_hotkeys(&combos, &flag, fire, busy) {
+                    a.log.warn("Events", t!("events.hotkeysUnavailable", err));
+                }
+            });
+        }
         let types: Vec<String> = subs.iter().map(|s| s.trigger.kind.clone()).collect();
         app.twitch.set_wanted(&types);
         app.log.debug("Events", t!("events.activeEvents", subs.len()));
@@ -466,6 +491,9 @@ impl EventEngine {
     }
 
     pub fn stop(&self) {
+        if let Some(flag) = self.hotkeys.lock().unwrap().take() {
+            flag.store(true, std::sync::atomic::Ordering::Relaxed);
+        }
         for t in self.tasks.lock().unwrap().drain(..) {
             t.abort();
         }
