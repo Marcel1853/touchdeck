@@ -320,6 +320,7 @@ function renderFreeCanvas(p, canvas) {
     contextMenu(e.clientX, e.clientY, [
       { icon: '＋', label: tr('pages.newButton'), onclick: () => addFreeButton(x, y) },
       { icon: '📥', label: tr('pages.pasteHere'), keys: 'Strg+V', disabled: !readClip(CLIP), onclick: () => pasteButton({ x, y }) },
+      { icon: '📁', label: tr('pages.createFolderHere'), onclick: () => createFolder({ x, y }) },
     ]);
   };
 
@@ -794,7 +795,31 @@ function cellMenu(x, y, row, col) {
   contextMenu(x, y, [
     { icon: '＋', label: tr('pages.newButton'), onclick: () => addButton(row, col) },
     { icon: '📥', label: tr('pages.pasteHere'), keys: 'Strg+V', disabled: !readClip(CLIP), onclick: () => pasteButton({ row, col }) },
+    { icon: '📁', label: tr('pages.createFolderHere'), onclick: () => createFolder({ row, col }) },
   ]);
+}
+
+/**
+ * Ordner wie bei Stream Deck: neue Unterseite mit Zurück-Button oben links und hier ein Button,
+ * der sie öffnet. Alles normale Aktionen („Gehe zu Seite“), im Editor sichtbar und änderbar.
+ */
+function createFolder(at) {
+  const p = page();
+  const name = tr('pages.folder');
+  const sub = {
+    id: uid('p_'), name: `${p.name} › ${name}`, rows: p.rows, cols: p.cols, background: p.background,
+    layout: 'grid', ratioW: p.ratioW ?? 16, ratioH: p.ratioH ?? 10, colSizes: [...(p.colSizes ?? [])], rowSizes: [...(p.rowSizes ?? [])], buttons: [], events: [],
+  };
+  sub.buttons.push(tplBtn(0, 0, tr('pages.back'), '⬅️', [['go_page', { page: '__back' }]], { color: '#3a3f4b' }));
+  const extra = isFree(p) ? { free: defaultFree(p, at.x, at.y) } : {};
+  const opener = tplBtn(at.row ?? 0, at.col ?? 0, name, '📁', [['go_page', { page: sub.id }]], extra);
+  mutate(() => {
+    S.pages.splice(S.pages.indexOf(p) + 1, 0, sub);
+    p.buttons.push(opener);
+    S.selId = opener.id;
+    S.tab = 'look';
+  });
+  toast(tr('pages.folderCreated', [sub.name]), 'ok');
 }
 
 function resizeButton(b, rowSpan, colSpan) {
