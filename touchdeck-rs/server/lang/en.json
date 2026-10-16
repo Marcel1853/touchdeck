@@ -258,11 +258,13 @@
     "unexpectedAnswer": "OBS connection: unexpected answer."
   },
   "steam": {
+    "coversDownloaded": "Downloaded {0} Steam cover(s)",
     "friends": "Friends",
     "library": "Library",
     "noGameSelected": "No game selected.",
     "noSteamGamesFound": "No Steam games found.",
-    "pageName": "Steam games"
+    "pageName": "Steam games",
+    "pagesUpdatedAutomatically": "Steam pages updated: {0} game(s) added, {1} removed"
   },
   "twitch": {
     "codeHasExpiredPlease": "The code has expired. Please connect again.",

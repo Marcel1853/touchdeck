@@ -258,11 +258,13 @@
     "unexpectedAnswer": "OBS-Verbindung: unerwartete Antwort."
   },
   "steam": {
+    "coversDownloaded": "{0} Steam-Cover heruntergeladen",
     "friends": "Freunde",
     "library": "Bibliothek",
     "noGameSelected": "Kein Spiel ausgewählt.",
     "noSteamGamesFound": "Keine Steam-Spiele gefunden.",
-    "pageName": "Steam-Spiele"
+    "pageName": "Steam-Spiele",
+    "pagesUpdatedAutomatically": "Steam-Seiten aktualisiert: {0} Spiel(e) neu, {1} entfernt"
   },
   "twitch": {
     "codeHasExpiredPlease": "Der Code ist abgelaufen. Bitte noch einmal verbinden.",

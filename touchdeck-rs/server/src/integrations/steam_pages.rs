@@ -1,7 +1,9 @@
 // Erzeugt Seiten mit allen installierten Steam-Spielen: Coverbild, Start-Aktion und Events,
 // die den Button grün färben, solange das Spiel läuft (sichtbar unter „Bei Event“).
+// Cover kommen aus dem Steam-Cache am PC; fehlt dort eins, wird es einmal von Steams Bildserver geladen.
 use crate::t;
 use std::path::Path;
+use std::time::Duration;
 
 use serde_json::{Value, json};
 
@@ -20,20 +22,69 @@ fn on_event(kind: &str, params: Value, actions: Vec<Value>) -> Value {
     json!({ "id": new_id("e_"), "enabled": true, "trigger": { "type": kind, "params": params }, "actions": actions })
 }
 
-fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path) -> Value {
-    let src = steam::cover_image(appid);
-    let mut icon = json!({ "type": "emoji", "value": "🎮" });
-    if let Some(src) = &src {
+/** Bildserver von Steam, wichtigstes Format zuerst (hochkant wie in der Bibliothek, sonst das Banner). */
+const COVER_URLS: [&str; 3] = [
+    "https://shared.steamstatic.com/store_item_assets/steam/apps/{id}/library_600x900.jpg",
+    "https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/library_600x900.jpg",
+    "https://shared.steamstatic.com/store_item_assets/steam/apps/{id}/header.jpg",
+];
+const MAX_COVER: usize = 5 * 1024 * 1024;
+
+/** Dateiname eines heruntergeladenen Covers im Icon-Ordner. */
+fn web_cover(appid: &str) -> String {
+    format!("steam_{appid}_web.jpg")
+}
+
+/** Holt fehlende Cover von Steam (nur Spiele ohne Bild im Steam-Cache, die noch nicht geladen wurden). Liefert die Anzahl. */
+pub async fn download_missing_covers(icon_dir: &Path, games: &[(String, String)]) -> usize {
+    let Ok(client) = reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(10)).build() else { return 0 };
+    let mut loaded = 0;
+    for (appid, _) in games {
+        if !appid.chars().all(|c| c.is_ascii_digit()) || steam::cover_image(appid).is_some() || icon_dir.join(web_cover(appid)).exists() {
+            continue;
+        }
+        for url in COVER_URLS.map(|u| u.replace("{id}", appid)) {
+            let Ok(res) = client.get(&url).send().await else { continue };
+            let is_image = res.headers().get(reqwest::header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).is_some_and(|t| t.starts_with("image/"));
+            if !res.status().is_success() || !is_image {
+                continue;
+            }
+            if let Ok(bytes) = res.bytes().await
+                && !bytes.is_empty()
+                && bytes.len() <= MAX_COVER
+                && std::fs::write(icon_dir.join(web_cover(appid)), &bytes).is_ok()
+            {
+                loaded += 1;
+                break;
+            }
+        }
+    }
+    loaded
+}
+
+/** Cover für ein Spiel: aus dem Steam-Cache kopiert oder vorher heruntergeladen. */
+fn cover_icon(appid: &str, icon_dir: &Path) -> Option<String> {
+    if let Some(src) = steam::cover_image(appid) {
         let ext = src.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
         let name = format!("steam_{appid}{ext}");
         if std::fs::copy(src, icon_dir.join(&name)).is_ok() {
-            icon = json!({ "type": "image", "value": name });
+            return Some(name);
         }
     }
+    let web = web_cover(appid);
+    icon_dir.join(&web).exists().then_some(web)
+}
+
+fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path) -> Value {
+    let cover = cover_icon(appid, icon_dir);
+    let icon = match &cover {
+        Some(name) => json!({ "type": "image", "value": name }),
+        None => json!({ "type": "emoji", "value": "🎮" }),
+    };
     json!({
         "row": row, "col": col, "title": title, "icon": icon,
-        "iconFit": if src.is_some() { "cover" } else { "contain" },
-        "titlePos": if src.is_some() { "hidden" } else { "bottom" },
+        "iconFit": if cover.is_some() { "cover" } else { "contain" },
+        "titlePos": if cover.is_some() { "hidden" } else { "bottom" },
         "color": "#1b2838",
         "actions": [action("steam_game", json!({ "game": appid }))],
         "events": [
@@ -44,8 +95,7 @@ fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path
 }
 
 /** reuse_ids: IDs vorhandener Steam-Seiten, damit Verweise darauf gültig bleiben. */
-pub fn build_steam_pages(icon_dir: &Path, reuse_ids: &[String]) -> Result<Vec<Page>, HttpError> {
-    let games = steam::list_games();
+pub fn build_steam_pages(games: &[(String, String)], icon_dir: &Path, reuse_ids: &[String]) -> Result<Vec<Page>, HttpError> {
     if games.is_empty() {
         return Err(HttpError::new(404, t!("steam.noSteamGamesFound")));
     }

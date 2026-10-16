@@ -1,6 +1,6 @@
 // HTTP- und WebSocket-Server: Editor (nur lokal) und Bedienfeld fürs Handy (mit Kopplungsschlüssel und optional PIN).
 use crate::t;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fmt::Write as _;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
@@ -36,7 +36,7 @@ use crate::core::store::{Action, Store, action_list, new_id};
 use crate::integrations::discord::DiscordClient;
 use crate::integrations::obs::{self, ObsClient};
 use crate::integrations::twitch::TwitchClient;
-use crate::integrations::{steam_pages, touchportal};
+use crate::integrations::{steam, steam_pages, touchportal};
 use crate::system::linux;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -668,18 +668,9 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
 
         // Integrationen
         "POST /api/steam/pages" => {
-            let (icon_dir, existing) = {
-                let store = app.store.lock().unwrap();
-                (store.icon_dir.clone(), store.config.pages.iter().filter(|p| p.template == "steam").map(|p| p.id.clone()).collect::<Vec<_>>())
-            };
-            let pages = tokio::task::spawn_blocking(move || steam_pages::build_steam_pages(&icon_dir, &existing).map(|p| (p, existing.len())))
-                .await
-                .map_err(|e| HttpError::new(500, e.to_string()))??;
-            let (pages, existing) = pages;
-            let created: Vec<String> = pages.iter().map(|p| p.id.clone()).collect();
-            let mut store = app.store.lock().unwrap();
-            store.replace_template_pages("steam", pages).map_err(bad)?;
-            Ok(json!({ "ok": true, "pages": store.config.pages, "revision": store.revision, "created": created, "updated": existing > 0 }))
+            let (created, updated) = refresh_steam_pages(app).await?;
+            let store = app.store.lock().unwrap();
+            Ok(json!({ "ok": true, "pages": store.config.pages, "revision": store.revision, "created": created, "updated": updated }))
         }
         "POST /api/obs/autoconfig" => {
             let local = obs::read_local_config().map_err(user_error)?;
@@ -1106,6 +1097,64 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
 // ---------- Start ----------
 
 /** Startet den Server; liefert die App, sobald der Port offen ist. */
+/** Steam-Seiten aus den installierten Spielen neu bauen (fehlende Cover vorher von Steam laden).
+ *  Vorhandene Steam-Seiten behalten ihre IDs. Liefert (Seiten-IDs, ob es vorher schon Steam-Seiten gab). */
+async fn refresh_steam_pages(app: &Arc<App>) -> Result<(Vec<String>, bool), HttpError> {
+    let (icon_dir, existing) = {
+        let store = app.store.lock().unwrap();
+        (store.icon_dir.clone(), store.config.pages.iter().filter(|p| p.template == "steam").map(|p| p.id.clone()).collect::<Vec<_>>())
+    };
+    let games = tokio::task::spawn_blocking(steam::list_games).await.map_err(|e| HttpError::new(500, e.to_string()))?;
+    let loaded = steam_pages::download_missing_covers(&icon_dir, &games).await;
+    if loaded > 0 {
+        app.log.info("Steam", t!("steam.coversDownloaded", loaded));
+    }
+    let reuse = existing.clone();
+    let pages = tokio::task::spawn_blocking(move || steam_pages::build_steam_pages(&games, &icon_dir, &reuse))
+        .await
+        .map_err(|e| HttpError::new(500, e.to_string()))??;
+    let created: Vec<String> = pages.iter().map(|p| p.id.clone()).collect();
+    app.store.lock().unwrap().replace_template_pages("steam", pages).map_err(|e| HttpError::new(400, e.to_string()))?;
+    Ok((created, !existing.is_empty()))
+}
+
+/** Spiele auf den Steam-Seiten (aus den „Spiel starten“-Aktionen). */
+fn steam_games_on_pages(app: &App) -> BTreeSet<String> {
+    let store = app.store.lock().unwrap();
+    store.config.pages.iter().filter(|p| p.template == "steam")
+        .flat_map(|p| p.buttons.iter())
+        .flat_map(|b| b.actions.iter())
+        .filter(|a| a.kind == "steam_game")
+        .filter_map(|a| a.params.get("game").and_then(Value::as_str).map(String::from))
+        .collect()
+}
+
+/** Steam-Seiten aktuell halten: jede Minute neue oder deinstallierte Spiele übernehmen (nur wenn es Steam-Seiten gibt). */
+fn watch_steam_games(app: &Arc<App>) {
+    let a = app.clone();
+    tokio::spawn(async move {
+        let mut tick = tokio::time::interval(Duration::from_secs(60));
+        loop {
+            tick.tick().await;
+            let shown = steam_games_on_pages(&a);
+            if shown.is_empty() {
+                continue;
+            }
+            let Ok(games) = tokio::task::spawn_blocking(steam::list_games).await else { continue };
+            let installed: BTreeSet<String> = games.into_iter().map(|(id, _)| id).collect();
+            // Leere Liste: Steam gerade nicht lesbar – dann lieber nichts ändern.
+            if installed.is_empty() || installed == shown {
+                continue;
+            }
+            let (added, removed) = (installed.difference(&shown).count(), shown.difference(&installed).count());
+            match refresh_steam_pages(&a).await {
+                Ok(_) => a.log.info("Steam", t!("steam.pagesUpdatedAutomatically", added, removed)),
+                Err(err) => a.log.warn("Steam", err.message),
+            }
+        }
+    });
+}
+
 pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
     let log = Arc::new(Log::new(store.data_dir.join("logs")));
     log.set_level(&store.settings().logs.level);
@@ -1145,6 +1194,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         let _ = axum::serve(listener, router.into_make_service_with_connect_info::<SocketAddr>()).await;
     });
     app.log.info("Server", t!("server.touchdeckIsRunningOn", opts.port, VERSION));
+    watch_steam_games(&app);
 
     // Wert geändert: Events sofort auslösen (im selben Ablauf, damit Endlosketten erkannt werden).
     let weak = Arc::downgrade(&app);

@@ -57,7 +57,7 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
         .inner_size(1440.0, 900.0)
         .min_inner_size(1000.0, 640.0)
         .visible(false)
-        .icon(Image::from_bytes(include_bytes!("../icons/icon.png"))?)?
+        .icon(window_icon())?
         // Vorschau im eigenen kleinen Fenster, alle anderen Links im normalen Browser.
         .on_new_window(move |url, _| {
             if url.as_str().starts_with(&format!("{}/deck/", base())) {
@@ -91,6 +91,17 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
     Ok(window)
 }
 
+/** Fenstersymbol (für Taskleiste und Alt+Tab). Unter Linux geht das beim Anlegen eines unsichtbaren Fensters
+ *  verloren, darum wird es nach dem Anzeigen noch einmal gesetzt. */
+fn window_icon() -> Image<'static> {
+    Image::from_bytes(include_bytes!("../icons/icon.png")).expect("Symbol")
+}
+
+fn show_window(window: &tauri::WebviewWindow) -> tauri::Result<()> {
+    window.show()?;
+    window.set_icon(window_icon())
+}
+
 fn show_editor(app: &AppHandle, hash: &str) {
     let window = match app.get_webview_window("main") {
         Some(w) => w,
@@ -102,7 +113,7 @@ fn show_editor(app: &AppHandle, hash: &str) {
     if !hash.is_empty() {
         let _ = window.eval(format!("location.hash = {}", serde_json_string(hash)));
     }
-    let _ = window.show();
+    let _ = show_window(&window);
     let _ = window.unminimize();
     let _ = window.set_focus();
 }
@@ -121,7 +132,7 @@ fn open_preview_window(app: &AppHandle) {
     let built = WebviewWindowBuilder::new(app, "preview", WebviewUrl::External(url))
         .title("TouchDeck – Vorschau")
         .inner_size(480.0, 820.0)
-        .icon(Image::from_bytes(include_bytes!("../icons/icon.png")).expect("Symbol"))
+        .icon(window_icon())
         .and_then(|b| b.build());
     if let Err(err) = built {
         eprintln!("Vorschau: {err}");
@@ -166,6 +177,39 @@ fn set_autostart(on: bool) -> std::io::Result<()> {
         "",
     ];
     std::fs::write(file, entry.join("\n"))
+}
+
+// ---------- Starter-Eintrag ----------
+
+/** Starter-Eintrag und Symbol im Benutzerordner, damit Taskleiste und Startmenü TouchDeck mit Symbol zeigen.
+ *  Die Taskleiste ordnet das Fenster über StartupWMClass zu. Beim .deb-Paket gibt es den Eintrag schon. */
+fn install_desktop_entry() -> std::io::Result<()> {
+    if std::path::Path::new("/usr/share/applications/TouchDeck.desktop").exists() {
+        return Ok(());
+    }
+    let data = std::env::var_os("XDG_DATA_HOME").map_or_else(|| linux::home().join(".local/share"), PathBuf::from);
+    // Vollständiger Pfad statt Symbolname: ein veralteter icon-theme.cache würde den Namen sonst nicht finden.
+    let icon_dir = data.join("icons/hicolor/512x512/apps");
+    std::fs::create_dir_all(&icon_dir)?;
+    let icon = icon_dir.join("touchdeck.png");
+    std::fs::write(&icon, include_bytes!("../icons/icon.png"))?;
+    let apps = data.join("applications");
+    std::fs::create_dir_all(&apps)?;
+    let exec = launch_command().trim_end_matches(" --hidden").to_string();
+    let entry = [
+        "[Desktop Entry]",
+        "Type=Application",
+        "Name=TouchDeck",
+        "Comment=Makro-Fernbedienung fürs Handy",
+        "Comment[en]=Macro remote for your phone",
+        &format!("Exec={exec}"),
+        &format!("Icon={}", icon.display()),
+        "StartupWMClass=touchdeck",
+        "Categories=Utility;",
+        "Terminal=false",
+        "",
+    ];
+    std::fs::write(apps.join("touchdeck.desktop"), entry.join("\n"))
 }
 
 // ---------- Systemleiste ----------
@@ -253,10 +297,13 @@ fn main() {
             {
                 eprintln!("Autostart: {err}");
             }
+            if let Err(err) = install_desktop_entry() {
+                eprintln!("Starter-Eintrag: {err}");
+            }
             create_tray(&handle)?;
             let window = create_editor(&handle)?;
             if !hidden {
-                window.show()?;
+                show_window(&window)?;
             }
             Ok(())
         })
