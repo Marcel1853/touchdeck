@@ -112,6 +112,7 @@ export function mountPages(root) {
         h('div', { id: 'page-layout' }),
         h('label', { class: 'field-inline grid-only' }, tr('pages.columns'), h('input', { id: 'page-cols', type: 'number', min: 1, max: 16, onchange: (e) => resizePage(page().rows, Number(e.target.value)) })),
         h('label', { class: 'field-inline grid-only' }, tr('pages.rows'), h('input', { id: 'page-rows', type: 'number', min: 1, max: 12, onchange: (e) => resizePage(Number(e.target.value), page().cols) })),
+        h('button', { class: 'btn small free-only', title: tr('pages.newButton'), onclick: () => addFreeButton(50, 50) }, tr('pages.addButton')),
         h('label', { class: 'field-inline free-only' }, tr('pages.ratio'),
           h('select', { id: 'page-ratio', onchange: (e) => setRatio(e.target.value) }, RATIOS.map((r) => h('option', { value: r }, r)))),
         h('label', { class: 'field-inline' }, tr('pages.background'), h('input', { id: 'page-bg', type: 'color',
@@ -201,6 +202,7 @@ function renderCanvas() {
   setupGrid(canvas, p);
   canvas.onpointerdown = null;
   canvas.onpointerup = null;
+  canvas.ondblclick = null;
   canvas.oncontextmenu = null;
   if (isFree(p)) return renderFreeCanvas(p, canvas);
   const covered = new Set();
@@ -284,12 +286,17 @@ function pointInCanvas(canvas, e) {
  * Während des Ziehens ändert sich nur die Anzeige, gespeichert wird beim Loslassen.
  */
 function renderFreeCanvas(p, canvas) {
-  // Neuer Button nur, wenn Drücken und Loslassen auf der leeren Fläche waren (nicht nach dem Ziehen eines Buttons).
+  // Klick auf die leere Fläche hebt nur die Auswahl auf; neue Buttons per Doppelklick,
+  // Rechtsklick oder „＋ Button“ – damit ein Verklicken keinen Button anlegt.
   let pressedOnCanvas = false;
   canvas.onpointerdown = (e) => (pressedOnCanvas = e.target === canvas && e.button === 0);
   canvas.onpointerup = (e) => {
     if (!pressedOnCanvas || e.target !== canvas) return;
     pressedOnCanvas = false;
+    if (S.selId) select(null);
+  };
+  canvas.ondblclick = (e) => {
+    if (e.target !== canvas) return;
     const { x, y } = pointInCanvas(canvas, e);
     addFreeButton(x, y);
   };
@@ -353,7 +360,10 @@ function renderFreeCanvas(p, canvas) {
 
 function addFreeButton(x, y) {
   const p = page();
-  const b = newButton(0, 0, { free: defaultFree(p, x, y) });
+  let free = defaultFree(p, x, y);
+  // Liegt dort schon ein Button genau gleich, etwas versetzen.
+  while (p.buttons.some((o) => o.free && o.free.x === free.x && o.free.y === free.y) && free.x < 100 - free.w) free = fitFree({ ...free, x: free.x + 3, y: free.y + 3 });
+  const b = newButton(0, 0, { free });
   S.tab = 'look';
   mutate(() => {
     p.buttons.push(b);

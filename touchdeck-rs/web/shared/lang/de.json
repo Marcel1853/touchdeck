@@ -81,6 +81,7 @@
     "thisPcIsProtected": "Dieser PC ist mit einer PIN geschützt."
   },
   "pages": {
+    "addButton": "＋ Button",
     "addEvent": "＋ Event hinzufügen",
     "allEqual": "Alle gleich",
     "allGamesWithCover": "Alle Spiele mit Cover",
@@ -130,7 +131,7 @@
     "firstLineOfOutput": "Die erste Zeile der Ausgabe wird angezeigt (alle 5 Sekunden neu).",
     "fontSize": "Schriftgröße: {0}",
     "format": "„{0}“",
-    "freeHint": "Fläche anklicken = neuer Button · ziehen verschiebt · Ecke unten rechts ändert die Größe · Pfeiltasten schieben (mit Umschalt weiter)",
+    "freeHint": "Doppelklick auf die Fläche oder „＋ Button“ = neuer Button · ziehen verschiebt · Ecke unten rechts ändert die Größe · Pfeiltasten schieben (mit Umschalt weiter)",
     "freeLayoutHint": "Freie Seite: Buttons liegen frei auf der Fläche. Das Format (z. B. 16:10) stellst du oben ein – am besten passend zum Gerät.",
     "freeSizeHint": "Angaben in Prozent der Seite. Auf Handy und Tablet wird die Fläche im gewählten Format eingepasst.",
     "heightFields": "Höhe (Felder)",
