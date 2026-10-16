@@ -9,4 +9,5 @@ pub mod live;
 pub mod log;
 pub mod native_plugins;
 pub mod plugins;
+pub mod profiles;
 pub mod store;

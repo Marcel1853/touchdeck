@@ -602,3 +602,5 @@ button.status-chip:hover { color: var(--text); }
 .status-names { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .status-sep { width: 1px; height: 14px; background: var(--line); }
 .status-address { font-variant-numeric: tabular-nums; }
+
+.head-buttons { display: flex; gap: 6px; }

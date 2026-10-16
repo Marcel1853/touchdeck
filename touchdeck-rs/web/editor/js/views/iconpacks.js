@@ -21,7 +21,7 @@ export async function loadIconPacks() {
   }
 }
 
-const readDataUrl = (file) => new Promise((resolve, reject) => {
+export const readDataUrl = (file) => new Promise((resolve, reject) => {
   const r = new FileReader();
   r.onload = () => resolve(r.result);
   r.onerror = () => reject(new Error(tr('iconpacks.cannotBeRead', [file.name])));

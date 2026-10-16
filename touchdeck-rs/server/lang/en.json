@@ -25,6 +25,7 @@
     "fileIsDamaged": "The file is damaged.",
     "firewallOpenedForHome": "Firewall opened for the home network",
     "forbidden": "Forbidden",
+    "iconPackImported": "Icon pack imported ({0} images)",
     "imageIsDamaged": "The image is damaged.",
     "invalidJson": "Invalid JSON",
     "missingHeader": "Missing header",
@@ -317,5 +318,12 @@
     "quit": "Quit TouchDeck",
     "running": "TouchDeck is running on {0} – data: {1}",
     "startAtLogin": "Start at login"
+  },
+  "profiles": {
+    "imported": "Profile imported: {0} page(s), {1} flow(s), {2} value(s), {3} image(s)",
+    "noPagesInFile": "The profile contains no pages.",
+    "noPagesSelected": "No pages selected for export.",
+    "notAProfile": "The file is not a TouchDeck profile (.tdprofile).",
+    "tooLarge": "The profile is too large (more than 100 MB)."
   }
 }

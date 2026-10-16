@@ -30,6 +30,7 @@ use crate::core::catalog::{self, Section};
 use crate::core::events::EventEngine;
 use crate::core::iconpacks::IconPacks;
 use crate::core::plugins::Plugins;
+use crate::core::profiles;
 use crate::core::live::{apply_slider, collect_live};
 use crate::core::log::Log;
 use crate::core::store::{Action, Store, action_list, new_id};
@@ -475,7 +476,7 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 54] = [
+const ROUTES: [&str; 55] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -494,6 +495,7 @@ const ROUTES: [&str; 54] = [
     "POST /api/iconpacks/add",
     "POST /api/iconpacks/remove-icon",
     "POST /api/iconpacks/import",
+    "POST /api/profiles/import",
     "GET /api/state",
     "PUT /api/pages",
     "PUT /api/settings",
@@ -886,8 +888,19 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?;
             let fallback = str_of(&body, "fileName").trim_end_matches(".tdicons").trim_end_matches(".zip").to_string();
             let (id, count) = app.iconpacks.import(&bytes, &fallback).map_err(bad)?;
-            app.log.info("Icons", format!("Icon-Paket importiert ({count} Bilder)"));
+            app.log.info("Icons", t!("server.iconPackImported", count));
             Ok(json!({ "ok": true, "id": id, "count": count, "packs": app.iconpacks.list() }))
+        }
+
+        "POST /api/profiles/import" => {
+            let data = str_of(&body, "data");
+            let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
+            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?;
+            let mut store = app.store.lock().unwrap();
+            let r = profiles::import(&mut store, &bytes).map_err(bad)?;
+            app.log.info("Profile", t!("profiles.imported", r.pages.len(), r.flows, r.values, r.images));
+            Ok(json!({ "ok": true, "pages": store.config.pages, "flows": store.config.flows, "events": store.config.events, "values": store.config.values,
+                       "revision": store.revision, "created": r.pages, "counts": { "pages": r.pages.len(), "flows": r.flows, "events": r.events, "values": r.values, "images": r.images } }))
         }
 
         "GET /api/options/*" => {
@@ -931,7 +944,7 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         let body = if method == Method::GET {
             json!({})
         } else {
-            let limit = if who == Some(Who::Local) && route.starts_with("POST /api/iconpacks") { MAX_UPLOAD } else { MAX_BODY };
+            let limit = if who == Some(Who::Local) && (route.starts_with("POST /api/iconpacks") || route == "POST /api/profiles/import") { MAX_UPLOAD } else { MAX_BODY };
             match axum::body::to_bytes(req.into_body(), limit).await {
                 Err(_) => return error_response(413, t!("server.requestTooLarge")),
                 Ok(b) if b.is_empty() => json!({}),
@@ -981,6 +994,20 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
             res.headers_mut().insert(header::CONTENT_TYPE, "application/vnd.android.package-archive".parse().expect("gültiger Typ"));
         }
         return res;
+    }
+    if path == "/profiles/export" && who == Some(Who::Local) {
+        let pages: Vec<String> = query.get("pages").map(|p| p.split(',').filter(|s| !s.is_empty()).map(String::from).collect()).unwrap_or_default();
+        let name = query.get("name").cloned().unwrap_or_default();
+        let result = profiles::export(&app.store.lock().unwrap(), &pages, &name);
+        return match result {
+            Ok((file, bytes)) => Response::builder()
+                .header(header::CONTENT_TYPE, "application/zip")
+                .header(header::CACHE_CONTROL, "no-store")
+                .header(header::CONTENT_DISPOSITION, format!("attachment; filename*=UTF-8''{}", percent_encoding::utf8_percent_encode(&file, percent_encoding::NON_ALPHANUMERIC)))
+                .body(Body::from(bytes))
+                .expect("gültige Antwort"),
+            Err(err) => error_response(400, &err.to_string()),
+        };
     }
     if path == "/iconpacks/export" && who == Some(Who::Local) {
         return match app.iconpacks.export(query.get("id").map_or("", String::as_str)) {

@@ -3,7 +3,7 @@ import { t as tr, getLang } from '/shared/i18n.js';
 import { buttonElement, setupGrid, iconUrl, isFree } from '/shared/render.js';
 import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
-import { iconPicker } from './iconpacks.js';
+import { iconPicker, readDataUrl } from './iconpacks.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
 
 const EMOJIS = '⏯️ ⏮️ ⏭️ ⏹️ 🔊 🔉 🔇 🎙️ 🎧 🎵 🎬 📷 🎥 🖥️ 💻 ⌨️ 🖱️ 📁 📂 📄 📝 🌐 🔍 ⚙️ 🔧 🔒 🔓 💡 🔔 💬 📧 📅 ⏰ ⏱️ 🚀 🎮 🕹️ 🏠 ⬅️ ➡️ ⬆️ ⬇️ ↩️ 🔄 ✅ ❌ ⭐ ❤️ 🔥 ⚡ 🌙 ☀️ 🎨 ✂️ 📋 🗑️ 💾 📤 📥 🔴 🟢 🔵 🟡'.split(' ');
@@ -90,7 +90,13 @@ export function mountPages(root) {
   root.className = 'view view-pages';
   root.replaceChildren(
     h('aside', { class: 'sidebar' },
-      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.pages')), h('button', { class: 'btn small', title: tr('pages.newPage'), onclick: addPage }, '＋')),
+      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.pages')),
+        h('div', { class: 'head-buttons' },
+          h('button', { class: 'btn small ghost', title: tr('pages.exportImport'), onclick: (e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            profileMenu(r.left, r.bottom + 4, page());
+          } }, '⋯'),
+          h('button', { class: 'btn small', title: tr('pages.newPage'), onclick: addPage }, '＋'))),
       h('ul', { id: 'page-list', class: 'page-list' }),
       h('div', { class: `templates${prefs.get('touchdeck.templatesOpen') === '1' ? '' : ' collapsed'}` },
         h('button', {
@@ -144,6 +150,10 @@ function renderPageList() {
     draggable: 'true',
     title: tr('pages.dragToReorder'),
     onclick: () => selectPage(p.id),
+    oncontextmenu: (e) => {
+      e.preventDefault();
+      profileMenu(e.clientX, e.clientY, p);
+    },
     ondragstart: (e) => {
       dragFrom = i;
       e.dataTransfer.setData('text/x-page', String(i));
@@ -434,6 +444,48 @@ export function nudgeButton(dx, dy, big) {
   }
   const rect = { row: b.row + dy, col: b.col + dx, rowSpan: b.rowSpan, colSpan: b.colSpan };
   if (fits(p, rect, [b.id])) mutate(() => Object.assign(b, { row: rect.row, col: rect.col }), { coalesce: `${b.id}:nudge` });
+}
+
+// ---------- Profile (.tdprofile): Seiten mit Bildern, Vorlagen und Werten weitergeben ----------
+
+function download(url) {
+  const a = h('a', { href: url, download: '' });
+  document.body.append(a);
+  a.click();
+  a.remove();
+}
+
+async function exportProfile(pages, name) {
+  await save();
+  const query = new URLSearchParams({ name });
+  if (pages.length) query.set('pages', pages.map((p) => p.id).join(','));
+  download(`/profiles/export?${query}`);
+}
+
+async function importProfile(file) {
+  await save();
+  try {
+    const r = await api('POST', '/api/profiles/import', { data: await readDataUrl(file) });
+    pushUndo();
+    Object.assign(S, { pages: r.pages, flows: r.flows, events: r.events, values: r.values, revision: r.revision });
+    S.pageId = r.created[0] ?? S.pageId;
+    S.selId = null;
+    S.icons = await api('GET', '/api/icons');
+    render();
+    toast(tr('pages.profileImported', [r.counts.pages, r.counts.flows, r.counts.values, r.counts.images]), 'ok');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function profileMenu(x, y, p) {
+  const input = h('input', { type: 'file', accept: '.tdprofile,.zip', hidden: true, onchange: (e) => e.target.files[0] && importProfile(e.target.files[0]) });
+  contextMenu(x, y, [
+    { icon: '📤', label: tr('pages.exportThisPage', [p.name]), onclick: () => exportProfile([p], p.name) },
+    { icon: '📦', label: tr('pages.exportAllPages'), onclick: () => exportProfile([], 'TouchDeck') },
+    '-',
+    { icon: '📥', label: tr('pages.importProfile'), onclick: () => input.click() },
+  ]);
 }
 
 // ---------- Seiten ----------
