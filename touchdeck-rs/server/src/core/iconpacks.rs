@@ -342,7 +342,7 @@ impl IconPacks {
             && let Ok(m) = serde_json::from_str::<Value>(t)
         {
             let dir = folder(p);
-            let get = |k: &str| m.get(k).or_else(|| m.get(&k.to_lowercase())).and_then(Value::as_str).unwrap_or("").to_string();
+            let get = |k: &str| m.get(k).or_else(|| m.get(k.to_lowercase())).and_then(Value::as_str).unwrap_or("").to_string();
             for (ours, theirs) in [("name", "Name"), ("author", "Author"), ("link", "URL"), ("description", "Description"), ("version", "Version")] {
                 if meta[ours].as_str().is_none_or(str::is_empty) && !get(theirs).is_empty() {
                     meta[ours] = json!(get(theirs));
