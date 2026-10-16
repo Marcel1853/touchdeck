@@ -193,6 +193,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
                 json!({ "text": if v["deaf"] == true { t!("live.deafened") } else { t!("live.listening") }, "on": v["deaf"] == true })
             }
         }
+        "timer" => app.timers.live(&live.variable),
         "variable" => match variables.get(&live.variable) {
             None => json!({ "text": "–", "on": false }),
             Some(v) => json!({ "text": js_string(v), "on": truthy(v) }),

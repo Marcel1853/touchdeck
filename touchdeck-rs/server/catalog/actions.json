@@ -1280,6 +1280,52 @@
   ]
  },
  {
+  "type": "timer",
+  "category": "logic",
+  "group": "general",
+  "icon": "⏱️",
+  "fields": [
+   {
+    "key": "name",
+    "type": "text",
+    "default": "Timer"
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle"
+     },
+     {
+      "value": "start"
+     },
+     {
+      "value": "stop"
+     },
+     {
+      "value": "reset"
+     }
+    ]
+   },
+   {
+    "key": "minutes",
+    "type": "number",
+    "default": 5,
+    "min": 0,
+    "max": 1440
+   },
+   {
+    "key": "seconds",
+    "type": "number",
+    "default": 0,
+    "min": 0,
+    "max": 59
+   }
+  ]
+ },
+ {
   "type": "twitch_chat",
   "category": "twitch",
   "group": "streaming",

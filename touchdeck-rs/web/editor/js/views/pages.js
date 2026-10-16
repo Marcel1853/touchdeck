@@ -1010,6 +1010,8 @@ function liveSection(b) {
     h('label', { class: 'field' }, tr('pages.showOnButton'),
       h('select', { value: b.live.source, onchange: (e) => mutate(() => (b.live.source = e.target.value)) },
         S.liveSources.map((o) => h('option', { value: o.value }, o.label)))),
+    b.live.source === 'timer' && h('label', { class: 'field' }, tr('pages.timerName'),
+      h('input', { value: b.live.variable || '', placeholder: 'Timer', oninput: (e) => mutate(() => (b.live.variable = e.target.value.trim()), { coalesce: `${b.id}:timer`, detail: false }) })),
     b.live.source === 'command' && h('label', { class: 'field' }, tr('pages.command'),
       h('input', { value: b.live.command, placeholder: tr('pages.exampleUptimeP'), oninput: (e) => mutate(() => (b.live.command = e.target.value), { coalesce: `${b.id}:livecmd`, detail: false }) })),
     b.live.source === 'variable' && dynamicSelect({ label: tr('pages.value'), source: 'variables', allowNew: true }, b.live.variable,

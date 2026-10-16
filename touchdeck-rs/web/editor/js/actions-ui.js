@@ -503,7 +503,7 @@ const EVENT_DATA = {
   obs_scene: '{Event.Szene}', obs_preview: '{Event.Szene}', obs_stream: '{Event.Status}', obs_record: '{Event.Status}',
   obs_mute: '{Event.Quelle}', obs_source: '{Event.Quelle}, {Event.Szene}', obs_filter: '{Event.Filter}, {Event.Quelle}',
   obs_profile: '{Event.Name}', obs_replay_saved: '{Event.Datei}', steam_game: '{Event.Spiel}', audio_output: '{Event.Gerät}',
-  audio_mute: '{Event.Status}', device: '{Event.Gerät}', page_view: '{Event.Seite}', app_focus: '{Event.Programm}, {Event.Titel}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
+  audio_mute: '{Event.Status}', device: '{Event.Gerät}', page_view: '{Event.Seite}', timer_done: '{Event.Name}', app_focus: '{Event.Programm}, {Event.Titel}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
   twitch_follow: '{Event.Nutzer}', twitch_sub: '{Event.Nutzer}, {Event.Stufe}, {Event.Anzahl}, {Event.Monate}, {Event.Nachricht}',
   twitch_cheer: '{Event.Nutzer}, {Event.Bits}, {Event.Nachricht}', twitch_raid: '{Event.Nutzer}, {Event.Zuschauer}',
   twitch_redeem: '{Event.Nutzer}, {Event.Belohnung}, {Event.Kosten}, {Event.Eingabe}', twitch_chat: '{Event.Nutzer}, {Event.Nachricht}',

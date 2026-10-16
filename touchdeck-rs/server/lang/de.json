@@ -105,6 +105,8 @@
     "templatesCallEachOther": "Vorlagen rufen sich gegenseitig zu oft auf.",
     "thisButton": "⟲ Dieser Button",
     "thisButtonOnlyWorks": "„Dieser Button“ geht nur in Aktionen eines Buttons.",
+    "timerRunning": "Timer „{0}“ läuft",
+    "timerStopped": "Timer „{0}“ angehalten",
     "unknownAction": "Unbekannte Aktion: {0}",
     "updatedValuesTwitchLive": "Werte Twitch.Live, Twitch.Zuschauer, Twitch.Titel, Twitch.Kategorie, Twitch.Follower aktualisiert",
     "voiceActivity": "Sprachaktivierung",

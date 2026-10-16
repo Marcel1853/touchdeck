@@ -98,6 +98,17 @@
   ]
  },
  {
+  "type": "timer_done",
+  "category": "general",
+  "icon": "⏱️",
+  "fields": [
+   {
+    "key": "name",
+    "type": "text"
+   }
+  ]
+ },
+ {
   "type": "file_change",
   "category": "files",
   "icon": "📄",

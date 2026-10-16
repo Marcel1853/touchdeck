@@ -292,6 +292,13 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let v = linux::mic(&p.or("op", "toggle")).await?;
             Ok(Some(if v.muted { t!("actions.microphoneMuted") } else { t!("actions.microphoneOn") }.into()))
         }
+        "timer" => {
+            let name = p.or("name", "Timer");
+            let duration = (p.n_or("minutes", 0.0).max(0.0) * 60.0 + p.n_or("seconds", 0.0).max(0.0)) * 1000.0;
+            let running = app.timers.control(&name, &p.or("op", "toggle"), duration as u64);
+            app.timers_changed();
+            Ok(Some(if running { t!("actions.timerRunning", name) } else { t!("actions.timerStopped", name) }))
+        }
         "deck_show_page" => {
             let page = p.s("page");
             if app.store.lock().unwrap().page(&page).is_none() {

@@ -1021,6 +1021,29 @@
           "label": "Page"
         }
       }
+    },
+    "timer": {
+      "label": "Timer (countdown / stopwatch)",
+      "fields": {
+        "name": {
+          "label": "Timer name"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "start / pause",
+            "start": "start",
+            "stop": "pause",
+            "reset": "reset"
+          }
+        },
+        "minutes": {
+          "label": "Minutes (0 min and 0 s = stopwatch)"
+        },
+        "seconds": {
+          "label": "Seconds"
+        }
+      }
     }
   },
   "triggers": {
@@ -1422,6 +1445,14 @@
           "label": "Program (empty = any; part of the name is enough, e.g. obs)"
         }
       }
+    },
+    "timer_done": {
+      "label": "Timer finished",
+      "fields": {
+        "name": {
+          "label": "Timer name (empty = any)"
+        }
+      }
     }
   },
   "liveSources": {
@@ -1446,7 +1477,8 @@
     "discord_deaf": "Discord: deafened?",
     "discord_channel": "Discord: voice channel",
     "variable": "Value of a variable",
-    "command": "Output of a command"
+    "command": "Output of a command",
+    "timer": "Timer (time left) – enter the name below"
   },
   "sliderTargets": {
     "volume": "Volume (PC)",

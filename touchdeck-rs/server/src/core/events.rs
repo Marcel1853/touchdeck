@@ -68,6 +68,7 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
         "page_view" => empty_or_eq(&g("page"), &d["pageId"]) && state_matches(&g("state"), &d["state"]),
+        "timer_done" => empty_or_eq(&g("name"), &d["name"]),
         "app_focus" => {
             let want = s(&g("app")).to_lowercase();
             want.is_empty() || s(&d["app"]).to_lowercase().contains(&want)

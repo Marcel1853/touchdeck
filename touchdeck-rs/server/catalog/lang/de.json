@@ -1021,6 +1021,29 @@
           "label": "Seite"
         }
       }
+    },
+    "timer": {
+      "label": "Timer (Countdown / Stoppuhr)",
+      "fields": {
+        "name": {
+          "label": "Name des Timers"
+        },
+        "op": {
+          "label": "Aktion",
+          "options": {
+            "toggle": "starten / anhalten",
+            "start": "starten",
+            "stop": "anhalten",
+            "reset": "zurücksetzen"
+          }
+        },
+        "minutes": {
+          "label": "Minuten (0 Min. und 0 Sek. = Stoppuhr)"
+        },
+        "seconds": {
+          "label": "Sekunden"
+        }
+      }
     }
   },
   "triggers": {
@@ -1422,6 +1445,14 @@
           "label": "Programm (leer = jedes; Teil des Namens genügt, z. B. obs)"
         }
       }
+    },
+    "timer_done": {
+      "label": "Timer abgelaufen",
+      "fields": {
+        "name": {
+          "label": "Name des Timers (leer = jeder)"
+        }
+      }
     }
   },
   "liveSources": {
@@ -1446,7 +1477,8 @@
     "discord_deaf": "Discord: taub?",
     "discord_channel": "Discord: Sprachkanal",
     "variable": "Wert einer Variable",
-    "command": "Ausgabe eines Befehls"
+    "command": "Ausgabe eines Befehls",
+    "timer": "Timer (Restzeit) – Name unten eintragen"
   },
   "sliderTargets": {
     "volume": "Lautstärke (PC)",

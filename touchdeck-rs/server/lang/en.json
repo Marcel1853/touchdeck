@@ -105,6 +105,8 @@
     "templatesCallEachOther": "Templates call each other too often.",
     "thisButton": "⟲ This button",
     "thisButtonOnlyWorks": "“This button” only works in a button's actions.",
+    "timerRunning": "Timer “{0}” running",
+    "timerStopped": "Timer “{0}” paused",
     "unknownAction": "Unknown action: {0}",
     "updatedValuesTwitchLive": "Updated the values Twitch.Live, Twitch.Zuschauer, Twitch.Titel, Twitch.Kategorie, Twitch.Follower",
     "voiceActivity": "Voice activity",

@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Timer: Aktion „Timer (Countdown / Stoppuhr)“ mit Starten, Anhalten und Zurücksetzen,
+      Live-Anzeige „Timer“ mit sekundengenauer Restzeit und Auslöser „Timer abgelaufen“.
     - Neuer Auslöser „Programm im Vordergrund“ und Aktion „Seite auf allen Geräten anzeigen“:
       z. B. wechseln Handy und Tablet von selbst auf die OBS-Seite, sobald OBS im Vordergrund ist.
     - Neue Aktion „Zufällig: eine der nächsten Aktionen“: führt genau eine zufällig gewählte der

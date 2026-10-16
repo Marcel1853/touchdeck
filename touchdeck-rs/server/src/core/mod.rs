@@ -11,3 +11,4 @@ pub mod native_plugins;
 pub mod plugins;
 pub mod profiles;
 pub mod store;
+pub mod timers;

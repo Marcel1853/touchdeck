@@ -29,6 +29,7 @@ use crate::core::backup::Backups;
 use crate::core::catalog::{self, Section};
 use crate::core::events::EventEngine;
 use crate::core::iconpacks::IconPacks;
+use crate::core::timers::Timers;
 use crate::core::plugins::Plugins;
 use crate::core::profiles;
 use crate::core::live::{apply_slider, collect_live};
@@ -121,6 +122,7 @@ pub struct App {
     pub discord: DiscordClient,
     pub events: EventEngine,
     pub iconpacks: IconPacks,
+    pub timers: Arc<Timers>,
     pub plugins: Plugins,
     pub version: &'static str,
     pub port: u16,
@@ -191,6 +193,12 @@ impl App {
     fn pairing_urls(&self, store: &Store) -> Vec<String> {
         let token = &store.settings().token;
         linux::lan_addresses().iter().map(|ip| format!("http://{ip}:{}/deck/?token={token}", self.port)).collect()
+    }
+
+    /** Ein Timer wurde gesteuert: Anzeige sofort aktualisieren und, solange einer läuft, jede Sekunde. */
+    pub fn timers_changed(self: &Arc<Self>) {
+        refresh_live(self);
+        self.timers.ensure_ticker(self.clone(), refresh_live, |a, name| a.events.fire(a, "timer_done", &json!({ "name": name, "Name": name })));
     }
 
     /** Alle Bedienfelder (Handy, Tablet, Vorschau) auf eine Seite wechseln lassen. */
@@ -1248,6 +1256,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         discord: DiscordClient::new(store.clone(), log.clone()),
         events: EventEngine::default(),
         iconpacks,
+        timers: Arc::new(Timers::default()),
         plugins,
         backups,
         store,
