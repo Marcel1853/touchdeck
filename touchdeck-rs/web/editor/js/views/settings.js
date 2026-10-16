@@ -126,7 +126,10 @@ function deck() {
       check(tr('settings.showLabels'), d.showLabels, (v) => set('showLabels', v)),
       h('div', { class: 'field' }, tr('settings.orientationOnPhoneAnd'),
         segmented([['auto', tr('settings.automatic')], ['portrait', tr('settings.portrait')], ['landscape', tr('settings.landscape')]], d.orientation ?? 'auto', (v) => set('orientation', v))),
-      h('p', { class: 'hint-text' }, tr('settings.androidAppTurnsTo'))),
+      h('p', { class: 'hint-text' }, tr('settings.androidAppTurnsTo')),
+      h('div', { class: 'field' }, tr('settings.cellShape'),
+        segmented([['fill', tr('settings.cellShapeFill')], ['square', tr('settings.cellShapeSquare')]], d.cellShape ?? 'fill', (v) => set('cellShape', v))),
+      h('p', { class: 'hint-text' }, tr('settings.cellShapeHint'))),
   ];
 }
 

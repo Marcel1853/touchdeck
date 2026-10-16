@@ -63,17 +63,24 @@ html, body {
 
 #wrap {
   height: calc(100% - var(--bar-h) - env(safe-area-inset-top));
-  padding: 10px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  /* Rand: auf kleinen Bildschirmen schmaler, damit mehr Platz für Buttons bleibt. */
+  --pad: clamp(4px, 1.4vmin, 10px);
+  padding: var(--pad) max(var(--pad), env(safe-area-inset-right)) max(var(--pad), env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
   display: grid;
   place-items: center;
   container-type: size;
 }
 
-/* Quadratische Felder: das Raster nimmt so viel Platz wie möglich, ohne Buttons zu verzerren. */
+/* Das Raster nimmt so viel Platz wie möglich. --stretch-w / --stretch-h: wie weit ein Feld von quadratisch
+   abweichen darf (1 = quadratisch). Breiter geht weiter als höher, weil hohe Buttons schnell gestreckt wirken.
+   Der Abstand wächst mit der Feldgröße. */
 #grid {
-  --gap: clamp(6px, 1.6vmin, 14px);
-  width: min(100cqw, calc(100cqh * var(--cols) / var(--rows)));
-  aspect-ratio: var(--cols) / var(--rows);
+  --stretch-w: 2;
+  --stretch-h: 1.4;
+  --cell: min(100cqw / var(--cols), 100cqh / var(--rows));
+  --gap: clamp(2px, calc(var(--cell) * 0.08), 14px);
+  width: min(100cqw, 100cqh * var(--cols) / var(--rows) * var(--stretch-w));
+  height: min(100cqh, 100cqw * var(--rows) / var(--cols) * var(--stretch-h));
   background: transparent;
 }
 #rotate-hint {

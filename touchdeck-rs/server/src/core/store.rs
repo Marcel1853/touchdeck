@@ -413,10 +413,17 @@ pub struct DeckSettings {
     /// Ausrichtung auf Handy und Tablet: auto, portrait oder landscape.
     #[serde(default = "default_orientation")]
     pub orientation: String,
+    /// Form der Felder: fill (dürfen sich bis 1,6-fach dehnen, nutzen die Fläche) oder square.
+    #[serde(default = "default_cell_shape")]
+    pub cell_shape: String,
 }
 
 fn default_orientation() -> String {
     "auto".into()
+}
+
+fn default_cell_shape() -> String {
+    "fill".into()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -512,7 +519,7 @@ fn default_settings(start_page: &str) -> Settings {
         start_page: start_page.into(),
         lan_enabled: true,
         pin: String::new(),
-        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation() },
+        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape() },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
         twitch: TwitchSettings {
             client_id: String::new(),
@@ -872,6 +879,9 @@ impl Store {
             }
             if let Some(o) = d["orientation"].as_str().filter(|o| ["auto", "portrait", "landscape"].contains(o)) {
                 s.deck.orientation = o.into();
+            }
+            if let Some(c) = d["cellShape"].as_str().filter(|c| ["fill", "square"].contains(c)) {
+                s.deck.cell_shape = c.into();
             }
         }
         let o = &patch["obs"];
