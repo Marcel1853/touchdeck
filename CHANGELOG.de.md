@@ -74,6 +74,8 @@ Datum: 2026-10-16
       Gerätenamen aus ihren Einstellungen, Browser ihre Kennung.
     - /api/info liefert die Liste der verbundenen Geräte.
   Änderungen:
+    - Die Seiten-Einstellungen (wenn kein Button gewählt ist) sind in die Reiter „Logik“ und
+      „Raster“ / „Fläche“ aufgeteilt, die Logik zuerst.
     - Ein einfacher Klick auf ein leeres Rasterfeld oder die freie Fläche legt keinen Button mehr
       an, sondern hebt nur die Auswahl auf. Neue Buttons entstehen per Doppelklick, Rechtsklick
       oder „＋ Button“ in der Werkzeugleiste.

@@ -836,14 +836,25 @@ function resizeButton(b, rowSpan, colSpan) {
 // ---------- Eigenschaften ----------
 
 /** Seite: eigene Spaltenbreiten und Zeilenhöhen (Raster). */
+/** Seite (wenn kein Button gewählt ist): Reiter „Logik“ (Events der Seite) und „Raster“ bzw. „Fläche“. */
 function pageSettings() {
   const p = page();
-  const logic = [
-    h('h3', {}, tr('pages.pageLogic')),
+  S.pageTab ??= 'logic';
+  const count = p.events?.length ?? 0;
+  const tab = (id, label) => h('button', { class: S.pageTab === id ? 'active' : '', onclick: () => { S.pageTab = id; render(); } }, label);
+  const body = S.pageTab === 'layout' ? layoutSettings(p) : [
     h('p', { class: 'hint-text' }, tr('pages.pageLogicHint')),
     ...eventCards(p, { name: p.name, firstTrigger: 'page_view' }),
   ];
-  if (isFree(p)) return h('div', { class: 'page-settings' }, h('h3', {}, tr('pages.pageLayout')), h('p', { class: 'hint-text' }, tr('pages.freeLayoutHint')), ...logic);
+  return h('div', { class: 'page-settings' },
+    h('h3', {}, tr('pages.pageLayout')),
+    h('div', { class: 'tabs' }, tab('logic', `${tr('pages.pageLogicTab')}${count ? ` (${count})` : ''}`), tab('layout', isFree(p) ? tr('pages.areaTab') : tr('pages.gridTab'))),
+    ...body.filter(Boolean));
+}
+
+/** Reiter „Raster“: eigene Spaltenbreiten und Zeilenhöhen; „Fläche“: Hinweis zum Format. */
+function layoutSettings(p) {
+  if (isFree(p)) return [h('p', { class: 'hint-text' }, tr('pages.freeLayoutHint'))];
   const sizeList = (key, count, label) => {
     const list = p[key]?.length === count ? p[key] : Array(count).fill(1);
     return h('div', { class: 'field' }, label,
@@ -855,13 +866,12 @@ function pageSettings() {
         }) }))));
   };
   const custom = p.colSizes?.length || p.rowSizes?.length;
-  return h('div', { class: 'page-settings' },
-    h('h3', {}, tr('pages.pageLayout')),
+  return [
     sizeList('colSizes', p.cols, tr('pages.colSizes')),
     sizeList('rowSizes', p.rows, tr('pages.rowSizes')),
     h('p', { class: 'hint-text' }, tr('pages.sizesHint')),
     custom && h('button', { class: 'btn small', onclick: () => mutate(() => Object.assign(p, { colSizes: [], rowSizes: [] })) }, tr('pages.allEqual')),
-    ...logic);
+  ];
 }
 
 function renderInspector() {

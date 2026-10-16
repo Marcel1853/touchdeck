@@ -71,6 +71,8 @@ Date: 2026-10-16
       settings, browsers send their ID.
     - /api/info lists the connected devices.
   Changes:
+    - Page settings (shown when no button is selected) are split into the tabs "Logic" and
+      "Grid" / "Area", with the logic first.
     - A single click on an empty grid field or the free area no longer creates a button, it only
       clears the selection. New buttons are created by double-click, right-click or "＋ Button" in
       the toolbar.
