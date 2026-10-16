@@ -191,6 +191,17 @@ Leiste des Editors (neben Plugins): anlegen, Bilder hinzufügen,
 als `.tdicons`-Datei exportieren und weitergeben, Pakete anderer importieren.
 Abgelegt im Datenordner unter `icons/packs/`.
 
+- Jedes Paket hat Name, Autor, Link, Lizenz-Kurzname, **Beschreibung, Version,
+  Titelbild, Lizenztext** und optional eine **passende Button-Farbe** – wählt man ein
+  Bild aus dem Paket für einen Button mit Standardfarbe, bekommt er diese Farbe.
+- Jedes Bild kann einen **Namen und Schlagwörter** bekommen (im Paket anklicken). Die
+  Bildauswahl beim Button sucht in Dateinamen, Namen und Schlagwörtern.
+- **Icon erstellen** baut aus Hintergrund, Emoji und Text ein PNG.
+- Der Import erkennt den Inhalt, nicht die Dateiendung: `.tdicons`, ZIP-Dateien mit
+  Bildern (auch in Unterordnern) und übliche Beschreibungsdateien wie eine `info.txt`
+  mit „schlüssel=wert“ oder eine `manifest.json` mit `icons.json` (Namen und
+  Schlagwörter) und Lizenzdatei. Bitte nur Bilder importieren, die man nutzen darf.
+
 ## Plugins
 
 Normale Plugins sind JavaScript und laufen abgeschottet (QuickJS) mit festen Grenzen

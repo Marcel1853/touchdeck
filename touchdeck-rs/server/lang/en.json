@@ -202,6 +202,7 @@
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",
     "fileIsNotValid": "The file is not a valid icon pack (ZIP).",
     "iconPackDoesNot": "The icon pack does not exist (anymore).",
+    "importedPack": "Imported pack",
     "isDamaged": "“{0}” is damaged.",
     "isLargerThan5": "“{0}” is larger than 5 MB.",
     "isNotImagePng": "“{0}” is not an image (PNG, JPG, GIF, WebP or SVG).",
@@ -209,7 +210,8 @@
     "packCanContainAt": "A pack can contain at most {0} images.",
     "packContainsMoreThan": "The pack contains more than {0} images.",
     "packIsTooLarge": "The pack is too large (more than 100 MB).",
-    "pleaseEnterNameFor": "Please enter a name for the icon pack."
+    "pleaseEnterNameFor": "Please enter a name for the icon pack.",
+    "unknownImage": "Unknown image."
   },
   "store": {
     "atLeastOnePage": "At least one page is required.",

@@ -489,7 +489,7 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 55] = [
+const ROUTES: [&str; 56] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -508,6 +508,7 @@ const ROUTES: [&str; 55] = [
     "POST /api/iconpacks/add",
     "POST /api/iconpacks/remove-icon",
     "POST /api/iconpacks/import",
+    "POST /api/iconpacks/icon",
     "POST /api/profiles/import",
     "GET /api/state",
     "PUT /api/pages",
@@ -890,6 +891,10 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "POST /api/iconpacks/add" => {
             let saved = app.iconpacks.add_icons(str_of(&body, "id"), &body["files"]).map_err(bad)?;
             Ok(json!({ "ok": true, "saved": saved, "packs": app.iconpacks.list() }))
+        }
+        "POST /api/iconpacks/icon" => {
+            app.iconpacks.set_icon_info(str_of(&body, "id"), str_of(&body, "file"), &body).map_err(bad)?;
+            Ok(json!({ "ok": true, "packs": app.iconpacks.list() }))
         }
         "POST /api/iconpacks/remove-icon" => {
             app.iconpacks.remove_icon(str_of(&body, "id"), str_of(&body, "file")).map_err(bad)?;

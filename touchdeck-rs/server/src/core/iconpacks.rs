@@ -1,7 +1,11 @@
 // Icon-Pakete: eigene Bildersammlungen, die jeder selbst anlegt, füllt und als Datei (.tdicons) weitergeben kann.
 // Ablage: <Datenordner>/icons/packs/<id>/pack.json plus die Bilder. Buttons verweisen auf „packs/<id>/<datei>“,
 // damit Bedienfeld und Handy-App die Bilder wie alle anderen über /icons/… laden.
+//
+// pack.json (Format 2): name, author, link, license (Kurzname), description, version, color (passende
+// Button-Farbe), cover (Titelbild), licenseText und icons: { "<datei>": { "name": …, "tags": […] } }.
 use crate::t;
+use std::collections::HashMap;
 use std::fs;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
@@ -18,6 +22,8 @@ const SVG_EXT: &str = "svg";
 const MAX_ICONS: usize = 3000;
 const MAX_IMAGE: u64 = 5 * 1024 * 1024;
 const MAX_TOTAL: u64 = 100 * 1024 * 1024;
+const FORMAT: u64 = 2;
+const MAX_TAGS: usize = 20;
 
 pub struct IconPacks {
     dir: PathBuf,
@@ -39,6 +45,32 @@ fn make_id(name: &str) -> String {
     }
     let slug: String = slug.trim_matches('-').chars().take(32).collect();
     new_id(&format!("{}-", if slug.is_empty() { "paket" } else { &slug }))
+}
+
+fn hex_color(v: &str) -> bool {
+    v.len() == 7 && v.starts_with('#') && v[1..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
+/** Schlagwörter: Liste oder kommagetrennter Text, kleingeschrieben, ohne Doppelte. */
+fn tags(v: &Value) -> Vec<String> {
+    let raw: Vec<String> = match v {
+        Value::Array(l) => l.iter().filter_map(|t| t.as_str().map(String::from)).collect(),
+        Value::String(s) => s.split([',', ';']).map(String::from).collect(),
+        _ => Vec::new(),
+    };
+    let mut out: Vec<String> = Vec::new();
+    for t in raw {
+        let t: String = t.trim().to_lowercase().chars().take(40).collect();
+        if !t.is_empty() && !out.contains(&t) && out.len() < MAX_TAGS {
+            out.push(t);
+        }
+    }
+    out
+}
+
+/** Name und Schlagwörter eines Bildes bereinigen. */
+fn icon_info(v: &Value) -> Value {
+    json!({ "name": text(&v["name"], 80), "tags": tags(&v["tags"]) })
 }
 
 fn valid_id(id: &str) -> bool {
@@ -110,13 +142,22 @@ impl IconPacks {
                 let id = e.file_name().into_string().ok().filter(|id| valid_id(id))?;
                 let meta = Self::read_meta(&e.path());
                 let icons = Self::icons_of(&e.path());
+                // Infos nur für vorhandene Bilder; Titelbild nur, wenn es das Bild gibt.
+                let info: serde_json::Map<String, Value> = icons.iter().filter_map(|i| meta["icons"].get(i).map(|v| (i.clone(), icon_info(v)))).collect();
+                let cover = meta["cover"].as_str().filter(|c| icons.iter().any(|i| i == c)).or(icons.first().map(String::as_str)).unwrap_or("");
                 Some(json!({
                     "id": id,
                     "name": meta["name"].as_str().filter(|n| !n.is_empty()).unwrap_or(&id),
                     "author": meta["author"].as_str().unwrap_or(""),
                     "link": meta["link"].as_str().unwrap_or(""),
                     "license": meta["license"].as_str().unwrap_or(""),
+                    "description": meta["description"].as_str().unwrap_or(""),
+                    "version": meta["version"].as_str().unwrap_or(""),
+                    "color": meta["color"].as_str().filter(|c| hex_color(c)).unwrap_or(""),
+                    "licenseText": meta["licenseText"].as_str().unwrap_or(""),
+                    "cover": cover,
                     "icons": icons,
+                    "info": info,
                 }))
             })
             .collect();
@@ -138,7 +179,20 @@ impl IconPacks {
         if !link.is_empty() && !(link.starts_with("https://") || link.starts_with("http://")) {
             bail!(t!("iconpacks.linkMustStartWith"));
         }
-        Ok(json!({ "name": name, "author": text(&body["author"], 80), "link": link, "license": text(&body["license"], 200) }))
+        let color = text(&body["color"], 7);
+        Ok(json!({
+            "format": FORMAT,
+            "name": name,
+            "author": text(&body["author"], 80),
+            "link": link,
+            "license": text(&body["license"], 200),
+            "description": text(&body["description"], 500),
+            "version": text(&body["version"], 20),
+            "color": if hex_color(&color) { color } else { String::new() },
+            "cover": clean_file_name(body["cover"].as_str().unwrap_or("")).unwrap_or_default(),
+            "licenseText": body["licenseText"].as_str().unwrap_or("").chars().take(20_000).collect::<String>(),
+            "icons": body["icons"].as_object().map(|o| o.iter().take(MAX_ICONS).filter_map(|(k, v)| clean_file_name(k).map(|k| (k, icon_info(v)))).collect::<serde_json::Map<_, _>>()).unwrap_or_default(),
+        }))
     }
 
     pub fn create(&self, body: &Value) -> Result<String> {
@@ -150,9 +204,27 @@ impl IconPacks {
         Ok(id)
     }
 
+    /** Beschreibung ändern; Namen und Schlagwörter der Bilder bleiben erhalten. */
     pub fn update(&self, id: &str, body: &Value) -> Result<()> {
         let dir = self.pack_dir(id)?;
-        Self::write_meta(&dir, &Self::meta_from(body)?)
+        let mut meta = Self::meta_from(body)?;
+        meta["icons"] = Self::read_meta(&dir)["icons"].clone();
+        if !meta["icons"].is_object() {
+            meta["icons"] = json!({});
+        }
+        Self::write_meta(&dir, &meta)
+    }
+
+    /** Name und Schlagwörter eines Bildes setzen. */
+    pub fn set_icon_info(&self, id: &str, file: &str, info: &Value) -> Result<()> {
+        let dir = self.pack_dir(id)?;
+        let name = clean_file_name(file).filter(|n| n == file && dir.join(n).is_file()).ok_or_else(|| anyhow!(t!("iconpacks.unknownImage")))?;
+        let mut meta = Self::read_meta(&dir);
+        if !meta["icons"].is_object() {
+            meta["icons"] = json!({});
+        }
+        meta["icons"][name] = icon_info(info);
+        Self::write_meta(&dir, &meta)
     }
 
     pub fn delete(&self, id: &str) -> Result<()> {
@@ -187,9 +259,16 @@ impl IconPacks {
 
     pub fn remove_icon(&self, id: &str, file: &str) -> Result<()> {
         let dir = self.pack_dir(id)?;
-        let name = clean_file_name(file).filter(|n| n == file).ok_or_else(|| anyhow!("Unbekanntes Bild."))?;
-        fs::remove_file(dir.join(name))?;
-        Ok(())
+        let name = clean_file_name(file).filter(|n| n == file).ok_or_else(|| anyhow!(t!("iconpacks.unknownImage")))?;
+        fs::remove_file(dir.join(&name))?;
+        let mut meta = Self::read_meta(&dir);
+        if let Some(icons) = meta["icons"].as_object_mut() {
+            icons.remove(&name);
+        }
+        if meta["cover"] == json!(name) {
+            meta["cover"] = json!("");
+        }
+        Self::write_meta(&dir, &meta)
     }
 
     /** Paket als ZIP (.tdicons): pack.json plus alle Bilder. Liefert (Dateiname, Inhalt). */
@@ -210,51 +289,128 @@ impl IconPacks {
         Ok((format!("{}.tdicons", file.trim()), bytes))
     }
 
-    /** Paket aus einer ZIP-Datei übernehmen (.tdicons oder ein ZIP mit Bildern). Liefert die neue ID und die Anzahl der Bilder. */
+    /**
+     * Paket aus einer ZIP-Datei übernehmen: .tdicons oder ein ZIP mit Bildern (auch in Unterordnern).
+     * Beschreibungen in anderen üblichen Aufbauten werden mit übernommen: eine info.txt mit „name=…“,
+     * eine manifest.json (Name, Autor, Beschreibung, Version, Titelbild, Lizenzdatei) mit icons.json
+     * (Name und Schlagwörter je Bild) und eine Lizenzdatei. Liefert die neue ID und die Anzahl der Bilder.
+     */
     pub fn import(&self, bytes: &[u8], fallback_name: &str) -> Result<(String, usize)> {
         let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!(t!("iconpacks.fileIsNotValid")))?;
-        let mut meta = json!({});
+        let mut texts: Vec<(String, String)> = Vec::new();
         let mut images: Vec<(String, Vec<u8>)> = Vec::new();
         let mut total = 0u64;
         for i in 0..zip.len() {
             let mut f = zip.by_index(i)?;
-            if f.is_dir() {
+            if f.is_dir() || f.size() > MAX_IMAGE {
                 continue;
             }
-            let raw_name = f.name()?.to_string();
-            let base = raw_name.rsplit('/').next().unwrap_or("").to_string();
-            if f.size() > MAX_IMAGE {
+            let path = f.name()?.replace('\\', "/");
+            if path.split('/').any(|p| p.starts_with('.') || p == "__MACOSX") {
                 continue;
             }
             total += f.size();
             if total > MAX_TOTAL {
                 bail!(t!("iconpacks.packIsTooLarge"));
             }
-            if base == "pack.json" {
+            let base = path.rsplit('/').next().unwrap_or("").to_lowercase();
+            if ["pack.json", "manifest.json", "icons.json", "info.txt", "license.txt", "license.md", "license"].contains(&base.as_str()) {
                 let mut t = String::new();
-                f.read_to_string(&mut t)?;
-                meta = serde_json::from_str(&t).unwrap_or_else(|_| json!({}));
-            } else if let Some(name) = clean_file_name(&base) {
+                if f.read_to_string(&mut t).is_ok() {
+                    texts.push((path, t.trim_start_matches('\u{feff}').to_string()));
+                }
+            } else if clean_file_name(&path).is_some() {
                 if images.len() >= MAX_ICONS {
                     bail!(t!("iconpacks.packContainsMoreThan", MAX_ICONS));
                 }
                 let mut data = Vec::with_capacity(f.size() as usize);
                 f.read_to_end(&mut data)?;
-                images.push((name, data));
+                images.push((path, data));
             }
         }
         if images.is_empty() {
             bail!(t!("iconpacks.fileContainsNoImages"));
         }
-        if meta["name"].as_str().is_none_or(str::is_empty) {
-            meta["name"] = json!(if fallback_name.is_empty() { "Importiertes Paket" } else { fallback_name });
+        let find = |name: &str| texts.iter().find(|(p, _)| p.rsplit('/').next().is_some_and(|b| b.eq_ignore_ascii_case(name))).map(|(p, t)| (p.as_str(), t.as_str()));
+        let folder = |p: &str| p.rsplit_once('/').map_or(String::new(), |(d, _)| format!("{d}/"));
+
+        // Beschreibung zusammentragen: eigenes Format zuerst, sonst die anderen Aufbauten.
+        let mut meta = find("pack.json").and_then(|(_, t)| serde_json::from_str::<Value>(t).ok()).unwrap_or_else(|| json!({}));
+        let mut info_by_path: HashMap<String, Value> = HashMap::new();
+        let mut cover_path = String::new();
+        if let Some((p, t)) = find("manifest.json")
+            && let Ok(m) = serde_json::from_str::<Value>(t)
+        {
+            let dir = folder(p);
+            let get = |k: &str| m.get(k).or_else(|| m.get(&k.to_lowercase())).and_then(Value::as_str).unwrap_or("").to_string();
+            for (ours, theirs) in [("name", "Name"), ("author", "Author"), ("link", "URL"), ("description", "Description"), ("version", "Version")] {
+                if meta[ours].as_str().is_none_or(str::is_empty) && !get(theirs).is_empty() {
+                    meta[ours] = json!(get(theirs));
+                }
+            }
+            if !get("Icon").is_empty() {
+                cover_path = format!("{dir}{}", get("Icon"));
+            }
+            if !get("License").is_empty()
+                && let Some((_, lt)) = texts.iter().find(|(lp, _)| *lp == format!("{dir}{}", get("License")))
+            {
+                meta["licenseText"] = json!(lt);
+            }
+            // Name und Schlagwörter je Bild (Pfade relativ zum Ordner der Bilder).
+            if let Some((ip, it)) = find("icons.json")
+                && let Ok(Value::Array(list)) = serde_json::from_str::<Value>(it)
+            {
+                let base_dir = folder(ip);
+                for e in list {
+                    if let Some(rel) = e["path"].as_str() {
+                        let hit = images.iter().find(|(p, _)| p.ends_with(&format!("/{rel}")) || p == &format!("{base_dir}{rel}") || p.ends_with(rel));
+                        if let Some((p, _)) = hit {
+                            info_by_path.insert(p.clone(), json!({ "name": e["name"], "tags": e["tags"] }));
+                        }
+                    }
+                }
+            }
         }
+        if let Some((_, t)) = find("info.txt") {
+            for line in t.lines() {
+                let Some((k, v)) = line.split_once('=') else { continue };
+                let (k, v) = (k.trim().to_lowercase(), v.trim().replace("##", "#"));
+                match k.as_str() {
+                    "name" | "author" | "link" if meta[&k].as_str().is_none_or(str::is_empty) => meta[&k] = json!(v),
+                    "bgcolor" if hex_color(&v) && meta["color"].as_str().is_none_or(str::is_empty) => meta["color"] = json!(v),
+                    _ => {}
+                }
+            }
+        }
+        if meta["licenseText"].as_str().is_none_or(str::is_empty)
+            && let Some((_, lt)) = find("license.txt").or_else(|| find("license.md")).or_else(|| find("license"))
+        {
+            meta["licenseText"] = json!(lt);
+        }
+        if meta["name"].as_str().is_none_or(str::is_empty) {
+            meta["name"] = json!(if fallback_name.is_empty() { t!("iconpacks.importedPack") } else { fallback_name });
+        }
+        let old_icons = meta["icons"].clone();
+        let old_cover = meta["cover"].as_str().unwrap_or("").to_string();
+        meta["icons"] = json!({});
+        meta["cover"] = json!("");
         let id = self.create(&meta)?;
         let dir = self.dir.join(&id);
         let count = images.len();
-        for (name, data) in images {
-            fs::write(dir.join(free_name(&dir, &name)), data)?;
+        let mut final_meta = Self::read_meta(&dir);
+        for (path, data) in images {
+            let base = clean_file_name(&path).unwrap_or_default();
+            let saved = free_name(&dir, &base);
+            fs::write(dir.join(&saved), data)?;
+            let info = info_by_path.get(&path).cloned().or_else(|| old_icons.get(&base).cloned());
+            if let Some(info) = info {
+                final_meta["icons"][&saved] = icon_info(&info);
+            }
+            if path == cover_path || (!old_cover.is_empty() && base == old_cover && final_meta["cover"] == "") {
+                final_meta["cover"] = json!(saved);
+            }
         }
+        Self::write_meta(&dir, &final_meta)?;
         Ok((id, count))
     }
 }
@@ -295,4 +451,56 @@ mod tests {
         assert_eq!(packs.list().len(), 1);
         fs::remove_dir_all(dir).unwrap();
     }
+
+    fn zip_of(files: &[(&str, &[u8])]) -> Vec<u8> {
+        let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        for (name, data) in files {
+            zip.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(data).unwrap();
+        }
+        zip.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn andere_aufbauten_importieren() {
+        let dir = std::env::temp_dir().join(new_id("td-icons2-"));
+        let packs = IconPacks::new(&dir);
+        // Bilder mit info.txt (name=…, bgcolor=…).
+        let a = zip_of(&[("info.txt", b"name=Spiele\nauthor=Ich\nbgcolor=##112233\n"), ("pad.png", b"PNG"), ("unterordner/maus.png", b"PNG")]);
+        let (id, n) = packs.import(&a, "").unwrap();
+        assert_eq!(n, 2);
+        let p = packs.list().into_iter().find(|p| p["id"] == id).unwrap();
+        assert_eq!((p["name"].as_str(), p["author"].as_str(), p["color"].as_str()), (Some("Spiele"), Some("Ich"), Some("#112233")));
+        // manifest.json + icons.json in einem Unterordner, Bilder in icons/, Lizenzdatei, Titelbild.
+        let b = zip_of(&[
+            ("x.paket/manifest.json", "\u{feff}{\"Name\":\"Logos\",\"Author\":\"A\",\"Description\":\"Bunte Logos\",\"Version\":\"2.0\",\"Icon\":\"icon.svg\",\"License\":\"license.txt\"}".as_bytes()),
+            ("x.paket/icons.json", br#"[{"path":"mic.svg","name":"Mikrofon","tags":["Audio","Stimme"]}]"#),
+            ("x.paket/license.txt", b"Frei nutzbar"),
+            ("x.paket/icon.svg", b"<svg/>"),
+            ("x.paket/icons/mic.svg", b"<svg/>"),
+        ]);
+        let (id2, n2) = packs.import(&b, "").unwrap();
+        assert_eq!(n2, 2);
+        let p = packs.list().into_iter().find(|p| p["id"] == id2).unwrap();
+        assert_eq!(p["name"], "Logos");
+        assert_eq!(p["description"], "Bunte Logos");
+        assert_eq!(p["version"], "2.0");
+        assert_eq!(p["licenseText"], "Frei nutzbar");
+        assert_eq!(p["cover"], "icon.svg");
+        assert_eq!(p["info"]["mic.svg"], json!({ "name": "Mikrofon", "tags": ["audio", "stimme"] }));
+        // Infos überstehen Bearbeiten, Export und Import.
+        packs.set_icon_info(&id2, "icon.svg", &json!({ "name": "Titel", "tags": "logo, Titel, logo" })).unwrap();
+        packs.update(&id2, &json!({ "name": "Logos 2", "cover": "mic.svg", "color": "#abcdef" })).unwrap();
+        let (_, bytes) = packs.export(&id2).unwrap();
+        let (id3, _) = packs.import(&bytes, "").unwrap();
+        let p = packs.list().into_iter().find(|p| p["id"] == id3).unwrap();
+        assert_eq!((p["name"].as_str(), p["cover"].as_str(), p["color"].as_str()), (Some("Logos 2"), Some("mic.svg"), Some("#abcdef")));
+        assert_eq!(p["info"]["icon.svg"]["tags"], json!(["logo", "titel"]));
+        assert_eq!(p["info"]["mic.svg"]["name"], "Mikrofon");
+        packs.remove_icon(&id3, "mic.svg").unwrap();
+        let p = packs.list().into_iter().find(|p| p["id"] == id3).unwrap();
+        assert!(p["info"].get("mic.svg").is_none());
+        fs::remove_dir_all(dir).unwrap();
+    }
+
 }

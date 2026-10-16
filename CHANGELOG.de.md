@@ -28,6 +28,12 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Icon-Pakete deutlich ausgebaut: Beschreibung, Version, Titelbild, Lizenztext und passende
+      Button-Farbe pro Paket; Name und Schlagwörter pro Bild (im Paket anklicken); die
+      Bildauswahl sucht in Namen und Schlagwörtern; .tdicons-Format 2 behält alles.
+    - Der Import von Icon-Paketen erkennt den Inhalt statt der Dateiendung: ZIP-Dateien mit
+      Bildern in Unterordnern und übliche Beschreibungsdateien (info.txt mit Schlüssel=Wert,
+      manifest.json mit icons.json, Lizenzdateien) werden mit Namen, Schlagwörtern und Lizenz übernommen.
     - Optionale Fußleiste im Bedienfeld (Einstellungen › Bedienfeld › „Fußleiste anzeigen“):
       Verbindung mit dem Namen des PCs und in der Android-App ein Knopf „PC wechseln“.
     - Icon-Editor (Icon-Pakete › „Icon erstellen“): baut aus Hintergrund (Farbe, Verlauf oder

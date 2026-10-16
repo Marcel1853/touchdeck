@@ -27,6 +27,12 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Icon packs improved a lot: description, version, cover image, license text and a matching
+      button colour per pack; name and tags per image (click it in the pack); the image picker
+      searches names and tags; .tdicons format version 2 keeps all of it.
+    - The icon pack import recognises the content instead of the file extension: ZIP files with
+      images in sub-folders and common description files (key/value info.txt, manifest.json with
+      icons.json, license files) are taken over with names, tags and license.
     - Optional footer in the deck (Settings › Deck › "Show footer"): connection state with the
       PC's name and, in the Android app, a "Switch PC" button.
     - Icon editor (Icon packs › "Create icon"): builds a PNG from background (colour, gradient

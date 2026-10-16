@@ -1,5 +1,6 @@
 // Icon-Pakete: eigene Bildersammlungen anlegen, füllen, exportieren (.tdicons) und importieren.
-// Verwaltung in den Einstellungen, Auswahl beim Button (iconPicker).
+// Eigener Bereich in der linken Leiste, Auswahl beim Button (iconPicker). Pro Bild Name und Schlagwörter
+// (für die Suche), pro Paket Titelbild, Beschreibung, Version, Lizenztext und eine passende Button-Farbe.
 import { t as tr } from '/shared/i18n.js';
 import { h, api, toast, ask } from '../dom.js';
 import { S, render, mutate } from '../state.js';
@@ -8,6 +9,10 @@ import { iconUrl } from '/shared/render.js';
 const UPLOAD_BATCH = 20;
 
 export const packIcon = (packId, file) => `packs/${packId}/${file}`;
+
+/** Anzeigename eines Bildes: eigener Name, sonst der Dateiname ohne Endung. */
+const iconName = (pack, file) => pack.info?.[file]?.name || file.replace(/\.[^.]+$/, '');
+const iconTags = (pack, file) => pack.info?.[file]?.tags ?? [];
 
 /** Wie viele Buttons Bilder aus diesem Paket nutzen. */
 const usage = (packId) => S.pages.flatMap((p) => p.buttons).filter((b) => b.icon.type === 'image' && b.icon.value.startsWith(`packs/${packId}/`)).length;
@@ -59,14 +64,57 @@ async function importPack(file) {
 }
 
 function packForm(pack, onSave) {
-  const f = { name: pack?.name ?? '', author: pack?.author ?? '', link: pack?.link ?? '', license: pack?.license ?? '' };
-  const input = (key, label, placeholder) => h('label', { class: 'field' }, label,
-    h('input', { value: f[key], placeholder, maxlength: key === 'link' ? 300 : 120, oninput: (e) => (f[key] = e.target.value) }));
+  const keys = ['name', 'author', 'link', 'license', 'description', 'version', 'color', 'cover', 'licenseText'];
+  const f = Object.fromEntries(keys.map((k) => [k, pack?.[k] ?? '']));
+  const input = (key, label, placeholder, max = 120) => h('label', { class: 'field' }, label,
+    h('input', { value: f[key], placeholder, maxlength: max, oninput: (e) => (f[key] = e.target.value) }));
+  const area = (key, label, placeholder, rows, max) => h('label', { class: 'field' }, label,
+    h('textarea', { rows, maxlength: max, placeholder, oninput: (e) => (f[key] = e.target.value) }, f[key]));
+  const colorBox = h('input', { type: 'color', value: f.color || '#2b2f3a', disabled: !f.color, oninput: (e) => (f.color = e.target.value) });
   return h('div', { class: 'pack-form' },
-    input('name', tr('common.name'), tr('iconpacks.exampleMyStreamingSet')),
-    h('div', { class: 'row' }, input('author', tr('iconpacks.byOptional'), tr('iconpacks.yourName')), input('license', tr('iconpacks.licenseOptional'), tr('iconpacks.exampleCc0CcBy'))),
-    input('link', tr('iconpacks.linkOptional'), 'https://…'),
+    input('name', tr('common.name'), tr('iconpacks.exampleMyStreamingSet'), 80),
+    area('description', tr('iconpacks.descriptionOptional'), tr('iconpacks.descriptionPlaceholder'), 2, 500),
+    h('div', { class: 'row' }, input('author', tr('iconpacks.byOptional'), tr('iconpacks.yourName'), 80), input('version', tr('iconpacks.versionOptional'), '1.0', 20)),
+    h('div', { class: 'row' }, input('license', tr('iconpacks.licenseOptional'), tr('iconpacks.exampleCc0CcBy'), 200), input('link', tr('iconpacks.linkOptional'), 'https://…', 300)),
+    h('div', { class: 'row' },
+      pack?.icons.length ? h('label', { class: 'field' }, tr('iconpacks.cover'),
+        h('select', { value: f.cover || pack.cover, onchange: (e) => (f.cover = e.target.value) }, pack.icons.map((i) => h('option', { value: i }, iconName(pack, i))))) : null,
+      h('div', { class: 'field' }, tr('iconpacks.buttonColor'),
+        h('div', { class: 'colors' },
+          h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: !!f.color, onchange: (e) => {
+            f.color = e.target.checked ? colorBox.value : '';
+            colorBox.disabled = !e.target.checked;
+          } }), tr('iconpacks.useColor')),
+          colorBox))),
+    h('p', { class: 'hint-text' }, tr('iconpacks.buttonColorHint')),
+    area('licenseText', tr('iconpacks.licenseTextOptional'), tr('iconpacks.licenseTextPlaceholder'), 3, 20000),
     h('button', { class: 'btn primary small', onclick: () => onSave(f) }, pack ? tr('common.save') : tr('iconpacks.createPack')));
+}
+
+/** Name und Schlagwörter eines Bildes bearbeiten, Titelbild setzen. */
+function iconEditRow(pack, file) {
+  const f = { name: pack.info?.[file]?.name ?? '', tags: iconTags(pack, file).join(', ') };
+  const save = async (extra = {}) => {
+    try {
+      S.iconPacks = (await api('POST', '/api/iconpacks/icon', { id: pack.id, file, name: f.name, tags: f.tags })).packs;
+      if (extra.cover) S.iconPacks = (await api('POST', '/api/iconpacks/update', { id: pack.id, ...pack, info: undefined, icons: undefined, cover: file })).packs;
+      S.packIconEdit = null;
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+  return h('div', { class: 'icon-edit-row' },
+    h('img', { src: iconUrl(packIcon(pack.id, file)), alt: '' }),
+    h('div', { class: 'icon-edit-fields' },
+      h('small', { class: 'hint-text' }, file),
+      h('div', { class: 'row' },
+        h('label', { class: 'field' }, tr('common.name'), h('input', { value: f.name, maxlength: 80, placeholder: iconName(pack, file), oninput: (e) => (f.name = e.target.value) })),
+        h('label', { class: 'field' }, tr('iconpacks.tags'), h('input', { value: f.tags, placeholder: tr('iconpacks.tagsPlaceholder'), oninput: (e) => (f.tags = e.target.value) }))),
+      h('div', { class: 'pack-actions' },
+        h('button', { class: 'btn small primary', onclick: () => save() }, tr('common.save')),
+        pack.cover !== file && h('button', { class: 'btn small', onclick: () => save({ cover: true }) }, tr('iconpacks.makeCover')),
+        h('button', { class: 'btn small ghost', onclick: () => { S.packIconEdit = null; render(); } }, tr('common.cancel')))));
 }
 
 function packCard(pack) {
@@ -74,10 +122,13 @@ function packCard(pack) {
   const upload = h('input', { type: 'file', multiple: true, hidden: true, accept: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml',
     onchange: (e) => uploadImages(pack, e.target.files) });
   const head = h('div', { class: 'pack-head', onclick: () => { S.openPack = open ? null : pack.id; render(); } },
-    h('div', { class: 'pack-preview' }, pack.icons.slice(0, 4).map((i) => h('img', { src: iconUrl(packIcon(pack.id, i)), alt: '', loading: 'lazy' }))),
+    h('div', { class: 'pack-preview' }, [pack.cover, ...pack.icons.filter((i) => i !== pack.cover)].filter(Boolean).slice(0, 4)
+      .map((i) => h('img', { src: iconUrl(packIcon(pack.id, i)), alt: '', loading: 'lazy' }))),
     h('div', { class: 'pack-title' },
-      h('b', {}, pack.name),
+      h('b', {}, pack.name, pack.version && h('small', { class: 'pack-version' }, ` v${pack.version}`)),
+      pack.description && h('span', { class: 'pack-desc' }, pack.description),
       h('small', {}, [tr('iconpacks.images', [pack.icons.length]), pack.author && tr('iconpacks.by', [pack.author]), pack.license].filter(Boolean).join(' · '))),
+    pack.color && h('span', { class: 'pack-color', title: tr('iconpacks.buttonColor'), style: `background:${pack.color}` }),
     h('span', { class: 'chevron' }, open ? '▾' : '▸'));
   if (!open) return h('div', { class: 'settings-card pack' }, head);
 
@@ -110,8 +161,15 @@ function packCard(pack) {
       }
     }),
     pack.link && h('p', { class: 'hint-text' }, h('a', { href: pack.link, target: '_blank', rel: 'noopener' }, pack.link)),
+    pack.licenseText && h('details', { class: 'pack-license' }, h('summary', {}, tr('iconpacks.showLicense')), h('pre', {}, pack.licenseText)),
+    S.packIconEdit?.pack === pack.id && pack.icons.includes(S.packIconEdit.file) && iconEditRow(pack, S.packIconEdit.file),
+    pack.icons.length ? h('p', { class: 'hint-text' }, tr('iconpacks.clickImageToName')) : null,
     pack.icons.length
-      ? h('div', { class: 'icon-grid pack-icons' }, pack.icons.map((i) => h('div', { class: 'pack-icon', title: i },
+      ? h('div', { class: 'icon-grid pack-icons' }, pack.icons.map((i) => h('div', {
+        class: `pack-icon${pack.cover === i ? ' is-cover' : ''}${S.packIconEdit?.pack === pack.id && S.packIconEdit.file === i ? ' editing' : ''}`,
+        title: [iconName(pack, i), iconTags(pack, i).join(', ')].filter(Boolean).join('\n'),
+        onclick: (e) => { if (e.target.closest('.remove')) return; S.packIconEdit = { pack: pack.id, file: i }; render(); },
+      },
         h('img', { src: iconUrl(packIcon(pack.id, i)), alt: '', loading: 'lazy' }),
         h('button', { class: 'remove', title: tr('iconpacks.removeImage'), onclick: async () => {
           try {
@@ -237,7 +295,8 @@ function iconEditor() {
 function iconPacksSection() {
   const title = [h('h1', {}, tr('common.iconPacks')), h('p', { class: 'hint-text' },
     tr('iconpacks.yourOwnImageCollections'))];
-  const importInput = h('input', { type: 'file', hidden: true, accept: '.tdicons,.zip,application/zip', onchange: (e) => e.target.files[0] && importPack(e.target.files[0]) });
+  // Keine Einschränkung der Dateiendung: der Import erkennt den Aufbau am Inhalt.
+  const importInput = h('input', { type: 'file', hidden: true, onchange: (e) => e.target.files[0] && importPack(e.target.files[0]) });
   return [
     ...title,
     h('div', { class: 'settings-card' },
@@ -264,12 +323,13 @@ function iconPacksSection() {
 /** Bildauswahl beim Button: eigene Bilder und alle Icon-Pakete, mit Suche. key: icon oder iconOn. */
 export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
   const sources = [['own', tr('iconpacks.ownImages', [S.icons.length]), S.icons.map((n) => ({ value: n, label: n }))],
-    ...S.iconPacks.map((p) => [p.id, `${p.name} (${p.icons.length})`, p.icons.map((i) => ({ value: packIcon(p.id, i), label: i }))])];
+    ...S.iconPacks.map((p) => [p.id, `${p.name} (${p.icons.length})`,
+      p.icons.map((i) => ({ value: packIcon(p.id, i), label: iconName(p, i), search: [i, iconName(p, i), ...iconTags(p, i)].join(' ').toLowerCase(), color: p.color }))])];
   if (!sources.some(([, , list]) => list.length)) return null;
   if (!sources.some(([id]) => id === S.iconSource)) S.iconSource = sources.find(([, , l]) => l.length)?.[0] ?? 'own';
   const [, , list] = sources.find(([id]) => id === S.iconSource);
   const q = (S.iconSearch ?? '').toLowerCase();
-  const shown = list.filter((i) => !q || i.label.toLowerCase().includes(q));
+  const shown = list.filter((i) => !q || (i.search ?? i.label.toLowerCase()).includes(q));
   const MAX = 240;
   return h('div', {},
     h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S[toggle] = !S[toggle]; render(); } },
@@ -280,7 +340,11 @@ export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
         h('input', { type: 'search', placeholder: tr('common.search'), value: S.iconSearch ?? '', oninput: (e) => { S.iconSearch = e.target.value; render(); } })),
       shown.length
         ? h('div', { class: 'icon-grid' }, shown.slice(0, MAX).map((i) => h('button', { type: 'button', title: i.label, class: b[key]?.value === i.value ? 'active' : '',
-          onclick: () => mutate(() => (b[key] = { type: 'image', value: i.value })) }, h('img', { src: iconUrl(i.value), alt: '', loading: 'lazy' }))))
+          onclick: () => mutate(() => {
+            b[key] = { type: 'image', value: i.value };
+            // Paket-Farbe übernehmen, solange der Button noch die Standardfarbe hat.
+            if (key === 'icon' && i.color && b.color === '#2b2f3a') b.color = i.color;
+          }) }, h('img', { src: iconUrl(i.value), alt: '', loading: 'lazy' }))))
         : h('p', { class: 'hint-text' }, tr('iconpacks.noImagesFound')),
       shown.length > MAX && h('p', { class: 'hint-text' }, tr('iconpacks.moreRefineSearch', [shown.length - MAX]))));
 }

@@ -202,6 +202,7 @@
     "fileContainsNoImages": "In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).",
     "fileIsNotValid": "Die Datei ist kein gültiges Icon-Paket (ZIP).",
     "iconPackDoesNot": "Das Icon-Paket gibt es nicht (mehr).",
+    "importedPack": "Importiertes Paket",
     "isDamaged": "„{0}“ ist beschädigt.",
     "isLargerThan5": "„{0}“ ist größer als 5 MB.",
     "isNotImagePng": "„{0}“ ist kein Bild (PNG, JPG, GIF, WebP oder SVG).",
@@ -209,7 +210,8 @@
     "packCanContainAt": "Ein Paket kann höchstens {0} Bilder enthalten.",
     "packContainsMoreThan": "Das Paket enthält mehr als {0} Bilder.",
     "packIsTooLarge": "Das Paket ist zu groß (mehr als 100 MB).",
-    "pleaseEnterNameFor": "Bitte einen Namen für das Icon-Paket angeben."
+    "pleaseEnterNameFor": "Bitte einen Namen für das Icon-Paket angeben.",
+    "unknownImage": "Unbekanntes Bild."
   },
   "store": {
     "atLeastOnePage": "Mindestens eine Seite wird benötigt.",

@@ -185,6 +185,17 @@ sidebar of the editor (next to Plugins): create them, add images, export
 them as a `.tdicons` file and share them, import packs from others. Stored in the
 data folder under `icons/packs/`.
 
+- Every pack has a name, author, link, short license, **description, version, cover
+  image, license text** and an optional **matching button colour** – picking an image
+  from the pack gives a button with the default colour this colour.
+- Every image can get a **name and tags** (click it in the pack). The image picker on
+  a button searches file names, names and tags.
+- **Create icon** builds a PNG from background, emoji and text.
+- The import recognises the content, not the file extension: `.tdicons`, ZIP files
+  with images (also in sub-folders) and common description files such as a key/value
+  `info.txt` or a `manifest.json` with `icons.json` (names and tags) and a license
+  file. Only import images you are allowed to use.
+
 ## Plugins
 
 Normal plugins are JavaScript and run sandboxed (QuickJS) with fixed limits and
