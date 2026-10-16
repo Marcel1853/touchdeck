@@ -215,6 +215,8 @@ pub struct Page {
     pub col_sizes: Vec<f64>,
     pub row_sizes: Vec<f64>,
     pub buttons: Vec<Button>,
+    /// Logik der Seite: Events wie bei Buttons (z. B. „Seite geöffnet“ → Aktionen).
+    pub events: Vec<ButtonEvent>,
 }
 
 /** Vorlage: eine wiederverwendbare Aktionsliste. */
@@ -407,6 +409,7 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
         col_sizes: sizes(&p["colSizes"], cols),
         row_sizes: sizes(&p["rowSizes"], rows),
         buttons: Vec::new(),
+        events: p["events"].as_array().map_or_else(Vec::new, |l| l.iter().take(20).filter_map(sanitize_button_event).collect()),
     };
     // Raster: überlappende Buttons verwerfen, der erste gewinnt. Frei: Überlappen ist erlaubt.
     let mut taken = std::collections::HashSet::new();

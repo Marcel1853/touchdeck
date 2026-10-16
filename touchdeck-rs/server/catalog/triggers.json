@@ -132,6 +132,34 @@
   ]
  },
  {
+  "type": "page_view",
+  "category": "navigation",
+  "icon": "📄",
+  "fields": [
+   {
+    "key": "page",
+    "type": "page",
+    "noBack": true
+   },
+   {
+    "key": "state",
+    "type": "select",
+    "default": "open",
+    "options": [
+     {
+      "value": "open"
+     },
+     {
+      "value": "leave"
+     },
+     {
+      "value": "any"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "type": "button_toggle",
   "category": "general",
   "icon": "🔘",

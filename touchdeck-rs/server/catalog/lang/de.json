@@ -1382,6 +1382,22 @@
           }
         }
       }
+    },
+    "page_view": {
+      "label": "Seite geöffnet / verlassen",
+      "fields": {
+        "page": {
+          "label": "Seite (leer = jede; in der Logik einer Seite: diese Seite)"
+        },
+        "state": {
+          "label": "Zustand",
+          "options": {
+            "open": "geöffnet",
+            "leave": "verlassen",
+            "any": "egal"
+          }
+        }
+      }
     }
   },
   "liveSources": {

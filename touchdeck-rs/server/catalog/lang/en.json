@@ -1382,6 +1382,22 @@
           }
         }
       }
+    },
+    "page_view": {
+      "label": "Page opened / left",
+      "fields": {
+        "page": {
+          "label": "Page (empty = any; in a page’s logic: this page)"
+        },
+        "state": {
+          "label": "State",
+          "options": {
+            "open": "opened",
+            "leave": "left",
+            "any": "any"
+          }
+        }
+      }
     }
   },
   "liveSources": {

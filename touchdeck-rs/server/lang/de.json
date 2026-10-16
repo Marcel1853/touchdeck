@@ -113,6 +113,7 @@
     "button": "Button „{0}“",
     "format": "„{0}“: {1}",
     "isStillWaitingCooldown": "„{0}“ wartet noch (Abklingzeit).",
+    "page": "Seite „{0}“",
     "ran": "„{0}“ ausgeführt ({1})",
     "skippedEventsKeepTriggering": "„{0}“ übersprungen: Events lösen sich gegenseitig endlos aus."
   },

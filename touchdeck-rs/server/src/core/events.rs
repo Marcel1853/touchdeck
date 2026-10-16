@@ -67,6 +67,7 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "app_start" | "timer" | "time_of_day" | "file_change" | "obs_replay_saved" | "twitch_follow" | "twitch_ad" => true,
         "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
+        "page_view" => empty_or_eq(&g("page"), &d["pageId"]) && state_matches(&g("state"), &d["state"]),
         "audio_output" => empty_or_eq(&g("device"), &d["device"]),
         "audio_mute" => {
             let target = if s(&g("target")).is_empty() { "output".to_string() } else { s(&g("target")) };
@@ -184,6 +185,16 @@ impl EventEngine {
                 .filter(|e| e.enabled)
                 .map(|e| Sub { key: e.id.clone(), name: e.name.clone(), trigger: e.trigger.clone(), actions: e.actions.clone(), cooldown: e.cooldown, button_id: None })
                 .collect();
+            // Logik der Seiten: „Seite geöffnet/verlassen“ ohne Seitenwahl meint diese Seite.
+            for p in &c.pages {
+                for e in p.events.iter().filter(|e| e.enabled) {
+                    let mut trigger = e.trigger.clone();
+                    if trigger.kind == "page_view" && trigger.params.get("page").and_then(Value::as_str).unwrap_or("").is_empty() {
+                        trigger.params.insert("page".into(), Value::String(p.id.clone()));
+                    }
+                    subs.push(Sub { key: format!("{}:{}", p.id, e.id), name: t!("events.page", p.name), trigger, actions: e.actions.clone(), cooldown: 0, button_id: None });
+                }
+            }
             for b in c.pages.iter().flat_map(|p| &p.buttons) {
                 for e in b.events.iter().filter(|e| e.enabled) {
                     subs.push(Sub {

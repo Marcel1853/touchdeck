@@ -113,6 +113,7 @@
     "button": "Button “{0}”",
     "format": "“{0}”: {1}",
     "isStillWaitingCooldown": "“{0}” is still waiting (cooldown).",
+    "page": "Page “{0}”",
     "ran": "Ran “{0}” ({1})",
     "skippedEventsKeepTriggering": "Skipped “{0}”: events keep triggering each other."
   },

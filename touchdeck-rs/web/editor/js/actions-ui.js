@@ -199,7 +199,7 @@ export function fieldInput(f, obj, setParam) {
           h('span', { class: 'color-value' }, v || tr('actions.unchanged')),
           v && h('button', { type: 'button', class: 'btn small ghost', onclick: () => setParam(f.key, '', { structural: true }) }, 'leeren')));
     case 'page': {
-      const options = [h('option', { value: '' }, tr('actions.choosePage')), h('option', { value: '__back' }, tr('actions.previousPage3')), ...S.pages.map((p) => h('option', { value: p.id }, p.name))];
+      const options = [h('option', { value: '' }, tr(f.noBack ? 'actions.anyPage' : 'actions.choosePage')), !f.noBack && h('option', { value: '__back' }, tr('actions.previousPage3')), ...S.pages.map((p) => h('option', { value: p.id }, p.name))];
       return label(h('select', { value: v, onchange: (e) => setParam(f.key, e.target.value) }, options));
     }
     case 'app': {
@@ -503,7 +503,7 @@ const EVENT_DATA = {
   obs_scene: '{Event.Szene}', obs_preview: '{Event.Szene}', obs_stream: '{Event.Status}', obs_record: '{Event.Status}',
   obs_mute: '{Event.Quelle}', obs_source: '{Event.Quelle}, {Event.Szene}', obs_filter: '{Event.Filter}, {Event.Quelle}',
   obs_profile: '{Event.Name}', obs_replay_saved: '{Event.Datei}', steam_game: '{Event.Spiel}', audio_output: '{Event.Gerät}',
-  audio_mute: '{Event.Status}', device: '{Event.Gerät}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
+  audio_mute: '{Event.Status}', device: '{Event.Gerät}', page_view: '{Event.Seite}', file_change: '{Event.Datei}', time_of_day: '{Event.Zeit}',
   twitch_follow: '{Event.Nutzer}', twitch_sub: '{Event.Nutzer}, {Event.Stufe}, {Event.Anzahl}, {Event.Monate}, {Event.Nachricht}',
   twitch_cheer: '{Event.Nutzer}, {Event.Bits}, {Event.Nachricht}', twitch_raid: '{Event.Nutzer}, {Event.Zuschauer}',
   twitch_redeem: '{Event.Nutzer}, {Event.Belohnung}, {Event.Kosten}, {Event.Eingabe}', twitch_chat: '{Event.Nutzer}, {Event.Nachricht}',
@@ -513,7 +513,7 @@ const EVENT_DATA = {
 const EVENT_ALIASES = {
   Nutzer: 'User', Wert: 'Value', Alt: 'Old', Szene: 'Scene', Quelle: 'Source', Gerät: 'Device', Spiel: 'Game', Datei: 'File',
   Kanal: 'Channel', Nachricht: 'Message', Belohnung: 'Reward', Kosten: 'Cost', Eingabe: 'Input', Zuschauer: 'Viewers',
-  Monate: 'Months', Stufe: 'Tier', Anzahl: 'Count', Dauer: 'Duration', Zeit: 'Time',
+  Monate: 'Months', Stufe: 'Tier', Anzahl: 'Count', Dauer: 'Duration', Zeit: 'Time', Seite: 'Page',
 };
 function eventDataHint(type) {
   let names = EVENT_DATA[type];

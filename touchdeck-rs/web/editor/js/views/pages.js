@@ -726,7 +726,12 @@ function resizeButton(b, rowSpan, colSpan) {
 /** Seite: eigene Spaltenbreiten und Zeilenhöhen (Raster). */
 function pageSettings() {
   const p = page();
-  if (isFree(p)) return h('div', { class: 'page-settings' }, h('h3', {}, tr('pages.pageLayout')), h('p', { class: 'hint-text' }, tr('pages.freeLayoutHint')));
+  const logic = [
+    h('h3', {}, tr('pages.pageLogic')),
+    h('p', { class: 'hint-text' }, tr('pages.pageLogicHint')),
+    ...eventCards(p, { name: p.name, firstTrigger: 'page_view' }),
+  ];
+  if (isFree(p)) return h('div', { class: 'page-settings' }, h('h3', {}, tr('pages.pageLayout')), h('p', { class: 'hint-text' }, tr('pages.freeLayoutHint')), ...logic);
   const sizeList = (key, count, label) => {
     const list = p[key]?.length === count ? p[key] : Array(count).fill(1);
     return h('div', { class: 'field' }, label,
@@ -743,7 +748,8 @@ function pageSettings() {
     sizeList('colSizes', p.cols, tr('pages.colSizes')),
     sizeList('rowSizes', p.rows, tr('pages.rowSizes')),
     h('p', { class: 'hint-text' }, tr('pages.sizesHint')),
-    custom && h('button', { class: 'btn small', onclick: () => mutate(() => Object.assign(p, { colSizes: [], rowSizes: [] })) }, tr('pages.allEqual')));
+    custom && h('button', { class: 'btn small', onclick: () => mutate(() => Object.assign(p, { colSizes: [], rowSizes: [] })) }, tr('pages.allEqual')),
+    ...logic);
 }
 
 function renderInspector() {
@@ -923,19 +929,24 @@ function sliderTab(b) {
   ];
 }
 
-function eventsTab(b) {
+/** Event-Karten für einen Button oder eine Seite (owner.events). */
+function eventCards(owner, { buttonId, name, firstTrigger }) {
+  owner.events ??= [];
   return [
-    h('p', { class: 'hint-text' }, tr('pages.buttonReactsToEvents')),
-    ...b.events.map((ev, i) => h('div', { class: `event-card${ev.enabled ? '' : ' disabled'}` },
+    ...owner.events.map((ev, i) => h('div', { class: `event-card${ev.enabled ? '' : ' disabled'}` },
       h('div', { class: 'list-title' },
         h('h3', {}, tr('pages.event', [i + 1])),
         h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: ev.enabled, onchange: (e) => mutate(() => (ev.enabled = e.target.checked)) }), tr('common.active')),
-        h('button', { class: 'btn icon ghost danger', title: tr('pages.removeEvent'), onclick: () => mutate(() => b.events.splice(i, 1)) }, '✕')),
+        h('button', { class: 'btn icon ghost danger', title: tr('pages.removeEvent'), onclick: () => mutate(() => owner.events.splice(i, 1)) }, '✕')),
       h('p', { class: 'muted-note' }, triggerSummary(ev.trigger)),
       triggerEditor(ev.trigger),
-      actionList(ev, 'actions', tr('common.then'), { buttonId: b.id, compact: true, context: tr('pages.event2', [b.title || 'Button', i + 1]) }))),
-    h('button', { class: 'btn', onclick: () => mutate(() => b.events.push({ id: uid('e_'), enabled: true, trigger: newTrigger(), actions: [] })) }, tr('pages.addEvent')),
+      actionList(ev, 'actions', tr('common.then'), { buttonId, compact: true, context: tr('pages.event2', [name, i + 1]) }))),
+    h('button', { class: 'btn', onclick: () => mutate(() => owner.events.push({ id: uid('e_'), enabled: true, trigger: newTrigger(firstTrigger), actions: [] })) }, tr('pages.addEvent')),
   ];
+}
+
+function eventsTab(b) {
+  return [h('p', { class: 'hint-text' }, tr('pages.buttonReactsToEvents')), ...eventCards(b, { buttonId: b.id, name: b.title || 'Button' })];
 }
 
 function holdTab(b) {

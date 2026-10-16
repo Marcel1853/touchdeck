@@ -1050,7 +1050,10 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
             }
         }
     }
-    app.clients.lock().unwrap().remove(&id);
+    let last_page = app.clients.lock().unwrap().remove(&id).and_then(|c| c.viewing);
+    if let Some(page) = last_page {
+        fire_page_view(&app, &page, "leave");
+    }
     let held: Vec<String> = app.holds.lock().unwrap().keys().filter(|(c, _)| *c == id).map(|(_, b)| b.clone()).collect();
     for b in held {
         hold_end(&app, id, &b, false);
@@ -1060,6 +1063,12 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
         app.log.info(t!("server.device"), t!("server.disconnected", ip));
         app.events.fire(&app, "device", &json!({ "state": "disconnected", "Gerät": ip }));
     }
+}
+
+/** Auslöser „Seite geöffnet / verlassen“ (Handy oder Tablet zeigt eine Seite bzw. blättert weg). */
+fn fire_page_view(app: &Arc<App>, page_id: &str, state: &str) {
+    let name = app.store.lock().unwrap().page(page_id).map(|p| p.name.clone()).unwrap_or_default();
+    app.events.fire(app, "page_view", &json!({ "pageId": page_id, "state": state, "Seite": name }));
 }
 
 fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg: Value) {
@@ -1086,8 +1095,12 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
         Some("slide") => slide(app, &page, &button, &msg["value"], tx),
         Some("view") if msg["pageId"].is_string() => {
             let steam = app.store.lock().unwrap().page(&page).is_some_and(|p| p.template == "steam");
-            if let Some(c) = app.clients.lock().unwrap().get_mut(&id) {
-                c.viewing = Some(page);
+            let previous = app.clients.lock().unwrap().get_mut(&id).and_then(|c| c.viewing.replace(page.clone()));
+            if previous.as_deref() != Some(page.as_str()) {
+                if let Some(old) = previous {
+                    fire_page_view(app, &old, "leave");
+                }
+                fire_page_view(app, &page, "open");
             }
             refresh_live(app);
             if steam {
