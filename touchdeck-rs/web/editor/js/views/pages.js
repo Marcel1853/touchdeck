@@ -1,6 +1,6 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
 import { t as tr, getLang } from '/shared/i18n.js';
-import { buttonElement, setupGrid, iconUrl } from '/shared/render.js';
+import { buttonElement, setupGrid, iconUrl, isFree } from '/shared/render.js';
 import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
 import { iconPicker } from './iconpacks.js';
@@ -21,6 +21,46 @@ function fits(p, rect, ignore = []) {
 function freeCell(p) {
   for (let r = 0; r < p.rows; r++) for (let c = 0; c < p.cols; c++) if (fits(p, { row: r, col: c, rowSpan: 1, colSpan: 1 })) return { row: r, col: c };
   return null;
+}
+
+// ---------- Freie Seiten ----------
+
+const RATIOS = ['16:9', '16:10', '3:2', '4:3', '1:1', '3:4', '10:16', '9:16'];
+const SNAP = 0.5;
+const snap = (n) => Math.round(n / SNAP) * SNAP;
+const clampNum = (n, min, max) => Math.min(max, Math.max(min, n));
+
+/** Lage eines Buttons auf der freien Fläche, begrenzt auf die Seite. */
+function fitFree(f) {
+  const w = clampNum(snap(f.w), 2, 100);
+  const h = clampNum(snap(f.h), 2, 100);
+  return { x: clampNum(snap(f.x), 0, 100 - w), y: clampNum(snap(f.y), 0, 100 - h), w, h };
+}
+
+/** Anteil (0–1) vom Anfang bis zum Anfang von Spalte/Zeile i, mit eigenen Größen. */
+function offsets(sizes, count) {
+  const list = sizes?.length === count ? sizes : Array(count).fill(1);
+  const total = list.reduce((a, n) => a + n, 0);
+  const starts = [0];
+  for (const n of list) starts.push(starts.at(-1) + n / total);
+  return starts;
+}
+
+/** Rasterfeld eines Buttons als freie Lage (mit etwas Abstand), z. B. beim Wechsel auf „Frei“. */
+function freeFromCell(p, b) {
+  const xs = offsets(p.colSizes, p.cols);
+  const ys = offsets(p.rowSizes, p.rows);
+  const x0 = xs[b.col], x1 = xs[Math.min(p.cols, b.col + b.colSpan)];
+  const y0 = ys[b.row], y1 = ys[Math.min(p.rows, b.row + b.rowSpan)];
+  const padX = (x1 - x0) * 0.05 / b.colSpan, padY = (y1 - y0) * 0.05 / b.rowSpan;
+  return fitFree({ x: (x0 + padX) * 100, y: (y0 + padY) * 100, w: (x1 - x0 - 2 * padX) * 100, h: (y1 - y0 - 2 * padY) * 100 });
+}
+
+/** Neue Größe für einen Button auf einer freien Seite: ungefähr quadratisch. */
+function defaultFree(p, cx, cy) {
+  const w = 12;
+  const h = clampNum((w * p.ratioW) / p.ratioH, 4, 40);
+  return fitFree({ x: cx - w / 2, y: cy - h / 2, w, h });
 }
 
 function cloneButton(b) {
@@ -69,14 +109,17 @@ export function mountPages(root) {
       h('div', { class: 'page-toolbar' },
         h('input', { id: 'page-name', class: 'page-name', maxlength: 100, 'aria-label': tr('pages.pageName'),
           oninput: (e) => mutate(() => (page().name = e.target.value || tr('pages.page')), { coalesce: `${S.pageId}:name`, detail: false }) }),
-        h('label', { class: 'field-inline' }, tr('pages.columns'), h('input', { id: 'page-cols', type: 'number', min: 1, max: 16, onchange: (e) => resizePage(page().rows, Number(e.target.value)) })),
-        h('label', { class: 'field-inline' }, tr('pages.rows'), h('input', { id: 'page-rows', type: 'number', min: 1, max: 12, onchange: (e) => resizePage(Number(e.target.value), page().cols) })),
+        h('div', { id: 'page-layout' }),
+        h('label', { class: 'field-inline grid-only' }, tr('pages.columns'), h('input', { id: 'page-cols', type: 'number', min: 1, max: 16, onchange: (e) => resizePage(page().rows, Number(e.target.value)) })),
+        h('label', { class: 'field-inline grid-only' }, tr('pages.rows'), h('input', { id: 'page-rows', type: 'number', min: 1, max: 12, onchange: (e) => resizePage(Number(e.target.value), page().cols) })),
+        h('label', { class: 'field-inline free-only' }, tr('pages.ratio'),
+          h('select', { id: 'page-ratio', onchange: (e) => setRatio(e.target.value) }, RATIOS.map((r) => h('option', { value: r }, r)))),
         h('label', { class: 'field-inline' }, tr('pages.background'), h('input', { id: 'page-bg', type: 'color',
           oninput: (e) => mutate(() => (page().background = e.target.value), { coalesce: `${S.pageId}:bg`, detail: false }) })),
         h('button', { class: 'btn small ghost', onclick: duplicatePage }, tr('common.duplicate')),
         h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: deletePage }, tr('common.delete'))),
       h('div', { class: 'canvas-wrap' }, h('div', { id: 'canvas', class: 'td-grid canvas' })),
-      h('p', { class: 'hint' }, tr('pages.clickEmptyFieldNew'))),
+      h('p', { id: 'canvas-hint', class: 'hint' }, tr('pages.clickEmptyFieldNew'))),
     h('aside', { id: 'inspector', class: 'inspector' }),
   );
 }
@@ -135,6 +178,14 @@ function renderTemplateState() {
 
 function renderToolbar() {
   const p = page();
+  const free = isFree(p);
+  $('.page-toolbar').classList.toggle('is-free', free);
+  $('#page-layout').replaceChildren(segmented([['grid', tr('pages.layoutGrid')], ['free', tr('pages.layoutFree')]], free ? 'free' : 'grid', setLayout));
+  const ratio = `${p.ratioW ?? 16}:${p.ratioH ?? 10}`;
+  const select = $('#page-ratio');
+  if (![...select.options].some((o) => o.value === ratio)) select.append(h('option', { value: ratio }, ratio));
+  setIfChanged(select, ratio);
+  $('#canvas-hint').textContent = free ? tr('pages.freeHint') : tr('pages.clickEmptyFieldNew');
   setIfChanged($('#page-name'), p.name);
   setIfChanged($('#page-cols'), p.cols);
   setIfChanged($('#page-rows'), p.rows);
@@ -148,6 +199,10 @@ function renderCanvas() {
   const p = page();
   const canvas = $('#canvas');
   setupGrid(canvas, p);
+  canvas.onpointerdown = null;
+  canvas.onpointerup = null;
+  canvas.oncontextmenu = null;
+  if (isFree(p)) return renderFreeCanvas(p, canvas);
   const covered = new Set();
   for (const b of p.buttons) for (let r = b.row; r < b.row + b.rowSpan; r++) for (let c = b.col; c < b.col + b.colSpan; c++) covered.add(`${r}:${c}`);
 
@@ -180,16 +235,9 @@ function renderCanvas() {
   }
 
   const buttons = p.buttons.map((b) => {
-    const el = buttonElement(b, { on: false, live: b.mode === 'slider' ? { value: 50 } : null });
+    const el = buttonElement(b, { on: false, live: b.mode === 'slider' ? { value: 50 } : null, page: p });
     if (b.id === S.selId) el.classList.add('selected');
-    const badges = [];
-    if (b.mode !== 'slider' && b.live.source !== 'none') badges.push('LIVE');
-    if (b.events?.length) badges.push('EVENT');
-    if (b.holdActions?.length) badges.push('HALTEN');
-    if (badges.length) {
-      el.dataset.badges = badges.join(' · ');
-      el.classList.add('has-badges');
-    }
+    addBadges(el, b);
     el.draggable = true;
     el.addEventListener('click', () => select(b.id));
     el.addEventListener('contextmenu', (e) => {
@@ -213,6 +261,170 @@ function renderCanvas() {
   canvas.replaceChildren(...cells, ...buttons);
 }
 
+/** Kleine Schilder oben am Button: LIVE, EVENT, HALTEN. */
+function addBadges(el, b) {
+  const badges = [];
+  if (b.mode !== 'slider' && b.live.source !== 'none') badges.push('LIVE');
+  if (b.events?.length) badges.push('EVENT');
+  if (b.holdActions?.length) badges.push('HALTEN');
+  if (badges.length) {
+    el.dataset.badges = badges.join(' · ');
+    el.classList.add('has-badges');
+  }
+}
+
+/** Mauszeiger in Prozent der Fläche. */
+function pointInCanvas(canvas, e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 };
+}
+
+/**
+ * Freie Seite: Buttons mit der Maus ziehen (verschieben) oder an der Ecke unten rechts ziehen (Größe).
+ * Während des Ziehens ändert sich nur die Anzeige, gespeichert wird beim Loslassen.
+ */
+function renderFreeCanvas(p, canvas) {
+  // Neuer Button nur, wenn Drücken und Loslassen auf der leeren Fläche waren (nicht nach dem Ziehen eines Buttons).
+  let pressedOnCanvas = false;
+  canvas.onpointerdown = (e) => (pressedOnCanvas = e.target === canvas && e.button === 0);
+  canvas.onpointerup = (e) => {
+    if (!pressedOnCanvas || e.target !== canvas) return;
+    pressedOnCanvas = false;
+    const { x, y } = pointInCanvas(canvas, e);
+    addFreeButton(x, y);
+  };
+  canvas.oncontextmenu = (e) => {
+    if (e.target !== canvas) return;
+    e.preventDefault();
+    const { x, y } = pointInCanvas(canvas, e);
+    contextMenu(e.clientX, e.clientY, [
+      { icon: '＋', label: tr('pages.newButton'), onclick: () => addFreeButton(x, y) },
+      { icon: '📥', label: tr('pages.pasteHere'), keys: 'Strg+V', disabled: !readClip(CLIP), onclick: () => pasteButton({ x, y }) },
+    ]);
+  };
+
+  const buttons = p.buttons.map((b) => {
+    b.free ??= freeFromCell(p, b);
+    const el = buttonElement(b, { on: false, live: b.mode === 'slider' ? { value: 50 } : null, page: p });
+    el.draggable = false;
+    addBadges(el, b);
+    if (b.id === S.selId) {
+      el.classList.add('selected');
+      el.append(h('div', { class: 'resize-handle', title: tr('pages.dragToResize') }));
+    }
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (S.selId !== b.id) select(b.id);
+      buttonMenu(e.clientX, e.clientY, b.id);
+    });
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const resizing = e.target.classList.contains('resize-handle');
+      const rect = canvas.getBoundingClientRect();
+      const from = { x: e.clientX, y: e.clientY };
+      const orig = { ...b.free };
+      let next = null;
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('moving');
+      const move = (ev) => {
+        if (!next && Math.hypot(ev.clientX - from.x, ev.clientY - from.y) < 4) return;
+        const dx = ((ev.clientX - from.x) / rect.width) * 100;
+        const dy = ((ev.clientY - from.y) / rect.height) * 100;
+        next = resizing
+          ? fitFree({ ...orig, w: Math.min(orig.w + dx, 100 - orig.x), h: Math.min(orig.h + dy, 100 - orig.y) })
+          : fitFree({ ...orig, x: orig.x + dx, y: orig.y + dy });
+        Object.assign(el.style, { left: `${next.x}%`, top: `${next.y}%`, width: `${next.w}%`, height: `${next.h}%` });
+      };
+      const up = () => {
+        el.removeEventListener('pointermove', move);
+        el.classList.remove('moving');
+        if (next) mutate(() => (b.free = next));
+        else select(b.id);
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up, { once: true });
+      el.addEventListener('pointercancel', up, { once: true });
+    });
+    return el;
+  });
+  canvas.replaceChildren(...buttons);
+}
+
+function addFreeButton(x, y) {
+  const p = page();
+  const b = newButton(0, 0, { free: defaultFree(p, x, y) });
+  S.tab = 'look';
+  mutate(() => {
+    p.buttons.push(b);
+    S.selId = b.id;
+  });
+  $('#inspector input')?.focus();
+}
+
+/** Raster ↔ frei. Beim Wechsel ins Raster müssen die Buttons in freie Felder passen. */
+function setLayout(layout) {
+  const p = page();
+  if ((p.layout ?? 'grid') === layout) return;
+  if (layout === 'free') {
+    return mutate(() => {
+      for (const b of p.buttons) b.free = freeFromCell(p, b);
+      // Seitenverhältnis wie das bisherige Raster, damit alles gleich aussieht.
+      const w = p.colSizes?.length === p.cols ? p.colSizes.reduce((a, n) => a + n, 0) : p.cols;
+      const hgt = p.rowSizes?.length === p.rows ? p.rowSizes.reduce((a, n) => a + n, 0) : p.rows;
+      const scale = Math.max(1, Math.max(w, hgt) / 32);
+      p.ratioW = Math.max(1, Math.round(w / scale));
+      p.ratioH = Math.max(1, Math.round(hgt / scale));
+      p.layout = 'free';
+    });
+  }
+  // Raster: jeden Button an die Stelle, die seiner freien Lage am nächsten liegt, sonst ins erste freie Feld.
+  const placed = { ...p, buttons: [] };
+  const plan = [];
+  const lost = [];
+  for (const b of [...p.buttons].sort((a, c) => (a.free?.y ?? 0) - (c.free?.y ?? 0) || (a.free?.x ?? 0) - (c.free?.x ?? 0))) {
+    const f = b.free ?? freeFromCell(p, b);
+    const near = {
+      row: clampNum(Math.floor((f.y / 100) * p.rows), 0, p.rows - 1),
+      col: clampNum(Math.floor((f.x / 100) * p.cols), 0, p.cols - 1),
+      rowSpan: 1, colSpan: 1,
+    };
+    const spot = fits(placed, near) ? near : freeCell(placed);
+    if (!spot) {
+      lost.push(b);
+      continue;
+    }
+    const rect = { rowSpan: 1, colSpan: 1, ...spot };
+    placed.buttons.push({ id: b.id, ...rect });
+    plan.push([b, rect]);
+  }
+  if (lost.length && !confirm(tr('pages.buttonsDontFitGrid', [lost.length]))) return render({ detail: false });
+  mutate(() => {
+    for (const [b, rect] of plan) Object.assign(b, { row: rect.row, col: rect.col, rowSpan: rect.rowSpan, colSpan: rect.colSpan });
+    p.buttons = p.buttons.filter((b) => !lost.includes(b));
+    p.layout = 'grid';
+    if (!sel()) S.selId = null;
+  });
+}
+
+function setRatio(value) {
+  const [w, hgt] = value.split(':').map(Number);
+  mutate(() => Object.assign(page(), { ratioW: w, ratioH: hgt }));
+}
+
+/** Pfeiltasten: Button verschieben – frei um 0,5 % (mit Umschalt 5 %), im Raster um ein Feld. */
+export function nudgeButton(dx, dy, big) {
+  const b = sel();
+  const p = page();
+  if (!b) return;
+  if (isFree(p)) {
+    const step = big ? 5 : SNAP;
+    return mutate(() => (b.free = fitFree({ ...b.free, x: b.free.x + dx * step, y: b.free.y + dy * step })), { coalesce: `${b.id}:nudge` });
+  }
+  const rect = { row: b.row + dy, col: b.col + dx, rowSpan: b.rowSpan, colSpan: b.colSpan };
+  if (fits(p, rect, [b.id])) mutate(() => Object.assign(b, { row: rect.row, col: rect.col }), { coalesce: `${b.id}:nudge` });
+}
+
 // ---------- Seiten ----------
 
 export function selectPage(id) {
@@ -223,7 +435,8 @@ export function selectPage(id) {
 
 function addPage() {
   const cur = page();
-  const p = { id: uid('p_'), name: tr('pages.newPage'), rows: cur?.rows ?? 3, cols: cur?.cols ?? 5, background: cur?.background ?? '#14161b', buttons: [] };
+  const p = { id: uid('p_'), name: tr('pages.newPage'), rows: cur?.rows ?? 3, cols: cur?.cols ?? 5, background: cur?.background ?? '#14161b',
+    layout: 'grid', ratioW: 16, ratioH: 10, colSizes: [], rowSizes: [], buttons: [] };
   mutate(() => {
     S.pages.push(p);
     S.pageId = p.id;
@@ -264,6 +477,9 @@ function resizePage(rows, cols) {
   const lost = p.buttons.filter((b) => b.row >= rows || b.col >= cols);
   if (lost.length && !confirm(tr('pages.buttonSLieOutside', [lost.length]))) return render({ detail: false });
   mutate(() => {
+    const fitSizes = (list, n) => (list?.length ? [...list.slice(0, n), ...Array(Math.max(0, n - list.length)).fill(1)] : []);
+    p.colSizes = fitSizes(p.colSizes, cols);
+    p.rowSizes = fitSizes(p.rowSizes, rows);
     p.rows = rows;
     p.cols = cols;
     p.buttons = p.buttons.filter((b) => !lost.includes(b));
@@ -318,6 +534,13 @@ function swapButtons(idA, idB) {
 export function duplicateButton() {
   const b = sel();
   if (!b) return;
+  if (isFree(page())) {
+    const copy = { ...cloneButton(b), free: fitFree({ ...b.free, x: b.free.x + 3, y: b.free.y + 3 }) };
+    return mutate(() => {
+      page().buttons.push(copy);
+      S.selId = copy.id;
+    });
+  }
   const spot = freeCell(page());
   if (!spot) return toast(tr('pages.thereIsNoFree'), 'error');
   const copy = { ...cloneButton(b), ...spot, rowSpan: 1, colSpan: 1 };
@@ -372,10 +595,21 @@ export function cutButton(id = S.selId) {
 }
 
 /** Fügt den kopierten Button ein: an row/col, sonst ins erste freie Feld. replace = Button an dieser Stelle ersetzen. */
-export function pasteButton({ row, col, replace } = {}) {
+export function pasteButton({ row, col, replace, x, y } = {}) {
   const src = readClip(CLIP);
   if (!src) return toast(tr('pages.nothingToPasteCopy'), 'error');
   const p = page();
+  if (isFree(p)) {
+    const old = replace && p.buttons.find((b) => b.id === replace);
+    const size = src.free ?? defaultFree(p, 50, 50);
+    const free = old?.free ? { ...old.free } : fitFree(x === undefined ? { ...size, x: size.x + 3, y: size.y + 3 } : { ...size, x: x - size.w / 2, y: y - size.h / 2 });
+    const copy = { ...newButton(0, 0), ...cloneButton(src), free };
+    return mutate(() => {
+      if (replace) p.buttons = p.buttons.filter((b) => b.id !== replace);
+      p.buttons.push(copy);
+      S.selId = copy.id;
+    });
+  }
   const ignore = replace ? [replace] : [];
   const spot = row === undefined ? freeCell(p) : { row, col };
   if (!spot) return toast(tr('pages.thereIsNoFree'), 'error');
@@ -410,6 +644,17 @@ function sendToPage(id, targetId, keep) {
   const b = findButton(id);
   const target = S.pages.find((p) => p.id === targetId);
   if (!b || !target) return;
+  if (isFree(target)) {
+    const free = b.free ?? freeFromCell(page(), b);
+    mutate(() => {
+      target.buttons.push({ ...(keep ? cloneButton(b) : b), free: { ...free } });
+      if (!keep) {
+        page().buttons = page().buttons.filter((x) => x !== b);
+        S.selId = null;
+      }
+    });
+    return toast(tr(keep ? 'pages.copiedTo' : 'pages.movedTo', [label(b), target.name]), 'ok');
+  }
   const big = { row: b.row, col: b.col, rowSpan: b.rowSpan, colSpan: b.colSpan };
   // Gleiche Stelle wie hier, sonst erstes freies Feld.
   const free = freeCell(target);
@@ -468,13 +713,36 @@ function resizeButton(b, rowSpan, colSpan) {
 
 // ---------- Eigenschaften ----------
 
+/** Seite: eigene Spaltenbreiten und Zeilenhöhen (Raster). */
+function pageSettings() {
+  const p = page();
+  if (isFree(p)) return h('div', { class: 'page-settings' }, h('h3', {}, tr('pages.pageLayout')), h('p', { class: 'hint-text' }, tr('pages.freeLayoutHint')));
+  const sizeList = (key, count, label) => {
+    const list = p[key]?.length === count ? p[key] : Array(count).fill(1);
+    return h('div', { class: 'field' }, label,
+      h('div', { class: 'size-list' }, list.map((n, i) => h('input', { type: 'number', step: 0.1, min: 0.1, max: 10, value: n, title: `${i + 1}`,
+        onchange: (e) => mutate(() => {
+          const next = [...list];
+          next[i] = clampNum(Math.round((Number(e.target.value) || 1) * 10) / 10, 0.1, 10);
+          p[key] = next.every((v) => v === 1) ? [] : next;
+        }) }))));
+  };
+  const custom = p.colSizes?.length || p.rowSizes?.length;
+  return h('div', { class: 'page-settings' },
+    h('h3', {}, tr('pages.pageLayout')),
+    sizeList('colSizes', p.cols, tr('pages.colSizes')),
+    sizeList('rowSizes', p.rows, tr('pages.rowSizes')),
+    h('p', { class: 'hint-text' }, tr('pages.sizesHint')),
+    custom && h('button', { class: 'btn small', onclick: () => mutate(() => Object.assign(p, { colSizes: [], rowSizes: [] })) }, tr('pages.allEqual')));
+}
+
 function renderInspector() {
   const root = $('#inspector');
   const b = sel();
   if (!b) {
     root.replaceChildren(empty('▦',
       tr('pages.selectButtonOrClick'),
-      tr('pages.withPreviewYouSee')));
+      tr('pages.withPreviewYouSee')), pageSettings());
     return;
   }
   const counts = {
@@ -579,7 +847,7 @@ function lookTab(b) {
     h('div', { class: 'swatches' }, SWATCHES.map((c) => h('button', { type: 'button', title: c, style: `background:${c}`, onclick: () => mutate(() => (b.color = c)) }))),
 
     h('h3', {}, tr('pages.sizeBehavior')),
-    h('div', { class: 'row' },
+    isFree(p) ? freeSizeFields(b) : h('div', { class: 'row' },
       h('label', { class: 'field' }, tr('pages.widthFields'),
         h('input', { type: 'number', min: 1, max: p.cols - b.col, value: b.colSpan, onchange: (e) => resizeButton(b, b.rowSpan, Number(e.target.value)) })),
       h('label', { class: 'field' }, tr('pages.heightFields'),
@@ -588,6 +856,17 @@ function lookTab(b) {
       segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')]], b.mode, (v) => mutate(() => (b.mode = v)))),
     b.mode !== 'slider' && liveSection(b),
   ];
+}
+
+/** Lage und Größe in Prozent der Seite (freie Seiten). */
+function freeSizeFields(b) {
+  const field = (key, label) => h('label', { class: 'field' }, label,
+    h('input', { type: 'number', step: SNAP, min: 0, max: 100, value: b.free[key],
+      onchange: (e) => mutate(() => (b.free = fitFree({ ...b.free, [key]: Number(e.target.value) || 0 }))) }));
+  return h('div', {},
+    h('div', { class: 'row' }, field('x', tr('pages.posX')), field('y', tr('pages.posY'))),
+    h('div', { class: 'row' }, field('w', tr('pages.widthPercent')), field('h', tr('pages.heightPercent'))),
+    h('p', { class: 'hint-text' }, tr('pages.freeSizeHint')));
 }
 
 function liveSection(b) {

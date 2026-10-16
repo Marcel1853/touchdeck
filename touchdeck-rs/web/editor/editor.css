@@ -143,8 +143,11 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 /* ---------- Arbeitsfläche ---------- */
 
 .workspace { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 14px 20px 10px; gap: 12px; }
-.page-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.page-name { flex: 1 1 140px; min-width: 120px; max-width: 280px; font-size: 16px; font-weight: 650; background: transparent; border-color: transparent; }
+.page-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.page-toolbar .field-inline { gap: 6px; }
+.page-toolbar .field-inline input[type="number"] { width: 50px; }
+.page-toolbar .segmented button { padding-inline: 10px; }
+.page-name { flex: 1 1 120px; min-width: 100px; max-width: 280px; font-size: 16px; font-weight: 650; background: transparent; border-color: transparent; }
 .page-name:hover { border-color: var(--line); }
 
 .canvas-wrap { flex: 1; min-height: 0; display: grid; place-items: center; container-type: size; }
@@ -157,6 +160,28 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
   box-shadow: 0 0 0 1px var(--line), 0 20px 60px rgb(0 0 0 / 0.45);
 }
 .canvas .td-btn { cursor: pointer; }
+/* Freie Seiten: Hilfslinien alle 10 %, Buttons ziehen und an der Ecke vergrößern. */
+.page-toolbar .free-only { display: none; }
+.page-toolbar.is-free .free-only { display: flex; }
+.page-toolbar.is-free .grid-only { display: none; }
+.canvas.is-free {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--muted) 14%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--muted) 14%, transparent) 1px, transparent 1px);
+  background-size: 10% 10%;
+  background-color: var(--page-bg);
+  cursor: copy;
+}
+.canvas.is-free .td-btn { cursor: grab; touch-action: none; }
+.canvas.is-free .td-btn.moving { cursor: grabbing; opacity: 0.85; z-index: 5; }
+.canvas .resize-handle {
+  position: absolute; right: 3px; bottom: 3px; width: 14px; height: 14px; z-index: 3;
+  border-radius: 4px; background: var(--accent); cursor: nwse-resize;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.35);
+}
+.size-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.size-list input { width: 58px; }
+.page-settings { padding: 0 2px; }
 .canvas .td-btn.selected { outline: 3px solid var(--accent); outline-offset: 3px; }
 .canvas .td-btn.dragging { opacity: 0.35; }
 .canvas .td-btn.drop-target, .cell.drop-target { outline: 2px dashed var(--accent); outline-offset: 2px; }

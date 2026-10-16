@@ -2,7 +2,7 @@
 import { t as tr } from '/shared/i18n.js';
 import { $, h, api, toast, ask, resizer } from './dom.js';
 import { S, setRenderer, render, loadState, watchServer, undo, redo, sel, onPairRequest } from './state.js';
-import { mountPages, renderPages, duplicateButton, deleteButton, select, copyButton, cutButton, pasteButton } from './views/pages.js';
+import { mountPages, renderPages, duplicateButton, deleteButton, select, copyButton, cutButton, pasteButton, nudgeButton } from './views/pages.js';
 import { mountValues, renderValues } from './views/values.js';
 import { mountFlows, renderFlows } from './views/flows.js';
 import { mountEvents, renderEvents } from './views/events.js';
@@ -133,6 +133,10 @@ function bind() {
     } else if (S.view === 'pages' && (e.key === 'Delete' || e.key === 'Backspace') && sel()) {
       e.preventDefault();
       deleteButton();
+    } else if (S.view === 'pages' && e.key.startsWith('Arrow') && sel()) {
+      e.preventDefault();
+      const [dx, dy] = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      nudgeButton(dx, dy, e.shiftKey);
     } else if (S.view === 'pages' && e.key === 'Escape' && sel()) {
       select(null);
     } else if (ctrl && /^[1-7]$/.test(key)) {

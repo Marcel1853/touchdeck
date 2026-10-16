@@ -10,8 +10,14 @@ export function fillTitle(title, variables) {
   return title.replace(/\{([^{}]{1,40})\}/g, (m, name) => (name in variables ? String(variables[name]) : m));
 }
 
-/** Erzeugt das DOM-Element für einen Button. live = { text, on, value } vom Server, variables für {Name}-Platzhalter. */
-export function buttonElement(b, { on = false, live = null, variables = null } = {}) {
+/** Freie Seite? Dann stehen Buttons nicht im Raster, sondern mit Lage in Prozent auf der Fläche. */
+export const isFree = (page) => page?.layout === 'free';
+
+/**
+ * Erzeugt das DOM-Element für einen Button. live = { text, on, value } vom Server, variables für {Name}-Platzhalter,
+ * page = die Seite (für freie Lage und Seitenverhältnis).
+ */
+export function buttonElement(b, { on = false, live = null, variables = null, page = null } = {}) {
   if (typeof live?.on === 'boolean') on = live.on;
   // Eigenes Aussehen für „an“ (z. B. 🔇 „Stumm“ statt 🔊 „Ton an“).
   if (on) b = { ...b, icon: b.iconOn?.value ? b.iconOn : b.icon, title: b.titleOn || b.title };
@@ -20,8 +26,18 @@ export function buttonElement(b, { on = false, live = null, variables = null } =
   const cover = b.iconFit === 'cover' && b.icon?.type === 'image' && b.icon.value;
   el.className = `td-btn pos-${b.titlePos}${on ? ' is-on' : ''}${b.mode === 'toggle' ? ' is-toggle' : ''}${cover ? ' is-cover' : ''}`;
   el.dataset.id = b.id;
-  el.style.gridRow = `${b.row + 1} / span ${b.rowSpan}`;
-  el.style.gridColumn = `${b.col + 1} / span ${b.colSpan}`;
+  const free = isFree(page) && b.free;
+  if (free) {
+    el.style.left = `${b.free.x}%`;
+    el.style.top = `${b.free.y}%`;
+    el.style.width = `${b.free.w}%`;
+    el.style.height = `${b.free.h}%`;
+    // Prozent-Innenabstand bezieht sich auf die ganze Fläche: auf 7 % der Button-Breite umrechnen (wie im Raster).
+    el.style.padding = `${(b.free.w * 0.07).toFixed(2)}%`;
+  } else {
+    el.style.gridRow = `${b.row + 1} / span ${b.rowSpan}`;
+    el.style.gridColumn = `${b.col + 1} / span ${b.colSpan}`;
+  }
   el.style.setProperty('--bg', on ? b.colorOn : b.color);
   el.style.setProperty('--fg', b.textColor);
   el.style.setProperty('--fs', b.fontSize);
@@ -30,7 +46,7 @@ export function buttonElement(b, { on = false, live = null, variables = null } =
 
   if (isSlider) {
     // Regler: hoch, wenn der Button höher als breit ist, sonst quer.
-    const vertical = b.rowSpan >= b.colSpan;
+    const vertical = free ? b.free.h * page.ratioH >= b.free.w * page.ratioW : b.rowSpan >= b.colSpan;
     const value = Number.isFinite(live?.value) ? live.value : 0;
     el.classList.add('is-slider', vertical ? 'vertical' : 'horizontal');
     el.dataset.vertical = vertical ? '1' : '';
@@ -73,9 +89,20 @@ export function buttonElement(b, { on = false, live = null, variables = null } =
   return el;
 }
 
-/** Richtet ein Raster-Element für eine Seite ein. */
+const sum = (list) => list.reduce((a, n) => a + n, 0);
+
+/**
+ * Richtet ein Raster-Element für eine Seite ein. --cols/--rows bestimmen das Seitenverhältnis:
+ * im Raster Anzahl (oder Summe der eigenen Größen), auf freien Seiten das Seitenverhältnis.
+ */
 export function setupGrid(grid, page) {
-  grid.style.setProperty('--rows', page.rows);
-  grid.style.setProperty('--cols', page.cols);
+  const free = isFree(page);
+  const colSizes = !free && page.colSizes?.length === page.cols ? page.colSizes : null;
+  const rowSizes = !free && page.rowSizes?.length === page.rows ? page.rowSizes : null;
+  grid.classList.toggle('is-free', free);
+  grid.style.setProperty('--rows', free ? page.ratioH : rowSizes ? sum(rowSizes) : page.rows);
+  grid.style.setProperty('--cols', free ? page.ratioW : colSizes ? sum(colSizes) : page.cols);
   grid.style.setProperty('--page-bg', page.background);
+  grid.style.gridTemplateColumns = colSizes ? colSizes.map((n) => `minmax(0, ${n}fr)`).join(' ') : '';
+  grid.style.gridTemplateRows = rowSizes ? rowSizes.map((n) => `minmax(0, ${n}fr)`).join(' ') : '';
 }

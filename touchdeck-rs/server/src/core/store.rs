@@ -183,9 +183,22 @@ pub struct Button {
     pub hold_repeat: i64,
     /// Bei Event: der Button reagiert selbst auf Ereignisse.
     pub events: Vec<ButtonEvent>,
+    /// Position und Größe auf einer freien Seite (Prozent der Fläche); im Raster ungenutzt.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub free: Option<FreeRect>,
+}
+
+/** Lage eines Buttons auf einer freien Seite, alles in Prozent der Seitenfläche. */
+#[derive(Clone, Debug, Serialize)]
+pub struct FreeRect {
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
 }
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Page {
     pub id: String,
     pub name: String,
@@ -194,6 +207,13 @@ pub struct Page {
     pub background: String,
     /// Woher die Seite stammt, damit Vorlagen sie wiederfinden statt doppelt anzulegen.
     pub template: String,
+    /// grid: Buttons im Raster; free: Buttons frei auf einer Fläche mit Seitenverhältnis ratio_w:ratio_h.
+    pub layout: String,
+    pub ratio_w: i64,
+    pub ratio_h: i64,
+    /// Eigene Spaltenbreiten und Zeilenhöhen im Raster (Anteile, 1 = normal); leer = alle gleich.
+    pub col_sizes: Vec<f64>,
+    pub row_sizes: Vec<f64>,
     pub buttons: Vec<Button>,
 }
 
@@ -285,11 +305,45 @@ fn sanitize_icon(icon: &Value) -> Icon {
     }
 }
 
-fn sanitize_button(b: &Value, rows: i64, cols: i64) -> Option<Button> {
+/** Zahl auf eine Nachkommastelle runden und begrenzen. */
+fn decimal(v: &Value, min: f64, max: f64) -> Option<f64> {
+    let n = v.as_f64().filter(|n| n.is_finite())?;
+    Some((n.clamp(min, max) * 10.0).round() / 10.0)
+}
+
+fn sanitize_free(v: &Value) -> Option<FreeRect> {
+    let w = decimal(&v["w"], 2.0, 100.0)?;
+    let h = decimal(&v["h"], 2.0, 100.0)?;
+    Some(FreeRect { x: decimal(&v["x"], 0.0, 100.0 - w)?, y: decimal(&v["y"], 0.0, 100.0 - h)?, w, h })
+}
+
+/** Liste von Größenanteilen: genau `count` Werte zwischen 0,1 und 10, sonst leer (= alle gleich). */
+fn sizes(v: &Value, count: i64) -> Vec<f64> {
+    let list: Vec<f64> = v.as_array().into_iter().flatten().filter_map(|n| decimal(n, 0.1, 10.0)).collect();
+    if list.len() as i64 == count && list.iter().any(|&n| n != 1.0) { list } else { Vec::new() }
+}
+
+/** Ein Raster-Feld als freie Lage (mit etwas Abstand), wenn eine Seite von Raster auf frei wechselt. */
+fn free_from_cell(row: i64, col: i64, row_span: i64, col_span: i64, rows: i64, cols: i64) -> FreeRect {
+    let (cw, ch) = (100.0 / cols as f64, 100.0 / rows as f64);
+    let r = |n: f64| (n * 10.0).round() / 10.0;
+    FreeRect {
+        x: r(col as f64 * cw + cw * 0.05),
+        y: r(row as f64 * ch + ch * 0.05),
+        w: r((col_span as f64 * cw - cw * 0.1).max(2.0)),
+        h: r((row_span as f64 * ch - ch * 0.1).max(2.0)),
+    }
+}
+
+fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option<Button> {
     b.as_object()?;
-    let row = parse_int(&b["row"])?;
-    let col = parse_int(&b["col"])?;
-    if !(0..rows).contains(&row) || !(0..cols).contains(&col) {
+    let mut row = parse_int(&b["row"])?;
+    let mut col = parse_int(&b["col"])?;
+    if free_layout {
+        // Auf freien Seiten zählt die freie Lage; Raster-Position nur gültig halten.
+        row = row.clamp(0, rows - 1);
+        col = col.clamp(0, cols - 1);
+    } else if !(0..rows).contains(&row) || !(0..cols).contains(&col) {
         return None;
     }
     let icon = sanitize_icon(&b["icon"]);
@@ -330,6 +384,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64) -> Option<Button> {
         events: b["events"]
             .as_array()
             .map_or_else(Vec::new, |l| l.iter().take(20).filter_map(sanitize_button_event).collect()),
+        free: sanitize_free(&b["free"]),
     })
 }
 
@@ -337,6 +392,8 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
     p.as_object()?;
     let rows = clamp(&p["rows"], 1, 12, 3);
     let cols = clamp(&p["cols"], 1, 16, 5);
+    let layout = one_of(&p["layout"], &["grid", "free"], "grid");
+    let free_layout = layout == "free";
     let mut page = Page {
         id: id_or_new(&p["id"], "p_"),
         name: text_or(&p["name"], t!("store.page"), 100),
@@ -344,12 +401,24 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
         cols,
         background: color(&p["background"], "#14161b"),
         template: one_of(&p["template"], &TEMPLATES, ""),
+        layout,
+        ratio_w: clamp(&p["ratioW"], 1, 32, 16),
+        ratio_h: clamp(&p["ratioH"], 1, 32, 10),
+        col_sizes: sizes(&p["colSizes"], cols),
+        row_sizes: sizes(&p["rowSizes"], rows),
         buttons: Vec::new(),
     };
-    // Überlappende Buttons verwerfen, der erste gewinnt.
+    // Raster: überlappende Buttons verwerfen, der erste gewinnt. Frei: Überlappen ist erlaubt.
     let mut taken = std::collections::HashSet::new();
     for raw in p["buttons"].as_array().into_iter().flatten() {
-        let Some(b) = sanitize_button(raw, rows, cols) else { continue };
+        let Some(mut b) = sanitize_button(raw, rows, cols, free_layout) else { continue };
+        if free_layout {
+            if b.free.is_none() {
+                b.free = Some(free_from_cell(b.row, b.col, b.row_span, b.col_span, rows, cols));
+            }
+            page.buttons.push(b);
+            continue;
+        }
         let cells: Vec<(i64, i64)> = (b.row..b.row + b.row_span)
             .flat_map(|r| (b.col..b.col + b.col_span).map(move |c| (r, c)))
             .collect();
@@ -1044,6 +1113,23 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn freie_seite_und_eigene_groessen() {
+        let p = sanitize_page(&json!({ "layout": "free", "rows": 2, "cols": 2, "buttons": [
+            { "row": 0, "col": 1 },
+            { "row": 0, "col": 1, "free": { "x": 95, "y": 0, "w": 10, "h": 10 } },
+        ] }))
+        .unwrap();
+        assert_eq!(p.buttons.len(), 2, "überlappen ist auf freien Seiten erlaubt");
+        assert_eq!(p.buttons[1].free.as_ref().unwrap().x, 90.0, "bleibt innerhalb der Fläche");
+        let derived = p.buttons[0].free.as_ref().unwrap();
+        assert_eq!((derived.x, derived.w), (52.5, 45.0), "aus dem Rasterfeld abgeleitet");
+        let g = sanitize_page(&json!({ "rows": 2, "cols": 2, "colSizes": [1, 2], "rowSizes": [1, 1] })).unwrap();
+        assert_eq!(g.col_sizes, vec![1.0, 2.0]);
+        assert!(g.row_sizes.is_empty(), "alle gleich = leer");
+        assert!(sanitize_page(&json!({ "rows": 2, "cols": 2, "colSizes": [1] })).unwrap().col_sizes.is_empty(), "falsche Anzahl");
+    }
 
     #[test]
     fn parse_int_wie_javascript() {

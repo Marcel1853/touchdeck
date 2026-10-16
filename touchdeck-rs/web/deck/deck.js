@@ -88,8 +88,8 @@ const effective = (b) => ({ ...b, ...state.overrides?.buttons?.[b.id] });
 /** Live-Wert eines Buttons; solange er noch nicht da ist, ein Platzhalter, damit nichts springt. */
 const liveFor = (b) => state.live?.[b.id] ?? (b.mode !== 'slider' && b.live && b.live.source !== 'none' ? { text: '…' } : null);
 
-const element = (b) => {
-  const el = buttonElement(effective(b), { on: !!state.toggles[b.id], live: liveFor(b), variables: state.variables });
+const element = (b, page) => {
+  const el = buttonElement(effective(b), { on: !!state.toggles[b.id], live: liveFor(b), variables: state.variables, page });
   if (b.holdActions?.length) el.dataset.hold = '1';
   return el;
 };
@@ -127,7 +127,7 @@ function render() {
   grid.style.setProperty('--stretch-h', square ? 1 : 1.25);
   setupGrid(grid, page);
   document.body.style.background = state.overrides?.pages?.[page.id]?.background ?? page.background;
-  grid.replaceChildren(...page.buttons.map(element));
+  grid.replaceChildren(...page.buttons.map((b) => element(b, page)));
 }
 
 /** Live-Werte einzeln austauschen, damit laufende Berührungen nicht unterbrochen werden. */
@@ -137,7 +137,7 @@ function updateLive(values) {
   for (const b of page?.buttons ?? []) {
     const el = grid.querySelector(`[data-id="${CSS.escape(b.id)}"]`);
     if (!el || el.classList.contains('pressed') || el.classList.contains('sliding')) continue;
-    el.replaceWith(element(b));
+    el.replaceWith(element(b, page));
   }
 }
 
