@@ -8,8 +8,8 @@
 }
 
 /* Freie Seite: Buttons liegen mit Prozent-Angaben auf der Fläche statt im Raster. */
-.td-grid.is-free { display: block; position: relative; }
-.td-grid.is-free > .td-btn { position: absolute; }
+.td-grid.is-free { display: block; position: relative; container-type: size; }
+.td-grid.is-free > .td-btn { position: absolute; box-sizing: border-box; }
 
 .td-btn {
   container-type: size;

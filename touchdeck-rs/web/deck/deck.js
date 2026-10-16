@@ -122,7 +122,8 @@ function render() {
   applyOrientation(state.deck.orientation);
   document.body.className = `anim-${state.deck.pressAnimation}${state.deck.showLabels ? '' : ' hide-labels'}${page.cols > page.rows + 1 ? ' wide-page' : ''}`;
   // „Fläche füllen“: Felder dürfen bis 1,4-mal so breit und 1,25-mal so hoch wie quadratisch werden.
-  const square = state.deck.cellShape === 'square';
+  // Freie Seiten immer im gewählten Format zeigen, sonst verschiebt sich die Gestaltung.
+  const square = state.deck.cellShape === 'square' || page.layout === 'free';
   grid.style.setProperty('--stretch-w', square ? 1 : 1.4);
   grid.style.setProperty('--stretch-h', square ? 1 : 1.25);
   setupGrid(grid, page);

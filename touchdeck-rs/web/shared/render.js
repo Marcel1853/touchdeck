@@ -32,8 +32,9 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     el.style.top = `${b.free.y}%`;
     el.style.width = `${b.free.w}%`;
     el.style.height = `${b.free.h}%`;
-    // Prozent-Innenabstand bezieht sich auf die ganze Fläche: auf 7 % der Button-Breite umrechnen (wie im Raster).
-    el.style.padding = `${(b.free.w * 0.07).toFixed(2)}%`;
+    // Innenabstand: 7 % der kürzeren Button-Seite (cqw/cqh beziehen sich auf die Fläche), damit flache
+    // oder schmale Buttons nie über ihre Größe hinauswachsen.
+    el.style.padding = `min(${(b.free.w * 0.07).toFixed(2)}cqw, ${(b.free.h * 0.07).toFixed(2)}cqh)`;
   } else {
     el.style.gridRow = `${b.row + 1} / span ${b.rowSpan}`;
     el.style.gridColumn = `${b.col + 1} / span ${b.colSpan}`;
