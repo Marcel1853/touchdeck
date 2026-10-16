@@ -953,6 +953,9 @@
         },
         "times": {
           "label": "How often? (repeat)"
+        },
+        "inputs": {
+          "label": "Inputs of the flow (placeholders allowed)"
         }
       }
     },

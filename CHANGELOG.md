@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Flows with inputs: a flow can declare inputs with default values (e.g. "Scene"), "Run flow"
+      fills them per call (placeholders allowed) and the flow uses them as {Input.Name}.
     - Logic blocks for action lists: "If …" / "Else if …" / "Else", "Repeat (n times)", "While …"
       and "Exit loop", each closed by "End". The editor indents the blocks and adds the "End" by
       itself. The current round is available as {Event.Loop}; endless loops stop after 20000 steps.

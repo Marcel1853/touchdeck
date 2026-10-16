@@ -993,8 +993,17 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             }
             let times = clamp(p.n_or("times", 1.0), 1.0, 100.0) as u32;
             let mut messages: Vec<String> = Vec::new();
+            // Eingaben der Vorlage: Wert aus dem Aufruf (mit Platzhaltern) oder der Standardwert.
+            let mut event_data = ctx.opts.event_data.clone();
+            for input in &flow.inputs {
+                let given = p.s(&format!("in:{}", input.name));
+                let value = fill(app, ctx, if given.is_empty() { &input.default } else { &given });
+                for prefix in ["Eingabe", "Input"] {
+                    event_data.insert(format!("{prefix}.{}", input.name), json!(value));
+                }
+            }
             for _ in 0..times {
-                let opts = RunOpts { flow_depth: ctx.opts.flow_depth + 1, ..ctx.opts.clone() };
+                let opts = RunOpts { flow_depth: ctx.opts.flow_depth + 1, event_data: event_data.clone(), ..ctx.opts.clone() };
                 let r = run_actions(app, &flow.actions, opts).await;
                 if let Some(nav) = r["navigate"].as_str() {
                     ctx.navigate = Some(nav.into());

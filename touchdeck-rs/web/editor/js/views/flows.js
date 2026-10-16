@@ -11,7 +11,7 @@ function usages(id) {
   for (const pg of S.pages) {
     for (const b of pg.buttons) {
       const where = `${pg.name} › ${b.title || 'Button'}`;
-      check(where, [...b.actions, ...b.actionsOff, ...(b.holdActions ?? []), ...(b.releaseActions ?? []), ...(b.events ?? []).flatMap((e) => e.actions)]);
+      check(where, [...b.actions, ...b.actionsOff, ...(b.holdActions ?? []), ...(b.releaseActions ?? []), ...(b.doubleActions ?? []), ...(b.events ?? []).flatMap((e) => e.actions)]);
     }
   }
   for (const e of S.events) check(tr('common.event2', [e.name]), e.actions);
@@ -22,7 +22,7 @@ function usages(id) {
 async function addFlow() {
   const name = await prompt(tr('flows.newFlow'), tr('flows.nameOfFlowStart'));
   if (!name) return;
-  const flow = { id: uid('f_'), name, actions: [] };
+  const flow = { id: uid('f_'), name, inputs: [], actions: [] };
   mutate(() => {
     S.flows.push(flow);
     S.flowId = flow.id;
@@ -70,6 +70,22 @@ export function renderFlows({ detail = true } = {}) {
       h('button', { class: 'btn primary small', onclick: () => testActions(flow.actions, flow.name) }, tr('flows.run')),
       h('button', { class: 'btn ghost danger small', onclick: () => deleteFlow(flow) }, tr('common.delete'))),
     h('p', { class: 'hint-text' }, used.length ? tr('flows.usedBy', [used.join(', ')]) : tr('flows.notUsedAnywhereYet')),
+    inputsEditor(flow),
     actionList(flow, 'actions', tr('flows.actions'), { context: tr('common.flow', [flow.name]) }),
   );
+}
+
+/** Eingaben der Vorlage: Name und Standardwert; im Ablauf als {Eingabe.Name}. */
+function inputsEditor(flow) {
+  flow.inputs ??= [];
+  const set = (i, k, v) => mutate(() => (flow.inputs[i][k] = v), { coalesce: `${flow.id}:in${i}${k}`, detail: false });
+  return h('div', { class: 'action-section' },
+    h('div', { class: 'list-title' }, h('h3', {}, tr('flows.inputs')),
+      flow.inputs.length < 10 && h('button', { class: 'btn small', onclick: () => mutate(() => flow.inputs.push({ name: `${tr('flows.inputName')} ${flow.inputs.length + 1}`, default: '' })) }, tr('flows.addInput'))),
+    h('p', { class: 'hint-text' }, tr('flows.inputsHint')),
+    flow.inputs.map((inp, i) => h('div', { class: 'flow-input' },
+      h('input', { value: inp.name, maxlength: 40, title: tr('flows.inputName'), oninput: (e) => set(i, 'name', e.target.value.replace(/[{}.]/g, '')) }),
+      h('input', { value: inp.default, placeholder: tr('flows.inputDefault'), title: tr('flows.inputDefault'), oninput: (e) => set(i, 'default', e.target.value) }),
+      h('code', {}, `{${tr('flows.placeholderPrefix')}.${inp.name}}`),
+      h('button', { class: 'btn icon ghost danger', title: tr('common.remove'), onclick: () => mutate(() => flow.inputs.splice(i, 1)) }, '✕'))));
 }

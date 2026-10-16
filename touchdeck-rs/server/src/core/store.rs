@@ -244,7 +244,15 @@ pub struct Page {
 pub struct Flow {
     pub id: String,
     pub name: String,
+    /** Eingaben, die „Vorlage ausführen“ mitgibt; im Ablauf als {Eingabe.Name}. */
+    pub inputs: Vec<FlowInput>,
     pub actions: Vec<Action>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct FlowInput {
+    pub name: String,
+    pub default: String,
 }
 
 /** Globales Event: Wenn <Auslöser>, dann <Aktionen>; optional mit Abklingzeit. */
@@ -474,7 +482,14 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
 
 fn sanitize_flow(f: &Value) -> Option<Flow> {
     f.as_object()?;
-    Some(Flow { id: id_or_new(&f["id"], "f_"), name: text_or(&f["name"], t!("store.template"), 100), actions: action_list(&f["actions"]) })
+    let mut inputs: Vec<FlowInput> = Vec::new();
+    for i in f["inputs"].as_array().into_iter().flatten().take(10) {
+        let name: String = i["name"].as_str().unwrap_or("").chars().filter(|c| !"{}.".contains(*c)).take(40).collect::<String>().trim().to_string();
+        if !name.is_empty() && !inputs.iter().any(|x| x.name == name) {
+            inputs.push(FlowInput { name, default: truncate(i["default"].as_str().unwrap_or(""), MAX_TEXT) });
+        }
+    }
+    Some(Flow { id: id_or_new(&f["id"], "f_"), name: text_or(&f["name"], t!("store.template"), 100), inputs, actions: action_list(&f["actions"]) })
 }
 
 fn sanitize_event(e: &Value) -> Option<Event> {

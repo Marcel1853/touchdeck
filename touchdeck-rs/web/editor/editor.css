@@ -494,6 +494,8 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .mini-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .mini-row:hover { border-color: var(--accent); }
 .mini-row.disabled { opacity: 0.5; }
+.flow-input { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(160px, 2fr) 150px auto; gap: 8px; align-items: center; margin-bottom: 6px; }
+.flow-input code { font-size: 12px; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-row .ai { font-size: 17px; }
 .mini-row .al { flex: 1; min-width: 0; }
 .mini-row .al b { display: block; font-size: 13px; font-weight: 600; }

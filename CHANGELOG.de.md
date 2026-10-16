@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Vorlagen mit Eingaben: eine Vorlage legt Eingaben mit Standardwert fest (z. B. „Szene“),
+      „Vorlage ausführen“ füllt sie je Aufruf (Platzhalter erlaubt), im Ablauf stehen sie als
+      {Eingabe.Name} bereit.
     - Logik-Blöcke für Aktionslisten: „Wenn …“ / „Sonst wenn …“ / „Sonst“, „Wiederholen (n-mal)“,
       „Solange …“ und „Schleife verlassen“, jeweils bis „Ende“. Der Editor rückt die Blöcke ein und
       setzt das „Ende“ selbst dazu. Der aktuelle Durchlauf steht als {Event.Durchlauf} bereit;

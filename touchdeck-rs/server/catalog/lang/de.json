@@ -953,6 +953,9 @@
         },
         "times": {
           "label": "Wie oft? (Wiederholen)"
+        },
+        "inputs": {
+          "label": "Eingaben der Vorlage (Platzhalter erlaubt)"
         }
       }
     },

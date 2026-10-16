@@ -16,6 +16,11 @@ function describeParams(def, params) {
   const parts = [];
   for (const f of def.fields) {
     if (!fieldVisible(f, params, def) || f.type === 'checkbox') continue;
+    if (f.type === 'flowInputs') {
+      const flow = S.flows.find((fl) => fl.id === params.flow);
+      for (const i of flow?.inputs ?? []) if (params[`in:${i.name}`]) parts.push(`${i.name}: ${params[`in:${i.name}`]}`);
+      continue;
+    }
     const v = params[f.key] ?? f.default;
     if (v === undefined || v === '') continue;
     if (f.type === 'select') parts.push(f.options.find((o) => o.value === v)?.label ?? v);
@@ -239,6 +244,13 @@ export function fieldInput(f, obj, setParam) {
         obj.params.appName = app?.name ?? '';
         setParam(f.key, e.target.value);
       } }, options));
+    }
+    case 'flowInputs': {
+      // Eine Zeile je Eingabe der gewählten Vorlage; leer = Standardwert der Vorlage.
+      const flow = S.flows.find((fl) => fl.id === obj.params.flow);
+      if (!flow?.inputs?.length) return h('p', { class: 'hint-text' }, tr('flows.noInputs'));
+      return h('div', { class: 'field' }, f.label, flow.inputs.map((i) => h('label', { class: 'field' }, i.name,
+        h('input', { value: obj.params[`in:${i.name}`] ?? '', placeholder: i.default, oninput: (e) => setParam(`in:${i.name}`, e.target.value) }))));
     }
     case 'dynamic':
       return dynamicSelect(f, v, (value) => setParam(f.key, value, { structural: !f.allowNew }));
