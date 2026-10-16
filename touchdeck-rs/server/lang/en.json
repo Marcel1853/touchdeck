@@ -131,6 +131,7 @@
     "memoryUsageNotReadable": "Memory usage not readable",
     "noChannel": "no channel",
     "noObsAudioSource": "No OBS audio source selected.",
+    "obsOff": "OBS off",
     "off": "Off",
     "offline": "Offline",
     "on": "On",

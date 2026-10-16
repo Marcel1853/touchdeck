@@ -241,6 +241,7 @@
     "scenesStreamRecording": "Scenes, stream, recording",
     "selectButtonOrClick": "Select a button or double-click an empty field to create a new one.",
     "shortTapRunsThese": "A short tap runs these actions, a long press the ones under “Hold”.",
+    "showAsBar": "Also show as progress bar (0–100 %)",
     "showOnButton": "Show on the button",
     "sizeBehavior": "Size & behavior",
     "sizesHint": "1 = normal, 2 = twice as big, 0.5 = half as big. This way a slider gets a wide column and a separator column stays narrow.",

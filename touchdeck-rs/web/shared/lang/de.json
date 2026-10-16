@@ -241,6 +241,7 @@
     "scenesStreamRecording": "Szenen, Stream, Aufnahme",
     "selectButtonOrClick": "Wähle einen Button aus oder doppelklicke auf ein leeres Feld, um einen neuen anzulegen.",
     "shortTapRunsThese": "Kurz tippen führt diese Aktionen aus, langes Drücken die unter „Halten“.",
+    "showAsBar": "Zusätzlich als Fortschrittsbalken zeigen (0–100 %)",
     "showOnButton": "Wert auf dem Button anzeigen",
     "sizeBehavior": "Größe & Verhalten",
     "sizesHint": "1 = normal, 2 = doppelt so groß, 0,5 = halb so groß. So bekommt z. B. ein Regler eine breite Spalte und eine Trennspalte bleibt schmal.",

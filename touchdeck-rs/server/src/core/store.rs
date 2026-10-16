@@ -144,6 +144,8 @@ pub struct Live {
     pub source: String,
     pub command: String,
     pub variable: String,
+    /// Zahlenwert (0–100) zusätzlich als Fortschrittsbalken zeigen.
+    pub bar: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -384,6 +386,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             source: one_of(&live["source"], &catalog::live_source_ids(), "none"),
             command: text(&live["command"], "", 1000),
             variable: text(&live["variable"], "", 40),
+            bar: live["bar"] == Value::Bool(true),
         },
         slider: Slider {
             target: one_of(&slider["target"], &catalog::slider_target_ids(), "volume"),

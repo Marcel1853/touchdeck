@@ -1024,6 +1024,8 @@ function liveSection(b) {
     h('label', { class: 'field' }, tr('pages.showOnButton'),
       h('select', { value: b.live.source, onchange: (e) => mutate(() => (b.live.source = e.target.value)) },
         S.liveSources.map((o) => h('option', { value: o.value }, o.label)))),
+    ['cpu', 'ram', 'temp', 'volume', 'timer', 'variable'].includes(b.live.source) && h('label', { class: 'switch-row' },
+      h('input', { type: 'checkbox', checked: !!b.live.bar, onchange: (e) => mutate(() => (b.live.bar = e.target.checked)) }), tr('pages.showAsBar')),
     b.live.source === 'timer' && h('label', { class: 'field' }, tr('pages.timerName'),
       h('input', { value: b.live.variable || '', placeholder: 'Timer', oninput: (e) => mutate(() => (b.live.variable = e.target.value.trim()), { coalesce: `${b.id}:timer`, detail: false }) })),
     b.live.source === 'command' && h('label', { class: 'field' }, tr('pages.command'),

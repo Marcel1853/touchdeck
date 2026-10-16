@@ -131,6 +131,7 @@
     "memoryUsageNotReadable": "Arbeitsspeicher nicht lesbar",
     "noChannel": "kein Kanal",
     "noObsAudioSource": "Keine OBS-Audioquelle gewählt.",
+    "obsOff": "OBS aus",
     "off": "Aus",
     "offline": "Offline",
     "on": "An",

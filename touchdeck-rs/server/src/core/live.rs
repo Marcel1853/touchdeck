@@ -94,7 +94,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         }
         "temp" => {
             let t = *snap.temp.get_or_init(|| async { linux::cpu_temp() }).await;
-            json!({ "text": t.map_or_else(|| "–".into(), |t| format!("{t} °C")), "on": t.is_some_and(|t| t >= 80) })
+            json!({ "text": t.map_or_else(|| "–".into(), |t| format!("{t} °C")), "on": t.is_some_and(|t| t >= 80), "value": t.map(|t| t.clamp(0, 100)) })
         }
         "volume" => {
             let v = snap.sink().await?;
@@ -196,7 +196,8 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         "timer" => app.timers.live(&live.variable),
         "variable" => match variables.get(&live.variable) {
             None => json!({ "text": "–", "on": false }),
-            Some(v) => json!({ "text": js_string(v), "on": truthy(v) }),
+            // Zahlen von 0 bis 100 lassen sich auch als Balken zeigen.
+            Some(v) => json!({ "text": js_string(v), "on": truthy(v), "value": js_string(v).trim().parse::<f64>().ok().filter(|n| (0.0..=100.0).contains(n)) }),
         },
         _ => return Ok(None),
     }))
@@ -209,7 +210,7 @@ async fn slider_value(app: &Arc<App>, button: &Button, snap: &Snapshot) -> Resul
         "mic" => Some(json!({ "value": snap.source().await?.volume })),
         "obs_volume" if !s.input.is_empty() => Some(match app.obs.call("GetInputVolume", json!({ "inputName": s.input })).await {
             Ok(r) => json!({ "value": (r["inputVolumeMul"].as_f64().unwrap_or(0.0).sqrt() * 100.0).round() }),
-            Err(_) => json!({ "value": null, "text": "OBS aus" }),
+            Err(_) => json!({ "value": null, "text": t!("live.obsOff") }),
         }),
         _ => None,
     })

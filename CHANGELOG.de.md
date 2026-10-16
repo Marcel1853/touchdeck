@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Live-Anzeigen mit Zahl (CPU, RAM, Temperatur, Lautstärke, Timer, Zahlen-Werte) lassen sich
+      zusätzlich als Fortschrittsbalken unten im Button zeigen.
     - Schrift-Optionen für Beschriftung und Live-Text: Schriftart (normal, Serif, Monospace,
       schmal, Handschrift – Schriften, die jedes Gerät hat, darum kann es leicht abweichen),
       fett, kursiv und Umriss (0–6 px) für Text auf Bildern. „Aussehen kopieren“ überträgt sie.

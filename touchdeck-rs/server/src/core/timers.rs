@@ -79,7 +79,11 @@ impl Timers {
     pub fn live(&self, name: &str) -> Value {
         let all = self.all.lock().unwrap();
         match all.get(name) {
-            Some(t) if t.duration > 0 => json!({ "text": format(t.duration.saturating_sub(t.total())), "on": t.running() }),
+            Some(t) if t.duration > 0 => {
+                let left = t.duration.saturating_sub(t.total());
+                // value: verbleibender Anteil in Prozent (für den Fortschrittsbalken).
+                json!({ "text": format(left), "on": t.running(), "value": (left as f64 / t.duration as f64 * 100.0).round() })
+            }
             Some(t) => json!({ "text": format(t.total()), "on": t.running() }),
             None => json!({ "text": "00:00", "on": false }),
         }

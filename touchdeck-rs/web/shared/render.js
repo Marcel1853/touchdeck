@@ -79,6 +79,16 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     }
     el.append(icon);
   }
+  // Fortschrittsbalken: Zahlenwert 0–100 der Live-Anzeige, unten im Button.
+  if (!isSlider && b.live?.bar && Number.isFinite(live?.value)) {
+    const bar = document.createElement('div');
+    bar.className = 'td-bar';
+    bar.style.setProperty('--val', Math.max(0, Math.min(100, live.value)));
+    el.append(bar);
+    // Unten Platz für den Balken lassen, damit Text ihn nicht überdeckt.
+    el.classList.add('has-bar');
+    if (free) el.style.paddingBottom = `calc(min(${(b.free.w * 0.07).toFixed(2)}cqw, ${(b.free.h * 0.07).toFixed(2)}cqh) + ${(b.free.h * 0.1).toFixed(2)}cqh)`;
+  }
   if (live?.text) {
     const l = document.createElement('div');
     l.className = 'td-live';
