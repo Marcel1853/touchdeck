@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Button background opacity (0–100 %) with a "Transparent" shortcut: at 0 % only icon and
+      label remain, shadow and gloss disappear; textures keep their image.
     - Icon packs improved a lot: description, version, cover image, license text and a matching
       button colour per pack; name and tags per image (click it in the pack); the image picker
       searches names and tags; .tdicons format version 2 keeps all of it.
@@ -103,6 +105,8 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Typing in the image search no longer loses focus after each letter (a following Backspace
+      could delete the selected button).
     - Fixed the autostart entry pointing to a file that no longer existed after an update; it now
       follows the running version on every start.
     - Fixed the missing TouchDeck icon in taskbar and start menu; a desktop launcher entry with

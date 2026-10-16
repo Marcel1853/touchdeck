@@ -39,7 +39,11 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     el.style.gridRow = `${b.row + 1} / span ${b.rowSpan}`;
     el.style.gridColumn = `${b.col + 1} / span ${b.colSpan}`;
   }
-  el.style.setProperty('--bg', on ? b.colorOn : b.color);
+  // Deckkraft des Hintergrunds: unter 100 % scheint die Seite durch, bei 0 % nur Symbol und Text.
+  const opacity = b.bgOpacity ?? 100;
+  const bg = on ? b.colorOn : b.color;
+  el.style.setProperty('--bg', opacity < 100 ? `color-mix(in srgb, ${bg} ${opacity}%, transparent)` : bg);
+  if (opacity === 0) el.classList.add('is-transparent');
   el.style.setProperty('--fg', b.textColor);
   el.style.setProperty('--fs', b.fontSize);
   // Schrift: Familie (überall vorhandene Schriften), fett/kursiv, Umriss für Text auf Bildern.

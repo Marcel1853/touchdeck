@@ -167,3 +167,8 @@
 .td-overlay.ov-dots { background: radial-gradient(rgb(255 255 255 / 0.16) 18%, transparent 22%) 0 0 / 10cqmin 10cqmin; }
 .td-overlay.ov-vignette { background: radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / 0.55)); }
 .td-overlay.ov-glow { box-shadow: inset 0 0 12cqmin color-mix(in srgb, var(--fg) 45%, transparent), 0 0 14px color-mix(in srgb, var(--bg) 80%, white 20%); }
+
+/* Durchsichtiger Button: kein Schatten, kein Glanz – nur Symbol und Text (Umriss bleibt bei „an“). */
+.td-btn.is-transparent { box-shadow: none; }
+.td-btn.is-transparent:not(.has-texture) { background: transparent; }
+.td-btn.is-transparent.is-on { box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.45); }

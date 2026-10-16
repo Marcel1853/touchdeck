@@ -167,6 +167,8 @@ pub struct Button {
     pub icon: Icon,
     pub color: String,
     pub color_on: String,
+    /// Deckkraft des Hintergrunds in Prozent (0 = durchsichtig, nur Symbol und Text).
+    pub bg_opacity: i64,
     /// Symbol und Beschriftung, wenn der Button „an“ ist (Umschalter oder Live-Anzeige); leer = wie sonst.
     pub icon_on: Icon,
     pub title_on: String,
@@ -377,6 +379,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         icon,
         color: color(&b["color"], "#2b2f3a"),
         color_on: color(&b["colorOn"], "#2f9e6b"),
+        bg_opacity: clamp(&b["bgOpacity"], 0, 100, 100),
         icon_on: sanitize_icon(&b["iconOn"]),
         title_on: text(&b["titleOn"], "", 200),
         text_color: color(&b["textColor"], "#ffffff"),

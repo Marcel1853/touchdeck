@@ -76,7 +76,7 @@ function cloneButton(b) {
 export function newButton(row, col, extra = {}) {
   return {
     id: uid('b_'), row, col, rowSpan: 1, colSpan: 1, title: '', icon: { type: 'emoji', value: '' },
-    color: '#2b2f3a', colorOn: '#2f9e6b', textColor: '#ffffff', fontSize: 14, fontFamily: '', bold: true, italic: false, textOutline: 0,
+    color: '#2b2f3a', colorOn: '#2f9e6b', bgOpacity: 100, textColor: '#ffffff', fontSize: 14, fontFamily: '', bold: true, italic: false, textOutline: 0,
     titlePos: 'bottom', mode: 'press', iconFit: 'contain',
     actions: [], actionsOff: [], holdActions: [], releaseActions: [], doubleActions: [], holdRepeat: 0, events: [],
     iconOn: { type: 'emoji', value: '' }, titleOn: '',
@@ -110,7 +110,7 @@ export function mountPages(root) {
         }, h('span', { class: 'chevron' }, '▸'), tr('pages.readyMadePages')),
         tplButton('steam', '🎮', tr('pages.steamGames'), tr('pages.allGamesWithCover'), steamTemplate),
         tplButton('system', '📊', tr('common.system'), tr('pages.clockCpuAudioLock'), systemTemplate),
-        tplButton('obs', '🎬', tr('pages.obsStudio'), tr('pages.scenesStreamRecording'), obsTemplate)),
+        tplButton('obs', '🎬', tr('pages.obsStudio'), tr('pages.scenesStreamRecording'), obsTemplate))),
     h('section', { class: 'workspace' },
       h('div', { class: 'page-toolbar' },
         h('input', { id: 'page-name', class: 'page-name', maxlength: 100, 'aria-label': tr('pages.pageName'),
@@ -640,7 +640,7 @@ export function deleteButton() {
 // Die Zwischenablage bleibt beim Seitenwechsel und Neuladen erhalten (nur in diesem Editor).
 const CLIP = 'touchdeck.clipboard';
 const STYLE_CLIP = 'touchdeck.styleClipboard';
-const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit', 'bgImage', 'overlay'];
+const STYLE_KEYS = ['color', 'colorOn', 'bgOpacity', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit', 'bgImage', 'overlay'];
 const LOGIC_CLIP = 'touchdeck.logicClipboard';
 // Logik eines Buttons: alle Aktionslisten (Drücken, Aus, Halten, Loslassen, Doppelt) und seine Events.
 const LOGIC_KEYS = ['actions', 'actionsOff', 'holdActions', 'releaseActions', 'doubleActions', 'holdRepeat', 'events'];
@@ -996,7 +996,18 @@ function lookTab(b) {
       h('label', {}, h('input', { type: 'color', value: b.color, oninput: (e) => edit('color', () => (b.color = e.target.value), { detail: false }) }), tr('pages.background')),
       h('label', {}, h('input', { type: 'color', value: b.textColor, oninput: (e) => edit('tc', () => (b.textColor = e.target.value), { detail: false }) }), tr('pages.text')),
       canBeOn && h('label', {}, h('input', { type: 'color', value: b.colorOn, oninput: (e) => edit('con', () => (b.colorOn = e.target.value), { detail: false }) }), tr('pages.whenOn'))),
-    h('div', { class: 'swatches' }, SWATCHES.map((c) => h('button', { type: 'button', title: c, style: `background:${c}`, onclick: () => mutate(() => (b.color = c)) }))),
+    h('div', { class: 'swatches' }, SWATCHES.map((c) => h('button', { type: 'button', title: c, style: `background:${c}`, onclick: () => mutate(() => {
+      b.color = c;
+      if ((b.bgOpacity ?? 100) === 0) b.bgOpacity = 100;
+    }) }))),
+    h('div', { class: 'row opacity-row' },
+      h('label', { class: 'field' }, tr('pages.bgOpacity', [b.bgOpacity ?? 100]),
+        h('input', { type: 'range', min: 0, max: 100, step: 5, value: b.bgOpacity ?? 100, oninput: (e) => {
+          e.target.parentElement.firstChild.textContent = tr('pages.bgOpacity', [e.target.value]);
+          edit('opacity', () => (b.bgOpacity = Number(e.target.value)), { detail: false });
+        } })),
+      h('button', { class: 'btn small', style: 'align-self:end', onclick: () => mutate(() => (b.bgOpacity = (b.bgOpacity ?? 100) === 0 ? 100 : 0)) },
+        (b.bgOpacity ?? 100) === 0 ? tr('pages.opaque') : tr('pages.transparent'))),
 
     h('h3', {}, tr('pages.texture')),
     textureSection(b),

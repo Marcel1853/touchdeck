@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Deckkraft des Button-Hintergrunds (0–100 %) mit Knopf „Durchsichtig“: bei 0 % bleiben nur
+      Symbol und Text, Schatten und Glanz fallen weg; Texturen behalten ihr Bild.
     - Icon-Pakete deutlich ausgebaut: Beschreibung, Version, Titelbild, Lizenztext und passende
       Button-Farbe pro Paket; Name und Schlagwörter pro Bild (im Paket anklicken); die
       Bildauswahl sucht in Namen und Schlagwörtern; .tdicons-Format 2 behält alles.
@@ -106,6 +108,8 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Beim Tippen in der Bildsuche geht der Fokus nicht mehr nach jedem Buchstaben verloren (eine
+      folgende Rücktaste konnte den ausgewählten Button löschen).
     - Der Autostart-Eintrag zeigte nach einem Update auf eine nicht mehr vorhandene Datei; er
       folgt jetzt bei jedem Start der laufenden Version.
     - Fehlendes TouchDeck-Symbol in Taskleiste und Startmenü behoben; dafür wird jetzt ein

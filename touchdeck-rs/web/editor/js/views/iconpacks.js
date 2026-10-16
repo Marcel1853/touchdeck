@@ -328,16 +328,13 @@ export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
   if (!sources.some(([, , list]) => list.length)) return null;
   if (!sources.some(([id]) => id === S.iconSource)) S.iconSource = sources.find(([, , l]) => l.length)?.[0] ?? 'own';
   const [, , list] = sources.find(([id]) => id === S.iconSource);
-  const q = (S.iconSearch ?? '').toLowerCase();
-  const shown = list.filter((i) => !q || (i.search ?? i.label.toLowerCase()).includes(q));
   const MAX = 240;
-  return h('div', {},
-    h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S[toggle] = !S[toggle]; render(); } },
-      tr('iconpacks.imagesIconPacks', [S[toggle] ? '▾' : '▸'])),
-    S[toggle] && h('div', { class: 'picker' },
-      h('div', { class: 'row' },
-        h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; render(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
-        h('input', { type: 'search', placeholder: tr('common.search'), value: S.iconSearch ?? '', oninput: (e) => { S.iconSearch = e.target.value; render(); } })),
+  // Nur die Bildliste neu zeichnen – so behält das Suchfeld beim Tippen den Fokus
+  // (sonst landete z. B. die Rücktaste beim Editor und löschte den Button).
+  const results = () => {
+    const q = (S.iconSearch ?? '').toLowerCase();
+    const shown = list.filter((i) => !q || (i.search ?? i.label.toLowerCase()).includes(q));
+    return [
       shown.length
         ? h('div', { class: 'icon-grid' }, shown.slice(0, MAX).map((i) => h('button', { type: 'button', title: i.label, class: b[key]?.value === i.value ? 'active' : '',
           onclick: () => mutate(() => {
@@ -346,5 +343,19 @@ export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
             if (key === 'icon' && i.color && b.color === '#2b2f3a') b.color = i.color;
           }) }, h('img', { src: iconUrl(i.value), alt: '', loading: 'lazy' }))))
         : h('p', { class: 'hint-text' }, tr('iconpacks.noImagesFound')),
-      shown.length > MAX && h('p', { class: 'hint-text' }, tr('iconpacks.moreRefineSearch', [shown.length - MAX]))));
+      shown.length > MAX && h('p', { class: 'hint-text' }, tr('iconpacks.moreRefineSearch', [shown.length - MAX])),
+    ];
+  };
+  const box = h('div', { class: 'picker-results' }, results());
+  return h('div', {},
+    h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S[toggle] = !S[toggle]; render(); } },
+      tr('iconpacks.imagesIconPacks', [S[toggle] ? '▾' : '▸'])),
+    S[toggle] && h('div', { class: 'picker' },
+      h('div', { class: 'row' },
+        h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; render(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
+        h('input', { type: 'search', placeholder: tr('common.search'), value: S.iconSearch ?? '', oninput: (e) => {
+          S.iconSearch = e.target.value;
+          box.replaceChildren(...results().filter(Boolean));
+        } })),
+      box));
 }
