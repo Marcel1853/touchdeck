@@ -137,7 +137,22 @@ pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) 
     async move {
         let mut ctx = Ctx { opts, navigate: None, stop: false };
         let mut messages: Vec<String> = Vec::new();
-        for action in actions.iter().filter(|a| a.enabled) {
+        let enabled: Vec<&Action> = actions.iter().filter(|a| a.enabled).collect();
+        // „Zufällig“: von den nächsten Aktionen nur eine ausführen, die anderen überspringen.
+        let mut skip = std::collections::HashSet::new();
+        for (i, action) in enabled.iter().enumerate() {
+            if skip.contains(&i) {
+                continue;
+            }
+            if action.kind == "random" {
+                let rest = enabled.len() - i - 1;
+                let count = match js_number(action.params.get("count")) as usize { 0 => rest, n => n.min(rest) };
+                if count > 1 {
+                    let pick = random_below(count);
+                    skip.extend((0..count).filter(|&k| k != pick).map(|k| i + 1 + k));
+                }
+                continue;
+            }
             let result = if known(&action.kind) { run_action(app, action, &mut ctx).await } else { Err(anyhow!(t!("actions.unknownAction", action.kind))) };
             match result {
                 Ok(Some(msg)) if !msg.is_empty() => messages.push(msg),
@@ -154,6 +169,14 @@ pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) 
         json!({ "ok": true, "messages": messages, "navigate": ctx.navigate })
     }
     .boxed()
+}
+
+/** Zufallszahl 0..n (für „Zufällig“; keine Kryptografie nötig). */
+fn random_below(n: usize) -> usize {
+    use std::hash::{BuildHasher, Hasher};
+    let mut h = std::collections::hash_map::RandomState::new().build_hasher();
+    h.write_u128(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_nanos()));
+    (h.finish() % n as u64) as usize
 }
 
 fn hex_color(v: &str) -> bool {

@@ -1005,6 +1005,14 @@
     },
     "unsupported": {
       "label": "Not supported"
+    },
+    "random": {
+      "label": "Random: one of the next actions",
+      "fields": {
+        "count": {
+          "label": "From how many of the following actions? (0 = all following)"
+        }
+      }
     }
   },
   "triggers": {

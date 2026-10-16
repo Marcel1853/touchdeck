@@ -1252,6 +1252,21 @@
   ]
  },
  {
+  "type": "random",
+  "category": "logic",
+  "group": "general",
+  "icon": "🎲",
+  "fields": [
+   {
+    "key": "count",
+    "type": "number",
+    "default": 0,
+    "min": 0,
+    "max": 50
+   }
+  ]
+ },
+ {
   "type": "twitch_chat",
   "category": "twitch",
   "group": "streaming",
