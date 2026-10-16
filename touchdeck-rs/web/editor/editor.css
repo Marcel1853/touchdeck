@@ -258,6 +258,9 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .dialog-body { padding: 20px; }
 .dialog-body > h2 { margin-bottom: 10px; font-size: 18px; }
 .dialog-body p { color: var(--muted); line-height: 1.55; margin: 0 0 14px; }
+.shortcut-dialog { width: min(640px, calc(100vw - 32px)); }
+.shortcut-dialog textarea { font-family: ui-monospace, monospace; }
+.shortcut-dialog .row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
 .dialog-actions { display: flex; gap: 8px; margin-top: 18px; }
 .qr { width: 240px; margin: 0 auto 14px; padding: 10px; border-radius: 14px; background: #fff; }
 .qr svg { display: block; width: 100%; height: auto; }

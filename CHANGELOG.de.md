@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - „Tastenkürzel-Seite erstellen …“ (Seitenmenü „⋯“): eine Liste wie „Rückgängig = ctrl+z | ↩️“
+      wird zu einer Seite, deren Buttons die Kürzel an ein gewähltes Programm schicken; Listen lassen
+      sich aus Textdateien laden.
     - „Tastenkürzel drücken“ kann das Kürzel an ein gewähltes Programm schicken: es wird vorher nach
       vorn geholt, danach geht TouchDeck auf Wunsch zum vorigen Fenster zurück.
     - Neue Aktionen „In die Zwischenablage kopieren“ (mit Platzhaltern, auf Wunsch gleich einfügen

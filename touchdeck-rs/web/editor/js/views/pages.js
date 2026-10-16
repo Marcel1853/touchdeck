@@ -498,7 +498,100 @@ function profileMenu(x, y, p) {
     { icon: '📦', label: tr('pages.exportAllPages'), onclick: () => exportProfile([], 'TouchDeck') },
     '-',
     { icon: '📥', label: tr('pages.importProfile'), onclick: () => input.click() },
+    '-',
+    { icon: '⌨️', label: tr('pages.shortcutPage'), onclick: () => shortcutPageDialog() },
   ]);
+}
+
+// ---------- Tastenkürzel-Seite ----------
+
+/**
+ * Liest eine Kürzel-Liste: je Zeile „Bezeichnung = Kürzel“, optional „| Symbol“; # = Kommentar.
+ * Auch JSON { name, app, shortcuts: [{ label, keys, icon }] } wird verstanden.
+ */
+export function parseShortcuts(text) {
+  const t = text.trim();
+  if (t.startsWith('{')) {
+    try {
+      const j = JSON.parse(t);
+      return { name: String(j.name ?? ''), app: String(j.app ?? ''), items: (j.shortcuts ?? []).map((x) => ({ label: String(x.label ?? x.keys ?? ''), keys: String(x.keys ?? ''), icon: String(x.icon ?? '') })).filter((x) => x.keys) };
+    } catch {
+      return { items: [] };
+    }
+  }
+  const items = [];
+  for (const raw of t.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const [main, icon = ''] = line.split('|').map((x) => x.trim());
+    const eq = main.lastIndexOf('=');
+    const label = eq > 0 ? main.slice(0, eq).trim() : main;
+    const keys = (eq > 0 ? main.slice(eq + 1) : main).trim().toLowerCase().replace(/\s*\+\s*/g, '+');
+    if (keys) items.push({ label, keys, icon });
+  }
+  return { items };
+}
+
+/** Dialog: aus einer Kürzel-Liste eine Seite mit Buttons bauen, die die Kürzel an ein Programm schicken. */
+async function shortcutPageDialog() {
+  const dlg = h('dialog', { class: 'dialog shortcut-dialog' });
+  const name = h('input', { value: tr('pages.shortcutPageName'), maxlength: 100 });
+  const listId = `dl-win-${uid('')}`;
+  const app = h('input', { list: listId, placeholder: tr('pages.shortcutAppPlaceholder') });
+  const winList = h('datalist', { id: listId });
+  api('GET', '/api/options/windows').then((items) => winList.replaceChildren(...items.map((o) => h('option', { value: o.value }, o.label)))).catch(() => {});
+  const text = h('textarea', { rows: 12, placeholder: tr('pages.shortcutExample') });
+  const count = h('span', { class: 'hint-text' });
+  const update = () => {
+    const n = parseShortcuts(text.value).items.length;
+    count.textContent = tr('pages.shortcutCount', [n]);
+  };
+  text.addEventListener('input', update);
+  const file = h('input', { type: 'file', accept: '.txt,.json,.tdkeys', hidden: true, onchange: async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    text.value = await f.text();
+    const parsed = parseShortcuts(text.value);
+    if (parsed.name) name.value = parsed.name;
+    if (parsed.app) app.value = parsed.app;
+    update();
+  } });
+  dlg.append(h('form', { method: 'dialog', class: 'dialog-body' },
+    h('h2', {}, tr('pages.shortcutPage')),
+    h('p', {}, tr('pages.shortcutIntro')),
+    h('label', { class: 'field' }, tr('pages.pageName'), name),
+    h('label', { class: 'field' }, tr('pages.shortcutApp'), app, winList),
+    h('label', { class: 'field' }, tr('pages.shortcutList'), text),
+    h('div', { class: 'row' }, count, h('div', { class: 'spacer' }),
+      h('button', { type: 'button', class: 'btn small ghost', onclick: () => { text.value = tr('pages.shortcutExample'); update(); } }, tr('pages.shortcutInsertExample')),
+      h('button', { type: 'button', class: 'btn small', onclick: () => file.click() }, tr('pages.shortcutLoadFile')), file),
+    h('div', { class: 'dialog-actions' },
+      h('button', { value: '', class: 'btn ghost' }, tr('common.cancel')),
+      h('div', { class: 'spacer' }),
+      h('button', { value: 'ok', class: 'btn primary' }, tr('pages.create')))));
+  document.body.append(dlg);
+  update();
+  dlg.showModal();
+  const r = await new Promise((resolve) => dlg.addEventListener('close', () => resolve(dlg.returnValue), { once: true }));
+  dlg.remove();
+  const { items } = parseShortcuts(text.value);
+  if (r !== 'ok' || !items.length) return;
+  const cols = Math.min(5, Math.max(3, Math.ceil(Math.sqrt(items.length + 1))));
+  const total = items.length + 1;
+  const rows = Math.ceil(total / cols);
+  const target = app.value.trim();
+  const buttons = items.slice(0, 99).map((it, i) => tplBtn(Math.floor(i / cols), i % cols, it.label, it.icon || '⌨️',
+    [['hotkey', { keys: it.keys, window: target, back: false }]]));
+  const back = items.length;
+  buttons.push(tplBtn(Math.floor(back / cols), back % cols, tr('pages.back'), '⬅️', [['go_page', { page: '__back' }]]));
+  const pg = { id: uid('p_'), name: name.value.trim() || tr('pages.shortcutPageName'), rows: Math.min(rows, 12), cols, background: '#14161b',
+    layout: 'grid', ratioW: 16, ratioH: 10, colSizes: [], rowSizes: [], buttons };
+  mutate(() => {
+    S.pages.push(pg);
+    S.pageId = pg.id;
+    S.selId = null;
+  });
+  toast(tr('pages.pageCreated', [pg.name]), 'ok');
 }
 
 // ---------- Seiten ----------
