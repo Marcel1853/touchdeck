@@ -460,6 +460,7 @@
     "outline": "Outline",
     "ownImages": "Own images ({0})",
     "ownImagesShort": "Own images",
+    "packsImported": "Imported {0} icon packs with {1} images in total ✓",
     "removeImage": "Remove image",
     "rounded": "Rounded",
     "saveIcon": "Save icon",

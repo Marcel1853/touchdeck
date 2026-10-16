@@ -460,6 +460,7 @@
     "outline": "Umriss",
     "ownImages": "Eigene Bilder ({0})",
     "ownImagesShort": "Eigene Bilder",
+    "packsImported": "{0} Icon-Pakete mit zusammen {1} Bildern importiert ✓",
     "removeImage": "Bild entfernen",
     "rounded": "Abgerundet",
     "saveIcon": "Icon speichern",

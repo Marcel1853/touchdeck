@@ -205,7 +205,7 @@
     "isDamaged": "“{0}” is damaged.",
     "isLargerThan5": "“{0}” is larger than 5 MB.",
     "isNotImagePng": "“{0}” is not an image (PNG, JPG, GIF, WebP or SVG).",
-    "linkMustStartWith": "The link must start with https://.",
+    "linkMustStartWith": "That is not a valid link (e.g. www.example.com or https://…).",
     "packCanContainAt": "A pack can contain at most {0} images.",
     "packContainsMoreThan": "The pack contains more than {0} images.",
     "packIsTooLarge": "The pack is too large (more than 100 MB).",

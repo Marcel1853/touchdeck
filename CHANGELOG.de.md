@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Import von Icon-Paketen: Eine Datei mit mehreren Paketen in Unterordnern (jedes mit eigener
+      Beschreibung) wird zu mehreren Paketen; Links ohne „https://“ (z. B. „www.beispiel.de“)
+      werden ergänzt, statt das Paket abzulehnen.
     - Deckkraft des Button-Hintergrunds (0–100 %) mit Knopf „Durchsichtig“: bei 0 % bleiben nur
       Symbol und Text, Schatten und Glanz fallen weg; Texturen behalten ihr Bild.
     - Icon-Pakete deutlich ausgebaut: Beschreibung, Version, Titelbild, Lizenztext und passende

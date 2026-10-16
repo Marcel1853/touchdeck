@@ -27,6 +27,9 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Icon pack import: a file with several packs in sub-folders (each with its own description)
+      becomes several packs; links without "https://" (e.g. "www.example.com") are completed
+      instead of rejecting the pack.
     - Button background opacity (0–100 %) with a "Transparent" shortcut: at 0 % only icon and
       label remain, shadow and gloss disappear; textures keep their image.
     - Icon packs improved a lot: description, version, cover image, license text and a matching

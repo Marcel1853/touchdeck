@@ -56,7 +56,7 @@ async function importPack(file) {
     const r = await api('POST', '/api/iconpacks/import', { data: await readDataUrl(file), fileName: file.name });
     S.iconPacks = r.packs;
     S.openPack = r.id;
-    toast(tr('iconpacks.iconPackWithImages', [r.count]), 'ok');
+    toast(r.packCount > 1 ? tr('iconpacks.packsImported', [r.packCount, r.count]) : tr('iconpacks.iconPackWithImages', [r.count]), 'ok');
     render();
   } catch (err) {
     toast(err.message, 'error');

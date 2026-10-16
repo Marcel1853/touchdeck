@@ -73,6 +73,19 @@ fn icon_info(v: &Value) -> Value {
     json!({ "name": text(&v["name"], 80), "tags": tags(&v["tags"]) })
 }
 
+/** Link bereinigen: „www.beispiel.de“ bekommt https:// davor; was kein Link ist, wird leer. */
+fn normalize_link(raw: &str) -> String {
+    let l = raw.trim();
+    if l.is_empty() {
+        return String::new();
+    }
+    if l.starts_with("https://") || l.starts_with("http://") {
+        return l.to_string();
+    }
+    let looks_like_host = l.contains('.') && !l.contains(char::is_whitespace) && !l.contains("://");
+    if looks_like_host { format!("https://{l}") } else { String::new() }
+}
+
 fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
@@ -175,8 +188,9 @@ impl IconPacks {
         if name.is_empty() {
             bail!(t!("iconpacks.pleaseEnterNameFor"));
         }
-        let link = text(&body["link"], 300);
-        if !link.is_empty() && !(link.starts_with("https://") || link.starts_with("http://")) {
+        let raw_link = text(&body["link"], 300);
+        let link = normalize_link(&raw_link);
+        if !raw_link.is_empty() && link.is_empty() {
             bail!(t!("iconpacks.linkMustStartWith"));
         }
         let color = text(&body["color"], 7);
@@ -295,7 +309,7 @@ impl IconPacks {
      * eine manifest.json (Name, Autor, Beschreibung, Version, Titelbild, Lizenzdatei) mit icons.json
      * (Name und Schlagwörter je Bild) und eine Lizenzdatei. Liefert die neue ID und die Anzahl der Bilder.
      */
-    pub fn import(&self, bytes: &[u8], fallback_name: &str) -> Result<(String, usize)> {
+    pub fn import(&self, bytes: &[u8], fallback_name: &str) -> Result<Vec<(String, usize)>> {
         let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!(t!("iconpacks.fileIsNotValid")))?;
         let mut texts: Vec<(String, String)> = Vec::new();
         let mut images: Vec<(String, Vec<u8>)> = Vec::new();
@@ -331,6 +345,40 @@ impl IconPacks {
         if images.is_empty() {
             bail!(t!("iconpacks.fileContainsNoImages"));
         }
+        // Mehrere Pakete in einer Datei: jeder Ordner mit eigener Beschreibung wird ein eigenes Paket.
+        let folder_of = |p: &str| p.rsplit_once('/').map_or(String::new(), |(d, _)| format!("{d}/"));
+        let mut groups: Vec<String> = texts
+            .iter()
+            .filter(|(p, _)| ["pack.json", "manifest.json", "info.txt"].iter().any(|n| p.rsplit('/').next().is_some_and(|b| b.eq_ignore_ascii_case(n))))
+            .map(|(p, _)| folder_of(p))
+            .filter(|f| !f.is_empty())
+            .collect();
+        groups.sort();
+        groups.dedup();
+        if groups.len() < 2 {
+            return Ok(vec![self.import_group(texts, images, fallback_name)?]);
+        }
+        // Längster passender Ordner gewinnt (Bilder in icons/ unter dem Paketordner gehören dazu).
+        let group_of = |p: &str| groups.iter().filter(|g| p.starts_with(g.as_str())).max_by_key(|g| g.len()).cloned();
+        let mut result = Vec::new();
+        for g in &groups {
+            let t: Vec<(String, String)> = texts.iter().filter(|(p, _)| group_of(p).as_ref() == Some(g)).cloned().collect();
+            let imgs: Vec<(String, Vec<u8>)> = images.iter().filter(|(p, _)| group_of(p).as_ref() == Some(g)).cloned().collect();
+            if !imgs.is_empty() {
+                let name = g.trim_end_matches('/').rsplit('/').next().unwrap_or(fallback_name).to_string();
+                result.push(self.import_group(t, imgs, &name)?);
+            }
+        }
+        // Bilder außerhalb aller Paketordner als eigenes Paket.
+        let rest: Vec<(String, Vec<u8>)> = images.into_iter().filter(|(p, _)| group_of(p).is_none()).collect();
+        if !rest.is_empty() {
+            result.push(self.import_group(Vec::new(), rest, fallback_name)?);
+        }
+        Ok(result)
+    }
+
+    /** Ein Paket aus Beschreibungsdateien und Bildern anlegen. */
+    fn import_group(&self, texts: Vec<(String, String)>, images: Vec<(String, Vec<u8>)>, fallback_name: &str) -> Result<(String, usize)> {
         let find = |name: &str| texts.iter().find(|(p, _)| p.rsplit('/').next().is_some_and(|b| b.eq_ignore_ascii_case(name))).map(|(p, t)| (p.as_str(), t.as_str()));
         let folder = |p: &str| p.rsplit_once('/').map_or(String::new(), |(d, _)| format!("{d}/"));
 
@@ -390,6 +438,9 @@ impl IconPacks {
         if meta["name"].as_str().is_none_or(str::is_empty) {
             meta["name"] = json!(if fallback_name.is_empty() { t!("iconpacks.importedPack") } else { fallback_name });
         }
+        // Link nie als Grund zum Abbrechen: ergänzen oder weglassen.
+        let link = normalize_link(meta["link"].as_str().unwrap_or(""));
+        meta["link"] = json!(link);
         let old_icons = meta["icons"].clone();
         let old_cover = meta["cover"].as_str().unwrap_or("").to_string();
         meta["icons"] = json!({});
@@ -440,7 +491,7 @@ mod tests {
         assert_eq!(saved, vec!["mic.png", "mic-2.png"]);
         let (file, bytes) = packs.export(&id).unwrap();
         assert_eq!(file, "Streaming.tdicons");
-        let (copy, n) = packs.import(&bytes, "").unwrap();
+        let (copy, n) = packs.import(&bytes, "").unwrap().remove(0);
         assert_eq!(n, 2);
         let list = packs.list();
         assert_eq!(list.len(), 2);
@@ -467,7 +518,7 @@ mod tests {
         let packs = IconPacks::new(&dir);
         // Bilder mit info.txt (name=…, bgcolor=…).
         let a = zip_of(&[("info.txt", b"name=Spiele\nauthor=Ich\nbgcolor=##112233\n"), ("pad.png", b"PNG"), ("unterordner/maus.png", b"PNG")]);
-        let (id, n) = packs.import(&a, "").unwrap();
+        let (id, n) = packs.import(&a, "").unwrap().remove(0);
         assert_eq!(n, 2);
         let p = packs.list().into_iter().find(|p| p["id"] == id).unwrap();
         assert_eq!((p["name"].as_str(), p["author"].as_str(), p["color"].as_str()), (Some("Spiele"), Some("Ich"), Some("#112233")));
@@ -479,7 +530,7 @@ mod tests {
             ("x.paket/icon.svg", b"<svg/>"),
             ("x.paket/icons/mic.svg", b"<svg/>"),
         ]);
-        let (id2, n2) = packs.import(&b, "").unwrap();
+        let (id2, n2) = packs.import(&b, "").unwrap().remove(0);
         assert_eq!(n2, 2);
         let p = packs.list().into_iter().find(|p| p["id"] == id2).unwrap();
         assert_eq!(p["name"], "Logos");
@@ -492,7 +543,7 @@ mod tests {
         packs.set_icon_info(&id2, "icon.svg", &json!({ "name": "Titel", "tags": "logo, Titel, logo" })).unwrap();
         packs.update(&id2, &json!({ "name": "Logos 2", "cover": "mic.svg", "color": "#abcdef" })).unwrap();
         let (_, bytes) = packs.export(&id2).unwrap();
-        let (id3, _) = packs.import(&bytes, "").unwrap();
+        let (id3, _) = packs.import(&bytes, "").unwrap().remove(0);
         let p = packs.list().into_iter().find(|p| p["id"] == id3).unwrap();
         assert_eq!((p["name"].as_str(), p["cover"].as_str(), p["color"].as_str()), (Some("Logos 2"), Some("mic.svg"), Some("#abcdef")));
         assert_eq!(p["info"]["icon.svg"]["tags"], json!(["logo", "titel"]));
@@ -503,4 +554,24 @@ mod tests {
         fs::remove_dir_all(dir).unwrap();
     }
 
+
+    #[test]
+    fn mehrere_pakete_und_links() {
+        assert_eq!(normalize_link("www.beispiel.de/x"), "https://www.beispiel.de/x");
+        assert_eq!(normalize_link("http://a.b"), "http://a.b");
+        assert_eq!(normalize_link("kein link"), "");
+        let dir = std::env::temp_dir().join(new_id("td-icons3-"));
+        let packs = IconPacks::new(&dir);
+        let z = zip_of(&[
+            ("eins/info.txt", b"name=Eins\nlink=www.eins.de\n"), ("eins/a.png", b"PNG"),
+            ("zwei/info.txt", b"name=Zwei\n"), ("zwei/b.png", b"PNG"), ("zwei/c.png", b"PNG"),
+        ]);
+        let r = packs.import(&z, "Datei").unwrap();
+        assert_eq!(r.iter().map(|(_, n)| *n).collect::<Vec<_>>(), vec![1, 2]);
+        let list = packs.list();
+        let eins = list.iter().find(|p| p["name"] == "Eins").unwrap();
+        assert_eq!(eins["link"], "https://www.eins.de");
+        assert!(list.iter().any(|p| p["name"] == "Zwei"));
+        fs::remove_dir_all(dir).unwrap();
+    }
 }

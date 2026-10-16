@@ -888,9 +888,11 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
             let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?;
             let fallback = str_of(&body, "fileName").trim_end_matches(".tdicons").trim_end_matches(".zip").to_string();
-            let (id, count) = app.iconpacks.import(&bytes, &fallback).map_err(bad)?;
+            let imported = app.iconpacks.import(&bytes, &fallback).map_err(bad)?;
+            let count: usize = imported.iter().map(|(_, n)| n).sum();
             app.log.info("Icons", t!("server.iconPackImported", count));
-            Ok(json!({ "ok": true, "id": id, "count": count, "packs": app.iconpacks.list() }))
+            let id = imported.first().map(|(id, _)| id.clone()).unwrap_or_default();
+            Ok(json!({ "ok": true, "id": id, "count": count, "packCount": imported.len(), "packs": app.iconpacks.list() }))
         }
 
         "POST /api/profiles/import" => {
