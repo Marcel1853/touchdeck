@@ -63,6 +63,9 @@
         },
         "wait": {
           "label": "Auf Ende warten und Ausgabe anzeigen"
+        },
+        "saveTo": {
+          "label": "Ausgabe in Wert speichern (leer = nicht speichern)"
         }
       }
     },
@@ -179,6 +182,12 @@
         },
         "body": {
           "label": "Inhalt"
+        },
+        "saveTo": {
+          "label": "Antwort in Wert speichern (leer = nicht speichern)"
+        },
+        "jsonPath": {
+          "label": "Nur dieses Feld aus der JSON-Antwort (z. B. data.0.name, leer = ganze Antwort)"
         }
       }
     },
@@ -1140,6 +1149,21 @@
       "fields": {
         "count": {
           "label": "Wie oft? (aktueller Durchlauf: {Event.Durchlauf})"
+        }
+      }
+    },
+    "var_calc": {
+      "label": "Wert berechnen",
+      "fields": {
+        "name": {
+          "label": "Ergebnis in Wert"
+        },
+        "expr": {
+          "label": "Rechnung (z. B. ({Tore} + 1) * 2, round(x), min(a; b), max(a; b), abs(x))",
+          "placeholder": "{Tore} + 1"
+        },
+        "decimals": {
+          "label": "Höchstens so viele Nachkommastellen"
         }
       }
     }

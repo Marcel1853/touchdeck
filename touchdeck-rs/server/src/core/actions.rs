@@ -328,6 +328,154 @@ fn check(app: &App, ctx: &Ctx, p: &P) -> bool {
     }
 }
 
+/** Ein Feld aus einer JSON-Antwort: Pfad wie „data.0.name“ oder „data[0].name“. Texte ohne Anführungszeichen. */
+fn json_path(text: &str, path: &str) -> Result<String> {
+    let mut v: Value = serde_json::from_str(text).map_err(|_| anyhow!(t!("actions.responseNotJson")))?;
+    for part in path.replace('[', ".").replace(']', "").split('.').map(str::trim).filter(|s| !s.is_empty()) {
+        v = match &v {
+            Value::Array(a) => part.parse::<usize>().ok().and_then(|i| a.get(i).cloned()),
+            Value::Object(o) => o.get(part).cloned(),
+            _ => None,
+        }
+        .ok_or_else(|| anyhow!(t!("actions.jsonFieldMissing", path)))?;
+    }
+    Ok(match v {
+        Value::String(s) => s,
+        other => other.to_string(),
+    })
+}
+
+/** Zahl mit höchstens `decimals` Nachkommastellen, ohne überflüssige Nullen. */
+fn format_number(n: f64, decimals: usize) -> String {
+    let s = format!("{n:.decimals$}");
+    let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.').to_string() } else { s };
+    if s == "-0" { "0".into() } else { s }
+}
+
+/** Kleiner Rechner für „Wert berechnen“: + - * / % ^, Klammern, round/floor/ceil/abs/min/max/sqrt. */
+fn calc(expr: &str) -> std::result::Result<f64, String> {
+    struct Parser<'a> {
+        s: &'a [u8],
+        i: usize,
+    }
+    impl Parser<'_> {
+        fn ws(&mut self) {
+            while self.i < self.s.len() && self.s[self.i].is_ascii_whitespace() {
+                self.i += 1;
+            }
+        }
+        fn eat(&mut self, c: u8) -> bool {
+            self.ws();
+            if self.s.get(self.i) == Some(&c) {
+                self.i += 1;
+                true
+            } else {
+                false
+            }
+        }
+        fn expr(&mut self, depth: u32) -> std::result::Result<f64, String> {
+            if depth > 50 {
+                return Err(t!("calc.tooDeep").to_string());
+            }
+            let mut v = self.term(depth)?;
+            loop {
+                if self.eat(b'+') {
+                    v += self.term(depth)?;
+                } else if self.eat(b'-') {
+                    v -= self.term(depth)?;
+                } else {
+                    return Ok(v);
+                }
+            }
+        }
+        fn term(&mut self, depth: u32) -> std::result::Result<f64, String> {
+            let mut v = self.unary(depth)?;
+            loop {
+                if self.eat(b'*') {
+                    v *= self.unary(depth)?;
+                } else if self.eat(b'/') {
+                    v /= self.unary(depth)?;
+                } else if self.eat(b'%') {
+                    v %= self.unary(depth)?;
+                } else {
+                    return Ok(v);
+                }
+            }
+        }
+        fn unary(&mut self, depth: u32) -> std::result::Result<f64, String> {
+            if self.eat(b'-') {
+                return Ok(-self.unary(depth + 1)?);
+            }
+            if self.eat(b'+') {
+                return self.unary(depth + 1);
+            }
+            let base = self.atom(depth)?;
+            if self.eat(b'^') { Ok(base.powf(self.unary(depth + 1)?)) } else { Ok(base) }
+        }
+        fn atom(&mut self, depth: u32) -> std::result::Result<f64, String> {
+            self.ws();
+            if self.eat(b'(') {
+                let v = self.expr(depth + 1)?;
+                return if self.eat(b')') { Ok(v) } else { Err(t!("calc.missingParen").to_string()) };
+            }
+            let start = self.i;
+            while self.i < self.s.len() && (self.s[self.i].is_ascii_digit() || self.s[self.i] == b'.') {
+                self.i += 1;
+            }
+            if self.i > start {
+                let t = std::str::from_utf8(&self.s[start..self.i]).unwrap_or("");
+                return t.parse().map_err(|_| t!("calc.notANumber", t).to_string());
+            }
+            while self.i < self.s.len() && self.s[self.i].is_ascii_alphabetic() {
+                self.i += 1;
+            }
+            let name = std::str::from_utf8(&self.s[start..self.i]).unwrap_or("").to_lowercase();
+            if name.is_empty() {
+                return Err(match self.s.get(self.i) {
+                    Some(&c) => t!("calc.unexpected", c as char).to_string(),
+                    None => t!("calc.endsEarly").to_string(),
+                });
+            }
+            if !self.eat(b'(') {
+                return Err(t!("calc.unknown", name).to_string());
+            }
+            let mut args = vec![self.expr(depth + 1)?];
+            while self.eat(b',') || self.eat(b';') {
+                args.push(self.expr(depth + 1)?);
+            }
+            if !self.eat(b')') {
+                return Err(t!("calc.missingParen").to_string());
+            }
+            let one = |f: fn(f64) -> f64| if args.len() == 1 { Ok(f(args[0])) } else { Err(t!("calc.oneNumber", name).to_string()) };
+            match name.as_str() {
+                "round" => one(f64::round),
+                "floor" => one(f64::floor),
+                "ceil" => one(f64::ceil),
+                "abs" => one(f64::abs),
+                "sqrt" => one(f64::sqrt),
+                "min" => Ok(args.iter().copied().fold(f64::INFINITY, f64::min)),
+                "max" => Ok(args.iter().copied().fold(f64::NEG_INFINITY, f64::max)),
+                _ => Err(t!("calc.unknownFunction", name).to_string()),
+            }
+        }
+    }
+    // Deutsche Kommazahlen aus Werten („1,5“) als Dezimalpunkt lesen, wenn eine Ziffer folgt und kein Leerzeichen.
+    let normalized: String = {
+        let c: Vec<char> = expr.chars().collect();
+        c.iter().enumerate().map(|(i, &ch)| if ch == ',' && i > 0 && c[i - 1].is_ascii_digit() && c.get(i + 1).is_some_and(char::is_ascii_digit) { '.' } else { ch }).collect()
+    };
+    let mut p = Parser { s: normalized.as_bytes(), i: 0 };
+    let v = p.expr(0)?;
+    p.ws();
+    if p.i < p.s.len() {
+        return Err(t!("calc.unexpected", p.s[p.i] as char).to_string());
+    }
+    if !v.is_finite() {
+        return Err(t!("calc.notFinite").to_string());
+    }
+    Ok(v)
+}
+
 /** Zufallszahl 0..n (für „Zufällig“; keine Kryptografie nötig). */
 fn random_below(n: usize) -> usize {
     use std::hash::{BuildHasher, Hasher};
@@ -423,6 +571,10 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             }
             let wait = p.t("wait");
             let out = linux::shell(&cmd, wait, Duration::from_secs(30)).await?;
+            let save = p.s("saveTo");
+            if wait && !save.is_empty() {
+                set_variable(app, &save, &truncate(out.trim(), 2000))?;
+            }
             Ok((wait && !out.is_empty()).then(|| truncate(&out, 500)))
         }
         "hotkey" => {
@@ -440,7 +592,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             }
             none
         }
-        "media" => Ok(Some(format!("Player: {}", linux::media(&p.or("op", "play-pause")).await?))),
+        "media" => Ok(Some(t!("actions.player", linux::media(&p.or("op", "play-pause")).await?))),
         "volume" => {
             let v = linux::volume(&p.or("op", "up"), p.n("step"), p.n("value")).await?;
             Ok(Some(if v.muted { t!("common.muted").into() } else { t!("actions.volume", v.volume.map_or_else(|| "?".into(), |v| v.to_string())) }))
@@ -482,27 +634,36 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             none
         }
         "http" => {
-            let url = p.s("url");
+            let url = fill(app, ctx, &p.s("url"));
             let lower = url.to_lowercase();
             if !(lower.starts_with("http://") || lower.starts_with("https://")) {
                 bail!(t!("actions.addressMustStartWith"));
             }
             let method = p.or("method", "GET");
             let mut req = reqwest::Client::new().request(reqwest::Method::from_bytes(method.as_bytes())?, &url).timeout(Duration::from_secs(15));
-            for line in p.s("headers").lines() {
+            for line in fill(app, ctx, &p.s("headers")).lines() {
                 if let Some((k, v)) = line.split_once(':').filter(|(k, _)| !k.is_empty()) {
                     req = req.header(k.trim(), v.trim());
                 }
             }
-            let body = p.s("body");
+            let body = fill(app, ctx, &p.s("body"));
             if method != "GET" && !body.is_empty() {
                 req = req.body(body);
             }
             let res = req.send().await?;
-            Ok(Some(format!("Antwort {} {}", res.status().as_u16(), res.status().canonical_reason().unwrap_or(""))))
+            let status = t!("actions.httpResponse", res.status().as_u16(), res.status().canonical_reason().unwrap_or(""));
+            let save = p.s("saveTo");
+            if !save.is_empty() {
+                let bytes = res.bytes().await?;
+                let text = String::from_utf8_lossy(&bytes[..bytes.len().min(1_000_000)]).to_string();
+                let path = p.s("jsonPath");
+                let value = if path.trim().is_empty() { text } else { json_path(&text, &path)? };
+                set_variable(app, &save, &truncate(&value, 2000))?;
+            }
+            Ok(Some(status.to_string()))
         }
-        "audio_output" => Ok(Some(format!("Ausgang: {}", linux::set_default_audio(true, &p.or("target", "next")).await?))),
-        "audio_input" => Ok(Some(format!("Eingang: {}", linux::set_default_audio(false, &p.or("target", "next")).await?))),
+        "audio_output" => Ok(Some(t!("actions.audioOutput", linux::set_default_audio(true, &p.or("target", "next")).await?))),
+        "audio_input" => Ok(Some(t!("actions.audioInput", linux::set_default_audio(false, &p.or("target", "next")).await?))),
         "screenshot" => {
             linux::screenshot(&p.s("mode"))?;
             none
@@ -516,7 +677,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             none
         }
         "night_light" => Ok(Some(if linux::night_light(&p.or("mode", "toggle")).await? { t!("actions.nightLightOn") } else { t!("actions.nightLightOff") }.into())),
-        "dark_mode" => Ok(Some(if linux::dark_mode(&p.or("mode", "toggle")).await? { "Dunkles Design" } else { "Helles Design" }.into())),
+        "dark_mode" => Ok(Some(if linux::dark_mode(&p.or("mode", "toggle")).await? { t!("actions.darkTheme") } else { t!("actions.lightTheme") }.into())),
         "wake_on_lan" => {
             linux::wake_on_lan(&p.s("mac")).await?;
             Ok(Some(t!("actions.wakePacketSent").into()))
@@ -774,6 +935,18 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 _ => cur + n,
             };
             let text = js_string(&json!(next));
+            set_variable(app, &name, &text)?;
+            Ok(Some(format!("{name} = {text}")))
+        }
+        "var_calc" => {
+            let name = p.s("name");
+            if name.is_empty() {
+                bail!(t!("actions.noValueGiven"));
+            }
+            let expr = fill(app, ctx, &p.s("expr"));
+            let result = calc(&expr).map_err(|e| anyhow!(t!("actions.calcError", expr, e)))?;
+            let decimals = if p.0.contains_key("decimals") { clamp(p.n("decimals"), 0.0, 10.0) as usize } else { 2 };
+            let text = format_number(result, decimals);
             set_variable(app, &name, &text)?;
             Ok(Some(format!("{name} = {text}")))
         }
@@ -1214,6 +1387,30 @@ mod tests {
         assert_eq!(owner[3], Some(1));
         assert_eq!(owner[9], None, "überzähliges Ende gehört zu nichts");
         assert_eq!(in_loop[6], Some(0), "Schleife verlassen springt aus der Wiederholung");
+    }
+
+    #[test]
+    fn rechnen() {
+        assert_eq!(calc("(2 + 3) * 4 - 1").unwrap(), 19.0);
+        assert_eq!(calc("-2 ^ 2 + 10 % 4").unwrap(), -2.0, "wie in der Mathematik: -(2²)");
+        assert_eq!(calc("round(2,5) + max(1; 7; 3) + min(4, 2)").unwrap(), 12.0);
+        assert_eq!(calc("1,5 * 2").unwrap(), 3.0);
+        assert!(calc("1 / 0").is_err());
+        assert!(calc("2 +").is_err());
+        assert!(calc("foo(1)").is_err());
+        assert_eq!(format_number(2.0 / 3.0, 2), "0.67");
+        assert_eq!(format_number(4.0, 2), "4");
+        assert_eq!(format_number(-0.001, 2), "0");
+    }
+
+    #[test]
+    fn json_felder() {
+        let t = r#"{"data":[{"name":"anna","n":3}],"ok":true}"#;
+        assert_eq!(json_path(t, "data.0.name").unwrap(), "anna");
+        assert_eq!(json_path(t, "data[0].n").unwrap(), "3");
+        assert_eq!(json_path(t, "ok").unwrap(), "true");
+        assert!(json_path(t, "data.1").is_err());
+        assert!(json_path("kein json", "a").is_err());
     }
 
     #[test]

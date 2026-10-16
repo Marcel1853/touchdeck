@@ -63,6 +63,9 @@
         },
         "wait": {
           "label": "Wait for it to finish and show the output"
+        },
+        "saveTo": {
+          "label": "Save output in value (empty = don't save)"
         }
       }
     },
@@ -179,6 +182,12 @@
         },
         "body": {
           "label": "Body"
+        },
+        "saveTo": {
+          "label": "Save response in value (empty = don't save)"
+        },
+        "jsonPath": {
+          "label": "Only this field of the JSON response (e.g. data.0.name, empty = whole response)"
         }
       }
     },
@@ -1140,6 +1149,21 @@
       "fields": {
         "count": {
           "label": "How often? (current round: {Event.Loop})"
+        }
+      }
+    },
+    "var_calc": {
+      "label": "Calculate value",
+      "fields": {
+        "name": {
+          "label": "Result in value"
+        },
+        "expr": {
+          "label": "Calculation (e.g. ({Goals} + 1) * 2, round(x), min(a; b), max(a; b), abs(x))",
+          "placeholder": "{Goals} + 1"
+        },
+        "decimals": {
+          "label": "At most this many decimals"
         }
       }
     }

@@ -111,7 +111,17 @@
     "updatedValuesTwitchLive": "Updated the values Twitch.Live, Twitch.Zuschauer, Twitch.Titel, Twitch.Kategorie, Twitch.Follower",
     "voiceActivity": "Voice activity",
     "volume": "Volume {0} %",
-    "wakePacketSent": "Wake packet sent"
+    "wakePacketSent": "Wake packet sent",
+    "httpResponse": "Response {0} {1}",
+    "player": "Player: {0}",
+    "audioOutput": "Output: {0}",
+    "audioInput": "Input: {0}",
+    "darkTheme": "Dark theme",
+    "lightTheme": "Light theme",
+    "noValueGiven": "No value given.",
+    "calcError": "Calculation “{0}”: {1}",
+    "responseNotJson": "The response is not JSON.",
+    "jsonFieldMissing": "Field “{0}” is not in the response."
   },
   "events": {
     "activeEvents": "{0} event(s) active",
@@ -341,5 +351,16 @@
     "noPagesSelected": "No pages selected for export.",
     "notAProfile": "The file is not a TouchDeck profile (.tdprofile).",
     "tooLarge": "The profile is too large (more than 100 MB)."
+  },
+  "calc": {
+    "tooDeep": "nested too deeply",
+    "missingParen": "“)” is missing",
+    "notANumber": "“{0}” is not a number",
+    "unexpected": "unexpected character “{0}”",
+    "endsEarly": "calculation ends too early",
+    "unknown": "unknown: “{0}”",
+    "oneNumber": "{0}() needs exactly one number",
+    "unknownFunction": "unknown function “{0}”",
+    "notFinite": "result is not a number (e.g. divided by 0)"
   }
 }

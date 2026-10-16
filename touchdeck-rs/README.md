@@ -114,7 +114,10 @@ About 80 actions in groups:
 | Plugins | Actions of installed plugins |
 
 Values appear in labels via `{Name}` (e.g. “Goals: {Goals}”), as a live display and
-in OBS texts. `{Time}` and `{Date}` are always available.
+in OBS texts. `{Time}` and `{Date}` are always available. Values can be filled by
+**Calculate value** (e.g. `({Goals} + 1) * 2`), by the response of an **HTTP request**
+(also a single JSON field such as `data.0.name`) or by the output of **Run command**.
+**Flows** can have inputs that “Run flow” fills per call; inside they are `{Input.Name}`.
 
 Examples of the newer actions and triggers:
 

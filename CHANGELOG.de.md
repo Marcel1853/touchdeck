@@ -28,6 +28,11 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Neue Aktion „Wert berechnen“: + − × ÷ %, Potenzen, Klammern und round/floor/ceil/abs/sqrt/
+      min/max mit Platzhaltern, z. B. ({Tore} + 1) * 2; Kommazahlen aus Werten werden verstanden.
+    - „HTTP-Anfrage“ kann die Antwort – oder ein Feld einer JSON-Antwort wie data.0.name – in einem
+      Wert speichern; Adresse, Header und Inhalt verstehen Platzhalter.
+    - „Befehl ausführen“ kann die Ausgabe in einem Wert speichern.
     - Vorlagen mit Eingaben: eine Vorlage legt Eingaben mit Standardwert fest (z. B. „Szene“),
       „Vorlage ausführen“ füllt sie je Aufruf (Platzhalter erlaubt), im Ablauf stehen sie als
       {Eingabe.Name} bereit.

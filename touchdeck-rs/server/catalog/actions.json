@@ -48,6 +48,17 @@
    {
     "key": "wait",
     "type": "checkbox"
+   },
+   {
+    "key": "saveTo",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true,
+    "showIf": {
+     "wait": [
+      true
+     ]
+    }
    }
   ]
  },
@@ -281,6 +292,16 @@
       "DELETE"
      ]
     }
+   },
+   {
+    "key": "saveTo",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "jsonPath",
+    "type": "text"
    }
   ]
  },
@@ -1209,6 +1230,31 @@
     "type": "dynamic",
     "source": "variables",
     "allowNew": true
+   }
+  ]
+ },
+ {
+  "type": "var_calc",
+  "category": "values",
+  "group": "general",
+  "icon": "🧮",
+  "fields": [
+   {
+    "key": "name",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "expr",
+    "type": "text"
+   },
+   {
+    "key": "decimals",
+    "type": "number",
+    "default": 2,
+    "min": 0,
+    "max": 10
    }
   ]
  },

@@ -119,7 +119,11 @@ Rund 80 Aktionen in Gruppen:
 | Plugins | Aktionen installierter Plugins |
 
 Werte erscheinen in Beschriftungen über `{Name}` (z. B. „Tore: {Tore}“), als
-Live-Anzeige und in OBS-Texten. `{Zeit}` und `{Datum}` gibt es immer.
+Live-Anzeige und in OBS-Texten. `{Zeit}` und `{Datum}` gibt es immer. Werte füllen
+lassen sich mit **Wert berechnen** (z. B. `({Tore} + 1) * 2`), mit der Antwort einer
+**HTTP-Anfrage** (auch ein einzelnes JSON-Feld wie `data.0.name`) oder mit der
+Ausgabe von **Befehl ausführen**. **Vorlagen** können Eingaben haben, die „Vorlage
+ausführen“ je Aufruf füllt; darin heißen sie `{Eingabe.Name}`.
 
 Beispiele für die neueren Aktionen und Auslöser:
 

@@ -27,6 +27,11 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - New action "Calculate value": + − × ÷ %, powers, brackets and round/floor/ceil/abs/sqrt/
+      min/max with placeholders, e.g. ({Goals} + 1) * 2; decimal commas from values are understood.
+    - "HTTP request" can save the response – or one field of a JSON response such as data.0.name –
+      in a value; URL, headers and body understand placeholders.
+    - "Run command" can save the output in a value.
     - Flows with inputs: a flow can declare inputs with default values (e.g. "Scene"), "Run flow"
       fills them per call (placeholders allowed) and the flow uses them as {Input.Name}.
     - Logic blocks for action lists: "If …" / "Else if …" / "Else", "Repeat (n times)", "While …"
