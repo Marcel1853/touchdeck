@@ -84,6 +84,9 @@ struct Client {
     role: Role,
     tx: mpsc::UnboundedSender<Message>,
     viewing: Option<String>,
+    /// Für die Statusleiste: Adresse und Name, den das Gerät nach dem Verbinden meldet.
+    ip: String,
+    name: String,
 }
 
 struct Pairing {
@@ -641,6 +644,18 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         // Information
         "GET /api/info" => {
             let devices = app.device_count();
+            let device_list: Vec<Value> = {
+                let store = app.store.lock().unwrap();
+                let clients = app.clients.lock().unwrap();
+                clients
+                    .values()
+                    .filter(|c| c.role == Role::Device)
+                    .map(|c| {
+                        let page = c.viewing.as_deref().and_then(|p| store.page(p)).map(|p| p.name.clone());
+                        json!({ "name": c.name, "ip": c.ip, "page": page })
+                    })
+                    .collect()
+            };
             let (twitch, discord) = (app.twitch.status(), app.discord.status());
             let obs_connected = app.obs.connected();
             let store = app.store.lock().unwrap();
@@ -655,6 +670,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
                 "lan": linux::lan_addresses(),
                 "port": app.port,
                 "devices": devices,
+                "deviceList": device_list,
                 "obsConnected": obs_connected,
                 "twitch": twitch,
                 "discord": discord,
@@ -1009,7 +1025,7 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
     let (mut sink, mut stream) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
     let id = app.next_client.fetch_add(1, Ordering::Relaxed);
-    app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None });
+    app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None, ip: ip.clone(), name: String::new() });
     if role == Role::Device {
         app.log.info(t!("server.device"), t!("server.connected", ip));
         app.events.fire(&app, "device", &json!({ "state": "connected", "Gerät": ip }));
@@ -1095,6 +1111,13 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
             }
         }
         Some("slide") => slide(app, &page, &button, &msg["value"], tx),
+        Some("hello") => {
+            // Name des Geräts (Android-App: Gerätename, Browser: aus der Kennung abgeleitet).
+            let name: String = msg["name"].as_str().unwrap_or("").chars().filter(|c| !c.is_control()).take(60).collect();
+            if let Some(c) = app.clients.lock().unwrap().get_mut(&id) {
+                c.name = name.trim().to_string();
+            }
+        }
         Some("view") if msg["pageId"].is_string() => {
             let steam = app.store.lock().unwrap().page(&page).is_some_and(|p| p.template == "steam");
             let previous = app.clients.lock().unwrap().get_mut(&id).and_then(|c| c.viewing.replace(page.clone()));

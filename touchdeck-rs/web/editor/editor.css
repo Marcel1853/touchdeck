@@ -22,8 +22,8 @@ body {
   height: 100vh;
   display: grid;
   grid-template-columns: 86px minmax(0, 1fr);
-  grid-template-rows: 56px minmax(0, 1fr);
-  grid-template-areas: "top top" "rail view";
+  grid-template-rows: 56px minmax(0, 1fr) 28px;
+  grid-template-areas: "top top" "rail view" "status status";
   background: var(--bg);
   color: var(--text);
 }
@@ -583,3 +583,22 @@ a.btn { text-decoration: none; }
 pre.code { margin: 8px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 12px; line-height: 1.6; overflow: auto; white-space: pre; }
 .danger-card { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
 #ask-text { white-space: pre-line; line-height: 1.5; }
+
+/* Statusleiste unten: Geräte, Integrationen, Adresse. */
+.statusbar {
+  grid-area: status; display: flex; align-items: center; gap: 14px; padding: 0 12px;
+  border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12px;
+  white-space: nowrap; overflow: hidden;
+}
+.statusbar .spacer { flex: 1; }
+.status-chip { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: inherit; font: inherit; padding: 0; }
+button.status-chip { cursor: pointer; }
+button.status-chip:hover { color: var(--text); }
+.status-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: 0.5; }
+.status-chip.ok .dot { background: #30a46c; opacity: 1; }
+.status-chip.warn .dot { background: #f5a524; opacity: 1; }
+.status-chip.error .dot { background: #e5484d; opacity: 1; }
+.status-chip.ok { color: var(--text); }
+.status-names { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.status-sep { width: 1px; height: 14px; background: var(--line); }
+.status-address { font-variant-numeric: tabular-nums; }

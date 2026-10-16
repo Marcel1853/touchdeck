@@ -167,6 +167,21 @@ function goTo(pageId) {
   render();
 }
 
+/** Name dieses Geräts für die Statusleiste am PC: aus der App, sonst aus der Browser-Kennung. */
+function deviceName() {
+  try {
+    const fromApp = app?.deviceName?.();
+    if (fromApp) return fromApp;
+  } catch {}
+  const ua = navigator.userAgent;
+  const model = ua.match(/Android [\d.]+; ([^;)]+)/)?.[1]?.trim();
+  if (model && model !== 'K') return model;
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/Android/.test(ua)) return 'Android';
+  return `Browser (${/Firefox/.test(ua) ? 'Firefox' : /Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : navigator.platform || '?'})`;
+}
+
 const send = (msg) => {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     toast(tr('deck.notConnected'), true);
@@ -346,6 +361,7 @@ async function connect() {
     retryDelay = 500;
     announcedPage = null;
     setConnected(true);
+    ws.send(JSON.stringify({ type: 'hello', name: deviceName() }));
   };
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);

@@ -3,6 +3,7 @@ import { t as tr } from '/shared/i18n.js';
 import { $, h, api, toast, ask, resizer } from './dom.js';
 import { S, setRenderer, render, loadState, watchServer, undo, redo, sel, onPairRequest } from './state.js';
 import { mountPages, renderPages, duplicateButton, deleteButton, select, copyButton, cutButton, pasteButton, nudgeButton } from './views/pages.js';
+import { startStatusBar } from './statusbar.js';
 import { mountValues, renderValues } from './views/values.js';
 import { mountFlows, renderFlows } from './views/flows.js';
 import { mountEvents, renderEvents } from './views/events.js';
@@ -164,6 +165,7 @@ async function init() {
     applyTheme();
     showView('pages');
     watchServer();
+    startStatusBar(() => showView('settings'));
     // Das Desktop-Programm öffnet über #pair den Kopplungsdialog (Menü in der Systemleiste).
     const onHash = () => {
       if (location.hash !== '#pair') return;

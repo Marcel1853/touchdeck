@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Build
+import android.provider.Settings
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -213,6 +214,11 @@ class DeckActivity : Activity() {
                 }
             }
         }
+
+        /** Gerätename (wie in den Android-Einstellungen) für die Statusleiste am PC. */
+        @JavascriptInterface
+        fun deviceName(): String =
+            Settings.Global.getString(contentResolver, "device_name")?.takeIf { it.isNotBlank() } ?: "${Build.MANUFACTURER} ${Build.MODEL}"
 
         /** Sprache aus den TouchDeck-Einstellungen; gilt dann auch für den Verbinden-Bildschirm. */
         @JavascriptInterface
