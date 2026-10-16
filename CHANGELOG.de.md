@@ -82,6 +82,8 @@ Datum: 2026-10-16
       Gerätenamen aus ihren Einstellungen, Browser ihre Kennung.
     - /api/info liefert die Liste der verbundenen Geräte.
   Änderungen:
+    - Der Hinweis zum Querhalten spricht vom „Gerät“ statt vom „Handy“ und blendet sich nach ein
+      paar Sekunden aus; beim Öffnen einer anderen breiten Seite erscheint er wieder.
     - Auswahl eines Buttons aufheben ist einfacher: Klick neben die Seite oder auf das neue „✕“
       in den Button-Eigenschaften (Esc geht weiter) – dann erscheinen die Seiten-Einstellungen.
     - Die Seiten-Einstellungen (wenn kein Button gewählt ist) sind in die Reiter „Logik“ und

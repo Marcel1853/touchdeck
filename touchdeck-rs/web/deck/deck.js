@@ -123,6 +123,7 @@ function render() {
     ws.send(JSON.stringify({ type: 'view', pageId: page.id }));
     announcedPage = page.id;
   }
+  showRotateHint(page.id);
   currentPage = page.id;
   $('page-name').textContent = page.name;
   $('back').hidden = history_.length === 0;
@@ -136,6 +137,18 @@ function render() {
   setupGrid(grid, page);
   document.body.style.background = state.overrides?.pages?.[page.id]?.background ?? page.background;
   grid.replaceChildren(...page.buttons.map((b) => element(b, page)));
+}
+
+/** Hinweis „Gerät quer halten“ beim Öffnen einer breiten Seite kurz zeigen, dann ausblenden. */
+let hintShownFor = null;
+let hintTimer = null;
+function showRotateHint(pageId) {
+  if (hintShownFor === pageId) return;
+  hintShownFor = pageId;
+  const el = $('rotate-hint');
+  el.classList.remove('gone');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => el.classList.add('gone'), 4000);
 }
 
 /** Live-Werte einzeln austauschen, damit laufende Berührungen nicht unterbrochen werden. */

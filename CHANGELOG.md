@@ -79,6 +79,8 @@ Date: 2026-10-16
       settings, browsers send their ID.
     - /api/info lists the connected devices.
   Changes:
+    - The hint to turn the device sideways now says "device" instead of "phone" and fades out
+      after a few seconds; it shows again when opening another wide page.
     - Deselecting a button is easier: click next to the page or the new "✕" in the button
       properties (Esc still works) – then the page settings appear.
     - Page settings (shown when no button is selected) are split into the tabs "Logic" and
