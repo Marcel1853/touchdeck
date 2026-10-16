@@ -76,7 +76,8 @@ function cloneButton(b) {
 export function newButton(row, col, extra = {}) {
   return {
     id: uid('b_'), row, col, rowSpan: 1, colSpan: 1, title: '', icon: { type: 'emoji', value: '' },
-    color: '#2b2f3a', colorOn: '#2f9e6b', textColor: '#ffffff', fontSize: 14, titlePos: 'bottom', mode: 'press', iconFit: 'contain',
+    color: '#2b2f3a', colorOn: '#2f9e6b', textColor: '#ffffff', fontSize: 14, fontFamily: '', bold: true, italic: false, textOutline: 0,
+    titlePos: 'bottom', mode: 'press', iconFit: 'contain',
     actions: [], actionsOff: [], holdActions: [], releaseActions: [], doubleActions: [], holdRepeat: 0, events: [],
     iconOn: { type: 'emoji', value: '' }, titleOn: '',
     live: { source: 'none', command: '', variable: '' }, slider: { target: 'volume', input: '', command: '' },
@@ -639,7 +640,7 @@ export function deleteButton() {
 // Die Zwischenablage bleibt beim Seitenwechsel und Neuladen erhalten (nur in diesem Editor).
 const CLIP = 'touchdeck.clipboard';
 const STYLE_CLIP = 'touchdeck.styleClipboard';
-const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'titlePos', 'iconFit'];
+const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit'];
 const LOGIC_CLIP = 'touchdeck.logicClipboard';
 // Logik eines Buttons: alle Aktionslisten (Drücken, Aus, Halten, Loslassen, Doppelt) und seine Events.
 const LOGIC_KEYS = ['actions', 'actionsOff', 'holdActions', 'releaseActions', 'doubleActions', 'holdRepeat', 'events'];
@@ -947,6 +948,19 @@ function lookTab(b) {
         e.target.parentElement.firstChild.textContent = tr('pages.fontSize', [e.target.value]);
         edit('fs', () => (b.fontSize = Number(e.target.value)), { detail: false });
       } })),
+    h('div', { class: 'row' },
+      h('label', { class: 'field' }, tr('pages.font'),
+        h('select', { value: b.fontFamily ?? '', onchange: (e) => mutate(() => (b.fontFamily = e.target.value)) },
+          [['', tr('pages.fontNormal')], ['serif', 'Serif'], ['mono', 'Monospace'], ['condensed', tr('pages.fontCondensed')], ['handwriting', tr('pages.fontHandwriting')]]
+            .map(([v, l]) => h('option', { value: v }, l)))),
+      h('label', { class: 'field' }, tr('pages.textOutline', [b.textOutline ?? 0]),
+        h('input', { type: 'range', min: 0, max: 6, value: b.textOutline ?? 0, oninput: (e) => {
+          e.target.parentElement.firstChild.textContent = tr('pages.textOutline', [e.target.value]);
+          edit('outline', () => (b.textOutline = Number(e.target.value)), { detail: false });
+        } }))),
+    h('div', { class: 'font-styles' },
+      h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: b.bold !== false, onchange: (e) => mutate(() => (b.bold = e.target.checked)) }), h('b', {}, tr('pages.bold'))),
+      h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: !!b.italic, onchange: (e) => mutate(() => (b.italic = e.target.checked)) }), h('i', {}, tr('pages.italic')))),
 
     h('h3', {}, tr('pages.icon')),
     canBeOn && h('div', { class: 'field' },

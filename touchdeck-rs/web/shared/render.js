@@ -42,6 +42,12 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   el.style.setProperty('--bg', on ? b.colorOn : b.color);
   el.style.setProperty('--fg', b.textColor);
   el.style.setProperty('--fs', b.fontSize);
+  // Schrift: Familie (überall vorhandene Schriften), fett/kursiv, Umriss für Text auf Bildern.
+  const FONTS = { serif: 'Georgia, serif', mono: 'ui-monospace, monospace', condensed: '"Roboto Condensed", "Arial Narrow", sans-serif-condensed, sans-serif', handwriting: '"Comic Neue", "Comic Sans MS", cursive' };
+  if (FONTS[b.fontFamily]) el.style.setProperty('--ff', FONTS[b.fontFamily]);
+  if (b.bold === false) el.style.setProperty('--fw', 400);
+  if (b.italic) el.style.setProperty('--fst', 'italic');
+  if (b.textOutline > 0) el.style.setProperty('--outline', `${b.textOutline}px`);
 
   if (cover) el.style.setProperty('--img', `url("${iconUrl(b.icon.value)}")`);
 

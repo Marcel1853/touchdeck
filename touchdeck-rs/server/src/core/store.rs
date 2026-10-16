@@ -170,6 +170,12 @@ pub struct Button {
     pub title_on: String,
     pub text_color: String,
     pub font_size: i64,
+    /// Schrift für Beschriftung und Live-Text: "" (normal), serif, mono, condensed, handwriting.
+    pub font_family: String,
+    pub bold: bool,
+    pub italic: bool,
+    /// Umriss um die Schrift in Pixeln (0 = keiner).
+    pub text_outline: i64,
     pub title_pos: String,
     pub icon_fit: String,
     pub mode: String,
@@ -367,6 +373,10 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         title_on: text(&b["titleOn"], "", 200),
         text_color: color(&b["textColor"], "#ffffff"),
         font_size: clamp(&b["fontSize"], 8, 64, 14),
+        font_family: one_of(&b["fontFamily"], &["serif", "mono", "condensed", "handwriting"], ""),
+        bold: b["bold"] != Value::Bool(false),
+        italic: b["italic"] == Value::Bool(true),
+        text_outline: clamp(&b["textOutline"], 0, 6, 0),
         title_pos: one_of(&b["titlePos"], &["top", "center", "bottom", "hidden"], "bottom"),
         icon_fit: one_of(&b["iconFit"], &["cover"], "contain"),
         mode: one_of(&b["mode"], &["toggle", "slider"], "press"),

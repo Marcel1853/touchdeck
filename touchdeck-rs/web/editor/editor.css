@@ -604,3 +604,4 @@ button.status-chip:hover { color: var(--text); }
 .status-address { font-variant-numeric: tabular-nums; }
 
 .head-buttons { display: flex; gap: 6px; }
+.font-styles { display: flex; gap: 18px; margin: -4px 0 8px; }

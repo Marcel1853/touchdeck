@@ -27,6 +27,9 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Font options for labels and live text: font (normal, serif, monospace, condensed,
+      handwriting – fonts every device has, so the look can differ slightly), bold, italic and an
+      outline (0–6 px) for text on images. "Copy look" includes them.
     - Live display "Page indicator (●○○)" shows the position of the page in the page list, and
       "Go to page" can now jump to the next / previous page in the list.
     - Timer: action "Timer (countdown / stopwatch)" with start, pause and reset, live display

@@ -76,7 +76,7 @@
   flex: 0 0 auto;
   max-width: 100%;
   font-size: calc(var(--fs) * 1cqmin);
-  font-weight: 600;
+  font-weight: var(--fw, 600);
   line-height: 1.15;
   text-align: center;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
@@ -132,3 +132,10 @@
 }
 .td-btn.is-slider.horizontal .td-fill { inset: 0 auto 0 0; height: auto; width: calc(var(--val) * 1%); }
 .td-btn.is-slider > :not(.td-fill) { position: relative; }
+
+/* Schrift-Optionen (Schriftart, kursiv, Umriss) für Beschriftung und Live-Text. */
+.td-title, .td-live { font-family: var(--ff, inherit); font-style: var(--fst, normal); }
+.td-btn[style*="--outline"] .td-title, .td-btn[style*="--outline"] .td-live {
+  -webkit-text-stroke: var(--outline) rgb(0 0 0 / 0.85);
+  paint-order: stroke fill;
+}

@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Schrift-Optionen für Beschriftung und Live-Text: Schriftart (normal, Serif, Monospace,
+      schmal, Handschrift – Schriften, die jedes Gerät hat, darum kann es leicht abweichen),
+      fett, kursiv und Umriss (0–6 px) für Text auf Bildern. „Aussehen kopieren“ überträgt sie.
     - Live-Anzeige „Seitenanzeige (●○○)“ zeigt die Position der Seite in der Seitenliste, und
       „Gehe zu Seite“ kann jetzt zur nächsten / vorherigen Seite in der Liste springen.
     - Timer: Aktion „Timer (Countdown / Stoppuhr)“ mit Starten, Anhalten und Zurücksetzen,
