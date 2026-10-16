@@ -148,7 +148,7 @@ TouchDeck restarts it, at most three times per minute.
 
 | From TouchDeck | Meaning |
 |---|---|
-| `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.7.0"}` | The program has started |
+| `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.9.0"}` | The program has started |
 | `{"type":"action","requestId":"r_1","id":"go","params":{…},"info":{…}}` | Run an action, answer with `result` |
 | `{"type":"value","requestId":"…","value":"…"}` | Answer to `getValue` |
 | `{"type":"stop"}` | Quit (otherwise stopped after 2 s) |

@@ -6,6 +6,9 @@ Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy oder
 aus auslösen – mit Editor, Android-App und Bedienfeld im Browser. Geschrieben in Rust,
 das Programmfenster nutzt Tauri mit der Web-Ansicht des Systems.
 
+Aktuelle Version: **0.9.0** (PC-Programm), Android-App **0.6.2**. Änderungen je
+Version: [`CHANGELOG.de.md`](../CHANGELOG.de.md)
+
 ## Installieren
 
 ```sh
@@ -17,7 +20,8 @@ sudo apt install ./TouchDeck_<version>_amd64.deb   # mit Menüeintrag
 - Das `.deb` öffnet beim Installieren die Firewall (ufw) fürs Heimnetz und schließt
   sie beim Entfernen wieder. Python oder Node.js werden nicht gebraucht.
 - Fenster schließen = TouchDeck läuft im Hintergrund weiter (Handys bleiben
-  verbunden). Über das Symbol in der Systemleiste: Editor öffnen, Handy verbinden,
+  verbunden). Über das Symbol in der Systemleiste (Menü in der gewählten Sprache):
+  Editor öffnen, Handy verbinden,
   Vorschau, **Beim Anmelden starten**, Beenden.
 - Ein zweiter Start holt das vorhandene Fenster nach vorn.
 - Ohne `.deb` (z. B. beim AppImage) legt TouchDeck selbst einen Starter-Eintrag mit
@@ -34,6 +38,11 @@ lässt sie sich unter **Einstellungen › Allgemein**. Die Übersetzungen liegen
 `web/shared/lang/de.json` und `en.json` (Editor und Bedienfeld), `server/lang/*.json`
 (Meldungen des Servers) und `server/catalog/lang/*.json` (Namen der Aktionen und
 Auslöser). Plugins können eigene Übersetzungen mitbringen.
+
+Auch die **Android-App** gibt es auf Deutsch und Englisch. Ihre Texte –
+Verbindungsbildschirm, Dialoge und Bedienfeld – folgen der Sprache, die in TouchDeck
+am PC eingestellt ist, und wechseln mit, wenn man sie dort umstellt. Vor der ersten
+Verbindung nimmt die App die Sprache des gefundenen PCs, sonst die Sprache des Handys.
 
 ## Handy verbinden
 
@@ -58,12 +67,17 @@ meldet alle Geräte ab.
 ## Seiten
 
 - **Raster**-Seiten ordnen Buttons in Zeilen und Spalten. Spaltenbreiten und
-  Zeilenhöhen lassen sich einzeln einstellen.
+  Zeilenhöhen lassen sich einzeln einstellen. Ein Doppelklick auf ein leeres Feld
+  (oder „＋ Button“ in der Werkzeugleiste) legt einen Button an; ein einfacher Klick
+  hebt nur die Auswahl auf.
 - **Freie** Seiten platzieren Buttons beliebig auf einer Fläche mit gewähltem
   Seitenverhältnis (z. B. 16:10, am besten passend zum Gerät). Position und Größe
   werden in Prozent der Seite gespeichert, so zeigen Handy und Tablet die Seite genau
-  wie die Vorschau. Neue Buttons entstehen per Doppelklick auf die Fläche oder mit
-  „＋ Button“.
+  in ihrem Format, wie die Vorschau. Neue Buttons entstehen per Doppelklick auf die
+  Fläche, mit „＋ Button“ oder per Rechtsklick.
+- **Ordner:** Rechtsklick auf ein leeres Feld oder die freie Fläche › **Ordner hier
+  anlegen** erzeugt eine Unterseite mit Zurück-Button und an dieser Stelle einen
+  Button, der sie öffnet.
 - **Logik für Seiten:** Jede Seite kann eigene Events haben, z. B. mit dem Auslöser
   „Seite geöffnet / verlassen“, um eine OBS-Szene zu wechseln oder einen Wert zu setzen.
 - **Fertige Seiten** für System, OBS und Steam bestehen nur aus normalen, sichtbaren
@@ -71,6 +85,10 @@ meldet alle Geräte ab.
   automatisch an, wenn Spiele installiert oder entfernt werden, und laden fehlende
   Cover von Steam. Außerdem lassen sich Seiten aus einem anderen Makro-Programm
   importieren.
+- **Profile:** Über „⋯“ neben der Seitenliste oder per Rechtsklick auf eine Seite
+  lassen sich eine oder alle Seiten als `.tdprofile`-Datei exportieren – samt den
+  benutzten Bildern, Vorlagen, Werten und Events. Beim Import eines Profils kommen
+  nur Seiten hinzu, überschrieben wird nie etwas.
 - In den Einstellungen des Bedienfelds wählt **Form der Felder** zwischen „Fläche
   füllen“ (Felder dürfen etwas breiter oder höher als quadratisch werden) und
   „Quadratisch“.
@@ -82,8 +100,10 @@ Buttons gibt es als **Drücken**, **Umschalter** (an/aus mit eigenem Aussehen
 oder eigener Befehl mit `{value}`). Jeder Button kann eine **Live-Anzeige** haben
 (Uhrzeit, CPU, RAM, Temperatur, Lautstärke, Musiktitel, Steam, OBS, Twitch, Discord,
 Werte, Befehlsausgabe), auf **Events** reagieren und beim **Halten** und beim
-**Doppeldruck** eigene Aktionen ausführen. Rechtsklick auf einen Button:
-Duplizieren, Kopieren, Ausschneiden, Einfügen, Aussehen übertragen, auf andere
+**Doppeldruck** eigene Aktionen ausführen (nur Buttons mit Doppeldruck-Aktionen
+warten kurz, 0,3 s, auf ein zweites Tippen). Rechtsklick auf einen Button:
+Duplizieren, Kopieren, Ausschneiden, Einfügen, Aussehen übertragen, **Logik
+kopieren** / **Logik einfügen** (alle Aktionen und Events des Buttons), auf andere
 Seiten verschieben.
 
 ## Aktionen
@@ -92,7 +112,7 @@ Rund 80 Aktionen in Gruppen:
 
 | Gruppe | Aktionen |
 |---|---|
-| Allgemein | Webseiten, Dateien, Programme und Befehle, Seiten wechseln, Tastenkürzel, Text tippen, Tasten halten, Maus, Fenster nach vorn holen, Programme beenden, Benachrichtigungen, Bildschirmfoto, Sperren, Energie, Nachtlicht, Hell/Dunkel, Wake-on-LAN, HTTP, Dateien schreiben, Werte, Bedingungen, Vorlagen, Aussehen von Buttons ändern |
+| Allgemein | Webseiten, Dateien, Programme und Befehle, Seiten wechseln, Tastenkürzel, Text tippen, Tasten halten, Maus, Fenster nach vorn holen, Programme beenden, Benachrichtigungen, Bildschirmfoto, Sperren, Energie, Nachtlicht, Hell/Dunkel, Wake-on-LAN, HTTP, Dateien schreiben, Werte, Bedingungen, Zufall (eine der nächsten Aktionen), Timer (Countdown / Stoppuhr), Seite auf allen Geräten anzeigen, Vorlagen, Aussehen von Buttons ändern |
 | Audio, Musik & Medien | Mediensteuerung (MPRIS), Lautstärke und Mikrofon (PipeWire), Audioausgang/-eingang wechseln, Soundboard |
 | Streaming | OBS Studio (Szenen, Stream, Aufnahme, Clips, Audioquellen, Quellen, Filter, Texte, Übergänge, Profile …), Twitch |
 | Kommunikation | Discord (stumm, taub, Sprachkanal, Lautstärke, Push-to-Talk, Webhooks) |
@@ -102,21 +122,39 @@ Rund 80 Aktionen in Gruppen:
 Werte erscheinen in Beschriftungen über `{Name}` (z. B. „Tore: {Tore}“), als
 Live-Anzeige und in OBS-Texten. `{Zeit}` und `{Datum}` gibt es immer.
 
+Beispiele für die neueren Aktionen und Auslöser:
+
+- **Zufällig: eine der nächsten Aktionen** führt genau eine zufällig gewählte der
+  folgenden Aktionen aus (Anzahl einstellbar, 0 = alle folgenden).
+- **Timer (Countdown / Stoppuhr)** mit Starten, Anhalten und Zurücksetzen; die
+  Live-Anzeige **Timer** zeigt die Restzeit, der Auslöser **Timer abgelaufen**
+  reagiert, wenn er abläuft.
+- **Programm im Vordergrund** + **Seite auf allen Geräten anzeigen**: z. B. wechseln
+  Handy und Tablet von selbst zur OBS-Seite, sobald OBS vorn ist.
+- **Seitenanzeige (●○○)** als Live-Anzeige zeigt die Position der Seite in der
+  Seitenliste; **Gehe zu Seite** kann auch zur nächsten / vorherigen Seite springen.
+
 ## Bereiche im Editor
 
-Links in der Leiste (Strg+1 … Strg+7):
+Links in der Leiste (Strg+1 … Strg+8):
 
 - **Seiten** – Raster- oder freie Seiten gestalten, Logik für Seiten; fertige Seiten
   für Steam, System und OBS sowie Import von Seiten aus einem anderen Makro-Programm.
 - **Werte** – eigene Variablen mit Startwert, Ordner und Beschreibung.
 - **Events** – „Wenn …, dann …“: Wert ändert sich, Start, Zeitgeber, Uhrzeit, Datei,
-  Handy, Seite geöffnet / verlassen, Audio, Steam, OBS, Twitch, Discord, Plugins.
-  Mit Abklingzeit; Endlosschleifen werden abgefangen.
+  Handy, Umschalter, Seite geöffnet / verlassen, Programm im Vordergrund, Timer
+  abgelaufen, Audio (auch Ton oder Mikrofon stumm), Steam, OBS, Twitch, Discord,
+  Plugins. Mit Abklingzeit; Endlosschleifen werden abgefangen.
 - **Vorlagen** – wiederverwendbare Aktionslisten.
 - **Logs** – alles, was passiert, live.
 - **Plugins** – installierte Plugins, Marktplatz, Entwickeln, erweiterter Modus.
+- **🖼️ Icon-Pakete** – eigene Bildersammlungen (siehe unten).
 - **Einstellungen** – Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen,
-  Integrationen, Icon-Pakete, Backups, Protokoll, Information.
+  Integrationen, Backups, Protokoll, Information.
+
+Die **Statusleiste** unten zeigt die verbundenen Geräte mit Name, Adresse und der
+gerade angezeigten Seite, den Zustand von OBS, Twitch und Discord (ein Klick öffnet
+die Einstellungen) sowie die Adresse des PCs und die Version.
 
 ## Twitch einrichten
 
@@ -148,7 +186,8 @@ bearbeiten → Integrationen → Webhooks → Webhook-URL kopieren).
 
 ## Icon-Pakete
 
-Eigene Bildersammlungen (Einstellungen › Icon-Pakete): anlegen, Bilder hinzufügen,
+Eigene Bildersammlungen, in einem eigenen Bereich **🖼️ Icon-Pakete** links in der
+Leiste des Editors (neben Plugins): anlegen, Bilder hinzufügen,
 als `.tdicons`-Datei exportieren und weitergeben, Pakete anderer importieren.
 Abgelegt im Datenordner unter `icons/packs/`.
 
@@ -183,7 +222,7 @@ touchdeck-rs/
 │   ├── catalog/            Beschreibung der Aktionen und Auslöser für den Editor (mit lang/)
 │   ├── lang/               Übersetzungen der Meldungen des Servers
 │   └── src/
-│       ├── core/           Daten (store), Aktionen, Events, Live-Werte, Icon-Pakete, Plugins, Protokoll, Sicherungen
+│       ├── core/           Daten (store), Aktionen, Events, Live-Werte, Timer, Profile, Icon-Pakete, Plugins, Protokoll, Sicherungen
 │       ├── server/         HTTP-Routen, WebSocket, Suche im WLAN
 │       ├── system/         Linux: Programme, Audio, Medien (linux.rs), Tastatur/Maus/Fenster (x11.rs)
 │       └── integrations/   OBS, Steam, Twitch, Discord, Import von Seiten

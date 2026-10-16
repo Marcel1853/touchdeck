@@ -6,6 +6,9 @@ Macro remote for Linux: design button pages on your PC and trigger them from you
 phone or tablet – with an editor, an Android app and a deck in the browser. Written
 in Rust; the program window uses Tauri with the system's web view.
 
+Current version: **0.9.0** (desktop program), Android app **0.6.2**. Changes per
+version: [`CHANGELOG.md`](../CHANGELOG.md)
+
 ## Installing
 
 ```sh
@@ -17,7 +20,7 @@ sudo apt install ./TouchDeck_<version>_amd64.deb   # with menu entry
 - During installation the `.deb` opens the firewall (ufw) for the home network and
   closes it again on removal. Python or Node.js are not needed.
 - Closing the window = TouchDeck keeps running in the background (phones stay
-  connected). Via the system tray icon: open the editor, connect a phone, preview,
+  connected). Via the system tray icon (menu in the selected language): open the editor, connect a phone, preview,
   **Start at login**, quit.
 - Starting it a second time brings the existing window to the front.
 - Without the `.deb` (e.g. the AppImage), TouchDeck creates its own launcher entry
@@ -34,6 +37,11 @@ in **Settings › General**. The translations live in `web/shared/lang/de.json` 
 `en.json` (editor and deck), `server/lang/*.json` (server messages) and
 `server/catalog/lang/*.json` (names of actions and triggers). Plugins can ship their
 own translations.
+
+The **Android app** is available in German and English too. Its texts – connect
+screen, dialogs and the deck – follow the language set in TouchDeck on the PC and
+switch along when you change it there. Before the first connection the app uses the
+language of the PC it found, otherwise the phone's language.
 
 ## Connecting a phone
 
@@ -58,17 +66,25 @@ devices.
 ## Pages
 
 - **Grid** pages arrange buttons in rows and columns. Column widths and row heights
-  can be adjusted individually.
+  can be adjusted individually. Double-click an empty field (or use “＋ Button” in
+  the toolbar) to create a button; a single click only clears the selection.
 - **Free** pages place buttons anywhere on an area with a chosen aspect ratio (e.g.
   16:10, ideally matching the device). Position and size are stored in percent of
-  the page, so phone and tablet show the page exactly as the preview does. New
-  buttons are added by double-clicking the area or with “＋ Button”.
+  the page, so phone and tablet show the page exactly in its format, like the
+  preview. New buttons are added by double-clicking the area, with “＋ Button” or by
+  right-clicking.
+- **Folders:** right-click an empty field or the free area › **Create folder here**
+  creates a sub-page with a back button and a button at this spot that opens it.
 - **Page logic:** every page can have its own events, e.g. with the trigger
   “Page opened / left” to switch an OBS scene or set a value.
 - **Ready-made pages** for System, OBS and Steam are built only from normal, visible
   actions and events, so you can change everything afterwards. Steam pages update
   automatically when games are installed or removed and download missing covers
   from Steam. Pages can also be imported from another macro app.
+- **Profiles:** via “⋯” next to the page list or by right-clicking a page, one page
+  or all pages can be exported as a `.tdprofile` file – including the images, flows,
+  values and events they use. Importing a profile only adds pages and never
+  overwrites anything.
 - In the deck settings, **Shape of the cells** chooses between “Fill the screen”
   (cells may become a bit wider or taller than square) and “Square”.
 
@@ -79,8 +95,10 @@ own actions) and **Slider** (volume, microphone, OBS audio source or a custom
 command with `{value}`). Every button can have a **live display** (time, CPU, RAM,
 temperature, volume, music title, Steam, OBS, Twitch, Discord, values, command
 output), react to **events**, and run its own actions on **hold** and on **double
-press**. Right-click a button: duplicate, copy, cut, paste, transfer look, move to
-another page.
+press** (only buttons with double-press actions wait briefly, 0.3 s, for a second
+tap). Right-click a button: duplicate, copy, cut, paste, transfer look, **Copy
+logic** / **Paste logic** (all actions and events of the button), move to another
+page.
 
 ## Actions
 
@@ -88,7 +106,7 @@ About 80 actions in groups:
 
 | Group | Actions |
 |---|---|
-| General | Websites, files, programs and commands, switch pages, keyboard shortcuts, type text, hold keys, mouse, bring windows to the front, quit programs, notifications, screenshot, lock, power, night light, light/dark mode, Wake-on-LAN, HTTP, write files, values, conditions, templates, change the look of buttons |
+| General | Websites, files, programs and commands, switch pages, keyboard shortcuts, type text, hold keys, mouse, bring windows to the front, quit programs, notifications, screenshot, lock, power, night light, light/dark mode, Wake-on-LAN, HTTP, write files, values, conditions, random (one of the next actions), timer (countdown / stopwatch), show page on all devices, flows, change the look of buttons |
 | Audio, music & media | Media control (MPRIS), volume and microphone (PipeWire), switch audio output/input, soundboard |
 | Streaming | OBS Studio (scenes, stream, recording, clips, audio sources, sources, filters, texts, transitions, profiles …), Twitch |
 | Communication | Discord (mute, deafen, voice channel, volume, push-to-talk, webhooks) |
@@ -98,21 +116,39 @@ About 80 actions in groups:
 Values appear in labels via `{Name}` (e.g. “Goals: {Goals}”), as a live display and
 in OBS texts. `{Time}` and `{Date}` are always available.
 
+Examples of the newer actions and triggers:
+
+- **Random: one of the next actions** runs exactly one randomly chosen action of the
+  following ones (count adjustable, 0 = all following).
+- **Timer (countdown / stopwatch)** with start, pause and reset; the live display
+  **Timer** shows the time left, the trigger **Timer finished** reacts when it runs
+  out.
+- **Program in the foreground** + **Show page on all devices**: e.g. phone and tablet
+  switch to the OBS page by themselves as soon as OBS is in front.
+- **Page indicator (●○○)** as a live display shows the position of the page in the page
+  list; **Go to page** can also jump to the next / previous page in the list.
+
 ## Sections in the editor
 
-In the sidebar on the left (Ctrl+1 … Ctrl+7):
+In the sidebar on the left (Ctrl+1 … Ctrl+8):
 
 - **Pages** – design grid or free pages, page logic; ready-made pages for Steam,
   System and OBS, and importing pages from another macro app.
 - **Values** – your own variables with start value, folder and description.
-- **Events** – “When …, then …”: value changes, start, timer, time of day, file,
-  phone, page opened / left, audio, Steam, OBS, Twitch, Discord, plugins. With
-  cooldown; endless loops are caught.
-- **Templates** – reusable action lists.
+- **Events** – “When …, then …”: value changes, start, interval, time of day, file,
+  phone, toggle, page opened / left, program in the foreground, timer finished,
+  audio (incl. sound or microphone muted), Steam, OBS, Twitch, Discord, plugins.
+  With cooldown; endless loops are caught.
+- **Flows** – reusable action lists.
 - **Logs** – everything that happens, live.
 - **Plugins** – installed plugins, marketplace, develop, advanced mode.
-- **Settings** – General, Phone & security, Deck, Appearance, Integrations, Icon
-  packs, Backups, Log, Information.
+- **🖼️ Icon packs** – your own image collections (see below).
+- **Settings** – General, Phone & security, Deck, Look, Integrations, Backups,
+  Log, Information.
+
+The **status bar** at the bottom shows the connected devices with name, address and
+the page they currently show, the state of OBS, Twitch and Discord (a click opens
+the settings), plus the PC's address and the version.
 
 ## Setting up Twitch
 
@@ -144,7 +180,8 @@ Integrations → Webhooks → copy webhook URL).
 
 ## Icon packs
 
-Your own image collections (Settings › Icon packs): create them, add images, export
+Your own image collections, in their own section **🖼️ Icon packs** in the left
+sidebar of the editor (next to Plugins): create them, add images, export
 them as a `.tdicons` file and share them, import packs from others. Stored in the
 data folder under `icons/packs/`.
 
@@ -179,7 +216,7 @@ touchdeck-rs/
 │   ├── catalog/            description of actions and triggers for the editor (with lang/)
 │   ├── lang/               translations of server messages
 │   └── src/
-│       ├── core/           data (store), actions, events, live values, icon packs, plugins, log, backups
+│       ├── core/           data (store), actions, events, live values, timers, profiles, icon packs, plugins, log, backups
 │       ├── server/         HTTP routes, WebSocket, discovery on the Wi-Fi
 │       ├── system/         Linux: programs, audio, media (linux.rs), keyboard/mouse/windows (x11.rs)
 │       └── integrations/   OBS, Steam, Twitch, Discord, page import
