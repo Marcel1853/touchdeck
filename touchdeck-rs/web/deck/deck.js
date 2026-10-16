@@ -220,6 +220,13 @@ let slideTimer = null;
 
 function sliderValue(el, e) {
   const r = el.getBoundingClientRect();
+  if (el.dataset.knob) {
+    // Winkel um die Mitte: 0 % unten links (225°), 100 % unten rechts (135°), 270° dazwischen im Uhrzeigersinn.
+    const deg = (Math.atan2(e.clientX - (r.left + r.width / 2), r.top + r.height / 2 - e.clientY) * 180) / Math.PI;
+    let from = (deg + 360 + 135) % 360;
+    if (from > 270) from = from > 315 ? 0 : 270;
+    return Math.round((from / 270) * 100);
+  }
   const ratio = el.dataset.vertical ? (r.bottom - e.clientY) / r.height : (e.clientX - r.left) / r.width;
   return Math.round(Math.max(0, Math.min(1, ratio)) * 100);
 }

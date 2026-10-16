@@ -1120,6 +1120,22 @@ function sliderTab(b) {
     sl.target === 'obs_volume' && dynamicSelect({ key: 'input', label: tr('pages.obsAudioSource'), source: 'obs-inputs' }, sl.input, (v) => edit(() => (sl.input = v))),
     sl.target === 'command' && h('label', { class: 'field' }, tr('pages.commandIsReplacedBy'),
       h('textarea', { value: sl.command, placeholder: tr('pages.exampleDdcutilSetvcp10'), oninput: (e) => edit(() => (sl.command = e.target.value), 'slcmd') })),
+
+    h('h3', {}, tr('pages.sliderLook')),
+    h('label', { class: 'field' }, tr('pages.sliderShape'),
+      h('select', { value: sl.shape ?? 'fill', onchange: (e) => edit(() => (sl.shape = e.target.value)) },
+        [['fill', tr('pages.shapeFill')], ['rail', tr('pages.shapeRail')], ['knob', tr('pages.shapeKnob')], ['dial', tr('pages.shapeDial')]].map(([v, l]) => h('option', { value: v }, l)))),
+    h('div', { class: 'row' },
+      h('div', { class: 'field' }, tr('pages.sliderColor'),
+        h('div', { class: 'colors' },
+          h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: !!sl.color, onchange: (e) => edit(() => (sl.color = e.target.checked ? '#5b6cff' : '')) }), tr('pages.ownColor')),
+          sl.color && h('input', { type: 'color', value: sl.color, oninput: (e) => edit(() => (sl.color = e.target.value), 'slcolor') }))),
+      (sl.shape ?? 'fill') !== 'fill' && h('label', { class: 'field' }, tr('pages.sliderThickness', [sl.thickness ?? 10]),
+        h('input', { type: 'range', min: 2, max: 30, value: sl.thickness ?? 10, oninput: (e) => {
+          e.target.parentElement.firstChild.textContent = tr('pages.sliderThickness', [e.target.value]);
+          edit(() => (sl.thickness = Number(e.target.value)), 'slthick');
+        } }))),
+    h('p', { class: 'hint-text' }, tr('pages.sliderShapeHint')),
   ];
 }
 

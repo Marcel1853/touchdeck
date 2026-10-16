@@ -120,6 +120,8 @@ Examples of the newer actions and triggers:
 
 - **Random: one of the next actions** runs exactly one randomly chosen action of the
   following ones (count adjustable, 0 = all following).
+- **Knobs and slider styles:** a slider can be an area, a rail with handle, a knob
+  (ring) or a knob with pointer, with its own colour and thickness.
 - **Timer (countdown / stopwatch)** with start, pause and reset; the live display
   **Timer** shows the time left, the trigger **Timer finished** reacts when it runs
   out.

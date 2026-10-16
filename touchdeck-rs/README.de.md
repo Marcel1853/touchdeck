@@ -125,6 +125,8 @@ Beispiele für die neueren Aktionen und Auslöser:
 
 - **Zufällig: eine der nächsten Aktionen** führt genau eine zufällig gewählte der
   folgenden Aktionen aus (Anzahl einstellbar, 0 = alle folgenden).
+- **Drehregler und Regler-Formen:** ein Regler kann Fläche, Schiene mit Griff,
+  Drehregler (Ring) oder Drehregler mit Zeiger sein, mit eigener Farbe und Dicke.
 - **Timer (Countdown / Stoppuhr)** mit Starten, Anhalten und Zurücksetzen; die
   Live-Anzeige **Timer** zeigt die Restzeit, der Auslöser **Timer abgelaufen**
   reagiert, wenn er abläuft.

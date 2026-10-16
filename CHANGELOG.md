@@ -27,6 +27,9 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Knobs and slider styles: sliders can now be a slider (area), a slider with rail and handle,
+      a knob (ring) or a knob with pointer, with their own colour and thickness. Knobs are turned
+      in a circle (bottom left 0 %, bottom right 100 %) and control everything sliders can.
     - Icon pack import: a file with several packs in sub-folders (each with its own description)
       becomes several packs; links without "https://" (e.g. "www.example.com") are completed
       instead of rejecting the pack.

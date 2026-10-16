@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Drehregler und Regler-Formen: Regler können Schieber (Fläche), Schieber mit Schiene und Griff,
+      Drehregler (Ring) oder Drehregler mit Zeiger sein, mit eigener Farbe und Dicke. Drehregler
+      dreht man im Kreis (unten links 0 %, unten rechts 100 %); sie steuern alles, was Regler können.
     - Import von Icon-Paketen: Eine Datei mit mehreren Paketen in Unterordnern (jedes mit eigener
       Beschreibung) wird zu mehreren Paketen; Links ohne „https://“ (z. B. „www.beispiel.de“)
       werden ergänzt, statt das Paket abzulehnen.

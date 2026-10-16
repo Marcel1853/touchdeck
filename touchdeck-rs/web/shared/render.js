@@ -61,20 +61,40 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   }
 
 
+  const shape = isSlider ? b.slider?.shape ?? 'fill' : null;
+  const isKnob = shape === 'knob' || shape === 'dial';
   if (isSlider) {
-    // Regler: hoch, wenn der Button höher als breit ist, sonst quer.
+    // Regler: hoch, wenn der Button höher als breit ist, sonst quer. Alles hängt an --val (0–100).
     const vertical = free ? b.free.h * page.ratioH >= b.free.w * page.ratioW : b.rowSpan >= b.colSpan;
     const value = Number.isFinite(live?.value) ? live.value : 0;
-    el.classList.add('is-slider', vertical ? 'vertical' : 'horizontal');
+    el.classList.add('is-slider', vertical ? 'vertical' : 'horizontal', `shape-${shape}`);
     el.dataset.vertical = vertical ? '1' : '';
+    if (isKnob) el.dataset.knob = '1';
     el.style.setProperty('--val', value);
-    const fill = document.createElement('div');
-    fill.className = 'td-fill';
-    el.append(fill);
+    el.style.setProperty('--thick', b.slider?.thickness ?? 10);
+    if (b.slider?.color) el.style.setProperty('--sc', b.slider.color);
+    if (shape === 'fill') {
+      const fill = document.createElement('div');
+      fill.className = 'td-fill';
+      el.append(fill);
+    } else if (shape === 'rail') {
+      const rail = document.createElement('div');
+      rail.className = 'td-rail';
+      rail.innerHTML = '<span class="td-rail-fill"></span><i class="td-rail-handle"></i>';
+      el.append(rail);
+    } else {
+      // Drehregler: Ring über 270° (unten links bis unten rechts), wahlweise mit Zeiger.
+      const knob = document.createElement('div');
+      knob.className = 'td-knob';
+      knob.innerHTML = `<svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="40" pathLength="100"/>`
+        + `<circle class="value" cx="50" cy="50" r="40" pathLength="100"/>${shape === 'dial' ? '<line class="pointer" x1="50" y1="50" x2="50" y2="22"/>' : ''}</svg>`;
+      el.append(knob);
+    }
     live = { text: live?.text ?? `${value} %` };
   }
 
-  const hasIcon = b.icon?.value && !cover;
+  // Beim Drehregler steht der Wert in der Mitte, ein Symbol würde den Ring verdecken.
+  const hasIcon = b.icon?.value && !cover && !isKnob;
   if (hasIcon) {
     const icon = document.createElement('div');
     icon.className = 'td-icon';
