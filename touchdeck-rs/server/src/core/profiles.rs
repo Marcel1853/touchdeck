@@ -43,7 +43,7 @@ fn remap(v: &mut Value, ids: &HashMap<String, String>) {
 fn used_images(pages: &[Value]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for b in pages.iter().flat_map(|p| p["buttons"].as_array().into_iter().flatten()) {
-        for key in ["icon", "iconOn"] {
+        for key in ["icon", "iconOn", "bgImage"] {
             if b[key]["type"] == "image"
                 && let Some(name) = b[key]["value"].as_str().filter(|n| !n.is_empty())
                 && !out.iter().any(|o| o == name)
@@ -227,7 +227,7 @@ pub fn import(store: &mut Store, bytes: &[u8]) -> Result<Imported> {
     for p in &mut pages {
         p["template"] = json!("");
         for b in p["buttons"].as_array_mut().into_iter().flatten() {
-            for key in ["icon", "iconOn"] {
+            for key in ["icon", "iconOn", "bgImage"] {
                 if let Some(new) = b[key]["value"].as_str().and_then(|v| image_names.get(v)) {
                     b[key]["value"] = json!(new);
                 }

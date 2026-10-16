@@ -27,6 +27,9 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Button textures: a background image of its own (own image or from an icon pack) below icon
+      and label, plus overlays on top: gloss, frame, stripes, dots, vignette, glow. "Copy look"
+      includes them; profiles export the images.
     - Live displays with a number (CPU, RAM, temperature, volume, timer, numeric values) can
       additionally be shown as a progress bar at the bottom of the button.
     - Font options for labels and live text: font (normal, serif, monospace, condensed,

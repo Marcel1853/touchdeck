@@ -50,6 +50,12 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   if (b.textOutline > 0) el.style.setProperty('--outline', `${b.textOutline}px`);
 
   if (cover) el.style.setProperty('--img', `url("${iconUrl(b.icon.value)}")`);
+  // Textur: eigenes Hintergrundbild (unter Symbol und Text) und Overlay darüber.
+  if (b.bgImage?.type === 'image' && b.bgImage.value && !cover) {
+    el.classList.add('has-texture');
+    el.style.setProperty('--tex', `url("${iconUrl(b.bgImage.value)}")`);
+  }
+
 
   if (isSlider) {
     // Regler: hoch, wenn der Button höher als breit ist, sonst quer.
@@ -102,7 +108,12 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     t.textContent = fillTitle(b.title, variables);
     el.append(t);
   }
-  if (!hasIcon && !cover && !isSlider && !live?.text && !(b.title && b.titlePos !== 'hidden')) el.classList.add('is-blank');
+  if (b.overlay) {
+    const ov = document.createElement('div');
+    ov.className = `td-overlay ov-${b.overlay}`;
+    el.append(ov);
+  }
+  if (!hasIcon && !cover && !isSlider && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
   return el;
 }
 

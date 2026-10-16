@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Texturen für Buttons: eigenes Hintergrundbild (eigenes Bild oder aus einem Icon-Paket) unter
+      Symbol und Beschriftung, dazu Overlays darüber: Glanz, Rahmen, Streifen, Punkte, Vignette,
+      Leuchten. „Aussehen kopieren“ überträgt sie, Profile nehmen die Bilder mit.
     - Live-Anzeigen mit Zahl (CPU, RAM, Temperatur, Lautstärke, Timer, Zahlen-Werte) lassen sich
       zusätzlich als Fortschrittsbalken unten im Button zeigen.
     - Schrift-Optionen für Beschriftung und Live-Text: Schriftart (normal, Serif, Monospace,

@@ -640,7 +640,7 @@ export function deleteButton() {
 // Die Zwischenablage bleibt beim Seitenwechsel und Neuladen erhalten (nur in diesem Editor).
 const CLIP = 'touchdeck.clipboard';
 const STYLE_CLIP = 'touchdeck.styleClipboard';
-const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit'];
+const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit', 'bgImage', 'overlay'];
 const LOGIC_CLIP = 'touchdeck.logicClipboard';
 // Logik eines Buttons: alle Aktionslisten (Drücken, Aus, Halten, Loslassen, Doppelt) und seine Events.
 const LOGIC_KEYS = ['actions', 'actionsOff', 'holdActions', 'releaseActions', 'doubleActions', 'holdRepeat', 'events'];
@@ -997,6 +997,9 @@ function lookTab(b) {
       canBeOn && h('label', {}, h('input', { type: 'color', value: b.colorOn, oninput: (e) => edit('con', () => (b.colorOn = e.target.value), { detail: false }) }), tr('pages.whenOn'))),
     h('div', { class: 'swatches' }, SWATCHES.map((c) => h('button', { type: 'button', title: c, style: `background:${c}`, onclick: () => mutate(() => (b.color = c)) }))),
 
+    h('h3', {}, tr('pages.texture')),
+    textureSection(b),
+
     h('h3', {}, tr('pages.sizeBehavior')),
     isFree(p) ? freeSizeFields(b) : h('div', { class: 'row' },
       h('label', { class: 'field' }, tr('pages.widthFields'),
@@ -1007,6 +1010,39 @@ function lookTab(b) {
       segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')]], b.mode, (v) => mutate(() => (b.mode = v)))),
     b.mode !== 'slider' && liveSection(b),
   ];
+}
+
+/** Textur: Hintergrundbild unter Symbol und Text und ein Overlay darüber. */
+function textureSection(b) {
+  b.bgImage ??= { type: 'emoji', value: '' };
+  const has = b.bgImage.type === 'image' && b.bgImage.value;
+  const upload = h('input', {
+    type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml', hidden: true,
+    onchange: async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) return toast(tr('pages.imageIsLargerThan'), 'error');
+      try {
+        const { name } = await api('POST', '/api/icons', { data: await readDataUrl(file) });
+        S.icons.push(name);
+        mutate(() => (b.bgImage = { type: 'image', value: name }));
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    },
+  });
+  const overlays = [['', tr('pages.overlayNone')], ['gloss', tr('pages.overlayGloss')], ['frame', tr('pages.overlayFrame')], ['stripes', tr('pages.overlayStripes')],
+    ['dots', tr('pages.overlayDots')], ['vignette', tr('pages.overlayVignette')], ['glow', tr('pages.overlayGlow')]];
+  return h('div', {},
+    h('div', { class: 'icon-preview' },
+      h('div', { class: 'icon-box' }, has && h('img', { src: iconUrl(b.bgImage.value), alt: '' })),
+      h('span', { class: 'hint-text', style: 'flex:1;margin:0' }, has ? b.bgImage.value : tr('pages.noBackgroundImage')),
+      h('label', { class: 'btn small' }, tr('pages.image'), upload),
+      has && h('button', { class: 'btn small ghost', title: tr('pages.removeBackgroundImage'), onclick: () => mutate(() => (b.bgImage = { type: 'emoji', value: '' })) }, '✕')),
+    iconPicker(b, 'bgImage', 'showBgPicker'),
+    h('label', { class: 'field' }, tr('pages.overlay'),
+      h('select', { value: b.overlay ?? '', onchange: (e) => mutate(() => (b.overlay = e.target.value)) }, overlays.map(([v, l]) => h('option', { value: v }, l)))),
+    h('p', { class: 'hint-text' }, tr('pages.textureHint')));
 }
 
 /** Lage und Größe in Prozent der Seite (freie Seiten). */

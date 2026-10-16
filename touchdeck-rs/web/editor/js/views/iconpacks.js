@@ -161,7 +161,7 @@ function iconPacksSection() {
 }
 
 /** Bildauswahl beim Button: eigene Bilder und alle Icon-Pakete, mit Suche. key: icon oder iconOn. */
-export function iconPicker(b, key = 'icon') {
+export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
   const sources = [['own', tr('iconpacks.ownImages', [S.icons.length]), S.icons.map((n) => ({ value: n, label: n }))],
     ...S.iconPacks.map((p) => [p.id, `${p.name} (${p.icons.length})`, p.icons.map((i) => ({ value: packIcon(p.id, i), label: i }))])];
   if (!sources.some(([, , list]) => list.length)) return null;
@@ -171,9 +171,9 @@ export function iconPicker(b, key = 'icon') {
   const shown = list.filter((i) => !q || i.label.toLowerCase().includes(q));
   const MAX = 240;
   return h('div', {},
-    h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S.showIcons = !S.showIcons; render(); } },
-      tr('iconpacks.imagesIconPacks', [S.showIcons ? '▾' : '▸'])),
-    S.showIcons && h('div', { class: 'picker' },
+    h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S[toggle] = !S[toggle]; render(); } },
+      tr('iconpacks.imagesIconPacks', [S[toggle] ? '▾' : '▸'])),
+    S[toggle] && h('div', { class: 'picker' },
       h('div', { class: 'row' },
         h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; render(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
         h('input', { type: 'search', placeholder: tr('common.search'), value: S.iconSearch ?? '', oninput: (e) => { S.iconSearch = e.target.value; render(); } })),

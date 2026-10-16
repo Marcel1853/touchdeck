@@ -180,6 +180,9 @@ pub struct Button {
     pub text_outline: i64,
     pub title_pos: String,
     pub icon_fit: String,
+    /// Textur: Hintergrundbild (eigenes Bild oder aus einem Icon-Paket) und Overlay darüber.
+    pub bg_image: Icon,
+    pub overlay: String,
     pub mode: String,
     pub live: Live,
     pub slider: Slider,
@@ -347,6 +350,9 @@ fn free_from_cell(row: i64, col: i64, row_span: i64, col_span: i64, rows: i64, c
     }
 }
 
+/** Overlays über Buttons (reines CSS, keine Bilddateien). */
+pub const OVERLAYS: [&str; 6] = ["gloss", "frame", "stripes", "dots", "vignette", "glow"];
+
 fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option<Button> {
     b.as_object()?;
     let mut row = parse_int(&b["row"])?;
@@ -381,6 +387,8 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         text_outline: clamp(&b["textOutline"], 0, 6, 0),
         title_pos: one_of(&b["titlePos"], &["top", "center", "bottom", "hidden"], "bottom"),
         icon_fit: one_of(&b["iconFit"], &["cover"], "contain"),
+        bg_image: sanitize_icon(&b["bgImage"]),
+        overlay: one_of(&b["overlay"], &OVERLAYS, ""),
         mode: one_of(&b["mode"], &["toggle", "slider"], "press"),
         live: Live {
             source: one_of(&live["source"], &catalog::live_source_ids(), "none"),
