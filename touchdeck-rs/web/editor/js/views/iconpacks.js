@@ -135,6 +135,105 @@ export function renderIconPacks() {
   if (el) el.replaceChildren(...iconPacksSection().filter(Boolean));
 }
 
+// ---------- Icon-Editor: Bild aus Hintergrund, Symbol und Text zusammenbauen ----------
+
+const SIZE = 256;
+
+function drawIcon(canvas, o) {
+  const c = canvas.getContext('2d');
+  c.clearRect(0, 0, SIZE, SIZE);
+  c.save();
+  c.beginPath();
+  if (o.shape === 'circle') c.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+  else if (o.shape === 'rounded') c.roundRect(0, 0, SIZE, SIZE, 44);
+  else c.rect(0, 0, SIZE, SIZE);
+  c.clip();
+  if (o.background !== 'none') {
+    const g = c.createLinearGradient(0, 0, 0, SIZE);
+    g.addColorStop(0, o.color1);
+    g.addColorStop(1, o.background === 'gradient' ? o.color2 : o.color1);
+    c.fillStyle = g;
+    c.fillRect(0, 0, SIZE, SIZE);
+  }
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  const hasText = o.text.trim() && o.textPos !== 'none';
+  const emojiY = !hasText ? SIZE / 2 : o.textPos === 'top' ? SIZE * 0.58 : SIZE * 0.42;
+  if (o.emoji) {
+    c.font = `${Math.round(SIZE * o.emojiSize / 100)}px "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    c.fillText(o.emoji, SIZE / 2, emojiY);
+  }
+  if (hasText) {
+    c.font = `700 ${o.textSize}px system-ui, sans-serif`;
+    const y = o.textPos === 'top' ? SIZE * 0.14 : SIZE * 0.86;
+    if (o.outline) {
+      c.lineWidth = 6;
+      c.strokeStyle = 'rgb(0 0 0 / 0.8)';
+      c.lineJoin = 'round';
+      c.strokeText(o.text, SIZE / 2, y, SIZE - 20);
+    }
+    c.fillStyle = o.textColor;
+    c.fillText(o.text, SIZE / 2, y, SIZE - 20);
+  }
+  c.restore();
+}
+
+/** Kleiner Editor: Vorschau zeichnet sich bei jeder Eingabe neu, Speichern legt ein PNG an. */
+function iconEditor() {
+  S.iconEditor ??= { background: 'gradient', color1: '#5b6cff', color2: '#23264a', shape: 'rounded', emoji: '🎮', emojiSize: 55, text: '', textColor: '#ffffff', textSize: 34, textPos: 'bottom', outline: true, target: 'own' };
+  const o = S.iconEditor;
+  const canvas = h('canvas', { width: SIZE, height: SIZE, class: 'icon-editor-canvas' });
+  const redraw = () => drawIcon(canvas, o);
+  const set = (k, v) => { o[k] = v; redraw(); };
+  const field = (label, input) => h('label', { class: 'field' }, label, input);
+  const select = (k, options) => h('select', { value: o[k], onchange: (e) => set(k, e.target.value) }, options.map(([v, l]) => h('option', { value: v }, l)));
+  const save = async () => {
+    const data = canvas.toDataURL('image/png');
+    try {
+      if (o.target === 'own') {
+        const { name } = await api('POST', '/api/icons', { data });
+        S.icons.push(name);
+        toast(tr('iconpacks.iconSavedOwn', [name]), 'ok');
+      } else {
+        const pack = S.iconPacks.find((p) => p.id === o.target);
+        const base = (o.text || 'icon').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30) || 'icon';
+        const file = `${base}_${Date.now().toString(36)}.png`;
+        const r = await api('POST', '/api/iconpacks/add', { id: o.target, files: [{ name: file, data }] });
+        S.iconPacks = r.packs;
+        toast(tr('iconpacks.iconSavedPack', [pack?.name ?? '']), 'ok');
+      }
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+  requestAnimationFrame(redraw);
+  return h('div', { class: 'settings-card icon-editor' },
+    h('div', { class: 'icon-editor-preview' }, canvas),
+    h('div', { class: 'icon-editor-form' },
+      h('div', { class: 'row' },
+        field(tr('iconpacks.background'), select('background', [['gradient', tr('iconpacks.gradient')], ['solid', tr('iconpacks.solid')], ['none', tr('iconpacks.transparent')]])),
+        field(tr('iconpacks.shape'), select('shape', [['rounded', tr('iconpacks.rounded')], ['square', tr('iconpacks.square')], ['circle', tr('iconpacks.circle')]]))),
+      h('div', { class: 'colors' },
+        h('label', {}, h('input', { type: 'color', value: o.color1, oninput: (e) => set('color1', e.target.value) }), tr('iconpacks.color1')),
+        h('label', {}, h('input', { type: 'color', value: o.color2, oninput: (e) => set('color2', e.target.value) }), tr('iconpacks.color2'))),
+      h('div', { class: 'row' },
+        field(tr('iconpacks.symbol'), h('input', { value: o.emoji, maxlength: 16, placeholder: '🎮', oninput: (e) => set('emoji', e.target.value.trim()) })),
+        field(tr('iconpacks.symbolSize'), h('input', { type: 'range', min: 20, max: 90, value: o.emojiSize, oninput: (e) => set('emojiSize', Number(e.target.value)) }))),
+      h('div', { class: 'row' },
+        field(tr('iconpacks.text'), h('input', { value: o.text, maxlength: 24, placeholder: tr('iconpacks.textPlaceholder'), oninput: (e) => set('text', e.target.value) })),
+        field(tr('iconpacks.textPosition'), select('textPos', [['bottom', tr('iconpacks.bottom')], ['top', tr('iconpacks.top')], ['none', tr('iconpacks.noText')]]))),
+      h('div', { class: 'row' },
+        field(tr('iconpacks.textSize'), h('input', { type: 'range', min: 14, max: 64, value: o.textSize, oninput: (e) => set('textSize', Number(e.target.value)) })),
+        h('div', { class: 'colors' },
+          h('label', {}, h('input', { type: 'color', value: o.textColor, oninput: (e) => set('textColor', e.target.value) }), tr('iconpacks.textColor')),
+          h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: o.outline, onchange: (e) => set('outline', e.target.checked) }), tr('iconpacks.outline')))),
+      h('div', { class: 'row' },
+        field(tr('iconpacks.saveTo'), h('select', { value: o.target, onchange: (e) => (o.target = e.target.value) },
+          [h('option', { value: 'own' }, tr('iconpacks.ownImagesShort')), ...S.iconPacks.map((p) => h('option', { value: p.id }, p.name))])),
+        h('button', { class: 'btn primary', style: 'align-self:end', onclick: save }, tr('iconpacks.saveIcon')))));
+}
+
 function iconPacksSection() {
   const title = [h('h1', {}, tr('common.iconPacks')), h('p', { class: 'hint-text' },
     tr('iconpacks.yourOwnImageCollections'))];
@@ -144,7 +243,9 @@ function iconPacksSection() {
     h('div', { class: 'settings-card' },
       h('div', { class: 'pack-actions' },
         h('button', { class: 'btn primary small', onclick: () => { S.newPack = !S.newPack; render(); } }, tr('iconpacks.newPack')),
-        h('label', { class: 'btn small' }, tr('iconpacks.importPackTdiconsZip'), importInput)),
+        h('label', { class: 'btn small' }, tr('iconpacks.importPackTdiconsZip'), importInput),
+        h('button', { class: 'btn small', onclick: () => { S.showIconEditor = !S.showIconEditor; render(); } }, tr('iconpacks.createIcon'))),
+      S.showIconEditor && iconEditor(),
       S.newPack && packForm(null, async (f) => {
         try {
           const r = await api('POST', '/api/iconpacks', f);

@@ -605,3 +605,9 @@ button.status-chip:hover { color: var(--text); }
 
 .head-buttons { display: flex; gap: 6px; }
 .font-styles { display: flex; gap: 18px; margin: -4px 0 8px; }
+
+/* Icon-Editor */
+.icon-editor { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+.icon-editor-preview { padding: 12px; border-radius: 14px; background: repeating-conic-gradient(#2a2e38 0 25%, #20232b 0 50%) 0 0 / 16px 16px; }
+.icon-editor-canvas { width: 160px; height: 160px; display: block; }
+.icon-editor-form { flex: 1; min-width: 260px; }

@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Icon-Editor (Icon-Pakete › „Icon erstellen“): baut aus Hintergrund (Farbe, Verlauf oder
+      durchsichtig; Quadrat, abgerundet oder Kreis), Emoji und Text ein PNG mit Live-Vorschau und
+      speichert es bei den eigenen Bildern oder direkt in einem Icon-Paket.
     - Texturen für Buttons: eigenes Hintergrundbild (eigenes Bild oder aus einem Icon-Paket) unter
       Symbol und Beschriftung, dazu Overlays darüber: Glanz, Rahmen, Streifen, Punkte, Vignette,
       Leuchten. „Aussehen kopieren“ überträgt sie, Profile nehmen die Bilder mit.

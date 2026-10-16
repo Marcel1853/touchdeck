@@ -27,6 +27,9 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Icon editor (Icon packs › "Create icon"): builds a PNG from background (colour, gradient
+      or transparent; square, rounded or circle), emoji and text with live preview and saves it
+      to the own images or straight into an icon pack.
     - Button textures: a background image of its own (own image or from an icon pack) below icon
       and label, plus overlays on top: gloss, frame, stripes, dots, vignette, glow. "Copy look"
       includes them; profiles export the images.
