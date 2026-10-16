@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Live-Anzeige „Seitenanzeige (●○○)“ zeigt die Position der Seite in der Seitenliste, und
+      „Gehe zu Seite“ kann jetzt zur nächsten / vorherigen Seite in der Liste springen.
     - Timer: Aktion „Timer (Countdown / Stoppuhr)“ mit Starten, Anhalten und Zurücksetzen,
       Live-Anzeige „Timer“ mit sekundengenauer Restzeit und Auslöser „Timer abgelaufen“.
     - Neuer Auslöser „Programm im Vordergrund“ und Aktion „Seite auf allen Geräten anzeigen“:

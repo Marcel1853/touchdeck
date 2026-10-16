@@ -158,6 +158,12 @@ window.deckBack = () => {
 };
 
 function goTo(pageId) {
+  // Nächste / vorherige Seite in der Reihenfolge der Seitenliste (ringsum).
+  if (pageId === '__next' || pageId === '__prev') {
+    const ids = state.pages.map((p) => p.id);
+    const i = ids.indexOf(currentPage);
+    pageId = ids[(i + (pageId === '__next' ? 1 : ids.length - 1)) % ids.length];
+  }
   if (pageId === '__back') {
     if (history_.length) currentPage = history_.pop();
   } else if (pageId && pageId !== currentPage) {

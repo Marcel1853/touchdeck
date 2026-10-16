@@ -216,16 +216,29 @@ async fn slider_value(app: &Arc<App>, button: &Button, snap: &Snapshot) -> Resul
 }
 
 /** Berechnet die Live-Werte aller Buttons, die welche brauchen. */
+/** Seitenanzeige: ●○○ für die Position der Seite in der Seitenliste (ab 9 Seiten „3 / 12“). */
+fn page_indicator(index: usize, total: usize) -> Value {
+    let text = if total > 8 { format!("{} / {total}", index + 1) } else { (0..total).map(|i| if i == index { '●' } else { '○' }).collect() };
+    json!({ "text": text })
+}
+
 pub async fn collect_live(app: &Arc<App>, pages: &[Page], variables: &Map<String, Value>) -> Map<String, Value> {
+    let order: Vec<String> = app.store.lock().unwrap().config.pages.iter().map(|p| p.id.clone()).collect();
+    let mut values = Map::new();
+    for p in pages {
+        let index = order.iter().position(|id| *id == p.id).unwrap_or(0);
+        for b in p.buttons.iter().filter(|b| b.mode != "slider" && b.live.source == "page_indicator") {
+            values.insert(b.id.clone(), page_indicator(index, order.len()));
+        }
+    }
     let snap = Snapshot::default();
-    let jobs = pages.iter().flat_map(|p| &p.buttons).filter(|b| b.mode == "slider" || b.live.source != "none").map(|b| {
+    let jobs = pages.iter().flat_map(|p| &p.buttons).filter(|b| b.mode == "slider" || !["none", "page_indicator"].contains(&b.live.source.as_str())).map(|b| {
         let snap = &snap;
         async move {
             let r = if b.mode == "slider" { slider_value(app, b, snap).await } else { live_value(app, b, snap, variables).await };
             (b.id.clone(), r)
         }
     });
-    let mut values = Map::new();
     for (id, r) in futures_util::future::join_all(jobs).await {
         match r {
             Ok(Some(v)) => {

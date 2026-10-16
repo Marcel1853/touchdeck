@@ -1478,7 +1478,8 @@
     "discord_channel": "Discord: Sprachkanal",
     "variable": "Wert einer Variable",
     "command": "Ausgabe eines Befehls",
-    "timer": "Timer (Restzeit) – Name unten eintragen"
+    "timer": "Timer (Restzeit) – Name unten eintragen",
+    "page_indicator": "Seitenanzeige (●○○)"
   },
   "sliderTargets": {
     "volume": "Lautstärke (PC)",

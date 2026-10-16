@@ -1478,7 +1478,8 @@
     "discord_channel": "Discord: voice channel",
     "variable": "Value of a variable",
     "command": "Output of a command",
-    "timer": "Timer (time left) – enter the name below"
+    "timer": "Timer (time left) – enter the name below",
+    "page_indicator": "Page indicator (●○○)"
   },
   "sliderTargets": {
     "volume": "Volume (PC)",

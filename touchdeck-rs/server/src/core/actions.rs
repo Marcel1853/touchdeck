@@ -309,7 +309,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         }
         "go_page" => {
             let page = p.s("page");
-            if page != "__back" && app.store.lock().unwrap().page(&page).is_none() {
+            if !["__back", "__next", "__prev"].contains(&page.as_str()) && app.store.lock().unwrap().page(&page).is_none() {
                 bail!(t!("actions.targetPageNoLonger"));
             }
             ctx.navigate = Some(page);

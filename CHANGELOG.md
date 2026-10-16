@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Live display "Page indicator (●○○)" shows the position of the page in the page list, and
+      "Go to page" can now jump to the next / previous page in the list.
     - Timer: action "Timer (countdown / stopwatch)" with start, pause and reset, live display
       "Timer" showing the time left every second, and trigger "Timer finished".
     - New trigger "Program in the foreground" and action "Show page on all devices": e.g. phone

@@ -19,7 +19,8 @@ function describeParams(def, params) {
     const v = params[f.key] ?? f.default;
     if (v === undefined || v === '') continue;
     if (f.type === 'select') parts.push(f.options.find((o) => o.value === v)?.label ?? v);
-    else if (f.type === 'page') parts.push(v === '__back' ? tr('actions.previousPage') : S.pages.find((p) => p.id === v)?.name ?? tr('actions.pageMissing'));
+    else if (f.type === 'page') parts.push(v === '__back' ? tr('actions.previousPage') : v === '__next' ? tr('actions.nextPageInList') : v === '__prev' ? tr('actions.prevPageInList')
+      : S.pages.find((p) => p.id === v)?.name ?? tr('actions.pageMissing'));
     else if (f.type === 'app') parts.push(params.appName || v);
     else if (f.source === 'flows') parts.push(S.flows.find((fl) => fl.id === v)?.name ?? tr('actions.flowMissing'));
     else if (f.source === 'buttons') parts.push(v === 'self' ? tr('actions.thisButton') : tr('actions.otherButton'));
@@ -51,7 +52,10 @@ export async function testActions(actions, label, { buttonId } = {}) {
     const r = await api('POST', '/api/test-actions', { actions, buttonId });
     if (!r.ok) return toast(r.error, 'error');
     const extra = [...r.messages];
-    if (r.navigate) extra.push(tr('actions.wouldSwitchTo', [r.navigate === '__back' ? tr('actions.previousPage2') : S.pages.find((p) => p.id === r.navigate)?.name]));
+    if (r.navigate) {
+      const special = { __back: tr('actions.previousPage2'), __next: tr('actions.nextPageInList'), __prev: tr('actions.prevPageInList') };
+      extra.push(tr('actions.wouldSwitchTo', [special[r.navigate] ?? S.pages.find((p) => p.id === r.navigate)?.name]));
+    }
     toast(`${tr('actions.done', [label])}${extra.length ? `\n${extra.join('\n')}` : ''}`, 'ok');
   } catch (err) {
     toast(err.message, 'error');
@@ -199,7 +203,8 @@ export function fieldInput(f, obj, setParam) {
           h('span', { class: 'color-value' }, v || tr('actions.unchanged')),
           v && h('button', { type: 'button', class: 'btn small ghost', onclick: () => setParam(f.key, '', { structural: true }) }, 'leeren')));
     case 'page': {
-      const options = [h('option', { value: '' }, tr(f.noBack ? 'actions.anyPage' : 'actions.choosePage')), !f.noBack && h('option', { value: '__back' }, tr('actions.previousPage3')), ...S.pages.map((p) => h('option', { value: p.id }, p.name))];
+      const options = [h('option', { value: '' }, tr(f.noBack ? 'actions.anyPage' : 'actions.choosePage')), !f.noBack && h('option', { value: '__back' }, tr('actions.previousPage3')),
+        !f.noBack && h('option', { value: '__next' }, tr('actions.nextPageInList')), !f.noBack && h('option', { value: '__prev' }, tr('actions.prevPageInList')), ...S.pages.map((p) => h('option', { value: p.id }, p.name))];
       return label(h('select', { value: v, onchange: (e) => setParam(f.key, e.target.value) }, options));
     }
     case 'app': {
