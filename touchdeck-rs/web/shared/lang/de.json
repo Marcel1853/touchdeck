@@ -480,7 +480,7 @@
     "categoryApplicationIntegrationClient": ", Kategorie „Application Integration“, Client-Typ ",
     "cellShape": "Form der Felder",
     "cellShapeFill": "Fläche füllen",
-    "cellShapeHint": "„Fläche füllen“ nutzt den Bildschirm besser aus: Felder werden dafür bis zu doppelt so breit oder etwas höher. „Quadratisch“ lässt bei manchen Seiten Rand frei.",
+    "cellShapeHint": "„Fläche füllen“ nutzt den Bildschirm besser aus: Felder werden dafür etwas breiter oder höher als quadratisch. „Quadratisch“ lässt bei manchen Seiten mehr Rand frei.",
     "cellShapeSquare": "Quadratisch",
     "clickSoundOnPress": "Klick-Ton beim Drücken",
     "clientId": "Client-ID",

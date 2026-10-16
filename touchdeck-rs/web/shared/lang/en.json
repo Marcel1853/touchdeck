@@ -480,7 +480,7 @@
     "categoryApplicationIntegrationClient": ", category “Application Integration”, client type ",
     "cellShape": "Shape of the cells",
     "cellShapeFill": "Fill the screen",
-    "cellShapeHint": "“Fill the screen” makes better use of the screen: cells may become up to twice as wide or a bit taller. “Square” leaves a margin on some pages.",
+    "cellShapeHint": "“Fill the screen” makes better use of the screen: cells may become a bit wider or taller than square. “Square” leaves more margin on some pages.",
     "cellShapeSquare": "Square",
     "clickSoundOnPress": "Click sound on press",
     "clientId": "Client ID",

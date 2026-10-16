@@ -75,6 +75,23 @@ fn cover_icon(appid: &str, icon_dir: &Path) -> Option<String> {
     icon_dir.join(&web).exists().then_some(web)
 }
 
+/** Vorhandenen Spiel-Button an die neue Stelle setzen; hatte er noch kein Cover, jetzt eins eintragen. */
+fn place_existing(mut b: Value, appid: &str, row: usize, col: usize, icon_dir: &Path) -> Value {
+    b["row"] = json!(row);
+    b["col"] = json!(col);
+    b["rowSpan"] = json!(1);
+    b["colSpan"] = json!(1);
+    if b["icon"]["type"] == "emoji"
+        && b["icon"]["value"] == "🎮"
+        && let Some(name) = cover_icon(appid, icon_dir)
+    {
+        b["icon"] = json!({ "type": "image", "value": name });
+        b["iconFit"] = json!("cover");
+        b["titlePos"] = json!("hidden");
+    }
+    b
+}
+
 fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path) -> Value {
     let cover = cover_icon(appid, icon_dir);
     let icon = match &cover {
@@ -94,14 +111,47 @@ fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path
     })
 }
 
-/** reuse_ids: IDs vorhandener Steam-Seiten, damit Verweise darauf gültig bleiben. */
-pub fn build_steam_pages(games: &[(String, String)], icon_dir: &Path, reuse_ids: &[String]) -> Result<Vec<Page>, HttpError> {
+/** Spiel-Buttons der vorhandenen Steam-Seiten in ihrer Reihenfolge (Seite, Zeile, Spalte): (App-ID, Button). */
+fn existing_game_buttons(pages: &[Page]) -> Vec<(String, Value)> {
+    let mut out = Vec::new();
+    for page in pages {
+        let mut buttons: Vec<_> = page.buttons.iter().collect();
+        buttons.sort_by_key(|b| (b.row, b.col));
+        for b in buttons {
+            let game = b.actions.iter().find(|a| a.kind == "steam_game").and_then(|a| a.params.get("game")).and_then(Value::as_str);
+            if let (Some(game), Ok(value)) = (game, serde_json::to_value(b)) {
+                out.push((game.to_string(), value));
+            }
+        }
+    }
+    out
+}
+
+/**
+ * Steam-Seiten bauen. Vorhandene Spiel-Buttons bleiben samt eigenen Änderungen und Reihenfolge erhalten;
+ * deinstallierte Spiele fallen weg, neue kommen hinten dazu. Die Seiten behalten ihre IDs.
+ */
+pub fn build_steam_pages(games: &[(String, String)], icon_dir: &Path, existing: &[Page]) -> Result<Vec<Page>, HttpError> {
     if games.is_empty() {
         return Err(HttpError::new(404, t!("steam.noSteamGamesFound")));
     }
+    let installed: std::collections::HashSet<&str> = games.iter().map(|(id, _)| id.as_str()).collect();
+    let mut order: Vec<(String, Option<Value>)> = existing_game_buttons(existing)
+        .into_iter()
+        .filter(|(id, _)| installed.contains(id.as_str()))
+        .map(|(id, b)| (id, Some(b)))
+        .collect();
+    for (id, _) in games {
+        if !order.iter().any(|(known, _)| known == id) {
+            order.push((id.clone(), None));
+        }
+    }
+    let names: std::collections::HashMap<&str, &str> = games.iter().map(|(id, n)| (id.as_str(), n.as_str())).collect();
+    let reuse_ids: Vec<String> = existing.iter().map(|p| p.id.clone()).collect();
+
     // Letzte Zeile jeder Seite: Navigation und Steam-Funktionen.
     let per_page = COLS * (MAX_ROWS - 1);
-    let chunks: Vec<&[(String, String)]> = games.chunks(per_page).collect();
+    let chunks: Vec<&[(String, Option<Value>)]> = order.chunks(per_page).collect();
     let ids: Vec<String> = (0..chunks.len()).map(|i| reuse_ids.get(i).cloned().unwrap_or_else(|| new_id("p_"))).collect();
 
     Ok(chunks
@@ -110,7 +160,14 @@ pub fn build_steam_pages(games: &[(String, String)], icon_dir: &Path, reuse_ids:
         .filter_map(|(n, chunk)| {
             let rows = chunk.len().div_ceil(COLS) + 1;
             let last = rows - 1;
-            let mut buttons: Vec<Value> = chunk.iter().enumerate().map(|(i, (id, name))| game_button(id, name, i / COLS, i % COLS, icon_dir)).collect();
+            let mut buttons: Vec<Value> = chunk
+                .iter()
+                .enumerate()
+                .map(|(i, (id, old))| match old {
+                    Some(b) => place_existing(b.clone(), id, i / COLS, i % COLS, icon_dir),
+                    None => game_button(id, names.get(id.as_str()).copied().unwrap_or(id), i / COLS, i % COLS, icon_dir),
+                })
+                .collect();
             let mut tool = |col: usize, title: &str, emoji: &str, actions: Vec<Value>, extra: Value| {
                 let mut b = json!({ "row": last, "col": col, "title": title, "icon": { "type": "emoji", "value": emoji }, "color": "#2a475e", "actions": actions });
                 if let (Some(b), Some(extra)) = (b.as_object_mut(), extra.as_object()) {

@@ -1085,10 +1085,14 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
         }
         Some("slide") => slide(app, &page, &button, &msg["value"], tx),
         Some("view") if msg["pageId"].is_string() => {
+            let steam = app.store.lock().unwrap().page(&page).is_some_and(|p| p.template == "steam");
             if let Some(c) = app.clients.lock().unwrap().get_mut(&id) {
                 c.viewing = Some(page);
             }
             refresh_live(app);
+            if steam {
+                check_steam_games(app);
+            }
         }
         _ => {}
     }
@@ -1097,25 +1101,25 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
 // ---------- Start ----------
 
 /** Startet den Server; liefert die App, sobald der Port offen ist. */
-/** Steam-Seiten aus den installierten Spielen neu bauen (fehlende Cover vorher von Steam laden).
- *  Vorhandene Steam-Seiten behalten ihre IDs. Liefert (Seiten-IDs, ob es vorher schon Steam-Seiten gab). */
+/** Steam-Seiten aus den installierten Spielen aktualisieren (fehlende Cover vorher von Steam laden).
+ *  Vorhandene Spiel-Buttons und die Seiten-IDs bleiben erhalten. Liefert (Seiten-IDs, ob es vorher schon Steam-Seiten gab). */
 async fn refresh_steam_pages(app: &Arc<App>) -> Result<(Vec<String>, bool), HttpError> {
     let (icon_dir, existing) = {
         let store = app.store.lock().unwrap();
-        (store.icon_dir.clone(), store.config.pages.iter().filter(|p| p.template == "steam").map(|p| p.id.clone()).collect::<Vec<_>>())
+        (store.icon_dir.clone(), store.config.pages.iter().filter(|p| p.template == "steam").cloned().collect::<Vec<_>>())
     };
     let games = tokio::task::spawn_blocking(steam::list_games).await.map_err(|e| HttpError::new(500, e.to_string()))?;
     let loaded = steam_pages::download_missing_covers(&icon_dir, &games).await;
     if loaded > 0 {
         app.log.info("Steam", t!("steam.coversDownloaded", loaded));
     }
-    let reuse = existing.clone();
-    let pages = tokio::task::spawn_blocking(move || steam_pages::build_steam_pages(&games, &icon_dir, &reuse))
+    let had_pages = !existing.is_empty();
+    let pages = tokio::task::spawn_blocking(move || steam_pages::build_steam_pages(&games, &icon_dir, &existing))
         .await
         .map_err(|e| HttpError::new(500, e.to_string()))??;
     let created: Vec<String> = pages.iter().map(|p| p.id.clone()).collect();
     app.store.lock().unwrap().replace_template_pages("steam", pages).map_err(|e| HttpError::new(400, e.to_string()))?;
-    Ok((created, !existing.is_empty()))
+    Ok((created, had_pages))
 }
 
 /** Spiele auf den Steam-Seiten (aus den „Spiel starten“-Aktionen). */
@@ -1129,28 +1133,34 @@ fn steam_games_on_pages(app: &App) -> BTreeSet<String> {
         .collect()
 }
 
-/** Steam-Seiten aktuell halten: jede Minute neue oder deinstallierte Spiele übernehmen (nur wenn es Steam-Seiten gibt). */
-fn watch_steam_games(app: &Arc<App>) {
+/** Wann zuletzt nach neuen oder deinstallierten Steam-Spielen geschaut wurde. */
+static STEAM_CHECKED: Mutex<Option<Instant>> = Mutex::new(None);
+
+/** Steam-Seiten aktuell halten: beim Start und beim Öffnen einer Steam-Seite, höchstens alle zwei Minuten. */
+fn check_steam_games(app: &Arc<App>) {
+    {
+        let mut last = STEAM_CHECKED.lock().unwrap();
+        if last.is_some_and(|t| t.elapsed() < Duration::from_secs(120)) {
+            return;
+        }
+        *last = Some(Instant::now());
+    }
     let a = app.clone();
     tokio::spawn(async move {
-        let mut tick = tokio::time::interval(Duration::from_secs(60));
-        loop {
-            tick.tick().await;
-            let shown = steam_games_on_pages(&a);
-            if shown.is_empty() {
-                continue;
-            }
-            let Ok(games) = tokio::task::spawn_blocking(steam::list_games).await else { continue };
-            let installed: BTreeSet<String> = games.into_iter().map(|(id, _)| id).collect();
-            // Leere Liste: Steam gerade nicht lesbar – dann lieber nichts ändern.
-            if installed.is_empty() || installed == shown {
-                continue;
-            }
-            let (added, removed) = (installed.difference(&shown).count(), shown.difference(&installed).count());
-            match refresh_steam_pages(&a).await {
-                Ok(_) => a.log.info("Steam", t!("steam.pagesUpdatedAutomatically", added, removed)),
-                Err(err) => a.log.warn("Steam", err.message),
-            }
+        let shown = steam_games_on_pages(&a);
+        if shown.is_empty() {
+            return;
+        }
+        let Ok(games) = tokio::task::spawn_blocking(steam::list_games).await else { return };
+        let installed: BTreeSet<String> = games.into_iter().map(|(id, _)| id).collect();
+        // Leere Liste: Steam gerade nicht lesbar – dann lieber nichts ändern.
+        if installed.is_empty() || installed == shown {
+            return;
+        }
+        let (added, removed) = (installed.difference(&shown).count(), shown.difference(&installed).count());
+        match refresh_steam_pages(&a).await {
+            Ok(_) => a.log.info("Steam", t!("steam.pagesUpdatedAutomatically", added, removed)),
+            Err(err) => a.log.warn("Steam", err.message),
         }
     });
 }
@@ -1194,7 +1204,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         let _ = axum::serve(listener, router.into_make_service_with_connect_info::<SocketAddr>()).await;
     });
     app.log.info("Server", t!("server.touchdeckIsRunningOn", opts.port, VERSION));
-    watch_steam_games(&app);
+    check_steam_games(&app);
 
     // Wert geändert: Events sofort auslösen (im selben Ablauf, damit Endlosketten erkannt werden).
     let weak = Arc::downgrade(&app);

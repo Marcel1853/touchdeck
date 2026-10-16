@@ -75,8 +75,8 @@ html, body {
    abweichen darf (1 = quadratisch). Breiter geht weiter als höher, weil hohe Buttons schnell gestreckt wirken.
    Der Abstand wächst mit der Feldgröße. */
 #grid {
-  --stretch-w: 2;
-  --stretch-h: 1.4;
+  --stretch-w: 1.4;
+  --stretch-h: 1.25;
   --cell: min(100cqw / var(--cols), 100cqh / var(--rows));
   --gap: clamp(2px, calc(var(--cell) * 0.08), 14px);
   width: min(100cqw, 100cqh * var(--cols) / var(--rows) * var(--stretch-w));

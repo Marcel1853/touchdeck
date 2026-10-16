@@ -121,10 +121,10 @@ function render() {
   $('back').hidden = history_.length === 0;
   applyOrientation(state.deck.orientation);
   document.body.className = `anim-${state.deck.pressAnimation}${state.deck.showLabels ? '' : ' hide-labels'}${page.cols > page.rows + 1 ? ' wide-page' : ''}`;
-  // „Fläche füllen“: Felder dürfen bis doppelt so breit und 1,4-mal so hoch wie quadratisch werden.
+  // „Fläche füllen“: Felder dürfen bis 1,4-mal so breit und 1,25-mal so hoch wie quadratisch werden.
   const square = state.deck.cellShape === 'square';
-  grid.style.setProperty('--stretch-w', square ? 1 : 2);
-  grid.style.setProperty('--stretch-h', square ? 1 : 1.4);
+  grid.style.setProperty('--stretch-w', square ? 1 : 1.4);
+  grid.style.setProperty('--stretch-h', square ? 1 : 1.25);
   setupGrid(grid, page);
   document.body.style.background = state.overrides?.pages?.[page.id]?.background ?? page.background;
   grid.replaceChildren(...page.buttons.map(element));
