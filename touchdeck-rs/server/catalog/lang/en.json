@@ -1049,7 +1049,8 @@
             "toggle": "start / pause",
             "start": "start",
             "stop": "pause",
-            "reset": "reset"
+            "reset": "reset",
+            "alarm": "Alarm: count down to a time"
           }
         },
         "minutes": {
@@ -1057,6 +1058,10 @@
         },
         "seconds": {
           "label": "Seconds"
+        },
+        "time": {
+          "label": "Alarm time (HH:MM)",
+          "placeholder": "07:30"
         }
       }
     },
@@ -1217,7 +1222,7 @@
       "label": "Time of day reached",
       "fields": {
         "time": {
-          "label": "Time (HH:MM)",
+          "label": "Time (HH:MM, several with commas: 08:00, 18:30)",
           "placeholder": "18:30"
         },
         "days": {
@@ -1225,8 +1230,33 @@
           "options": {
             "all": "daily",
             "weekdays": "Mon–Fri",
-            "weekend": "Sat and Sun"
+            "weekend": "Sat and Sun",
+            "pick": "selected days"
           }
+        },
+        "d_mon": {
+          "label": "Monday"
+        },
+        "d_tue": {
+          "label": "Tuesday"
+        },
+        "d_wed": {
+          "label": "Wednesday"
+        },
+        "d_thu": {
+          "label": "Thursday"
+        },
+        "d_fri": {
+          "label": "Friday"
+        },
+        "d_sat": {
+          "label": "Saturday"
+        },
+        "d_sun": {
+          "label": "Sunday"
+        },
+        "monthday": {
+          "label": "Only on this day of the month (0 = any)"
         }
       }
     },

@@ -1049,7 +1049,8 @@
             "toggle": "starten / anhalten",
             "start": "starten",
             "stop": "anhalten",
-            "reset": "zurücksetzen"
+            "reset": "zurücksetzen",
+            "alarm": "Wecker: bis Uhrzeit herunterzählen"
           }
         },
         "minutes": {
@@ -1057,6 +1058,10 @@
         },
         "seconds": {
           "label": "Sekunden"
+        },
+        "time": {
+          "label": "Weckzeit (HH:MM)",
+          "placeholder": "07:30"
         }
       }
     },
@@ -1217,7 +1222,7 @@
       "label": "Uhrzeit erreicht",
       "fields": {
         "time": {
-          "label": "Uhrzeit (HH:MM)",
+          "label": "Uhrzeit (HH:MM, mehrere mit Komma: 08:00, 18:30)",
           "placeholder": "18:30"
         },
         "days": {
@@ -1225,8 +1230,33 @@
           "options": {
             "all": "täglich",
             "weekdays": "Mo–Fr",
-            "weekend": "Sa und So"
+            "weekend": "Sa und So",
+            "pick": "ausgewählte Tage"
           }
+        },
+        "d_mon": {
+          "label": "Montag"
+        },
+        "d_tue": {
+          "label": "Dienstag"
+        },
+        "d_wed": {
+          "label": "Mittwoch"
+        },
+        "d_thu": {
+          "label": "Donnerstag"
+        },
+        "d_fri": {
+          "label": "Freitag"
+        },
+        "d_sat": {
+          "label": "Samstag"
+        },
+        "d_sun": {
+          "label": "Sonntag"
+        },
+        "monthday": {
+          "label": "Nur an diesem Tag im Monat (0 = egal)"
         }
       }
     },

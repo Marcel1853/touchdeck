@@ -1607,22 +1607,46 @@
      },
      {
       "value": "reset"
+     },
+     {
+      "value": "alarm"
      }
     ]
+   },
+   {
+    "key": "time",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "alarm"
+     ]
+    }
    },
    {
     "key": "minutes",
     "type": "number",
     "default": 5,
     "min": 0,
-    "max": 1440
+    "max": 1440,
+    "showIf": {
+     "op": [
+      "toggle",
+      "start"
+     ]
+    }
    },
    {
     "key": "seconds",
     "type": "number",
     "default": 0,
     "min": 0,
-    "max": 59
+    "max": 59,
+    "showIf": {
+     "op": [
+      "toggle",
+      "start"
+     ]
+    }
    }
   ]
  },

@@ -92,8 +92,88 @@
      },
      {
       "value": "weekend"
+     },
+     {
+      "value": "pick"
      }
     ]
+   },
+   {
+    "key": "d_mon",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "d_tue",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "d_wed",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "d_thu",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "d_fri",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "d_sat",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "d_sun",
+    "type": "checkbox",
+    "default": false,
+    "showIf": {
+     "days": [
+      "pick"
+     ]
+    }
+   },
+   {
+    "key": "monthday",
+    "type": "number",
+    "default": 0,
+    "min": 0,
+    "max": 31
    }
   ]
  },

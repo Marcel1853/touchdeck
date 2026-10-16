@@ -28,6 +28,10 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - „Uhrzeit erreicht“ kennt mehrere Uhrzeiten (08:00, 18:30), einzelne Wochentage und einen Tag
+      im Monat.
+    - Timer-Aktion „Wecker: bis Uhrzeit herunterzählen“ (z. B. 07:30, heute oder morgen); „Timer
+      abgelaufen“ löst aus, wenn sie erreicht ist.
     - Neuer Auslöser „Tastenkürzel am PC gedrückt“: eine Tastenkombination irgendwo am PC (X11)
       startet Events, auch wenn TouchDeck im Hintergrund ist; von anderen Programmen belegte Kürzel
       stehen im Protokoll.

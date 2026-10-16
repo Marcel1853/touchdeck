@@ -121,7 +121,8 @@
     "noValueGiven": "Kein Wert angegeben.",
     "calcError": "Rechnung „{0}“: {1}",
     "responseNotJson": "Die Antwort ist kein JSON.",
-    "jsonFieldMissing": "Feld „{0}“ steht nicht in der Antwort."
+    "jsonFieldMissing": "Feld „{0}“ steht nicht in der Antwort.",
+    "timeFormat": "Uhrzeit bitte als HH:MM angeben, z. B. 07:30."
   },
   "events": {
     "activeEvents": "{0} Event(s) aktiv",

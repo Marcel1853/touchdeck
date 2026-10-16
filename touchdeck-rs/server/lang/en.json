@@ -121,7 +121,8 @@
     "noValueGiven": "No value given.",
     "calcError": "Calculation “{0}”: {1}",
     "responseNotJson": "The response is not JSON.",
-    "jsonFieldMissing": "Field “{0}” is not in the response."
+    "jsonFieldMissing": "Field “{0}” is not in the response.",
+    "timeFormat": "Please give the time as HH:MM, e.g. 07:30."
   },
   "events": {
     "activeEvents": "{0} event(s) active",

@@ -27,6 +27,9 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - "Time reached" knows several times (08:00, 18:30), single weekdays and a day of the month.
+    - Timer action "Alarm: count down to a time" (e.g. 07:30, today or tomorrow); "Timer
+      finished" fires when it is reached.
     - New trigger "Shortcut pressed on the PC": a key combination anywhere on the PC (X11) starts
       events, also with TouchDeck in the background; shortcuts taken by other programs are logged.
     - New action "Key sequence (recorded)": record keys with their real pauses in the editor, edit

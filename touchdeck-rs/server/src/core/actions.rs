@@ -476,6 +476,18 @@ fn calc(expr: &str) -> std::result::Result<f64, String> {
     Ok(v)
 }
 
+/** Millisekunden bis zur nächsten Uhrzeit „HH:MM“ (heute, sonst morgen). */
+fn ms_until(hhmm: &str) -> Option<u64> {
+    let (h, m) = hhmm.trim().split_once(':')?;
+    let (h, m): (u32, u32) = (h.trim().parse().ok()?, m.trim().parse().ok()?);
+    let now = Local::now();
+    let mut target = now.date_naive().and_hms_opt(h, m, 0)?;
+    if target <= now.naive_local() {
+        target += chrono::Duration::days(1);
+    }
+    u64::try_from((target - now.naive_local()).num_milliseconds()).ok()
+}
+
 /** Zufallszahl 0..n (für „Zufällig“; keine Kryptografie nötig). */
 fn random_below(n: usize) -> usize {
     use std::hash::{BuildHasher, Hasher};
@@ -616,8 +628,16 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         }
         "timer" => {
             let name = p.or("name", "Timer");
-            let duration = (p.n_or("minutes", 0.0).max(0.0) * 60.0 + p.n_or("seconds", 0.0).max(0.0)) * 1000.0;
-            let running = app.timers.control(&name, &p.or("op", "toggle"), duration as u64);
+            let op = p.or("op", "toggle");
+            let running = if op == "alarm" {
+                // Wecker: bis zur nächsten angegebenen Uhrzeit herunterzählen (heute oder morgen).
+                let ms = ms_until(&p.s("time")).ok_or_else(|| anyhow!(t!("actions.timeFormat")))?;
+                app.timers.control(&name, "reset", ms);
+                app.timers.control(&name, "start", ms)
+            } else {
+                let duration = (p.n_or("minutes", 0.0).max(0.0) * 60.0 + p.n_or("seconds", 0.0).max(0.0)) * 1000.0;
+                app.timers.control(&name, &op, duration as u64)
+            };
             app.timers_changed();
             Ok(Some(if running { t!("actions.timerRunning", name) } else { t!("actions.timerStopped", name) }))
         }
@@ -1414,6 +1434,16 @@ mod tests {
         assert_eq!(format_number(2.0 / 3.0, 2), "0.67");
         assert_eq!(format_number(4.0, 2), "4");
         assert_eq!(format_number(-0.001, 2), "0");
+    }
+
+    #[test]
+    fn wecker_zeit() {
+        let soon = Local::now() + chrono::Duration::minutes(2);
+        let ms = ms_until(&soon.format("%H:%M").to_string()).unwrap();
+        assert!((60_000..=120_000).contains(&ms), "{ms}");
+        let past = Local::now() - chrono::Duration::minutes(2);
+        assert!(ms_until(&past.format("%H:%M").to_string()).unwrap() > 23 * 3_600_000, "vorbei = morgen");
+        assert!(ms_until("25:00").is_none() && ms_until("abc").is_none());
     }
 
     #[test]

@@ -451,15 +451,29 @@ impl EventEngine {
         let subs: Vec<Sub> = self.subs.lock().unwrap().iter().filter(|s| s.trigger.kind == "time_of_day").cloned().collect();
         for sub in subs {
             let p = &sub.trigger.params;
+            // Mehrere Uhrzeiten mit Komma; „8:05“ gilt wie „08:05“.
             let time = p.get("time").map(js_string).unwrap_or_default();
-            if time != hhmm || self.last_day.lock().unwrap().get(&sub.key) == Some(&today) {
+            let hit = time.split([',', ';']).map(|t| t.trim()).any(|t| t == hhmm || format!("0{t}") == hhmm);
+            let key = format!("{}@{hhmm}", sub.key);
+            if !hit || self.last_day.lock().unwrap().get(&key) == Some(&today) {
                 continue;
             }
             let days = p.get("days").map(js_string).unwrap_or_default();
             if (days == "weekdays" && weekend) || (days == "weekend" && !weekend) {
                 continue;
             }
-            self.last_day.lock().unwrap().insert(sub.key.clone(), today.clone());
+            if days == "pick" {
+                let names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+                let day = names[now.weekday().num_days_from_monday() as usize];
+                if p.get(&format!("d_{day}")) != Some(&Value::Bool(true)) {
+                    continue;
+                }
+            }
+            let monthday = js_number(p.get("monthday"));
+            if monthday >= 1.0 && monthday as u32 != now.day() {
+                continue;
+            }
+            self.last_day.lock().unwrap().insert(key, today.clone());
             self.run_sub(app, &sub, &json!({ "Zeit": hhmm }));
         }
     }
