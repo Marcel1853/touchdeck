@@ -38,7 +38,7 @@ use crate::core::store::{Action, Store, action_list, new_id};
 use crate::integrations::discord::DiscordClient;
 use crate::integrations::obs::{self, ObsClient};
 use crate::integrations::twitch::TwitchClient;
-use crate::integrations::{steam, steam_pages, touchportal};
+use crate::integrations::{steam, steam_pages};
 use crate::system::linux;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -489,7 +489,7 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 56] = [
+const ROUTES: [&str; 55] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -544,7 +544,6 @@ const ROUTES: [&str; 56] = [
     "GET /api/pairing",
     "GET /api/icons",
     "POST /api/icons",
-    "POST /api/import/touchportal",
     "GET /api/options/*",
 ];
 
@@ -826,22 +825,6 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let dir = app.store.lock().unwrap().icon_dir.clone();
             std::fs::write(dir.join(&name), bytes).map_err(|e| HttpError::from(anyhow::Error::from(e)))?;
             Ok(json!({ "name": name }))
-        }
-        "POST /api/import/touchportal" => {
-            let dir = body["dir"].as_str().filter(|d| !d.is_empty()).map_or_else(touchportal::default_dir, PathBuf::from);
-            let (icon_dir, existing) = {
-                let store = app.store.lock().unwrap();
-                let existing: HashMap<String, String> = store.config.pages.iter().filter(|p| p.template == "touchportal").map(|p| (p.name.clone(), p.id.clone())).collect();
-                (store.icon_dir.clone(), existing)
-            };
-            let updated = !existing.is_empty();
-            let (pages, stats) = touchportal::import(&dir, &icon_dir, &existing).map_err(user_error)?;
-            if pages.is_empty() {
-                return Err(HttpError::new(404, t!("server.noPagesFound")));
-            }
-            let mut store = app.store.lock().unwrap();
-            store.replace_template_pages("touchportal", pages).map_err(bad)?;
-            Ok(json!({ "ok": true, "stats": stats, "pages": store.config.pages, "revision": store.revision, "updated": updated }))
         }
         // Plugins
         "GET /api/plugins" => Ok(json!(app.plugins.list(&lang(app)))),

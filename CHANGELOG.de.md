@@ -88,6 +88,7 @@ Datum: 2026-10-16
       Gerätenamen aus ihren Einstellungen, Browser ihre Kennung.
     - /api/info liefert die Liste der verbundenen Geräte.
   Änderungen:
+    - Seiten-Import aus einem anderen Programm entfernt; er diente nur zum Testen.
     - Der Hinweis zum Querhalten spricht vom „Gerät“ statt vom „Handy“ und blendet sich nach ein
       paar Sekunden aus; beim Öffnen einer anderen breiten Seite erscheint er wieder.
     - Auswahl eines Buttons aufheben ist einfacher: Klick neben die Seite oder auf das neue „✕“
@@ -183,7 +184,6 @@ Datum: 2026-10-14
     - Discord-Anbindung über das lokale Discord-Programm: stumm, taub, Sprachkanal betreten/
       verlassen, Lautstärke, Push-to-Talk; Events und Live-Anzeigen für stumm, taub und
       Sprachkanal; Nachrichten in einen Kanal per Webhook.
-    - Import von Seiten aus einem anderen Makro-Programm.
     - Android-App mit automatischer Suche im WLAN, Kopplung per Bestätigung oder QR-Code und
       mehreren gespeicherten PCs.
     - TouchDeck neu in Rust mit Tauri: Server, alle Aktionen, Events, Live-Werte, Regler,

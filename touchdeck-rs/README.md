@@ -80,7 +80,7 @@ devices.
 - **Ready-made pages** for System, OBS and Steam are built only from normal, visible
   actions and events, so you can change everything afterwards. Steam pages update
   automatically when games are installed or removed and download missing covers
-  from Steam. Pages can also be imported from another macro app.
+  from Steam.
 - **Profiles:** via “⋯” next to the page list or by right-clicking a page, one page
   or all pages can be exported as a `.tdprofile` file – including the images, flows,
   values and events they use. Importing a profile only adds pages and never
@@ -133,7 +133,7 @@ Examples of the newer actions and triggers:
 In the sidebar on the left (Ctrl+1 … Ctrl+8):
 
 - **Pages** – design grid or free pages, page logic; ready-made pages for Steam,
-  System and OBS, and importing pages from another macro app.
+  System and OBS.
 - **Values** – your own variables with start value, folder and description.
 - **Events** – “When …, then …”: value changes, start, interval, time of day, file,
   phone, toggle, page opened / left, program in the foreground, timer finished,

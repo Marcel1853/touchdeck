@@ -28,7 +28,7 @@ pub fn valid_variable_name(name: &str) -> bool {
     (1..=40).contains(&n) && name.chars().all(|c| c.is_alphabetic() || c.is_numeric() || " _.-".contains(c))
 }
 
-pub const TEMPLATES: [&str; 4] = ["steam", "system", "obs", "touchportal"];
+pub const TEMPLATES: [&str; 3] = ["steam", "system", "obs"];
 
 const MAX_TEXT: usize = 4000;
 const MAX_ACTIONS: usize = 100;

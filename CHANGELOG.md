@@ -85,6 +85,7 @@ Date: 2026-10-16
       settings, browsers send their ID.
     - /api/info lists the connected devices.
   Changes:
+    - Removed the page import from another program; it was only used for testing.
     - The hint to turn the device sideways now says "device" instead of "phone" and fades out
       after a few seconds; it shows again when opening another wide page.
     - Deselecting a button is easier: click next to the page or the new "✕" in the button
@@ -172,7 +173,6 @@ Date: 2026-10-14
     - Discord integration via the local Discord app: mute, deafen, join/leave voice channel,
       volume, push-to-talk; events and live displays for mute, deafen and voice channel;
       messages to a channel via webhook.
-    - Import pages from another macro app.
     - Android app with automatic search in the local network, pairing by confirmation or QR code
       and several saved PCs.
     - TouchDeck rewritten in Rust with Tauri: server, all actions, events, live values, sliders,

@@ -32,7 +32,7 @@ function describeParams(def, params) {
 export function summary(a) {
   const def = S.typeMap.get(a.type);
   if (!def) return a.type;
-  if (a.type === 'unsupported') return tr('actions.fromTouchPortal', [a.params.original]);
+  if (a.type === 'unsupported') return tr('actions.unsupportedAction', [a.params.original]);
   return describeParams(def, a.params) || tr('actions.notSetUpYet');
 }
 

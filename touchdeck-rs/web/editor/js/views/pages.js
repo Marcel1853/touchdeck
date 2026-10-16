@@ -110,8 +110,7 @@ export function mountPages(root) {
         }, h('span', { class: 'chevron' }, '▸'), tr('pages.readyMadePages')),
         tplButton('steam', '🎮', tr('pages.steamGames'), tr('pages.allGamesWithCover'), steamTemplate),
         tplButton('system', '📊', tr('common.system'), tr('pages.clockCpuAudioLock'), systemTemplate),
-        tplButton('obs', '🎬', tr('pages.obsStudio'), tr('pages.scenesStreamRecording'), obsTemplate),
-        tplButton('touchportal', '⤵️', tr('pages.touchPortal'), tr('pages.importPages'), importTouchPortal))),
+        tplButton('obs', '🎬', tr('pages.obsStudio'), tr('pages.scenesStreamRecording'), obsTemplate)),
     h('section', { class: 'workspace' },
       h('div', { class: 'page-toolbar' },
         h('input', { id: 'page-name', class: 'page-name', maxlength: 100, 'aria-label': tr('pages.pageName'),
@@ -1149,7 +1148,7 @@ function tplBtn(row, col, title, emoji, actions = [], extra = {}) {
   return newButton(row, col, { title, icon: { type: 'emoji', value: emoji }, actions: actions.map(([type, params = {}]) => ({ id: uid('a_'), type, enabled: true, params })), ...extra });
 }
 
-const TEMPLATE_NAMES = { steam: tr('pages.steamGames'), system: tr('common.system'), obs: 'OBS', touchportal: tr('pages.touchPortal') };
+const TEMPLATE_NAMES = { steam: tr('pages.steamGames'), system: tr('common.system'), obs: 'OBS' };
 
 /** Fragt vor dem Anlegen nach; gibt es die Seite schon: aktualisieren, öffnen oder abbrechen. */
 async function askTemplate(template, createText) {
@@ -1282,7 +1281,7 @@ async function obsTemplate() {
   });
 }
 
-/** Für Vorlagen, die der Server erzeugt (Steam, Touch Portal): Ergebnis übernehmen. */
+/** Für Vorlagen, die der Server erzeugt (Steam): Ergebnis übernehmen. */
 async function serverTemplate(url, apply) {
   await save();
   try {
@@ -1307,12 +1306,3 @@ async function steamTemplate() {
   });
 }
 
-async function importTouchPortal() {
-  if (!(await askTemplate('touchportal', tr('pages.importsAllPagesFrom')))) return;
-  await serverTemplate('/api/import/touchportal', (r) => {
-    S.pageId = S.pages.find((p) => p.template === 'touchportal')?.id ?? S.pageId;
-    const st = r.stats;
-    const missing = Object.entries(st.unsupported);
-    toast(`${tr(r.updated ? 'pages.updatedPageSButtons' : 'pages.importedPageSButtons', [st.pages, st.buttons, st.actions, st.icons])}${missing.length ? `\n${tr('pages.notSupportedYet', [missing.map(([k, n]) => `${k} (${n}×)`).join(', ')])}` : ''}`, 'ok');
-  });
-}

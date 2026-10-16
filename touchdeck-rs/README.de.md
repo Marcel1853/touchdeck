@@ -83,8 +83,7 @@ meldet alle Geräte ab.
 - **Fertige Seiten** für System, OBS und Steam bestehen nur aus normalen, sichtbaren
   Aktionen und Events – alles lässt sich danach ändern. Steam-Seiten passen sich
   automatisch an, wenn Spiele installiert oder entfernt werden, und laden fehlende
-  Cover von Steam. Außerdem lassen sich Seiten aus einem anderen Makro-Programm
-  importieren.
+  Cover von Steam.
 - **Profile:** Über „⋯“ neben der Seitenliste oder per Rechtsklick auf eine Seite
   lassen sich eine oder alle Seiten als `.tdprofile`-Datei exportieren – samt den
   benutzten Bildern, Vorlagen, Werten und Events. Beim Import eines Profils kommen
@@ -139,7 +138,7 @@ Beispiele für die neueren Aktionen und Auslöser:
 Links in der Leiste (Strg+1 … Strg+8):
 
 - **Seiten** – Raster- oder freie Seiten gestalten, Logik für Seiten; fertige Seiten
-  für Steam, System und OBS sowie Import von Seiten aus einem anderen Makro-Programm.
+  für Steam, System und OBS.
 - **Werte** – eigene Variablen mit Startwert, Ordner und Beschreibung.
 - **Events** – „Wenn …, dann …“: Wert ändert sich, Start, Zeitgeber, Uhrzeit, Datei,
   Handy, Umschalter, Seite geöffnet / verlassen, Programm im Vordergrund, Timer
