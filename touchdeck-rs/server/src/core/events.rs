@@ -14,7 +14,7 @@ use crate::core::catalog;
 use crate::core::store::{Action, Trigger, js_string};
 use crate::integrations::steam;
 use crate::server::App;
-use crate::system::linux;
+use crate::system::{linux, x11};
 
 // Verkettung erkennen: ein Event, das ein Event auslöst, das ein Event auslöst …
 tokio::task_local! {
@@ -68,6 +68,10 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
         "page_view" => empty_or_eq(&g("page"), &d["pageId"]) && state_matches(&g("state"), &d["state"]),
+        "app_focus" => {
+            let want = s(&g("app")).to_lowercase();
+            want.is_empty() || s(&d["app"]).to_lowercase().contains(&want)
+        }
         "audio_output" => empty_or_eq(&g("device"), &d["device"]),
         "audio_mute" => {
             let target = if s(&g("target")).is_empty() { "output".to_string() } else { s(&g("target")) };
@@ -128,6 +132,8 @@ struct State {
     sink: Option<String>,
     /// Zuletzt gesehene Stummschaltung von Ausgang und Eingang.
     muted: (Option<bool>, Option<bool>),
+    /// Programm im Vordergrund (zuletzt gesehen), für „Programm im Vordergrund“.
+    focused: Option<String>,
 }
 
 #[derive(Default)]
@@ -324,9 +330,24 @@ impl EventEngine {
                 }
             }));
         }
+        if has("app_focus") {
+            // Fenster im Vordergrund jede Sekunde ansehen; nur bei einem Wechsel des Programms auslösen.
+            let a = app.clone();
+            tasks.push(tokio::spawn(async move {
+                let mut t = tokio::time::interval(Duration::from_secs(1));
+                loop {
+                    t.tick().await;
+                    let Ok(Some((class, title))) = x11::active_window().await else { continue };
+                    let before = a.events.state.lock().unwrap().focused.replace(class.clone());
+                    if before.is_some_and(|b| b != class) {
+                        a.events.fire(&a, "app_focus", &json!({ "app": class, "Programm": class, "Titel": title }));
+                    }
+                }
+            }));
+        }
         let types: Vec<String> = subs.iter().map(|s| s.trigger.kind.clone()).collect();
         app.twitch.set_wanted(&types);
-        app.log.debug("Events", format!("{} Event(s) aktiv", subs.len()));
+        app.log.debug("Events", t!("events.activeEvents", subs.len()));
         *self.subs.lock().unwrap() = subs;
         *self.tasks.lock().unwrap() = tasks;
     }

@@ -3,6 +3,8 @@
 !/.gitignore
 !/README.md
 !/README.de.md
+!/CHANGELOG.md
+!/CHANGELOG.de.md
 !/env.sh
 !/touchdeck-rs/
 !/android/

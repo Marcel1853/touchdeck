@@ -47,6 +47,7 @@
   },
   "actions": {
     "actionIsNotSupported": "The action “{0}” is not supported yet.",
+    "activated": "Activated: {0}",
     "adStarted": "Ad started",
     "addressMustStartWith": "The address must start with http:// or https://.",
     "alwaysNextInput": "↻ Always the next input",
@@ -111,6 +112,7 @@
     "wakePacketSent": "Wake packet sent"
   },
   "events": {
+    "activeEvents": "{0} event(s) active",
     "button": "Button “{0}”",
     "format": "“{0}”: {1}",
     "isStillWaitingCooldown": "“{0}” is still waiting (cooldown).",

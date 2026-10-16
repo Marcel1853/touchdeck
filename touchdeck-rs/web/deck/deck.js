@@ -374,6 +374,9 @@ async function connect() {
       if (msg.language) app?.setLanguage?.(msg.language);
       state = msg;
       render();
+    } else if (msg.type === 'goto') {
+      // „Seite auf allen Geräten anzeigen“ (z. B. aus „Programm im Vordergrund“).
+      if (msg.pageId && msg.pageId !== currentPage) goTo(msg.pageId);
     } else if (msg.type === 'live') {
       if (state) updateLive(msg.values);
     } else if (msg.type === 'result') {

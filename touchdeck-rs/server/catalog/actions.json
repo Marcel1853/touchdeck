@@ -191,6 +191,19 @@
   ]
  },
  {
+  "type": "deck_show_page",
+  "category": "navigation",
+  "group": "general",
+  "icon": "📲",
+  "fields": [
+   {
+    "key": "page",
+    "type": "page",
+    "noBack": true
+   }
+  ]
+ },
+ {
   "type": "delay",
   "category": "logic",
   "group": "general",

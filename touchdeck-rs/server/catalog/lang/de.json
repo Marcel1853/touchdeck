@@ -1013,6 +1013,14 @@
           "label": "Aus wie vielen der folgenden Aktionen? (0 = alle folgenden)"
         }
       }
+    },
+    "deck_show_page": {
+      "label": "Seite auf allen Geräten anzeigen",
+      "fields": {
+        "page": {
+          "label": "Seite"
+        }
+      }
     }
   },
   "triggers": {
@@ -1404,6 +1412,14 @@
             "leave": "verlassen",
             "any": "egal"
           }
+        }
+      }
+    },
+    "app_focus": {
+      "label": "Programm im Vordergrund",
+      "fields": {
+        "app": {
+          "label": "Programm (leer = jedes; Teil des Namens genügt, z. B. obs)"
         }
       }
     }

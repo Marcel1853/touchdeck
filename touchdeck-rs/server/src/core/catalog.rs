@@ -79,12 +79,12 @@ pub fn action_label(kind: &str, lang: &str) -> Option<String> {
 }
 
 /** Englische Namen für Platzhalter in Event-Daten ({Event.User} = {Event.Nutzer} …). */
-pub const EVENT_ALIASES: [(&str, &str); 24] = [
+pub const EVENT_ALIASES: [(&str, &str); 26] = [
     ("Nutzer", "User"), ("Wert", "Value"), ("Alt", "Old"), ("Szene", "Scene"), ("Quelle", "Source"), ("Gerät", "Device"),
     ("Spiel", "Game"), ("Datei", "File"), ("Kanal", "Channel"), ("Nachricht", "Message"), ("Belohnung", "Reward"),
     ("Kosten", "Cost"), ("Eingabe", "Input"), ("Zuschauer", "Viewers"), ("Monate", "Months"), ("Stufe", "Tier"),
     ("Anzahl", "Count"), ("Dauer", "Duration"), ("Zeit", "Time"), ("Status", "Status"), ("Name", "Name"),
-    ("Filter", "Filter"), ("Bits", "Bits"), ("Seite", "Page"),
+    ("Filter", "Filter"), ("Bits", "Bits"), ("Seite", "Page"), ("Programm", "Program"), ("Titel", "Title"),
 ];
 
 pub fn live_sources() -> &'static Value {

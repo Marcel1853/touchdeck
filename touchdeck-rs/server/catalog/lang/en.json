@@ -1013,6 +1013,14 @@
           "label": "From how many of the following actions? (0 = all following)"
         }
       }
+    },
+    "deck_show_page": {
+      "label": "Show page on all devices",
+      "fields": {
+        "page": {
+          "label": "Page"
+        }
+      }
     }
   },
   "triggers": {
@@ -1404,6 +1412,14 @@
             "leave": "left",
             "any": "any"
           }
+        }
+      }
+    },
+    "app_focus": {
+      "label": "Program in the foreground",
+      "fields": {
+        "app": {
+          "label": "Program (empty = any; part of the name is enough, e.g. obs)"
         }
       }
     }

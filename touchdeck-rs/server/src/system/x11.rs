@@ -355,6 +355,16 @@ impl Keyboard {
             .collect()
     }
 
+    /** Programm (WM_CLASS) und Titel des Fensters im Vordergrund. */
+    fn active(&self) -> Option<Window> {
+        // SAFETY: offene Verbindung.
+        let root = unsafe { (self.x.XDefaultRootWindow)(self.dpy) };
+        let (raw, 32, 1..) = self.prop(root, "_NET_ACTIVE_WINDOW")? else { return None };
+        let size = std::mem::size_of::<c_ulong>();
+        let id = c_ulong::from_ne_bytes(raw.get(..size)?.try_into().ok()?);
+        self.windows().into_iter().find(|w| w.id == id as u64)
+    }
+
     fn activate(&self, query: &str) -> Result<String> {
         let q = query.to_lowercase();
         let wins = self.windows();
@@ -417,6 +427,11 @@ pub async fn mouse_move(x: i32, y: i32, relative: bool) -> Result<()> {
 pub async fn activate_window(query: &str) -> Result<String> {
     let query = query.to_string();
     with_keyboard(move |kb| kb.activate(&query)).await
+}
+
+/** Fenster im Vordergrund: (Programm, Titel); None, wenn keins aktiv ist. */
+pub async fn active_window() -> Result<Option<(String, String)>> {
+    with_keyboard(|kb| Ok(kb.active().map(|w| (w.class, w.title)))).await
 }
 
 /** Offene Fenster, je Programm (WM_CLASS) ein Eintrag. */

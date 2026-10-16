@@ -292,6 +292,14 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let v = linux::mic(&p.or("op", "toggle")).await?;
             Ok(Some(if v.muted { t!("actions.microphoneMuted") } else { t!("actions.microphoneOn") }.into()))
         }
+        "deck_show_page" => {
+            let page = p.s("page");
+            if app.store.lock().unwrap().page(&page).is_none() {
+                bail!(t!("actions.targetPageNoLonger"));
+            }
+            app.show_page_on_devices(&page);
+            none
+        }
         "go_page" => {
             let page = p.s("page");
             if page != "__back" && app.store.lock().unwrap().page(&page).is_none() {
@@ -563,7 +571,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if w.is_empty() {
                 bail!(t!("actions.noWindowSelected"));
             }
-            Ok(Some(format!("Aktiviert: {}", x11::activate_window(&w).await?)))
+            Ok(Some(t!("actions.activated", x11::activate_window(&w).await?)))
         }
         "kill_app" => {
             linux::kill_process(&p.s("name"), p.t("force")).await?;

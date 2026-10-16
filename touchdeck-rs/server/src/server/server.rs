@@ -193,6 +193,11 @@ impl App {
         linux::lan_addresses().iter().map(|ip| format!("http://{ip}:{}/deck/?token={token}", self.port)).collect()
     }
 
+    /** Alle Bedienfelder (Handy, Tablet, Vorschau) auf eine Seite wechseln lassen. */
+    pub fn show_page_on_devices(&self, page_id: &str) {
+        self.broadcast(Some(Role::Device), &json!({ "type": "goto", "pageId": page_id }));
+    }
+
     /** Nachricht an alle offenen Verbindungen einer Rolle (None = alle). */
     fn broadcast(&self, role: Option<Role>, msg: &Value) {
         let text = msg.to_string();

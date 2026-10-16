@@ -47,6 +47,7 @@
   },
   "actions": {
     "actionIsNotSupported": "Die Aktion „{0}“ wird noch nicht unterstützt.",
+    "activated": "Aktiviert: {0}",
     "adStarted": "Werbung gestartet",
     "addressMustStartWith": "Adresse muss mit http:// oder https:// beginnen.",
     "alwaysNextInput": "↻ Immer zum nächsten Eingang",
@@ -111,6 +112,7 @@
     "wakePacketSent": "Weckpaket gesendet"
   },
   "events": {
+    "activeEvents": "{0} Event(s) aktiv",
     "button": "Button „{0}“",
     "format": "„{0}“: {1}",
     "isStillWaitingCooldown": "„{0}“ wartet noch (Abklingzeit).",

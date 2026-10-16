@@ -160,6 +160,19 @@
   ]
  },
  {
+  "type": "app_focus",
+  "category": "general",
+  "icon": "🪟",
+  "fields": [
+   {
+    "key": "app",
+    "type": "dynamic",
+    "source": "windows",
+    "allowNew": true
+   }
+  ]
+ },
+ {
   "type": "button_toggle",
   "category": "general",
   "icon": "🔘",
