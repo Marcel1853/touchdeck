@@ -1239,13 +1239,22 @@
       "value": "gt"
      },
      {
+      "value": "ge"
+     },
+     {
       "value": "lt"
+     },
+     {
+      "value": "le"
      },
      {
       "value": "contains"
      },
      {
       "value": "empty"
+     },
+     {
+      "value": "not_empty"
      }
     ]
    },
@@ -1257,12 +1266,239 @@
       "eq",
       "ne",
       "gt",
+      "ge",
       "lt",
+      "le",
       "contains"
      ]
     }
    }
   ]
+ },
+ {
+  "type": "if",
+  "category": "logic",
+  "group": "general",
+  "icon": "🔀",
+  "fields": [
+   {
+    "key": "name",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "eq",
+    "options": [
+     {
+      "value": "eq"
+     },
+     {
+      "value": "ne"
+     },
+     {
+      "value": "gt"
+     },
+     {
+      "value": "ge"
+     },
+     {
+      "value": "lt"
+     },
+     {
+      "value": "le"
+     },
+     {
+      "value": "contains"
+     },
+     {
+      "value": "empty"
+     },
+     {
+      "value": "not_empty"
+     }
+    ]
+   },
+   {
+    "key": "value",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "eq",
+      "ne",
+      "gt",
+      "ge",
+      "lt",
+      "le",
+      "contains"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "type": "else_if",
+  "category": "logic",
+  "group": "general",
+  "icon": "↪️",
+  "fields": [
+   {
+    "key": "name",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "eq",
+    "options": [
+     {
+      "value": "eq"
+     },
+     {
+      "value": "ne"
+     },
+     {
+      "value": "gt"
+     },
+     {
+      "value": "ge"
+     },
+     {
+      "value": "lt"
+     },
+     {
+      "value": "le"
+     },
+     {
+      "value": "contains"
+     },
+     {
+      "value": "empty"
+     },
+     {
+      "value": "not_empty"
+     }
+    ]
+   },
+   {
+    "key": "value",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "eq",
+      "ne",
+      "gt",
+      "ge",
+      "lt",
+      "le",
+      "contains"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "type": "else",
+  "category": "logic",
+  "group": "general",
+  "icon": "↩️",
+  "fields": []
+ },
+ {
+  "type": "repeat",
+  "category": "logic",
+  "group": "general",
+  "icon": "🔁",
+  "fields": [
+   {
+    "key": "count",
+    "type": "number",
+    "default": 3,
+    "min": 1,
+    "max": 1000
+   }
+  ]
+ },
+ {
+  "type": "while",
+  "category": "logic",
+  "group": "general",
+  "icon": "🔄",
+  "fields": [
+   {
+    "key": "name",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "eq",
+    "options": [
+     {
+      "value": "eq"
+     },
+     {
+      "value": "ne"
+     },
+     {
+      "value": "gt"
+     },
+     {
+      "value": "ge"
+     },
+     {
+      "value": "lt"
+     },
+     {
+      "value": "le"
+     },
+     {
+      "value": "contains"
+     },
+     {
+      "value": "empty"
+     },
+     {
+      "value": "not_empty"
+     }
+    ]
+   },
+   {
+    "key": "value",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "eq",
+      "ne",
+      "gt",
+      "ge",
+      "lt",
+      "le",
+      "contains"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "type": "break",
+  "category": "logic",
+  "group": "general",
+  "icon": "⏏️",
+  "fields": []
+ },
+ {
+  "type": "end",
+  "category": "logic",
+  "group": "general",
+  "icon": "🔚",
+  "fields": []
  },
  {
   "type": "random",

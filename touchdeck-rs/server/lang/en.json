@@ -107,6 +107,7 @@
     "timerRunning": "Timer “{0}” running",
     "timerStopped": "Timer “{0}” paused",
     "unknownAction": "Unknown action: {0}",
+    "tooManySteps": "Too many steps – is a loop running forever? (at most 20000)",
     "updatedValuesTwitchLive": "Updated the values Twitch.Live, Twitch.Zuschauer, Twitch.Titel, Twitch.Kategorie, Twitch.Follower",
     "voiceActivity": "Voice activity",
     "volume": "Volume {0} %",

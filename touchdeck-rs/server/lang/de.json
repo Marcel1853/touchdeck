@@ -107,6 +107,7 @@
     "timerRunning": "Timer „{0}“ läuft",
     "timerStopped": "Timer „{0}“ angehalten",
     "unknownAction": "Unbekannte Aktion: {0}",
+    "tooManySteps": "Zu viele Schritte – läuft eine Schleife endlos? (höchstens 20000)",
     "updatedValuesTwitchLive": "Werte Twitch.Live, Twitch.Zuschauer, Twitch.Titel, Twitch.Kategorie, Twitch.Follower aktualisiert",
     "voiceActivity": "Sprachaktivierung",
     "volume": "Lautstärke {0} %",

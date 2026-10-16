@@ -118,6 +118,8 @@ in OBS texts. `{Time}` and `{Date}` are always available.
 
 Examples of the newer actions and triggers:
 
+- **If / Else if / Else**, **Repeat (n times)**, **While** and **Exit loop** build
+  blocks up to **End**; the editor indents them. The current round is `{Event.Loop}`.
 - **Random: one of the next actions** runs exactly one randomly chosen action of the
   following ones (count adjustable, 0 = all following).
 - **Knobs and slider styles:** a slider can be an area, a rail with handle, a knob

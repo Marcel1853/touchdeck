@@ -27,6 +27,11 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Logic blocks for action lists: "If …" / "Else if …" / "Else", "Repeat (n times)", "While …"
+      and "Exit loop", each closed by "End". The editor indents the blocks and adds the "End" by
+      itself. The current round is available as {Event.Loop}; endless loops stop after 20000 steps.
+    - Conditions can compare placeholders (e.g. {Event.User}) and know "greater or equal", "less or
+      equal" and "is not empty".
     - Knobs and slider styles: sliders can now be a slider (area), a slider with rail and handle,
       a knob (ring) or a knob with pointer, with their own colour and thickness. Knobs are turned
       in a circle (bottom left 0 %, bottom right 100 %) and control everything sliders can.

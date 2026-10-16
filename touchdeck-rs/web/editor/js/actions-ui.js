@@ -33,8 +33,25 @@ export function summary(a) {
   const def = S.typeMap.get(a.type);
   if (!def) return a.type;
   if (a.type === 'unsupported') return tr('actions.unsupportedAction', [a.params.original]);
-  return describeParams(def, a.params) || tr('actions.notSetUpYet');
+  return describeParams(def, a.params) || (def.fields?.length ? tr('actions.notSetUpYet') : '');
 }
+
+// Blöcke der Ablauf-Logik: diese Aktionen öffnen einen Block, „Ende“ schließt ihn.
+const BLOCK_OPEN = new Set(['if', 'repeat', 'while']);
+const BLOCK_MID = new Set(['else_if', 'else']);
+
+/** Einrückung je Aktion, damit Wenn / Sonst / Schleifen wie Blöcke aussehen. */
+function blockDepths(list) {
+  let d = 0;
+  return list.map((a) => {
+    if (a.type === 'end') d = Math.max(0, d - 1);
+    const own = BLOCK_MID.has(a.type) ? Math.max(0, d - 1) : d;
+    if (BLOCK_OPEN.has(a.type)) d++;
+    return own;
+  });
+}
+
+const blockClass = (a) => (BLOCK_OPEN.has(a.type) || BLOCK_MID.has(a.type) || a.type === 'end' ? ' block-mark' : '');
 
 export function triggerSummary(t) {
   const def = S.triggerMap.get(t.type);
@@ -80,14 +97,14 @@ export function actionList(owner, key, title, { hint, buttonId, compact = false,
     !list.length
       ? h('button', { type: 'button', class: 'empty-drop', onclick: () => open() }, tr('actions.addFirstAction'))
       : compact
-        ? h('div', { class: 'action-mini-list' }, list.map((a) => miniRow(a, () => open(a.id))))
+        ? h('div', { class: 'action-mini-list' }, list.map((a, i, all) => miniRow(a, () => open(a.id), blockDepths(all)[i])))
         : flowList(list, buttonId));
 }
 
 /** Kurze Zeile für die Übersicht: Klick öffnet den Editor mit dieser Aktion. */
-function miniRow(a, onOpen) {
+function miniRow(a, onOpen, depth = 0) {
   const def = S.typeMap.get(a.type) ?? { label: a.type, icon: '❔' };
-  return h('button', { type: 'button', class: `mini-row${a.enabled ? '' : ' disabled'}`, title: tr('actions.editInActionEditor'), onclick: onOpen },
+  return h('button', { type: 'button', class: `mini-row${a.enabled ? '' : ' disabled'}${blockClass(a)}`, style: depth ? `margin-left: ${depth * 14}px; width: calc(100% - ${depth * 14}px)` : null, title: tr('actions.editInActionEditor'), onclick: onOpen },
     h('span', { class: 'ai' }, def.icon),
     h('span', { class: 'al' }, h('b', {}, def.label), h('span', {}, summary(a))));
 }
@@ -97,7 +114,8 @@ let drag = null;
 
 /** Bearbeitbare Liste mit Ziehen zum Sortieren und Ablegen neuer Aktionen. */
 function flowList(list, buttonId) {
-  const box = h('div', { class: 'action-list flow-list' }, list.map((a, i) => actionCard(list, a, i, buttonId)));
+  const depths = blockDepths(list);
+  const box = h('div', { class: 'action-list flow-list' }, list.map((a, i) => actionCard(list, a, i, buttonId, depths[i])));
   const marker = h('div', { class: 'drop-marker' });
   const indexAt = (y) => {
     const cards = [...box.querySelectorAll(':scope > .action-card')];
@@ -132,7 +150,7 @@ function flowList(list, buttonId) {
   return box;
 }
 
-function actionCard(list, a, i, buttonId) {
+function actionCard(list, a, i, buttonId, depth = 0) {
   const def = S.typeMap.get(a.type) ?? { label: a.type, icon: '❔', fields: [] };
   const open = S.expanded.has(a.id);
   const sum = h('span', {}, summary(a));
@@ -154,7 +172,7 @@ function actionCard(list, a, i, buttonId) {
     a.type === 'unsupported' && h('p', { class: 'hint-text' }, tr('actions.thisActionWasImported')),
     h('button', { class: 'btn small', onclick: () => testActions([{ ...a, enabled: true }], def.label, { buttonId }) }, tr('actions.testOnlyThisAction')));
 
-  const card = h('div', { class: `action-card${a.enabled ? '' : ' disabled'}${a.type === 'unsupported' ? ' unsupported' : ''}${a.type === 'comment' ? ' comment' : ''}${open ? ' open' : ''}`, 'data-id': a.id },
+  const card = h('div', { class: `action-card${a.enabled ? '' : ' disabled'}${a.type === 'unsupported' ? ' unsupported' : ''}${a.type === 'comment' ? ' comment' : ''}${open ? ' open' : ''}${blockClass(a)}`, 'data-id': a.id, style: depth ? `margin-left: ${depth * 22}px` : null },
     h('div', { class: 'action-head', onclick: () => { open ? S.expanded.delete(a.id) : S.expanded.add(a.id); refresh(); } },
       h('span', {
         class: 'drag-handle', title: tr('actions.dragToMove'), draggable: 'true',
@@ -355,7 +373,9 @@ function insertAction(list, def, index = list.length) {
   remember(def.type);
   S.expanded.clear();
   S.expanded.add(a.id);
-  mutate(() => list.splice(index, 0, a));
+  // Wenn / Wiederholen / Solange bekommen gleich ihr „Ende“ dazu.
+  const end = BLOCK_OPEN.has(def.type) && S.typeMap.get('end');
+  mutate(() => list.splice(index, 0, a, ...(end ? [newAction(end)] : [])));
   requestAnimationFrame(() => document.querySelector(`#ae-flow [data-id="${a.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
 }
 

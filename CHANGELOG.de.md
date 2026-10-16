@@ -28,6 +28,12 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Logik-Blöcke für Aktionslisten: „Wenn …“ / „Sonst wenn …“ / „Sonst“, „Wiederholen (n-mal)“,
+      „Solange …“ und „Schleife verlassen“, jeweils bis „Ende“. Der Editor rückt die Blöcke ein und
+      setzt das „Ende“ selbst dazu. Der aktuelle Durchlauf steht als {Event.Durchlauf} bereit;
+      Endlosschleifen stoppen nach 20000 Schritten.
+    - Bedingungen können Platzhalter vergleichen (z. B. {Event.Nutzer}) und kennen „größer oder
+      gleich“, „kleiner oder gleich“ und „ist nicht leer“.
     - Drehregler und Regler-Formen: Regler können Schieber (Fläche), Schieber mit Schiene und Griff,
       Drehregler (Ring) oder Drehregler mit Zeiger sein, mit eigener Farbe und Dicke. Drehregler
       dreht man im Kreis (unten links 0 %, unten rechts 100 %); sie steuern alles, was Regler können.

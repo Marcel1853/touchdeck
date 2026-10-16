@@ -699,7 +699,7 @@
       "label": "Condition: only continue if …",
       "fields": {
         "name": {
-          "label": "Variable"
+          "label": "Variable or placeholder (e.g. {Event.User})"
         },
         "op": {
           "label": "Comparison",
@@ -707,9 +707,12 @@
             "eq": "is equal to",
             "ne": "is not equal to",
             "gt": "is greater than",
+            "ge": "is greater than or equal to",
             "lt": "is less than",
+            "le": "is less than or equal to",
             "contains": "contains",
-            "empty": "is empty"
+            "empty": "is empty",
+            "not_empty": "is not empty"
           }
         },
         "value": {
@@ -1042,6 +1045,98 @@
         },
         "seconds": {
           "label": "Seconds"
+        }
+      }
+    },
+    "if": {
+      "label": "If …",
+      "fields": {
+        "name": {
+          "label": "Variable or placeholder (e.g. {Event.User})"
+        },
+        "op": {
+          "label": "Comparison",
+          "options": {
+            "eq": "is equal to",
+            "ne": "is not equal to",
+            "gt": "is greater than",
+            "ge": "is greater than or equal to",
+            "lt": "is less than",
+            "le": "is less than or equal to",
+            "contains": "contains",
+            "empty": "is empty",
+            "not_empty": "is not empty"
+          }
+        },
+        "value": {
+          "label": "Value"
+        }
+      }
+    },
+    "else_if": {
+      "label": "Else if …",
+      "fields": {
+        "name": {
+          "label": "Variable or placeholder (e.g. {Event.User})"
+        },
+        "op": {
+          "label": "Comparison",
+          "options": {
+            "eq": "is equal to",
+            "ne": "is not equal to",
+            "gt": "is greater than",
+            "ge": "is greater than or equal to",
+            "lt": "is less than",
+            "le": "is less than or equal to",
+            "contains": "contains",
+            "empty": "is empty",
+            "not_empty": "is not empty"
+          }
+        },
+        "value": {
+          "label": "Value"
+        }
+      }
+    },
+    "while": {
+      "label": "While …",
+      "fields": {
+        "name": {
+          "label": "Variable or placeholder (e.g. {Event.User})"
+        },
+        "op": {
+          "label": "Comparison",
+          "options": {
+            "eq": "is equal to",
+            "ne": "is not equal to",
+            "gt": "is greater than",
+            "ge": "is greater than or equal to",
+            "lt": "is less than",
+            "le": "is less than or equal to",
+            "contains": "contains",
+            "empty": "is empty",
+            "not_empty": "is not empty"
+          }
+        },
+        "value": {
+          "label": "Value"
+        }
+      }
+    },
+    "else": {
+      "label": "Else"
+    },
+    "end": {
+      "label": "End (if / loop)"
+    },
+    "break": {
+      "label": "Exit loop"
+    },
+    "repeat": {
+      "label": "Repeat (n times)",
+      "fields": {
+        "count": {
+          "label": "How often? (current round: {Event.Loop})"
         }
       }
     }

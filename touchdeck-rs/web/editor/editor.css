@@ -379,6 +379,7 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .action-section .list-title { gap: 6px; }
 .action-section .list-title h3 { flex: 1; }
 .action-card.comment { border-style: dashed; }
+.action-card.block-mark, .mini-row.block-mark { border-left: 3px solid color-mix(in srgb, var(--accent) 70%, var(--line)); }
 
 /* Abzeichen auf Buttons im Raster */
 .canvas .td-btn.has-badges::before {

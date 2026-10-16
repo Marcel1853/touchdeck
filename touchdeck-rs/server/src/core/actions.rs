@@ -132,16 +132,145 @@ fn known(kind: &str) -> bool {
     kind.starts_with("plugin:") || catalog::ACTION_TYPES.as_array().into_iter().flatten().any(|a| a["type"] == kind)
 }
 
+/** Blöcke der Ablauf-Logik: Wenn / Sonst wenn / Sonst, Wiederholen, Solange – jeweils bis „Ende“. */
+#[derive(Default)]
+struct Block {
+    /** Zweige eines Wenn-Blocks (Sonst wenn / Sonst) und das passende Ende. */
+    branches: Vec<usize>,
+    end: Option<usize>,
+}
+
+/** Block-Anfänge, Besitzer von Sonst/Ende und innerste Schleife je Aktion. */
+type BlockMap = (std::collections::HashMap<usize, Block>, Vec<Option<usize>>, Vec<Option<usize>>);
+
+/** Ordnet jedem Block-Anfang seine Zweige und sein Ende zu, und jeder Aktion die innerste Schleife. */
+fn block_map(actions: &[&Action]) -> BlockMap {
+    let mut blocks: std::collections::HashMap<usize, Block> = std::collections::HashMap::new();
+    let mut owner: Vec<Option<usize>> = vec![None; actions.len()];
+    let mut in_loop: Vec<Option<usize>> = vec![None; actions.len()];
+    let mut stack: Vec<usize> = Vec::new();
+    for (i, a) in actions.iter().enumerate() {
+        in_loop[i] = stack.iter().rev().copied().find(|&o| actions[o].kind != "if");
+        match a.kind.as_str() {
+            "if" | "repeat" | "while" => {
+                blocks.insert(i, Block::default());
+                stack.push(i);
+            }
+            "else_if" | "else" => {
+                if let Some(&o) = stack.last().filter(|&&o| actions[o].kind == "if") {
+                    blocks.get_mut(&o).unwrap().branches.push(i);
+                    owner[i] = Some(o);
+                }
+            }
+            "end" => {
+                if let Some(o) = stack.pop() {
+                    blocks.get_mut(&o).unwrap().end = Some(i);
+                    owner[i] = Some(o);
+                }
+            }
+            _ => {}
+        }
+    }
+    (blocks, owner, in_loop)
+}
+
+/** Höchstzahl ausgeführter Schritte pro Aufruf, damit eine Schleife TouchDeck nicht lahmlegt. */
+const MAX_STEPS: u32 = 20_000;
+
 /** Führt die Aktionen nacheinander aus und bricht beim ersten Fehler ab. Ergebnis: { ok, error?, messages, navigate }. */
 pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) -> BoxFuture<'a, Value> {
     async move {
         let mut ctx = Ctx { opts, navigate: None, stop: false };
         let mut messages: Vec<String> = Vec::new();
         let enabled: Vec<&Action> = actions.iter().filter(|a| a.enabled).collect();
+        let (blocks, owner, in_loop) = block_map(&enabled);
+        let after = |o: usize| blocks.get(&o).and_then(|b| b.end).map_or(enabled.len(), |e| e + 1);
+        let fail = |ctx: &Ctx, messages: &[String], msg: String| json!({ "ok": false, "error": msg, "messages": messages, "navigate": ctx.navigate });
         // „Zufällig“: von den nächsten Aktionen nur eine ausführen, die anderen überspringen.
         let mut skip = std::collections::HashSet::new();
-        for (i, action) in enabled.iter().enumerate() {
+        // Durchläufe je Schleife (Index des Schleifen-Anfangs).
+        let mut rounds: std::collections::HashMap<usize, u32> = std::collections::HashMap::new();
+        // true, wenn der nächste Zweig (Sonst wenn / Sonst) geprüft werden soll statt übersprungen.
+        let mut try_branch = false;
+        let (mut i, mut steps) = (0usize, 0u32);
+        while i < enabled.len() {
+            steps += 1;
+            if steps > MAX_STEPS {
+                return fail(&ctx, &messages, t!("actions.tooManySteps").to_string());
+            }
+            let action = enabled[i];
+            let jumped = std::mem::take(&mut try_branch);
+            match action.kind.as_str() {
+                "if" | "else_if" => {
+                    // Ein „Sonst wenn“, das man nach einem ausgeführten Zweig erreicht, beendet den Block.
+                    let head = if action.kind == "if" { Some(i) } else { owner[i] };
+                    if action.kind == "else_if" && !jumped {
+                        i = head.map_or(i + 1, after);
+                        continue;
+                    }
+                    if check(app, &ctx, &P(&action.params)) {
+                        i += 1;
+                    } else {
+                        let b = head.and_then(|h| blocks.get(&h));
+                        let next = b.and_then(|b| b.branches.iter().copied().find(|&x| x > i));
+                        match next {
+                            Some(n) => {
+                                i = n;
+                                try_branch = true;
+                            }
+                            None => i = head.map_or(i + 1, after),
+                        }
+                    }
+                    continue;
+                }
+                "else" => {
+                    i = if jumped { i + 1 } else { owner[i].map_or(i + 1, after) };
+                    continue;
+                }
+                "repeat" | "while" => {
+                    let go = if action.kind == "repeat" { js_number(action.params.get("count")).max(0.0) >= 1.0 } else { check(app, &ctx, &P(&action.params)) };
+                    if go {
+                        rounds.insert(i, 1);
+                        set_round(&mut ctx, 1);
+                        i += 1;
+                    } else {
+                        i = after(i);
+                    }
+                    continue;
+                }
+                "end" => {
+                    let Some(o) = owner[i] else {
+                        i += 1;
+                        continue;
+                    };
+                    let head = enabled[o];
+                    let n = rounds.get(&o).copied().unwrap_or(1);
+                    let again = match head.kind.as_str() {
+                        "repeat" => (n as f64) < js_number(head.params.get("count")).min(1000.0),
+                        "while" => check(app, &ctx, &P(&head.params)),
+                        _ => false,
+                    };
+                    if again {
+                        rounds.insert(o, n + 1);
+                        set_round(&mut ctx, n + 1);
+                        i = o + 1;
+                    } else {
+                        // Nach einer inneren Schleife wieder den Durchlauf der äußeren zeigen.
+                        if let Some(outer) = in_loop[o].and_then(|x| rounds.get(&x)) {
+                            set_round(&mut ctx, *outer);
+                        }
+                        i += 1;
+                    }
+                    continue;
+                }
+                "break" => {
+                    i = in_loop[i].map_or(enabled.len(), after);
+                    continue;
+                }
+                _ => {}
+            }
             if skip.contains(&i) {
+                i += 1;
                 continue;
             }
             if action.kind == "random" {
@@ -151,6 +280,7 @@ pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) 
                     let pick = random_below(count);
                     skip.extend((0..count).filter(|&k| k != pick).map(|k| i + 1 + k));
                 }
+                i += 1;
                 continue;
             }
             let result = if known(&action.kind) { run_action(app, action, &mut ctx).await } else { Err(anyhow!(t!("actions.unknownAction", action.kind))) };
@@ -159,16 +289,43 @@ pub fn run_actions<'a>(app: &'a Arc<App>, actions: &'a [Action], opts: RunOpts) 
                 Ok(_) => {}
                 Err(err) => {
                     let label = if known(&action.kind) { label(app, &action.kind) } else { action.kind.clone() };
-                    return json!({ "ok": false, "error": format!("{label}: {err:#}"), "messages": messages, "navigate": ctx.navigate });
+                    return fail(&ctx, &messages, format!("{label}: {err:#}"));
                 }
             }
             if ctx.stop {
                 break;
             }
+            i += 1;
         }
         json!({ "ok": true, "messages": messages, "navigate": ctx.navigate })
     }
     .boxed()
+}
+
+/** Durchlauf der innersten Schleife als Platzhalter {Event.Durchlauf} / {Event.Loop}. */
+fn set_round(ctx: &mut Ctx, n: u32) {
+    for k in ["Event.Durchlauf", "Event.Loop"] {
+        ctx.opts.event_data.insert(k.into(), json!(n.to_string()));
+    }
+}
+
+/** Vergleich für Bedingung, Wenn und Solange: Variable (oder Text mit Platzhaltern) gegen einen Wert. */
+fn check(app: &App, ctx: &Ctx, p: &P) -> bool {
+    let name = p.s("name");
+    let v = if name.contains('{') { fill(app, ctx, &name) } else { variables(app).get(&name).map(js_string).unwrap_or_default() };
+    let w = fill(app, ctx, &p.s("value"));
+    let num = |s: &str| js_number(Some(&json!(s)));
+    match p.or("op", "eq").as_str() {
+        "ne" => v != w,
+        "gt" => num(&v) > num(&w),
+        "ge" => num(&v) >= num(&w),
+        "lt" => num(&v) < num(&w),
+        "le" => num(&v) <= num(&w),
+        "contains" => v.contains(&w),
+        "empty" => v.is_empty(),
+        "not_empty" => !v.is_empty(),
+        _ => v == w,
+    }
 }
 
 /** Zufallszahl 0..n (für „Zufällig“; keine Kryptografie nötig). */
@@ -628,23 +785,14 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             Ok(Some(format!("{name}: {}", if on { "an" } else { "aus" })))
         }
         "condition" => {
-            let v = variables(app).get(&p.s("name")).map(js_string).unwrap_or_default();
-            let w = p.s("value");
-            let num = |s: &str| js_number(Some(&json!(s)));
-            let ok = match p.or("op", "eq").as_str() {
-                "ne" => v != w,
-                "gt" => num(&v) > num(&w),
-                "lt" => num(&v) < num(&w),
-                "contains" => v.contains(&w),
-                "empty" => v.is_empty(),
-                _ => v == w,
-            };
             // Nicht erfüllt: die restlichen Aktionen dieses Buttons überspringen.
-            if !ok {
+            if !check(app, ctx, &p) {
                 ctx.stop = true;
             }
             none
         }
+        // Blöcke steuert run_actions selbst.
+        "if" | "else_if" | "else" | "repeat" | "while" | "break" | "end" => none,
 
         // ---------- Twitch ----------
         "twitch_chat" => {
@@ -997,7 +1145,7 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
             names.extend(c.values.keys().cloned());
             let mut lists: Vec<&Vec<Action>> = Vec::new();
             for b in c.pages.iter().flat_map(|p| &p.buttons) {
-                lists.extend([&b.actions, &b.actions_off, &b.hold_actions, &b.release_actions]);
+                lists.extend([&b.actions, &b.actions_off, &b.hold_actions, &b.release_actions, &b.double_actions]);
                 lists.extend(b.events.iter().map(|e| &e.actions));
                 if !b.live.variable.is_empty() {
                     names.insert(b.live.variable.clone());
@@ -1006,8 +1154,8 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
             lists.extend(c.flows.iter().map(|f| &f.actions));
             lists.extend(c.events.iter().map(|e| &e.actions));
             for a in lists.into_iter().flatten() {
-                if (a.kind.starts_with("var_") || a.kind.starts_with("condition"))
-                    && let Some(n) = a.params.get("name").and_then(Value::as_str).filter(|n| !n.is_empty())
+                if (a.kind.starts_with("var_") || ["condition", "if", "else_if", "while"].contains(&a.kind.as_str()))
+                    && let Some(n) = a.params.get("name").and_then(Value::as_str).filter(|n| !n.is_empty() && !n.contains('{'))
                 {
                     names.insert(n.into());
                 }
@@ -1043,6 +1191,20 @@ mod tests {
         assert!(js_number(None).is_nan());
         assert!(truthy(Some(&json!("x"))));
         assert!(!truthy(Some(&json!(0))));
+    }
+
+    #[test]
+    fn bloecke_zuordnen() {
+        let kinds = ["repeat", "if", "x", "else_if", "x", "else", "break", "end", "end", "end"];
+        let list: Vec<Action> = kinds.iter().map(|k| Action { id: String::new(), kind: k.to_string(), enabled: true, params: Default::default() }).collect();
+        let refs: Vec<&Action> = list.iter().collect();
+        let (blocks, owner, in_loop) = block_map(&refs);
+        assert_eq!(blocks[&0].end, Some(8));
+        assert_eq!(blocks[&1].branches, vec![3, 5]);
+        assert_eq!(blocks[&1].end, Some(7));
+        assert_eq!(owner[3], Some(1));
+        assert_eq!(owner[9], None, "überzähliges Ende gehört zu nichts");
+        assert_eq!(in_loop[6], Some(0), "Schleife verlassen springt aus der Wiederholung");
     }
 
     #[test]

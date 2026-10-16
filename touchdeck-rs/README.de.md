@@ -123,6 +123,9 @@ Live-Anzeige und in OBS-Texten. `{Zeit}` und `{Datum}` gibt es immer.
 
 Beispiele für die neueren Aktionen und Auslöser:
 
+- **Wenn / Sonst wenn / Sonst**, **Wiederholen (n-mal)**, **Solange** und **Schleife
+  verlassen** bilden Blöcke bis **Ende**; der Editor rückt sie ein. Der aktuelle
+  Durchlauf ist `{Event.Durchlauf}`.
 - **Zufällig: eine der nächsten Aktionen** führt genau eine zufällig gewählte der
   folgenden Aktionen aus (Anzahl einstellbar, 0 = alle folgenden).
 - **Drehregler und Regler-Formen:** ein Regler kann Fläche, Schiene mit Griff,
