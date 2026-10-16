@@ -214,6 +214,7 @@
     "play": "Abspielen",
     "quieter": "Leiser",
     "settingsDamagedUsingDefaults": "Einstellungen beschädigt, nutze Standardwerte: {0}",
+    "soundOn": "Ton an",
     "template": "Vorlage"
   },
   "backup": {
@@ -260,7 +261,8 @@
     "friends": "Freunde",
     "library": "Bibliothek",
     "noGameSelected": "Kein Spiel ausgewählt.",
-    "noSteamGamesFound": "Keine Steam-Spiele gefunden."
+    "noSteamGamesFound": "Keine Steam-Spiele gefunden.",
+    "pageName": "Steam-Spiele"
   },
   "twitch": {
     "codeHasExpiredPlease": "Der Code ist abgelaufen. Bitte noch einmal verbinden.",

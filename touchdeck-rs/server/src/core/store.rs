@@ -610,6 +610,14 @@ fn sample_pages() -> Vec<Page> {
         json!({ "row": row, "col": col, "title": title, "icon": { "type": "emoji", "value": emoji }, "color": color,
                 "actions": [{ "type": kind, "enabled": true, "params": params }] })
     };
+    // Stumm-Button: zeigt den Zustand über zwei Events am Button (sichtbar unter „Bei Event“).
+    let mut mute = btn(1, 2, t!("store.soundOn"), "🔊", "#2b2f3a", "volume", json!({ "op": "mute" }));
+    mute["events"] = json!([
+        { "enabled": true, "trigger": { "type": "audio_mute", "params": { "target": "output", "state": "muted" } },
+          "actions": [{ "type": "change_visuals", "enabled": true, "params": { "target": "self", "icon": "🔇", "title": t!("common.muted"), "color": "#8f3b3b" } }] },
+        { "enabled": true, "trigger": { "type": "audio_mute", "params": { "target": "output", "state": "unmuted" } },
+          "actions": [{ "type": "restore_visuals", "enabled": true, "params": { "target": "self" } }] },
+    ]);
     let page = json!({
         "name": "Start", "rows": 3, "cols": 5,
         "buttons": [
@@ -618,7 +626,7 @@ fn sample_pages() -> Vec<Page> {
             btn(0, 2, t!("common.next"), "⏭️", "#2b2f3a", "media", json!({ "op": "next" })),
             btn(1, 0, t!("store.quieter"), "🔉", "#2b2f3a", "volume", json!({ "op": "down", "step": 5 })),
             btn(1, 1, t!("store.louder"), "🔊", "#2b2f3a", "volume", json!({ "op": "up", "step": 5 })),
-            btn(1, 2, t!("common.muted"), "🔇", "#8f3b3b", "volume", json!({ "op": "mute" })),
+            mute,
             btn(2, 0, "Terminal", "🖥️", "#2b2f3a", "hotkey", json!({ "keys": "ctrl+alt+t" })),
             btn(2, 1, t!("store.files"), "📁", "#2b2f3a", "open_path", json!({ "path": "~" })),
         ],

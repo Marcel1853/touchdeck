@@ -49,7 +49,7 @@ export function renderEvents({ detail = true } = {}) {
   root.replaceChildren(
     h('div', { class: 'detail-head' },
       h('input', { class: 'page-name', value: ev.name, maxlength: 100, oninput: (e) => mutate(() => (ev.name = e.target.value || tr('common.event')), { coalesce: `${ev.id}:name`, detail: false }) }),
-      h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: ev.enabled, onchange: (e) => mutate(() => (ev.enabled = e.target.checked)) }), 'aktiv'),
+      h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: ev.enabled, onchange: (e) => mutate(() => (ev.enabled = e.target.checked)) }), tr('common.active')),
       h('div', { class: 'spacer' }),
       h('button', { class: 'btn primary small', title: tr('events.runActionsNowWithout'), onclick: () => testActions(ev.actions, ev.name) }, tr('events.runNow')),
       h('button', { class: 'btn ghost danger small', onclick: () => confirm(tr('events.deleteEvent', [ev.name])) && mutate(() => { S.events = S.events.filter((x) => x !== ev); S.eventId = null; }) }, tr('common.delete'))),

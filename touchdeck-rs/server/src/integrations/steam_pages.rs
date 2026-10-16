@@ -1,4 +1,5 @@
-// Erzeugt Seiten mit allen installierten Steam-Spielen (Coverbild, Start-Aktion, „läuft“-Anzeige).
+// Erzeugt Seiten mit allen installierten Steam-Spielen: Coverbild, Start-Aktion und Events,
+// die den Button grün färben, solange das Spiel läuft (sichtbar unter „Bei Event“).
 use crate::t;
 use std::path::Path;
 
@@ -15,6 +16,10 @@ fn action(kind: &str, params: Value) -> Value {
     json!({ "id": new_id("a_"), "type": kind, "enabled": true, "params": params })
 }
 
+fn on_event(kind: &str, params: Value, actions: Vec<Value>) -> Value {
+    json!({ "id": new_id("e_"), "enabled": true, "trigger": { "type": kind, "params": params }, "actions": actions })
+}
+
 fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path) -> Value {
     let src = steam::cover_image(appid);
     let mut icon = json!({ "type": "emoji", "value": "🎮" });
@@ -29,9 +34,12 @@ fn game_button(appid: &str, title: &str, row: usize, col: usize, icon_dir: &Path
         "row": row, "col": col, "title": title, "icon": icon,
         "iconFit": if src.is_some() { "cover" } else { "contain" },
         "titlePos": if src.is_some() { "hidden" } else { "bottom" },
-        "color": "#1b2838", "colorOn": "#4c8a2f",
+        "color": "#1b2838",
         "actions": [action("steam_game", json!({ "game": appid }))],
-        "live": { "source": "steam_running" },
+        "events": [
+            on_event("steam_game", json!({ "game": appid, "state": "started" }), vec![action("change_visuals", json!({ "target": "self", "color": "#4c8a2f" }))]),
+            on_event("steam_game", json!({ "game": appid, "state": "stopped" }), vec![action("restore_visuals", json!({ "target": "self" }))]),
+        ],
     })
 }
 
@@ -72,7 +80,7 @@ pub fn build_steam_pages(icon_dir: &Path, reuse_ids: &[String]) -> Result<Vec<Pa
             }
             sanitize_page(&json!({
                 "id": ids[n],
-                "name": if chunks.len() > 1 { format!("Steam-Spiele {}", n + 1) } else { "Steam-Spiele".into() },
+                "name": if chunks.len() > 1 { format!("{} {}", t!("steam.pageName"), n + 1) } else { t!("steam.pageName").into() },
                 "rows": rows, "cols": COLS, "background": "#171a21", "template": "steam", "buttons": buttons,
             }))
         })

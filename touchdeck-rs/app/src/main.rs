@@ -247,6 +247,12 @@ fn main() {
                 std::process::exit(1);
             }
             println!("TouchDeck läuft auf {} – Daten: {}", base(), data.display());
+            // Eingeschalteten Autostart auf diese Version zeigen lassen (Dateiname ändert sich mit jeder Version).
+            if autostart_file().exists()
+                && let Err(err) = set_autostart(true)
+            {
+                eprintln!("Autostart: {err}");
+            }
             create_tray(&handle)?;
             let window = create_editor(&handle)?;
             if !hidden {

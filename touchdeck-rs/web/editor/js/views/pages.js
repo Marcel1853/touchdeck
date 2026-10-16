@@ -1,5 +1,5 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
-import { t as tr } from '/shared/i18n.js';
+import { t as tr, getLang } from '/shared/i18n.js';
 import { buttonElement, setupGrid, iconUrl } from '/shared/render.js';
 import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
@@ -640,7 +640,7 @@ function eventsTab(b) {
     ...b.events.map((ev, i) => h('div', { class: `event-card${ev.enabled ? '' : ' disabled'}` },
       h('div', { class: 'list-title' },
         h('h3', {}, tr('pages.event', [i + 1])),
-        h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: ev.enabled, onchange: (e) => mutate(() => (ev.enabled = e.target.checked)) }), 'aktiv'),
+        h('label', { class: 'switch-row compact' }, h('input', { type: 'checkbox', checked: ev.enabled, onchange: (e) => mutate(() => (ev.enabled = e.target.checked)) }), tr('common.active')),
         h('button', { class: 'btn icon ghost danger', title: tr('pages.removeEvent'), onclick: () => mutate(() => b.events.splice(i, 1)) }, '✕')),
       h('p', { class: 'muted-note' }, triggerSummary(ev.trigger)),
       triggerEditor(ev.trigger),
@@ -679,10 +679,13 @@ async function askTemplate(template, createText) {
   return r === 'update' ? 'update' : null;
 }
 
-function addTemplatePage(pg, template) {
+/** extra: Werte und globale Events, die die Seite braucht (werden nur angelegt, wenn es sie noch nicht gibt). */
+function addTemplatePage(pg, template, extra = {}) {
   pg.template = template;
   const existing = S.pages.find((p) => p.template === template);
   mutate(() => {
+    for (const [name, meta] of Object.entries(extra.values ?? {})) S.values[name] ??= meta;
+    for (const ev of extra.events ?? []) if (!S.events.some((e) => e.name === ev.name)) S.events.push(ev);
     if (existing) {
       pg.id = existing.id;
       S.pages = S.pages.filter((p) => p.template !== template || p === existing).map((p) => (p === existing ? pg : p));
@@ -695,20 +698,43 @@ function addTemplatePage(pg, template) {
   toast(tr(existing ? 'pages.pageUpdated' : 'pages.pageCreated', [pg.name]), 'ok');
 }
 
+// Bausteine für die fertigen Seiten: nur normale Aktionen und Events, damit man im Editor sieht, was ein Button tut.
+const act = (type, params = {}) => ({ id: uid('a_'), type, enabled: true, params });
+const onEvent = (type, params, actions) => ({ id: uid('e_'), enabled: true, trigger: { type, params }, actions });
+const look = (params) => act('change_visuals', { target: 'self', ...params });
+const restoreLook = () => act('restore_visuals', { target: 'self' });
+const liveShow = (source) => ({ live: { source, command: '', variable: '' } });
+
+/** Ton- oder Mikrofon-Button: bei „stumm“ anderes Aussehen, bei „laut“ wieder das normale. */
+function muteEvents(target, mutedLook) {
+  return {
+    events: [
+      onEvent('audio_mute', { target, state: 'muted' }, [look(mutedLook)]),
+      onEvent('audio_mute', { target, state: 'unmuted' }, [restoreLook()]),
+    ],
+  };
+}
+
+export function muteButton(row, col) {
+  return tplBtn(row, col, tr('pages.soundOn'), '🔊', [['volume', { op: 'mute' }]],
+    muteEvents('output', { icon: '🔇', title: tr('pages.muted'), color: '#8f3b3b' }));
+}
+
 async function systemTemplate() {
   if (!(await askTemplate('system', tr('pages.pageWithClockCpu')))) return;
-  const live = (source) => ({ live: { source, command: '', variable: '' } });
   addTemplatePage({
     id: uid('p_'), name: tr('common.system'), rows: 3, cols: 5, background: '#14161b',
     buttons: [
-      tplBtn(0, 0, tr('pages.clock'), '🕐', [], live('clock')),
-      tplBtn(0, 1, 'CPU', '🧠', [], live('cpu')),
-      tplBtn(0, 2, 'RAM', '💾', [], live('ram')),
-      tplBtn(0, 3, tr('pages.temperature'), '🌡️', [], { ...live('temp'), colorOn: '#a33a2a' }),
+      // Zahlen wie Uhrzeit oder CPU gibt es nur als Live-Anzeige (Reiter „Aussehen“).
+      tplBtn(0, 0, tr('pages.clock'), '🕐', [], liveShow('clock')),
+      tplBtn(0, 1, 'CPU', '🧠', [], liveShow('cpu')),
+      tplBtn(0, 2, 'RAM', '💾', [], liveShow('ram')),
+      tplBtn(0, 3, tr('pages.temperature'), '🌡️', [], { ...liveShow('temp'), colorOn: '#a33a2a' }),
       tplBtn(0, 4, tr('pages.volume'), '', [], { rowSpan: 3, mode: 'slider', color: '#3b3f8f' }),
-      tplBtn(1, 0, tr('pages.music'), '⏯️', [['media', { op: 'play-pause' }]], { colSpan: 2, ...live('track'), colorOn: '#2f6e4f' }),
-      tplBtn(1, 2, tr('pages.soundOff'), '🔇', [['volume', { op: 'mute' }]], { ...live('volume'), colorOn: '#8f3b3b' }),
-      tplBtn(1, 3, tr('pages.microphone'), '🎙️', [['mic_mute', { op: 'toggle' }]], { ...live('mic'), colorOn: '#8f3b3b' }),
+      tplBtn(1, 0, tr('pages.music'), '⏯️', [['media', { op: 'play-pause' }]], { colSpan: 2, ...liveShow('track'), colorOn: '#2f6e4f' }),
+      muteButton(1, 2),
+      tplBtn(1, 3, tr('pages.microphone'), '🎙️', [['mic_mute', { op: 'toggle' }]],
+        muteEvents('input', { icon: '🔇', title: tr('pages.micOff'), color: '#8f3b3b' })),
       tplBtn(2, 0, tr('pages.output'), '🎧', [['audio_output', { target: 'next' }]]),
       tplBtn(2, 1, tr('pages.photo'), '📸', [['screenshot', { mode: 'dialog' }]]),
       tplBtn(2, 2, tr('pages.nightLight'), '🌙', [['night_light', { mode: 'toggle' }]]),
@@ -730,20 +756,46 @@ async function obsTemplate() {
   const cols = 5;
   const sceneList = scenes.length ? scenes.slice(0, cols * 2) : [''];
   const sceneRows = Math.ceil(sceneList.length / cols);
-  const live = (source) => ({ source, command: '', variable: '' });
+  // Die aktive Szene steht im Wert „OBS-Szene“ (gesetzt vom Event unten); jeder Szenen-Button vergleicht damit.
+  const sceneValue = tr('pages.obsSceneValue');
   const buttons = sceneList.map((scene, i) => tplBtn(Math.floor(i / cols), i % cols, scene || tr('pages.scene'), '🎬',
-    [['obs_scene', { scene }]], { live: live('obs_scene'), colorOn: '#2f7a4a' }));
+    [['obs_scene', { scene }]], {
+      events: [onEvent('value_change', { name: sceneValue, op: 'any', value: '' }, [
+        restoreLook(),
+        act('condition', { name: sceneValue, op: 'eq', value: scene }),
+        look({ color: '#2f7a4a' }),
+      ])],
+    }));
   const r = sceneRows;
   buttons.push(
-    tplBtn(r, 0, tr('pages.stream'), '📡', [['obs_stream', { op: 'toggle' }]], { live: live('obs_stream'), colorOn: '#b3262d' }),
-    tplBtn(r, 1, tr('pages.recording'), '⏺️', [['obs_record', { op: 'toggle' }]], { live: live('obs_record'), colorOn: '#b3262d' }),
+    tplBtn(r, 0, tr('pages.stream'), '📡', [['obs_stream', { op: 'toggle' }]], {
+      events: [
+        onEvent('obs_stream', { state: 'started' }, [look({ icon: '🔴', title: 'LIVE', color: '#b3262d' })]),
+        onEvent('obs_stream', { state: 'stopped' }, [restoreLook()]),
+      ],
+    }),
+    tplBtn(r, 1, tr('pages.recording'), '⏺️', [['obs_record', { op: 'toggle' }]], {
+      events: [
+        onEvent('obs_record', { state: 'started' }, [look({ title: 'REC', color: '#b3262d' })]),
+        onEvent('obs_record', { state: 'resumed' }, [look({ title: 'REC', color: '#b3262d' })]),
+        onEvent('obs_record', { state: 'paused' }, [look({ title: tr('pages.pause'), color: '#a3501d' })]),
+        onEvent('obs_record', { state: 'stopped' }, [restoreLook()]),
+      ],
+    }),
     tplBtn(r, 2, tr('pages.pause'), '⏸️', [['obs_record', { op: 'pause' }]]),
     tplBtn(r, 3, tr('pages.clip'), '⏪', [['obs_replay', { op: 'save' }]]),
     obsApp
       ? tplBtn(r, 4, tr('pages.startObs'), '🚀', [['launch_app', { app: obsApp.id, appName: obsApp.name }]])
       : tplBtn(r, 4, tr('pages.virtualCamera'), '📷', [['obs_misc', { op: 'virtualcam' }]]),
   );
-  addTemplatePage({ id: uid('p_'), name: 'OBS', rows: sceneRows + 1, cols, background: '#14161b', buttons }, 'obs');
+  addTemplatePage({ id: uid('p_'), name: 'OBS', rows: sceneRows + 1, cols, background: '#14161b', buttons }, 'obs', {
+    values: { [sceneValue]: { default: '', description: tr('pages.obsSceneValueDescription'), folder: 'OBS', resetOnStart: true } },
+    events: [{
+      id: uid('ev_'), name: tr('pages.rememberObsScene'), enabled: true, cooldown: 0,
+      trigger: { type: 'obs_scene', params: { scene: '' } },
+      actions: [act('var_set', { name: sceneValue, value: getLang() === 'de' ? '{Event.Szene}' : '{Event.Scene}' })],
+    }],
+  });
 }
 
 /** Für Vorlagen, die der Server erzeugt (Steam, Touch Portal): Ergebnis übernehmen. */
