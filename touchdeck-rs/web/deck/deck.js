@@ -5,6 +5,9 @@ import { buttonElement, setupGrid } from '/shared/render.js';
 const $ = (id) => document.getElementById(id);
 const grid = $('grid');
 const HOLD_DELAY = 450;
+// Doppelt drücken: so lange auf ein zweites Tippen warten (nur bei Buttons mit Doppelt-Aktionen).
+const DOUBLE_DELAY = 300;
+const pendingTaps = new Map();
 // In der Android-App stellt die App diese Brücke bereit (Vibration, Verbindung ändern).
 const app = window.TouchDeckApp ?? null;
 if (app) document.documentElement.classList.add('in-app');
@@ -91,6 +94,7 @@ const liveFor = (b) => state.live?.[b.id] ?? (b.mode !== 'slider' && b.live && b
 const element = (b, page) => {
   const el = buttonElement(effective(b), { on: !!state.toggles[b.id], live: liveFor(b), variables: state.variables, page });
   if (b.holdActions?.length) el.dataset.hold = '1';
+  if (b.doubleActions?.length) el.dataset.double = '1';
   return el;
 };
 
@@ -243,7 +247,18 @@ const release = (e, fire) => {
   const r = el.getBoundingClientRect();
   if (fire && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
     feedback();
-    send({ type: 'press', reqId: ++reqId, buttonId: el.dataset.id });
+    const id = el.dataset.id;
+    if (!el.dataset.double) return send({ type: 'press', reqId: ++reqId, buttonId: id });
+    // Zweites Tippen innerhalb der Wartezeit: Doppelt-Aktionen, sonst nach der Wartezeit die normalen.
+    if (pendingTaps.has(id)) {
+      clearTimeout(pendingTaps.get(id));
+      pendingTaps.delete(id);
+      return send({ type: 'press', reqId: ++reqId, buttonId: id, double: true });
+    }
+    pendingTaps.set(id, setTimeout(() => {
+      pendingTaps.delete(id);
+      send({ type: 'press', reqId: ++reqId, buttonId: id });
+    }, DOUBLE_DELAY));
   }
 };
 grid.addEventListener('pointerup', (e) => release(e, true));

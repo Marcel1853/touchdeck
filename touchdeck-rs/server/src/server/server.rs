@@ -253,14 +253,16 @@ fn button_title(b: &crate::core::store::Button) -> String {
 
 // ---------- Buttons ----------
 
-async fn press(app: &Arc<App>, page_id: &str, button_id: &str) -> Value {
+async fn press(app: &Arc<App>, page_id: &str, button_id: &str, double: bool) -> Value {
     let found = {
         let mut store = app.store.lock().unwrap();
         let found = store.page(page_id).and_then(|p| p.buttons.iter().find(|b| b.id == button_id).map(|b| (p.name.clone(), b.clone())));
         found.map(|(page_name, b)| {
             let mut actions = b.actions.clone();
             let mut toggled = None;
-            if b.mode == "toggle" {
+            if double && !b.double_actions.is_empty() {
+                actions = b.double_actions.clone();
+            } else if b.mode == "toggle" {
                 let on = store.config.toggles.get(button_id) != Some(&Value::Bool(true));
                 if !on {
                     actions = b.actions_off.clone();
@@ -572,7 +574,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             }
             Ok(r)
         }
-        "POST /api/press" => Ok(press(app, str_of(&body, "pageId"), str_of(&body, "buttonId")).await),
+        "POST /api/press" => Ok(press(app, str_of(&body, "pageId"), str_of(&body, "buttonId"), body["double"] == true).await),
         "POST /api/test-actions" => {
             let actions = action_list(&body["actions"]);
             Ok(run(app, &actions, body["buttonId"].as_str().map(String::from), "Test").await)
@@ -1077,7 +1079,7 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
         Some("press") => {
             let (app, tx) = (app.clone(), tx.clone());
             tokio::spawn(async move {
-                let result = press(&app, &page, &button).await;
+                let result = press(&app, &page, &button, msg["double"] == true).await;
                 let mut out = json!({ "type": "result", "reqId": msg["reqId"], "buttonId": msg["buttonId"] });
                 if let (Some(o), Value::Object(r)) = (out.as_object_mut(), result) {
                     o.extend(r);

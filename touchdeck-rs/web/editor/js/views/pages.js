@@ -66,7 +66,7 @@ function defaultFree(p, cx, cy) {
 function cloneButton(b) {
   const copy = structuredClone(b);
   copy.id = uid('b_');
-  for (const list of [copy.actions, copy.actionsOff, copy.holdActions ?? [], copy.releaseActions ?? [], ...(copy.events ?? []).map((e) => e.actions)]) {
+  for (const list of [copy.actions, copy.actionsOff, copy.holdActions ?? [], copy.releaseActions ?? [], copy.doubleActions ?? [], ...(copy.events ?? []).map((e) => e.actions)]) {
     for (const a of list) a.id = uid('a_');
   }
   for (const e of copy.events ?? []) e.id = uid('e_');
@@ -77,7 +77,7 @@ export function newButton(row, col, extra = {}) {
   return {
     id: uid('b_'), row, col, rowSpan: 1, colSpan: 1, title: '', icon: { type: 'emoji', value: '' },
     color: '#2b2f3a', colorOn: '#2f9e6b', textColor: '#ffffff', fontSize: 14, titlePos: 'bottom', mode: 'press', iconFit: 'contain',
-    actions: [], actionsOff: [], holdActions: [], releaseActions: [], holdRepeat: 0, events: [],
+    actions: [], actionsOff: [], holdActions: [], releaseActions: [], doubleActions: [], holdRepeat: 0, events: [],
     iconOn: { type: 'emoji', value: '' }, titleOn: '',
     live: { source: 'none', command: '', variable: '' }, slider: { target: 'volume', input: '', command: '' },
     ...extra,
@@ -268,7 +268,8 @@ function addBadges(el, b) {
   const badges = [];
   if (b.mode !== 'slider' && b.live.source !== 'none') badges.push('LIVE');
   if (b.events?.length) badges.push('EVENT');
-  if (b.holdActions?.length) badges.push('HALTEN');
+  if (b.holdActions?.length) badges.push(tr('pages.badgeHold'));
+  if (b.doubleActions?.length) badges.push('2×');
   if (badges.length) {
     el.dataset.badges = badges.join(' · ');
     el.classList.add('has-badges');
@@ -762,7 +763,7 @@ function renderInspector() {
     return;
   }
   const counts = {
-    actions: b.mode === 'slider' ? null : b.actions.length + (b.mode === 'toggle' ? b.actionsOff.length : 0),
+    actions: b.mode === 'slider' ? null : b.actions.length + (b.mode === 'toggle' ? b.actionsOff.length : 0) + (b.doubleActions?.length ?? 0),
     events: b.events.length,
     hold: b.holdActions.length + b.releaseActions.length,
   };
@@ -907,13 +908,20 @@ function liveSection(b) {
 }
 
 function pressTab(b) {
+  b.doubleActions ??= [];
+  const context = b.title || tr('pages.button');
+  const double = [
+    actionList(b, 'doubleActions', tr('pages.whenDoublePressed'), { buttonId: b.id, compact: true, context }),
+    h('p', { class: 'hint-text' }, tr('pages.doublePressHint')),
+  ];
   if (b.mode === 'toggle') {
     return [
-      actionList(b, 'actions', tr('pages.whenSwitchedOn'), { buttonId: b.id, compact: true, context: b.title || tr('pages.button') }),
-      actionList(b, 'actionsOff', tr('pages.whenSwitchedOff'), { buttonId: b.id, compact: true, context: b.title || tr('pages.button') }),
+      actionList(b, 'actions', tr('pages.whenSwitchedOn'), { buttonId: b.id, compact: true, context }),
+      actionList(b, 'actionsOff', tr('pages.whenSwitchedOff'), { buttonId: b.id, compact: true, context }),
+      ...double,
     ];
   }
-  return [actionList(b, 'actions', tr('pages.whenPressed'), { buttonId: b.id, compact: true, context: b.title || tr('pages.button'), hint: b.holdActions.length ? tr('pages.shortTapRunsThese') : '' })];
+  return [actionList(b, 'actions', tr('pages.whenPressed'), { buttonId: b.id, compact: true, context, hint: b.holdActions.length ? tr('pages.shortTapRunsThese') : '' }), ...double];
 }
 
 function sliderTab(b) {

@@ -180,6 +180,8 @@ pub struct Button {
     /// Gedrückthalten: Aktionen beim langen Drücken (optional wiederholt) und beim Loslassen danach.
     pub hold_actions: Vec<Action>,
     pub release_actions: Vec<Action>,
+    /// Doppelt drücken: eigene Aktionen statt der normalen (der Umschalter wechselt dabei nicht).
+    pub double_actions: Vec<Action>,
     pub hold_repeat: i64,
     /// Bei Event: der Button reagiert selbst auf Ereignisse.
     pub events: Vec<ButtonEvent>,
@@ -382,6 +384,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         actions_off: action_list(&b["actionsOff"]),
         hold_actions: action_list(&b["holdActions"]),
         release_actions: action_list(&b["releaseActions"]),
+        double_actions: action_list(&b["doubleActions"]),
         hold_repeat: clamp(&b["holdRepeat"], 0, 10000, 0),
         events: b["events"]
             .as_array()
