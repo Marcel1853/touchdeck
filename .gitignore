@@ -2,6 +2,7 @@
 /*
 !/.gitignore
 !/README.md
+!/README.de.md
 !/env.sh
 !/touchdeck-rs/
 !/android/

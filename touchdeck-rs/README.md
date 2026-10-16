@@ -1,182 +1,216 @@
 # TouchDeck
 
-Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy oder Tablet
-aus auslösen – mit Editor, Android-App und Bedienfeld im Browser. Geschrieben in Rust,
-das Programmfenster nutzt Tauri mit der Web-Ansicht des Systems.
+**English** · [Deutsch](README.de.md)
 
-## Installieren
+Macro remote for Linux: design button pages on your PC and trigger them from your
+phone or tablet – with an editor, an Android app and a deck in the browser. Written
+in Rust; the program window uses Tauri with the system's web view.
+
+## Installing
 
 ```sh
-sudo apt install ./TouchDeck_<version>_amd64.deb   # mit Menüeintrag
-# oder ohne Installation: AppImage ausführbar machen und doppelklicken
+sudo apt install ./TouchDeck_<version>_amd64.deb   # with menu entry
+# or without installing: make the AppImage executable and double-click it
 ./TouchDeck_<version>_amd64.AppImage
 ```
 
-- Das `.deb` öffnet beim Installieren die Firewall (ufw) fürs Heimnetz und schließt
-  sie beim Entfernen wieder. Python oder Node.js werden nicht gebraucht.
-- Fenster schließen = TouchDeck läuft im Hintergrund weiter (Handys bleiben
-  verbunden). Über das Symbol in der Systemleiste: Editor öffnen, Handy verbinden,
-  Vorschau, **Beim Anmelden starten**, Beenden.
-- Ein zweiter Start holt das vorhandene Fenster nach vorn.
-- Sprache: Deutsch oder Englisch, voreingestellt nach der Systemsprache.
-- Daten liegen in `~/.config/TouchDeck/data/`.
-- Deinstallieren: `sudo apt remove touchdeck`
+- During installation the `.deb` opens the firewall (ufw) for the home network and
+  closes it again on removal. Python or Node.js are not needed.
+- Closing the window = TouchDeck keeps running in the background (phones stay
+  connected). Via the system tray icon: open the editor, connect a phone, preview,
+  **Start at login**, quit.
+- Starting it a second time brings the existing window to the front.
+- Without the `.deb` (e.g. the AppImage), TouchDeck creates its own launcher entry
+  with icon in your user folder so the start menu and taskbar show it properly. The
+  autostart entry always points at the version that is currently running.
+- Data is stored in `~/.config/TouchDeck/data/`.
+- Uninstall: `sudo apt remove touchdeck`
 
-## Handy verbinden
+## Language
 
-**Mit der Android-App (empfohlen):**
+The whole interface – editor, deck, Android app and server messages – is available
+in German and English. By default it follows the system language; you can change it
+in **Settings › General**. The translations live in `web/shared/lang/de.json` and
+`en.json` (editor and deck), `server/lang/*.json` (server messages) and
+`server/catalog/lang/*.json` (names of actions and triggers). Plugins can ship their
+own translations.
 
-1. Im Editor **📱 Handy verbinden** öffnen und den QR-Code unter „Android-App“
-   scannen – die App wird vom PC heruntergeladen. Beim ersten Mal „Unbekannte Apps
-   installieren“ für den Browser erlauben.
-2. App öffnen: Sie findet den PC im WLAN von selbst. Antippen → am PC erscheint
-   „… möchte sich verbinden“ → **Erlauben**.
-3. Fertig: Bedienfeld im Vollbild, Bildschirm bleibt an, Vibration, die Zurück-Taste
-   blättert Seiten zurück. Die App merkt sich mehrere PCs.
+## Connecting a phone
 
-Alternativ in der App „QR-Code vom PC scannen“ oder die Adresse von Hand eingeben.
-**Ohne App:** den QR-Code im Dialog „Handy verbinden“ mit der Handykamera scannen –
-das Bedienfeld öffnet sich im Browser.
+**With the Android app (recommended):**
 
-Der Editor ist nur am PC selbst erreichbar; Handys brauchen den Schlüssel (per
-Bestätigung oder QR-Code) und – falls gesetzt – die PIN. **Neuen Schlüssel erzeugen**
-meldet alle Geräte ab.
+1. In the editor, open **📱 Connect phone** and scan the QR code under “Android app”
+   – the app is downloaded from the PC. The first time, allow “Install unknown apps”
+   for the browser.
+2. Open the app: it finds the PC on the Wi-Fi by itself. Tap it → on the PC,
+   “… wants to connect” appears → **Allow**.
+3. Done: deck in full screen, screen stays on, vibration, the back button goes back
+   through pages. The app remembers several PCs.
 
-## Aktionen
+Alternatively use “Scan QR code from PC” in the app or enter the address by hand.
+**Without the app:** scan the QR code in the “Connect phone” dialog with the phone's
+camera – the deck opens in the browser.
 
-Rund 80 Aktionen in Gruppen:
+The editor can only be reached on the PC itself; phones need the key (via
+confirmation or QR code) and – if set – the PIN. **Create a new key** signs out all
+devices.
 
-| Gruppe | Aktionen |
+## Pages
+
+- **Grid** pages arrange buttons in rows and columns. Column widths and row heights
+  can be adjusted individually.
+- **Free** pages place buttons anywhere on an area with a chosen aspect ratio (e.g.
+  16:10, ideally matching the device). Position and size are stored in percent of
+  the page, so phone and tablet show the page exactly as the preview does. New
+  buttons are added by double-clicking the area or with “＋ Button”.
+- **Page logic:** every page can have its own events, e.g. with the trigger
+  “Page opened / left” to switch an OBS scene or set a value.
+- **Ready-made pages** for System, OBS and Steam are built only from normal, visible
+  actions and events, so you can change everything afterwards. Steam pages update
+  automatically when games are installed or removed and download missing covers
+  from Steam. Pages can also be imported from another macro app.
+- In the deck settings, **Shape of the cells** chooses between “Fill the screen”
+  (cells may become a bit wider or taller than square) and “Square”.
+
+## Buttons
+
+Buttons come as **Press**, **Toggle** (on/off with its own look “When on” and its
+own actions) and **Slider** (volume, microphone, OBS audio source or a custom
+command with `{value}`). Every button can have a **live display** (time, CPU, RAM,
+temperature, volume, music title, Steam, OBS, Twitch, Discord, values, command
+output), react to **events**, and run its own actions on **hold** and on **double
+press**. Right-click a button: duplicate, copy, cut, paste, transfer look, move to
+another page.
+
+## Actions
+
+About 80 actions in groups:
+
+| Group | Actions |
 |---|---|
-| Allgemein | Webseiten, Dateien, Programme und Befehle, Seiten wechseln, Tastenkürzel, Text tippen, Tasten halten, Maus, Fenster nach vorn holen, Programme beenden, Benachrichtigungen, Bildschirmfoto, Sperren, Energie, Nachtlicht, Hell/Dunkel, Wake-on-LAN, HTTP, Dateien schreiben, Werte, Bedingungen, Vorlagen, Aussehen von Buttons ändern |
-| Audio, Musik & Medien | Mediensteuerung (MPRIS), Lautstärke und Mikrofon (PipeWire), Audioausgang/-eingang wechseln, Soundboard |
-| Streaming | OBS Studio (Szenen, Stream, Aufnahme, Clips, Audioquellen, Quellen, Filter, Texte, Übergänge, Profile …), Twitch |
-| Kommunikation | Discord (stumm, taub, Sprachkanal, Lautstärke, Push-to-Talk, Webhooks) |
-| Spiele | Steam (Spiele starten, Bibliothek, Downloads, Big Picture …) |
-| Plugins | Aktionen installierter Plugins |
+| General | Websites, files, programs and commands, switch pages, keyboard shortcuts, type text, hold keys, mouse, bring windows to the front, quit programs, notifications, screenshot, lock, power, night light, light/dark mode, Wake-on-LAN, HTTP, write files, values, conditions, templates, change the look of buttons |
+| Audio, music & media | Media control (MPRIS), volume and microphone (PipeWire), switch audio output/input, soundboard |
+| Streaming | OBS Studio (scenes, stream, recording, clips, audio sources, sources, filters, texts, transitions, profiles …), Twitch |
+| Communication | Discord (mute, deafen, voice channel, volume, push-to-talk, webhooks) |
+| Games | Steam (launch games, library, downloads, Big Picture …) |
+| Plugins | Actions of installed plugins |
 
-Werte erscheinen in Beschriftungen über `{Name}` (z. B. „Tore: {Tore}“), als
-Live-Anzeige und in OBS-Texten. `{Zeit}` und `{Datum}` gibt es immer.
+Values appear in labels via `{Name}` (e.g. “Goals: {Goals}”), as a live display and
+in OBS texts. `{Time}` and `{Date}` are always available.
 
-Buttons gibt es als **Drücken**, **Umschalter** (an/aus mit eigener Farbe und
-eigenen Aktionen) und **Regler** (Lautstärke, Mikrofon, OBS-Audioquelle oder eigener
-Befehl mit `{value}`). Jeder Button kann eine **Live-Anzeige** haben (Uhrzeit, CPU,
-RAM, Temperatur, Lautstärke, Musiktitel, Steam, OBS, Twitch, Discord, Werte,
-Befehlsausgabe), auf **Events** reagieren und beim **Halten** eigene Aktionen
-ausführen. Rechtsklick auf einen Button: Duplizieren, Kopieren, Ausschneiden,
-Einfügen, Aussehen übertragen, auf andere Seiten verschieben.
+## Sections in the editor
 
-## Bereiche im Editor
+In the sidebar on the left (Ctrl+1 … Ctrl+7):
 
-Links in der Leiste (Strg+1 … Strg+7):
+- **Pages** – design grid or free pages, page logic; ready-made pages for Steam,
+  System and OBS, and importing pages from another macro app.
+- **Values** – your own variables with start value, folder and description.
+- **Events** – “When …, then …”: value changes, start, timer, time of day, file,
+  phone, page opened / left, audio, Steam, OBS, Twitch, Discord, plugins. With
+  cooldown; endless loops are caught.
+- **Templates** – reusable action lists.
+- **Logs** – everything that happens, live.
+- **Plugins** – installed plugins, marketplace, develop, advanced mode.
+- **Settings** – General, Phone & security, Deck, Appearance, Integrations, Icon
+  packs, Backups, Log, Information.
 
-- **Seiten** – Raster gestalten; fertige Seiten für Steam, System, OBS und den Import
-  von Touch-Portal-Seiten.
-- **Werte** – eigene Variablen mit Startwert, Ordner und Beschreibung.
-- **Events** – „Wenn …, dann …“: Wert ändert sich, Start, Zeitgeber, Uhrzeit, Datei,
-  Handy, Audio, Steam, OBS, Twitch, Discord, Plugins. Mit Abklingzeit; Endlosschleifen
-  werden abgefangen.
-- **Vorlagen** – wiederverwendbare Aktionslisten.
-- **Logs** – alles, was passiert, live.
-- **Plugins** – installierte Plugins, Marktplatz, Entwickeln, erweiterter Modus.
-- **Einstellungen** – Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen,
-  Integrationen, Icon-Pakete, Backups, Protokoll, Information.
+## Setting up Twitch
 
-## Twitch einrichten
+1. Register an application at <https://dev.twitch.tv/console>: redirect URL
+   `http://localhost`, category “Application Integration”, client type **Public**.
+2. In TouchDeck: enter the client ID under **Settings → Integrations → Twitch** and
+   click **Connect to Twitch**.
+3. Enter the code shown at <https://www.twitch.tv/activate>.
 
-1. Auf <https://dev.twitch.tv/console> eine Anwendung registrieren: Redirect-URL
-   `http://localhost`, Kategorie „Application Integration“, Client-Typ **Öffentlich**.
-2. In TouchDeck: **Einstellungen → Integrationen → Twitch** die Client-ID eintragen und
-   **Mit Twitch verbinden** klicken.
-3. Den angezeigten Code auf <https://www.twitch.tv/activate> eingeben.
+The login stays on the PC only and is renewed automatically.
 
-Die Anmeldung bleibt nur auf dem PC und wird automatisch erneuert.
+## Setting up Discord
 
-## Discord einrichten
+1. Create a “New Application” at <https://discord.com/developers/applications>.
+2. Under **OAuth2 → Redirects**, add `http://localhost`.
+3. Copy the **Client ID** and **Client Secret** (via “Reset Secret”).
+4. In TouchDeck: enter them under **Settings → Integrations → Discord**, click
+   **Connect to Discord** and **Authorize** in Discord.
 
-1. Auf <https://discord.com/developers/applications> „New Application“ anlegen.
-2. Unter **OAuth2 → Redirects** `http://localhost` eintragen.
-3. **Client ID** und **Client Secret** (über „Reset Secret“) kopieren.
-4. In TouchDeck: **Einstellungen → Integrationen → Discord** eintragen, **Mit Discord
-   verbinden** klicken und in Discord **Autorisieren**.
+Messages to a channel are sent without login via webhook (in Discord: edit channel →
+Integrations → Webhooks → copy webhook URL).
 
-Nachrichten in einen Kanal gehen ohne Anmeldung per Webhook (in Discord: Kanal
-bearbeiten → Integrationen → Webhooks → Webhook-URL kopieren).
+## Setting up OBS
 
-## OBS einrichten
+1. In OBS: **Tools → WebSocket Server Settings → Enable WebSocket server**.
+2. In TouchDeck: **Settings → Integrations → Take over from OBS** – port and password
+   are read from the OBS configuration (Flatpak too).
+3. **Test connection**.
 
-1. In OBS: **Werkzeuge → WebSocket-Servereinstellungen → WebSocket-Server aktivieren**.
-2. In TouchDeck: **Einstellungen → Integrationen → Aus OBS übernehmen** – Port und
-   Passwort werden aus der OBS-Konfiguration gelesen (auch Flatpak).
-3. **Verbindung testen**.
+## Icon packs
 
-## Icon-Pakete
-
-Eigene Bildersammlungen (Einstellungen › Icon-Pakete): anlegen, Bilder hinzufügen,
-als `.tdicons`-Datei exportieren und weitergeben, Pakete anderer importieren.
-Abgelegt im Datenordner unter `icons/packs/`.
+Your own image collections (Settings › Icon packs): create them, add images, export
+them as a `.tdicons` file and share them, import packs from others. Stored in the
+data folder under `icons/packs/`.
 
 ## Plugins
 
-Normale Plugins sind JavaScript und laufen abgeschottet (QuickJS) mit festen Grenzen
-und Berechtigungen. Erweiterte Plugins sind eigene Programme mit vollen Rechten und
-laufen nur nach doppelter Bestätigung auf eigene Gefahr. Installiert wird nur aus
-öffentlichen GitHub-Repos; dazu gibt es einen Marktplatz und einen Testmodus.
-Anleitung: [Plugin-Wiki](https://github.com/Marcel1853/touchdeck-plugins/wiki),
-Beispiele: [touchdeck-plugins](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples),
-Kurzfassung: [PLUGINS.md](PLUGINS.md).
+Normal plugins are JavaScript and run sandboxed (QuickJS) with fixed limits and
+permissions. Advanced plugins are separate programs with full rights and only run
+after a double confirmation, at your own risk. Plugins are installed only from
+public GitHub repos; there is a marketplace and a test mode. Plugins can ship their
+own translations.
+Guide: [plugin wiki](https://github.com/Marcel1853/touchdeck-plugins/wiki),
+examples: [touchdeck-plugins](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples),
+short version: [PLUGINS.md](PLUGINS.md).
 
-## Entwickeln
+## Development
 
-Alles liegt im Projektordner (Rust, Cargo-Cache, Android-SDK, Werkzeuge):
+Everything lives in the project folder (Rust, Cargo cache, Android SDK, tools):
 
 ```bash
 source ../env.sh
-cargo test                     # Tests
-cargo run -p touchdeck         # Programm mit Fenster
-cargo run -p touchdeck-server  # nur der Server, Editor im Browser
-scripts/build-android.sh       # Android-App bauen und nach downloads/ legen
+cargo test                     # tests
+cargo run -p touchdeck         # program with window
+cargo run -p touchdeck-server  # server only, editor in the browser
+scripts/build-android.sh       # build the Android app and put it in downloads/
 ```
 
-Aufbau:
+Layout:
 
 ```
 touchdeck-rs/
-├── server/                 Bibliothek + Kommandozeilen-Server (touchdeck-server)
-│   ├── catalog/            Beschreibung der Aktionen und Auslöser für den Editor
+├── server/                 library + command-line server (touchdeck-server)
+│   ├── catalog/            description of actions and triggers for the editor (with lang/)
+│   ├── lang/               translations of server messages
 │   └── src/
-│       ├── core/           Daten (store), Aktionen, Events, Live-Werte, Icon-Pakete, Plugins, Protokoll, Sicherungen
-│       ├── server/         HTTP-Routen, WebSocket, Suche im WLAN
-│       ├── system/         Linux: Programme, Audio, Medien (linux.rs), Tastatur/Maus/Fenster (x11.rs)
-│       └── integrations/   OBS, Steam, Twitch, Discord, Import von Touch-Portal-Seiten
-├── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart
-├── web/                    Editor (editor/), Bedienfeld fürs Handy (deck/), gemeinsame Teile (shared/)
-├── downloads/              Android-App, die TouchDeck den Handys anbietet (wird gebaut, nicht im Repo)
-└── scripts/                Hilfsskripte
+│       ├── core/           data (store), actions, events, live values, icon packs, plugins, log, backups
+│       ├── server/         HTTP routes, WebSocket, discovery on the Wi-Fi
+│       ├── system/         Linux: programs, audio, media (linux.rs), keyboard/mouse/windows (x11.rs)
+│       └── integrations/   OBS, Steam, Twitch, Discord, page import
+├── app/                    desktop program (Tauri): window, system tray icon, autostart, launcher entry
+├── web/                    editor (editor/), deck for the phone (deck/), shared parts and translations (shared/)
+├── downloads/              Android app that TouchDeck offers to phones (built, not in the repo)
+└── scripts/                helper scripts
 ```
 
-Nützliche Umgebungsvariablen:
+Useful environment variables:
 
-| Variable | Bedeutung |
+| Variable | Meaning |
 |---|---|
-| `TOUCHDECK_PORT` | anderer Port (Standard 8770), z. B. zum Testen neben einer laufenden Version |
-| `TOUCHDECK_DATA` | anderer Datenordner |
-| `TOUCHDECK_PUBLIC` | anderer Ordner für Editor und Bedienfeld |
+| `TOUCHDECK_PORT` | different port (default 8770), e.g. for testing next to a running version |
+| `TOUCHDECK_DATA` | different data folder |
+| `TOUCHDECK_PUBLIC` | different folder for editor and deck |
 
-Zum Bauen des Fensters braucht das System einmalig:
+To build the window, the system needs once:
 
 ```bash
 sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-## Installationspakete bauen
+## Building installation packages
 
 ```bash
 source ../env.sh
-scripts/build-android.sh       # einmal: Android-App, die ins Paket kommt
+scripts/build-android.sh       # once: the Android app that goes into the package
 cd app
 XDG_CACHE_HOME="$PWD/../../.cache" cargo tauri build
 ```
 
-Ergebnis in `target/release/bundle/`: ein `.deb` (ca. 7 MB) und ein AppImage
-(ca. 85 MB, bringt WebKitGTK mit).
+Result in `target/release/bundle/`: a `.deb` (about 7 MB) and an AppImage
+(about 85 MB, includes WebKitGTK).

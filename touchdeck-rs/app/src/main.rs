@@ -14,6 +14,7 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use touchdeck_server::core::store::Store;
 use touchdeck_server::server::{self, Options};
 use touchdeck_server::system::linux;
+use touchdeck_server::t;
 
 static QUITTING: AtomicBool = AtomicBool::new(false);
 static HINT_SHOWN: AtomicBool = AtomicBool::new(false);
@@ -84,7 +85,7 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
             && !HINT_SHOWN.swap(true, Ordering::Relaxed)
         {
             tauri::async_runtime::spawn(async {
-                let _ = linux::notify("TouchDeck läuft weiter", "Über das Symbol in der Systemleiste öffnest du den Editor wieder oder beendest TouchDeck.").await;
+                let _ = linux::notify(t!("desktop.keepsRunning"), t!("desktop.keepsRunningText")).await;
             });
         }
     });
@@ -130,7 +131,7 @@ fn open_preview_window(app: &AppHandle) {
     }
     let url = format!("{}/deck/", base()).parse().expect("gültige Adresse");
     let built = WebviewWindowBuilder::new(app, "preview", WebviewUrl::External(url))
-        .title("TouchDeck – Vorschau")
+        .title(t!("desktop.previewTitle"))
         .inner_size(480.0, 820.0)
         .icon(window_icon())
         .and_then(|b| b.build());
@@ -215,11 +216,11 @@ fn install_desktop_entry() -> std::io::Result<()> {
 // ---------- Systemleiste ----------
 
 fn create_tray(app: &AppHandle) -> tauri::Result<()> {
-    let editor = MenuItem::with_id(app, "editor", "Editor öffnen", true, None::<&str>)?;
-    let pair = MenuItem::with_id(app, "pair", "Handy verbinden …", true, None::<&str>)?;
-    let preview = MenuItem::with_id(app, "preview", "Vorschau öffnen", true, None::<&str>)?;
-    let autostart = CheckMenuItem::with_id(app, "autostart", "Beim Anmelden starten", true, autostart_file().exists(), None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "TouchDeck beenden", true, None::<&str>)?;
+    let editor = MenuItem::with_id(app, "editor", t!("desktop.openEditor"), true, None::<&str>)?;
+    let pair = MenuItem::with_id(app, "pair", t!("desktop.connectPhone"), true, None::<&str>)?;
+    let preview = MenuItem::with_id(app, "preview", t!("desktop.openPreview"), true, None::<&str>)?;
+    let autostart = CheckMenuItem::with_id(app, "autostart", t!("desktop.startAtLogin"), true, autostart_file().exists(), None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", t!("desktop.quit"), true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&editor, &pair, &preview, &PredefinedMenuItem::separator(app)?, &autostart, &PredefinedMenuItem::separator(app)?, &quit])?;
     let check = autostart.clone();
     TrayIconBuilder::with_id("main")
@@ -282,15 +283,15 @@ fn main() {
             if let Err(err) = tauri::async_runtime::block_on(server::start(store, opts)) {
                 let in_use = err.downcast_ref::<std::io::Error>().is_some_and(|e| e.kind() == std::io::ErrorKind::AddrInUse);
                 let msg = if in_use {
-                    format!("Port {} ist schon belegt. Läuft TouchDeck bereits (z. B. die ältere Fassung)? Diese bitte zuerst beenden.", port())
+                    t!("desktop.portInUse", port())
                 } else {
                     err.to_string()
                 };
-                eprintln!("TouchDeck kann nicht starten: {msg}");
-                let _ = std::process::Command::new("notify-send").args(["-a", "TouchDeck", "TouchDeck kann nicht starten", &msg]).status();
+                eprintln!("{}: {msg}", t!("desktop.cannotStart"));
+                let _ = std::process::Command::new("notify-send").args(["-a", "TouchDeck", t!("desktop.cannotStart"), &msg]).status();
                 std::process::exit(1);
             }
-            println!("TouchDeck läuft auf {} – Daten: {}", base(), data.display());
+            println!("{}", t!("desktop.running", base(), data.display()));
             // Eingeschalteten Autostart auf diese Version zeigen lassen (Dateiname ändert sich mit jeder Version).
             if autostart_file().exists()
                 && let Err(err) = set_autostart(true)

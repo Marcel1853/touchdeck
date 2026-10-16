@@ -304,5 +304,18 @@
     "portNotValidNumber": "--port: keine gültige Zahl",
     "touchdeckIsAlreadyRunning": "TouchDeck läuft bereits – öffne den Editor: {0}",
     "touchdeckIsRunningEditor": "TouchDeck läuft.\n  Editor:  {1}\n  Daten:   {0}"
+  },
+  "desktop": {
+    "cannotStart": "TouchDeck kann nicht starten",
+    "connectPhone": "Handy verbinden …",
+    "keepsRunning": "TouchDeck läuft weiter",
+    "keepsRunningText": "Über das Symbol in der Systemleiste öffnest du den Editor wieder oder beendest TouchDeck.",
+    "openEditor": "Editor öffnen",
+    "openPreview": "Vorschau öffnen",
+    "portInUse": "Port {0} ist schon belegt. Läuft TouchDeck bereits (z. B. die ältere Fassung)? Diese bitte zuerst beenden.",
+    "previewTitle": "TouchDeck – Vorschau",
+    "quit": "TouchDeck beenden",
+    "running": "TouchDeck läuft auf {0} – Daten: {1}",
+    "startAtLogin": "Beim Anmelden starten"
   }
 }

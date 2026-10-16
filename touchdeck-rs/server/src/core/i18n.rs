@@ -78,8 +78,9 @@ mod tests {
     #[test]
     fn alle_schluessel_vorhanden() {
         // Jeder t!("…")-Schlüssel im Code muss in de.json stehen.
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-        let mut stack = vec![dir];
+        // Server und Desktop-App (die App nutzt dieselben Sprachdateien).
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut stack = vec![root.join("src"), root.join("../app/src")];
         while let Some(d) = stack.pop() {
             for e in std::fs::read_dir(d).unwrap().flatten() {
                 let p = e.path();
