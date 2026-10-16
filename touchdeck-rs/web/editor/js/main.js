@@ -8,7 +8,7 @@ import { mountValues, renderValues } from './views/values.js';
 import { mountFlows, renderFlows } from './views/flows.js';
 import { mountEvents, renderEvents } from './views/events.js';
 import { mountLogs, unmountLogs, renderLogs } from './views/logs.js';
-import { loadIconPacks } from './views/iconpacks.js';
+import { loadIconPacks, mountIconPacks, renderIconPacks } from './views/iconpacks.js';
 import { mountPlugins, renderPlugins } from './views/plugins.js';
 import { mountSettings, renderSettings, applyTheme, updateSettings, resetSettingsCache } from './views/settings.js';
 
@@ -19,6 +19,7 @@ const VIEWS = {
   flows: { icon: '🧩', label: tr('common.flows'), mount: mountFlows, render: renderFlows },
   logs: { icon: '📜', label: tr('common.logs'), mount: mountLogs, render: renderLogs, unmount: unmountLogs },
   plugins: { icon: '🧱', label: tr('common.plugins'), mount: mountPlugins, render: renderPlugins },
+  iconpacks: { icon: '🖼️', label: tr('common.iconPacks'), mount: mountIconPacks, render: renderIconPacks },
   settings: { icon: '⚙️', label: tr('common.settings'), mount: mountSettings, render: renderSettings },
 };
 
@@ -140,7 +141,7 @@ function bind() {
       nudgeButton(dx, dy, e.shiftKey);
     } else if (S.view === 'pages' && e.key === 'Escape' && sel()) {
       select(null);
-    } else if (ctrl && /^[1-7]$/.test(key)) {
+    } else if (ctrl && /^[1-8]$/.test(key)) {
       e.preventDefault();
       showView(Object.keys(VIEWS)[Number(key) - 1]);
     }

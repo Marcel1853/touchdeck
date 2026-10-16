@@ -1,9 +1,8 @@
-// Bereich „Einstellungen“: Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen, Integrationen, Icon-Pakete, Backups, Protokoll, Information.
+// Bereich „Einstellungen“: Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen, Integrationen, Backups, Protokoll, Information.
 import { t as tr } from '/shared/i18n.js';
 import { h, api, toast, ask, segmented } from '../dom.js';
 import { S, render, loadState } from '../state.js';
 import { openPairing } from '../main.js';
-import { iconPacksSection } from './iconpacks.js';
 
 const SECTIONS = [
   ['general', '⚙️', tr('settings.general')],
@@ -11,7 +10,6 @@ const SECTIONS = [
   ['deck', '📱', tr('settings.deck')],
   ['look', '🎨', tr('common.look')],
   ['integrations', '🔌', tr('settings.integrations')],
-  ['iconpacks', '🖼️', tr('common.iconPacks')],
   ['backups', '💾', tr('settings.backups')],
   ['logs', '📜', tr('settings.log')],
   ['info', 'ℹ️', tr('settings.information')],
@@ -55,7 +53,7 @@ export function renderSettings({ detail = true } = {}) {
   document.getElementById('settings-nav').replaceChildren(...SECTIONS.map(([id, icon, label]) => h('li', { class: id === section ? 'active' : '', onclick: () => { section = id; render(); } },
     h('span', {}, icon), h('span', { class: 'name' }, label))));
   if (!detail) return;
-  const build = { general, security, deck, look, integrations, iconpacks: iconPacksSection, backups: backupsSection, logs: logsSection, info: infoSection }[section];
+  const build = { general, security, deck, look, integrations, backups: backupsSection, logs: logsSection, info: infoSection }[section];
   document.getElementById('settings-detail').replaceChildren(...build().filter(Boolean));
 }
 

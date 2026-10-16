@@ -124,8 +124,18 @@ function packCard(pack) {
       : h('p', { class: 'hint-text' }, tr('iconpacks.stillEmptyUseAdd')));
 }
 
-/** Bereich in den Einstellungen. */
-export function iconPacksSection() {
+/** Eigener Bereich „Icon-Pakete“ in der linken Leiste (wie Plugins). */
+export function mountIconPacks(root) {
+  root.className = 'view view-plugins';
+  root.replaceChildren(h('section', { id: 'iconpacks-detail', class: 'detail settings' }));
+}
+
+export function renderIconPacks() {
+  const el = document.getElementById('iconpacks-detail');
+  if (el) el.replaceChildren(...iconPacksSection().filter(Boolean));
+}
+
+function iconPacksSection() {
   const title = [h('h1', {}, tr('common.iconPacks')), h('p', { class: 'hint-text' },
     tr('iconpacks.yourOwnImageCollections'))];
   const importInput = h('input', { type: 'file', hidden: true, accept: '.tdicons,.zip,application/zip', onchange: (e) => e.target.files[0] && importPack(e.target.files[0]) });
