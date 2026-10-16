@@ -279,7 +279,7 @@ mod tests {
         b["actions"] = json!([{ "type": "go_page", "enabled": true, "params": { "page": page_id } }]);
         store.set_project(&json!({ "pages": pages, "values": { "Zähler": { "default": "0" } } })).unwrap();
 
-        let (file, bytes) = export(&store, &[page_id.clone()], "Mein Profil").unwrap();
+        let (file, bytes) = export(&store, std::slice::from_ref(&page_id), "Mein Profil").unwrap();
         assert!(file.ends_with(".tdprofile"));
         let before = store.config.pages.len();
         let r = import(&mut store, &bytes).unwrap();

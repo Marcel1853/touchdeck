@@ -118,7 +118,7 @@ export function mountPages(root) {
         h('div', { id: 'page-layout' }),
         h('label', { class: 'field-inline grid-only' }, tr('pages.columns'), h('input', { id: 'page-cols', type: 'number', min: 1, max: 16, onchange: (e) => resizePage(page().rows, Number(e.target.value)) })),
         h('label', { class: 'field-inline grid-only' }, tr('pages.rows'), h('input', { id: 'page-rows', type: 'number', min: 1, max: 12, onchange: (e) => resizePage(Number(e.target.value), page().cols) })),
-        h('button', { class: 'btn small free-only', title: tr('pages.newButton'), onclick: () => addFreeButton(50, 50) }, tr('pages.addButton')),
+        h('button', { class: 'btn small', title: tr('pages.newButton'), onclick: addButtonSomewhere }, tr('pages.addButton')),
         h('label', { class: 'field-inline free-only' }, tr('pages.ratio'),
           h('select', { id: 'page-ratio', onchange: (e) => setRatio(e.target.value) }, RATIOS.map((r) => h('option', { value: r }, r)))),
         h('label', { class: 'field-inline' }, tr('pages.background'), h('input', { id: 'page-bg', type: 'color',
@@ -236,7 +236,9 @@ function renderCanvas() {
   for (let r = 0; r < p.rows; r++) {
     for (let c = 0; c < p.cols; c++) {
       if (covered.has(`${r}:${c}`)) continue;
-      const cell = h('div', { class: 'cell', style: `grid-row:${r + 1};grid-column:${c + 1}`, title: tr('pages.newButton'), onclick: () => addButton(r, c),
+      // Ein Klick hebt nur die Auswahl auf; neuer Button per Doppelklick, Rechtsklick oder „＋ Button“.
+      const cell = h('div', { class: 'cell', style: `grid-row:${r + 1};grid-column:${c + 1}`, title: tr('pages.doubleClickNewButton'),
+        onclick: () => S.selId && select(null), ondblclick: () => addButton(r, c),
         oncontextmenu: (e) => {
           e.preventDefault();
           cellMenu(e.clientX, e.clientY, r, c);
@@ -367,6 +369,15 @@ function renderFreeCanvas(p, canvas) {
     return el;
   });
   canvas.replaceChildren(...buttons);
+}
+
+/** „＋ Button“: auf freien Seiten in die Mitte, im Raster ins erste freie Feld. */
+function addButtonSomewhere() {
+  const p = page();
+  if (isFree(p)) return addFreeButton(50, 50);
+  const spot = freeCell(p);
+  if (!spot) return toast(tr('pages.thereIsNoFree'), 'error');
+  addButton(spot.row, spot.col);
 }
 
 function addFreeButton(x, y) {
@@ -628,6 +639,9 @@ export function deleteButton() {
 const CLIP = 'touchdeck.clipboard';
 const STYLE_CLIP = 'touchdeck.styleClipboard';
 const STYLE_KEYS = ['color', 'colorOn', 'textColor', 'fontSize', 'titlePos', 'iconFit'];
+const LOGIC_CLIP = 'touchdeck.logicClipboard';
+// Logik eines Buttons: alle Aktionslisten (Drücken, Aus, Halten, Loslassen, Doppelt) und seine Events.
+const LOGIC_KEYS = ['actions', 'actionsOff', 'holdActions', 'releaseActions', 'doubleActions', 'holdRepeat', 'events'];
 
 const readClip = (key) => {
   try {
@@ -702,6 +716,23 @@ function pasteStyle(id) {
   mutate(() => Object.assign(b, Object.fromEntries(STYLE_KEYS.filter((k) => k in style).map((k) => [k, style[k]]))));
 }
 
+function copyLogic(id) {
+  const b = findButton(id);
+  if (!b) return;
+  prefs.set(LOGIC_CLIP, JSON.stringify(Object.fromEntries(LOGIC_KEYS.map((k) => [k, b[k] ?? (k === 'holdRepeat' ? 0 : [])]))));
+  toast(tr('pages.logicCopied'), 'ok');
+}
+
+function pasteLogic(id) {
+  const b = findButton(id);
+  const logic = readClip(LOGIC_CLIP);
+  if (!b || !logic) return;
+  // Neue IDs für Aktionen und Events, damit Original und Kopie unabhängig bleiben.
+  const fresh = cloneButton({ ...newButton(0, 0), ...logic });
+  mutate(() => Object.assign(b, Object.fromEntries(LOGIC_KEYS.map((k) => [k, fresh[k]]))));
+  toast(tr('pages.logicPasted'), 'ok');
+}
+
 /** Button auf eine andere Seite verschieben (keep = false) oder dorthin kopieren (keep = true). */
 function sendToPage(id, targetId, keep) {
   const b = findButton(id);
@@ -749,6 +780,8 @@ function buttonMenu(x, y, id) {
     '-',
     { icon: '🎨', label: tr('pages.copyLook'), onclick: () => copyStyle(id) },
     { icon: '🖌️', label: tr('pages.pasteLook'), disabled: !readClip(STYLE_CLIP), onclick: () => pasteStyle(id) },
+    { icon: '⚙️', label: tr('pages.copyLogic'), onclick: () => copyLogic(id) },
+    { icon: '🔧', label: tr('pages.pasteLogic'), disabled: !readClip(LOGIC_CLIP), onclick: () => pasteLogic(id) },
     '-',
     { icon: '➡️', label: tr('pages.moveToPage'), disabled: !others.length, submenu: pageItems(false) },
     { icon: '📑', label: tr('pages.copyToPage'), disabled: !others.length, submenu: pageItems(true) },
