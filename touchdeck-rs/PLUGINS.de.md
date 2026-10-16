@@ -52,7 +52,10 @@ Berechtigung angeben.
   "permissions": {
     "http": ["api.example.com", "*.example.org", "lan"],
     "values": true,
-    "notify": true
+    "notify": true,
+    "events": true,
+    "deck": true,
+    "status": true
   },
   "settings": [
     { "key": "token", "label": "API-Schlüssel", "type": "password" }
@@ -64,6 +67,9 @@ Berechtigung angeben.
   "triggers": [
     { "id": "neu", "label": "Neue Nachricht", "icon": "🔔",
       "fields": [{ "key": "kanal", "label": "Kanal (leer = jeder)", "type": "text" }] }
+  ],
+  "lives": [
+    { "id": "ungelesen", "label": "Ungelesene Nachrichten" }
   ]
 }
 ```
@@ -76,6 +82,10 @@ Berechtigung angeben.
 | `permissions.http` | Erlaubte Adressen: genauer Name, `*.domain` für alle Unteradressen, `lan` für Geräte im Heimnetz. Ohne Eintrag kein Netz. |
 | `permissions.values` | TouchDeck-Werte lesen und setzen. |
 | `permissions.notify` | Benachrichtigungen am PC zeigen. |
+| `permissions.events` | Mit `td.on` auf TouchDeck-Ereignisse reagieren (Seite geöffnet, stummgeschaltet, Programm im Vordergrund, Timer abgelaufen …). |
+| `permissions.deck` | Das Bedienfeld steuern: Seiten auflisten, eine Seite auf allen Geräten anzeigen, Aussehen von Buttons ändern und zurücksetzen, Timer steuern. |
+| `permissions.status` | Verbundene Geräte und den Zustand von OBS, Twitch und Discord lesen. |
+| `lives` | Live-Anzeigen des Plugins. Sie erscheinen im Editor bei der Live-Anzeige eines Buttons als „Plugin › Bezeichnung“ und können Text, einen Fortschrittsbalken und das Aussehen „an“ zeigen. Keine Berechtigung nötig. |
 | `settings` | Felder, die der Nutzer beim Plugin ausfüllt (`text`, `password`, `number`, `checkbox`). |
 | `actions[].fields` / `triggers[].fields` | Eingabefelder wie bei den eingebauten Aktionen: `text`, `textarea`, `number`, `checkbox`, `select` (mit `options`), `dynamic` (z. B. `"source": "variables"`). |
 
@@ -108,7 +118,35 @@ td.notify('Titel', 'Text');                                 // braucht "notify"
 td.log('Info'); td.warn('Warnung'); console.log('geht auch');
 td.settings.token;                                          // Einstellungen des Nutzers
 td.plugin.id; td.plugin.version;
+
+// braucht "events": dieselben Ereignisse wie die Auslöser der Ereignisse; '*' = alle
+td.on('page_view', (data) => {          // data: { pageId, state: 'open'|'close', Seite, Page }
+  if (data.state === 'open') td.log(`Seite ${data.Seite} geöffnet`);
+});
+
+// eigene Live-Anzeige aus "lives": Text, Zahl 0–100 (Balken), Aussehen „an“
+td.live.set('ungelesen', { text: '3 neu', value: 30, on: true });
+td.live.set('ungelesen', 'nur ein Text');
+
+// braucht "deck"
+td.deck.pages();                        // [{ id, name, buttons: [{ id, title }] }]
+td.deck.showPage('OBS');                // ID oder Name, auf allen Geräten
+td.deck.setLook(buttonId, { title: 'Live', color: '#c0392b', textColor: '#fff', icon: '🔴' });
+td.deck.resetLook(buttonId);            // ursprüngliches Aussehen
+td.deck.timer('Pause', 'start', 300);   // start | stop | reset | toggle, Sekunden
+
+// braucht "status"
+td.status();  // { version, devices: [{ name, ip, page }], obs, twitch, discord }
 ```
+
+Die Ereignisnamen sind die Auslöser-Typen des Editors, z. B. `page_view`,
+`audio_mute`, `app_focus`, `timer_done`, `value_change`, `obs_scene`. Die Daten
+enthalten die deutschen und englischen Feldnamen (`Seite` und `Page`).
+Plugin-Auslöser, die mit `td.fire` gemeldet werden, gehen nicht an Plugins.
+
+Plugin-Aktionen und -Auslöser funktionieren überall in TouchDeck: beim Drücken,
+Halten und Doppelt-Drücken, in der Seiten-Logik („Seite geöffnet / verlassen“), in
+Abläufen und in Ereignissen.
 
 Alle Aufrufe sind synchron (kein `await` nötig). Ein Plugin läuft in einem eigenen
 Thread; lange Netzanfragen halten TouchDeck nicht auf.
@@ -153,6 +191,8 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 | `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.9.0"}` | Programm ist gestartet |
 | `{"type":"action","requestId":"r_1","id":"los","params":{…},"info":{…}}` | Aktion ausführen, mit `result` antworten |
 | `{"type":"value","requestId":"…","value":"…"}` | Antwort auf `getValue` |
+| `{"type":"event","kind":"page_view","data":{…}}` | Ein TouchDeck-Ereignis (wird immer gesendet, ohne Berechtigung) |
+| `{"type":"reply","requestId":"…","ok":true,"result":…}` | Antwort auf `call` (oder `"ok":false,"error":"…"`) |
 | `{"type":"stop"}` | Beenden (sonst nach 2 s gestoppt) |
 
 | An TouchDeck | Bedeutung |
@@ -163,6 +203,7 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 | `{"type":"fire","trigger":"fertig","data":{…}}` | Auslöser melden |
 | `{"type":"notify","title":"…","body":"…"}` | Benachrichtigung |
 | `{"type":"log","level":"info","message":"…"}` | Protokoll |
+| `{"type":"call","requestId":"…","op":"deck.showPage","args":{"page":"OBS"}}` | Erweiterte Plugins brauchen dafür keine Berechtigung, `live.set` nur die ID in `lives`. Dieselben Funktionen wie `td.live` / `td.deck` / `td.status` in JavaScript: `live.set` (`id`, `value`), `deck.pages`, `deck.showPage` (`page`), `deck.setLook` (`button`, `look`), `deck.resetLook` (`button`), `deck.timer` (`name`, `op`, `seconds`), `status` |
 
 Vollständige Beispiele in Python (nur Standardbibliothek) und Node.js:
 [`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) und [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).

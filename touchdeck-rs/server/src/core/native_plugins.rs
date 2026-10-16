@@ -9,12 +9,15 @@
 //   {"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.7.0"}
 //   {"type":"action","requestId":"…","id":"<aktion>","params":{…},"info":{"buttonId":…,"event":{…}}}
 //   {"type":"value","requestId":"…","value":"…"|null}        (Antwort auf getValue)
+//   {"type":"event","kind":"<auslöser>","data":{…}}               (TouchDeck-Ereignis, z. B. page_view)
+//   {"type":"reply","requestId":"…","ok":true,"result":…} bzw. {"ok":false,"error":"…"}   (Antwort auf call)
 //   {"type":"stop"}
 // Plugin → TouchDeck:
 //   {"type":"result","requestId":"…","ok":true,"message":"…"} bzw. {"ok":false,"error":"…"}
 //   {"type":"setValue","name":"…","value":"…"}   {"type":"getValue","requestId":"…","name":"…"}
 //   {"type":"fire","trigger":"<id>","data":{…}}   {"type":"notify","title":"…","body":"…"}
 //   {"type":"log","level":"info|warn|error","message":"…"}
+//   {"type":"call","requestId":"…","op":"live.set|deck.pages|deck.showPage|deck.setLook|deck.resetLook|deck.timer|status","args":{…}}
 use crate::t;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -33,6 +36,8 @@ use crate::server::App;
 
 pub enum NativeCmd {
     Action { id: String, params: Value, info: Value, depth: u32, reply: oneshot::Sender<Result<Option<String>, String>> },
+    /** Ein TouchDeck-Ereignis (erweiterte Plugins bekommen alle). */
+    Event { kind: String, data: Value },
     Stop,
 }
 
@@ -77,6 +82,7 @@ pub fn spawn_native(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Val
                         NativeCmd::Action { reply, .. } => {
                             let _ = reply.send(Err(t!("plugins.pluginIsNotRunning").into()));
                         }
+                        NativeCmd::Event { .. } => {}
                         NativeCmd::Stop => return,
                     }
                 }
@@ -173,6 +179,18 @@ async fn run_once(
                         let _ = crate::system::linux::notify(&t, &b).await;
                     }
                     "log" => log(app, id, msg["level"].as_str().unwrap_or("info"), msg["message"].as_str().unwrap_or("")),
+                    "call" => {
+                        // Erweiterte Plugins haben volle Rechte; Live-Anzeigen müssen trotzdem in plugin.json stehen.
+                        let op = msg["op"].as_str().unwrap_or("");
+                        let args = if msg["args"].is_object() { msg["args"].clone() } else { json!({}) };
+                        let known_live = !op.starts_with("live.") || manifest["lives"].as_array().is_some_and(|l| l.iter().any(|x| x["id"] == args["id"]));
+                        let r = if known_live { crate::core::plugins::host_call(&app_arc, id, op, &args).map_err(|e| e.to_string()) } else { Err(t!("plugins.unknownLive", js_string(&args["id"]))) };
+                        let reply = match r {
+                            Ok(v) => json!({ "type": "reply", "requestId": msg["requestId"], "ok": true, "result": v }),
+                            Err(e) => json!({ "type": "reply", "requestId": msg["requestId"], "ok": false, "error": e }),
+                        };
+                        stdin.write_all(send(reply).as_bytes()).await?;
+                    }
                     _ => {}
                 }
             }
@@ -189,6 +207,9 @@ async fn run_once(
                         let _ = child.kill().await;
                     }
                     break Ok(Stopped::ByTouchDeck);
+                }
+                Some(NativeCmd::Event { kind, data }) => {
+                    let _ = stdin.write_all(send(json!({ "type": "event", "kind": kind, "data": data })).as_bytes()).await;
                 }
                 Some(NativeCmd::Action { id: action, params, info, depth, reply }) => {
                     let request = new_id("r_");

@@ -122,6 +122,15 @@ Date: 2026-10-16
     - Server errors, live texts, logs, startup message and dates follow the selected language.
     - The confirmation phrase for advanced mode is also available in English.
     - Tests check that both languages have the same keys and placeholders.
+  Modding:
+    - Plugin interface extended: plugins can react to TouchDeck events (td.on, e.g. page opened,
+      muted, program in the foreground, timer finished), show pages on all devices, change and
+      restore the look of buttons, control timers and read connected devices and the state of
+      OBS, Twitch and Discord. New permissions "events", "deck" and "status".
+    - Plugins can bring their own live displays ("lives" in plugin.json) with text, progress bar
+      and "on" look; they appear in the editor's live display list.
+    - Advanced plugins receive all events and use the same functions via "call" / "reply".
+    - Plugin actions and triggers also work for double press and in page logic.
   Android app:
     - App 0.6.0: the app is available in German and English.
     - App 0.6.1: the app language follows the TouchDeck setting, including the connect screen

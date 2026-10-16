@@ -364,6 +364,18 @@ impl EventEngine {
         if !plugin && !known(kind) {
             return;
         }
+        // TouchDeck-Ereignisse auch an Plugins (td.on); eigene Plugin-Auslöser nicht, sonst drohen Schleifen.
+        if !plugin {
+            let mut d = data.clone();
+            if let Some(o) = d.as_object_mut() {
+                for (de, en) in crate::core::catalog::EVENT_ALIASES {
+                    if let Some(v) = o.get(de).cloned() {
+                        o.entry(en.to_string()).or_insert(v);
+                    }
+                }
+            }
+            app.plugins.broadcast_event(kind, &d);
+        }
         let matching: Vec<Sub> = self.subs.lock().unwrap().iter().filter(|s| s.trigger.kind == kind && trigger_matches(kind, &s.trigger.params, data)).cloned().collect();
         for sub in matching {
             self.run_sub_at(app, &sub, data, depth);

@@ -4,7 +4,10 @@
 // - Ein Plugin kann nur, was TouchDeck ihm anbietet (td.…): keine Dateien, keine Programme, kein freies Netz.
 // - Was es darf, steht in plugin.json unter "permissions" und wird vor dem Installieren angezeigt:
 //   "http": erlaubte Adressen (z. B. "api.example.com", "*.example.com", "lan" für das Heimnetz),
-//   "values": TouchDeck-Werte lesen und setzen, "notify": Benachrichtigungen zeigen.
+//   "values": TouchDeck-Werte lesen und setzen, "notify": Benachrichtigungen zeigen,
+//   "events": auf TouchDeck-Ereignisse reagieren (td.on), "deck": Bedienfeld steuern (Seiten, Aussehen,
+//   Timer), "status": verbundene Geräte und Integrationen lesen.
+// - Eigene Live-Anzeigen stehen unter "lives" und werden mit td.live.set(…) gefüllt.
 // - Installiert wird nur aus öffentlichen GitHub-Repos (jeder kann den Quelltext prüfen); zum Entwickeln
 //   gibt es zusätzlich einen lokalen Testmodus.
 // - Speicher (32 MB) und Rechenzeit (5 s je Aufruf) sind begrenzt.
@@ -53,6 +56,8 @@ const PRELUDE: &str = r#"
 (() => {
   const actions = {};
   const timers = [];
+  const listeners = {};
+  const call = (op, args = {}) => JSON.parse(__td(op, JSON.stringify(args)));
   const log = (level) => (...args) => __log(level, args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '));
   globalThis.console = { log: log('info'), info: log('info'), warn: log('warn'), error: log('error') };
   globalThis.td = Object.freeze({
@@ -68,6 +73,20 @@ const PRELUDE: &str = r#"
       get: (name) => __getValue(String(name)),
       set: (name, value) => __setValue(String(name), String(value ?? '')),
     }),
+    // Auf TouchDeck-Ereignisse reagieren, z. B. td.on('page_view', (data) => …); '*' = alle.
+    on(kind, fn) { (listeners[String(kind)] ??= []).push(fn); },
+    // Eigene Live-Anzeige (in plugin.json unter "lives"): Text, Zahl 0–100 (Balken) und „an“.
+    live: Object.freeze({
+      set: (id, v) => call('live.set', { id: String(id), value: v !== null && typeof v === 'object' ? v : { text: String(v ?? '') } }),
+    }),
+    deck: Object.freeze({
+      pages: () => call('deck.pages'),
+      showPage: (page) => call('deck.showPage', { page: String(page) }),
+      setLook: (button, look = {}) => call('deck.setLook', { button: String(button), look }),
+      resetLook: (button) => call('deck.resetLook', { button: String(button) }),
+      timer: (name, op = 'toggle', seconds = 0) => call('deck.timer', { name: String(name), op: String(op), seconds: Number(seconds) || 0 }),
+    }),
+    status: () => call('status'),
     http(req) {
       const r = typeof req === 'string' ? { url: req } : req;
       const res = JSON.parse(__http(JSON.stringify({ method: r.method ?? 'GET', url: r.url, headers: r.headers ?? {},
@@ -81,6 +100,9 @@ const PRELUDE: &str = r#"
     if (!fn) throw new Error(`Aktion „${id}“ ist im Plugin nicht registriert (td.action).`);
     const r = fn(JSON.parse(params), JSON.parse(info));
     return r === undefined || r === null ? null : String(r);
+  };
+  globalThis.__onEvent = (kind, data) => {
+    for (const fn of [...(listeners[kind] ?? []), ...(listeners['*'] ?? [])]) fn(JSON.parse(data), kind);
   };
   globalThis.__timerCount = () => timers.length;
   globalThis.__timerMs = (i) => timers[i].ms;
@@ -189,11 +211,13 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "description": ltext(&raw["description"], 400),
         "license": text(&raw["license"], 100),
         "main": main,
-        "permissions": { "http": http, "values": p["values"] == true, "notify": p["notify"] == true },
+        "permissions": { "http": http, "values": p["values"] == true, "notify": p["notify"] == true,
+                         "events": p["events"] == true, "deck": p["deck"] == true, "status": p["status"] == true },
         "native": if native.is_empty() { Value::Null } else { json!({ "command": native }) },
         "settings": raw["settings"].as_array().into_iter().flatten().filter(|f| f["key"].is_string()).take(20).cloned().collect::<Vec<_>>(),
         "actions": items("actions")?,
         "triggers": items("triggers")?,
+        "lives": items("lives")?,
     }))
 }
 
@@ -215,6 +239,11 @@ pub fn describe_permissions(m: &Value) -> Vec<String> {
     }
     if p["notify"] == true {
         out.push(t!("plugins.showNotifications").into());
+    }
+    for (key, text) in [("events", t!("plugins.permEvents")), ("deck", t!("plugins.permDeck")), ("status", t!("plugins.permStatus"))] {
+        if p[key] == true {
+            out.push(text.into());
+        }
     }
     out
 }
@@ -262,6 +291,8 @@ fn clean_error(e: impl std::fmt::Display) -> String {
 
 enum Msg {
     Action { id: String, params: Value, info: Value, depth: u32, reply: oneshot::Sender<Result<Option<String>, String>> },
+    /** Ein TouchDeck-Ereignis für td.on(…). */
+    Event { kind: String, data: Value },
     Stop,
 }
 
@@ -273,6 +304,8 @@ enum Channel {
 struct Running {
     tx: Channel,
     error: Arc<Mutex<Option<String>>>,
+    /// Bekommt TouchDeck-Ereignisse (Berechtigung „events“; erweiterte Plugins immer).
+    events: bool,
 }
 
 impl Running {
@@ -295,6 +328,8 @@ struct Host {
     http: Vec<String>,
     values: bool,
     notify: bool,
+    /// Weitere Berechtigungen und erlaubte Live-Anzeigen (für __td).
+    perms: Value,
     rt: tokio::runtime::Handle,
     depth: std::cell::Cell<u32>,
 }
@@ -393,6 +428,25 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
         })?,
     )?;
 
+    let h = host.clone();
+    g.set(
+        "__td",
+        Function::new(ctx.clone(), move |ctx: rquickjs::Ctx<'_>, op: String, args: String| -> rquickjs::Result<String> {
+            let args: Value = serde_json::from_str(&args).unwrap_or_else(|_| json!({}));
+            // Berechtigung je Bereich prüfen; Live-Anzeigen nur, wenn sie in plugin.json stehen.
+            let allowed = match op.split('.').next().unwrap_or("") {
+                "live" => h.perms["lives"].as_array().is_some_and(|l| l.iter().any(|x| x.as_str() == args["id"].as_str())),
+                area => h.perms[area] == true,
+            };
+            if !allowed {
+                let msg = if op.starts_with("live.") { t!("plugins.unknownLive", js_string(&args["id"])) } else { t!("plugins.noPermissionFor", op.split('.').next().unwrap_or("")) };
+                return Err(js_err(&ctx, msg));
+            }
+            let app = h.app.upgrade().ok_or_else(|| js_err(&ctx, t!("plugins.touchdeckIsShuttingDown")))?;
+            host_call(&app, &h.id, &op, &args).map(|v| v.to_string()).map_err(|e| js_err(&ctx, e.to_string()))
+        })?,
+    )?;
+
     let h = host;
     g.set(
         "__notify",
@@ -407,6 +461,85 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
     Ok(())
 }
 
+/**
+ * Befehle der Plugin-Schnittstelle (für normale Plugins über td.…, für erweiterte über „call“).
+ * Berechtigungen prüft der Aufrufer; hier wird nur ausgeführt.
+ */
+pub fn host_call(app: &Arc<App>, plugin: &str, op: &str, args: &Value) -> Result<Value> {
+    let hex = |v: &Value| v.as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).map(String::from);
+    match op {
+        "live.set" => {
+            let id = text(&args["id"], 24);
+            let v = &args["value"];
+            let value = v["value"].as_f64().filter(|n| n.is_finite()).map(|n| n.clamp(0.0, 100.0));
+            let mut live = json!({ "text": text(&v["text"], 200), "value": value });
+            if let Some(on) = v["on"].as_bool() {
+                live["on"] = json!(on);
+            }
+            app.set_plugin_live(&format!("plugin:{plugin}:{id}"), live);
+            Ok(json!(true))
+        }
+        "deck.pages" => {
+            let store = app.store.lock().unwrap();
+            Ok(json!(store.config.pages.iter().map(|p| json!({
+                "id": p.id, "name": p.name,
+                "buttons": p.buttons.iter().map(|b| json!({ "id": b.id, "title": b.title })).collect::<Vec<_>>(),
+            })).collect::<Vec<_>>()))
+        }
+        "deck.showPage" => {
+            let want = js_string(&args["page"]);
+            let id = {
+                let store = app.store.lock().unwrap();
+                store.config.pages.iter().find(|p| p.id == want || p.name.eq_ignore_ascii_case(&want)).map(|p| p.id.clone())
+            };
+            let id = id.ok_or_else(|| anyhow!(t!("actions.targetPageNoLonger")))?;
+            app.show_page_on_devices(&id);
+            Ok(json!(id))
+        }
+        "deck.setLook" | "deck.resetLook" => {
+            let button = js_string(&args["button"]);
+            let mut store = app.store.lock().unwrap();
+            if !store.config.pages.iter().any(|p| p.buttons.iter().any(|b| b.id == button)) {
+                bail!(t!("actions.buttonNoLongerExists"));
+            }
+            if op == "deck.resetLook" {
+                store.set_override(false, &button, None);
+                return Ok(json!(true));
+            }
+            let l = &args["look"];
+            let mut patch = Map::new();
+            if l["title"].is_string() {
+                patch.insert("title".into(), json!(text(&l["title"], 200)));
+            }
+            for key in ["color", "textColor"] {
+                if let Some(c) = hex(&l[key]) {
+                    patch.insert(key.into(), json!(c));
+                }
+            }
+            if l["icon"].is_string() {
+                patch.insert("icon".into(), json!({ "type": "emoji", "value": text(&l["icon"], 16) }));
+            }
+            store.set_override(false, &button, Some(&patch));
+            Ok(json!(true))
+        }
+        "deck.timer" => {
+            let name = text(&args["name"], 60);
+            let ms = (args["seconds"].as_f64().unwrap_or(0.0).clamp(0.0, 86_400.0) * 1000.0) as u64;
+            let running = app.timers.control(if name.is_empty() { "Timer" } else { &name }, args["op"].as_str().unwrap_or("toggle"), ms);
+            app.timers_changed();
+            Ok(json!({ "running": running }))
+        }
+        "status" => Ok(json!({
+            "version": env!("CARGO_PKG_VERSION"),
+            "devices": app.device_list(),
+            "obs": app.obs.connected(),
+            "twitch": app.twitch.status()["state"],
+            "discord": app.discord.status()["state"],
+        })),
+        _ => bail!(t!("plugins.unknownCall", op)),
+    }
+}
+
 /** Startet ein Plugin in einem eigenen Thread mit eigener JS-Engine. */
 fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) -> Result<Running> {
     let source = std::fs::read_to_string(dir.join(manifest["main"].as_str().unwrap_or("plugin.js")))
@@ -417,6 +550,7 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
     let rt = tokio::runtime::Handle::current();
     let weak = Arc::downgrade(app);
     let id = manifest["id"].as_str().unwrap_or("").to_string();
+    let events = manifest["permissions"]["events"] == true;
     std::thread::Builder::new().name(format!("plugin-{id}")).spawn(move || {
         // Im Laufzeit-Kontext von Tokio, damit Werte und Events wie gewohnt weitergereicht werden.
         let _guard = rt.enter();
@@ -433,6 +567,8 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
             http: p["http"].as_array().into_iter().flatten().filter_map(|h| h.as_str().map(String::from)).collect(),
             values: p["values"] == true,
             notify: p["notify"] == true,
+            perms: json!({ "events": p["events"], "deck": p["deck"], "status": p["status"],
+                           "lives": manifest["lives"].as_array().into_iter().flatten().filter_map(|l| l["id"].as_str()).collect::<Vec<_>>() }),
             rt: rt.clone(),
             depth: std::cell::Cell::new(0),
         });
@@ -470,6 +606,18 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
             let wait = next.iter().min().map_or(Duration::from_secs(3600), |t| t.saturating_duration_since(Instant::now()));
             match rx.recv_timeout(wait) {
                 Ok(Msg::Stop) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                Ok(Msg::Event { kind, data }) => {
+                    host.depth.set(0);
+                    start(&deadline);
+                    let r = context.with(|ctx| {
+                        let f: Function = ctx.globals().get("__onEvent").map_err(|e| e.to_string())?;
+                        f.call::<_, ()>((kind.clone(), data.to_string())).catch(&ctx).map_err(clean_error)
+                    });
+                    deadline.store(i64::MAX, Ordering::Relaxed);
+                    if let (Err(e), Some(app)) = (r, weak.upgrade()) {
+                        app.log.warn(&format!("Plugin {id}"), t!("plugins.eventHandlerError", kind, e));
+                    }
+                }
                 Ok(Msg::Action { id: action, params, info, depth, reply }) => {
                     host.depth.set(depth);
                     start(&deadline);
@@ -496,14 +644,14 @@ fn spawn_plugin(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Value) 
                         });
                         deadline.store(i64::MAX, Ordering::Relaxed);
                         if let (Err(e), Some(app)) = (r, weak.upgrade()) {
-                            app.log.warn(&format!("Plugin {id}"), format!("Zeitgeber: {e}"));
+                            app.log.warn(&format!("Plugin {id}"), t!("plugins.timerError", e));
                         }
                     }
                 }
             }
         }
     })?;
-    Ok(Running { tx: Channel::Js(tx), error })
+    Ok(Running { tx: Channel::Js(tx), error, events })
 }
 
 // ---------- Verwaltung ----------
@@ -698,7 +846,7 @@ impl Plugins {
             }
             let error = Arc::new(Mutex::new(None));
             let tx = spawn_native(app, self.plugin_dir(id, &entry), manifest, entry["settings"].clone(), error.clone());
-            self.running.lock().unwrap().insert(id.into(), Running { tx: Channel::Native(tx), error });
+            self.running.lock().unwrap().insert(id.into(), Running { tx: Channel::Native(tx), error, events: true });
             return;
         }
         match spawn_plugin(app, self.plugin_dir(id, &entry), manifest, entry["settings"].clone()) {
@@ -749,6 +897,38 @@ impl Plugins {
     }
 
     /** Aktionen und Auslöser der eingeschalteten Plugins für den Editor-Katalog. */
+    /** Ein TouchDeck-Ereignis an alle Plugins weitergeben, die darauf hören dürfen. */
+    pub fn broadcast_event(&self, kind: &str, data: &Value) {
+        for r in self.running.lock().unwrap().values().filter(|r| r.events) {
+            match &r.tx {
+                Channel::Js(tx) => {
+                    let _ = tx.send(Msg::Event { kind: kind.to_string(), data: data.clone() });
+                }
+                Channel::Native(tx) => {
+                    let _ = tx.send(NativeCmd::Event { kind: kind.to_string(), data: data.clone() });
+                }
+            }
+        }
+    }
+
+    /** Live-Anzeigen der Plugins für den Editor: { value: "plugin:<id>:<anzeige>", label }. */
+    pub fn live_sources(&self, lang: &str) -> Vec<Value> {
+        let advanced = self.advanced();
+        let installed = self.read_installed();
+        let manifests = self.manifests.lock().unwrap();
+        let mut out = Vec::new();
+        for (id, m) in manifests.iter().filter(|(id, m)| installed.get(*id).is_some_and(|e| e["enabled"] != false) && (advanced || !is_native(m))) {
+            let m = localize(m, lang);
+            let name = m["name"].as_str().unwrap_or(id).to_string();
+            for l in m["lives"].as_array().into_iter().flatten() {
+                let lid = l["id"].as_str().unwrap_or("");
+                let label = l["label"].as_str().filter(|x| !x.is_empty()).unwrap_or(lid);
+                out.push(json!({ "value": format!("plugin:{id}:{lid}"), "label": format!("{name} › {label}") }));
+            }
+        }
+        out
+    }
+
     pub fn catalog(&self, lang: &str) -> (Vec<Value>, Vec<Value>) {
         let advanced = self.advanced();
         let installed = self.read_installed();
@@ -918,7 +1098,7 @@ impl Plugins {
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m);
         self.start(app, &id);
-        app.log.warn("Plugins", format!("{id} im Testmodus geladen aus {}", dir.display()));
+        app.log.warn("Plugins", t!("plugins.devLoaded", id, dir.display()));
         Ok(id)
     }
 

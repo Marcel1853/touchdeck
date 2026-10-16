@@ -399,7 +399,10 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         overlay: one_of(&b["overlay"], &OVERLAYS, ""),
         mode: one_of(&b["mode"], &["toggle", "slider"], "press"),
         live: Live {
-            source: one_of(&live["source"], &catalog::live_source_ids(), "none"),
+            source: live["source"]
+                .as_str()
+                .filter(|s| s.starts_with("plugin:") && s.len() <= 80 && s.chars().all(|c| c.is_ascii_alphanumeric() || ":-_".contains(c)))
+                .map_or_else(|| one_of(&live["source"], &catalog::live_source_ids(), "none"), String::from),
             command: text(&live["command"], "", 1000),
             variable: text(&live["variable"], "", 40),
             bar: live["bar"] == Value::Bool(true),

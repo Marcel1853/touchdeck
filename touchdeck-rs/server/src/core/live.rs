@@ -194,6 +194,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             }
         }
         "timer" => app.timers.live(&live.variable),
+        s if s.starts_with("plugin:") => app.plugin_lives.lock().unwrap().get(s).cloned().unwrap_or_else(|| json!({ "text": "–" })),
         "variable" => match variables.get(&live.variable) {
             None => json!({ "text": "–", "on": false }),
             // Zahlen von 0 bis 100 lassen sich auch als Balken zeigen.

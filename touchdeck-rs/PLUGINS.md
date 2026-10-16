@@ -50,7 +50,10 @@ their own small JS engine. They can only do what TouchDeck offers them through t
   "permissions": {
     "http": ["api.example.com", "*.example.org", "lan"],
     "values": true,
-    "notify": true
+    "notify": true,
+    "events": true,
+    "deck": true,
+    "status": true
   },
   "settings": [
     { "key": "token", "label": "API key", "type": "password" }
@@ -62,6 +65,9 @@ their own small JS engine. They can only do what TouchDeck offers them through t
   "triggers": [
     { "id": "new", "label": "New message", "icon": "🔔",
       "fields": [{ "key": "channel", "label": "Channel (empty = any)", "type": "text" }] }
+  ],
+  "lives": [
+    { "id": "unread", "label": "Unread messages" }
   ]
 }
 ```
@@ -74,6 +80,10 @@ their own small JS engine. They can only do what TouchDeck offers them through t
 | `permissions.http` | Allowed addresses: exact name, `*.domain` for all subdomains, `lan` for devices on the home network. Without an entry, no network. |
 | `permissions.values` | Read and set TouchDeck values. |
 | `permissions.notify` | Show notifications on the PC. |
+| `permissions.events` | React to TouchDeck events with `td.on` (page opened, muted, program in the foreground, timer finished …). |
+| `permissions.deck` | Control the deck: list pages, show a page on all devices, change and restore the look of buttons, control timers. |
+| `permissions.status` | Read connected devices and the state of OBS, Twitch and Discord. |
+| `lives` | Live displays of the plugin. They appear in the editor under a button's live display as “Plugin › Label” and can show text, a progress bar and the “on” look. No permission needed. |
 | `settings` | Fields the user fills in for the plugin (`text`, `password`, `number`, `checkbox`). |
 | `actions[].fields` / `triggers[].fields` | Input fields like those of the built-in actions: `text`, `textarea`, `number`, `checkbox`, `select` (with `options`), `dynamic` (e.g. `"source": "variables"`). |
 
@@ -106,7 +116,34 @@ td.notify('Title', 'Text');                                 // needs "notify"
 td.log('Info'); td.warn('Warning'); console.log('works too');
 td.settings.token;                                          // the user's settings
 td.plugin.id; td.plugin.version;
+
+// needs "events": the same events the event triggers use; '*' = all
+td.on('page_view', (data) => {          // data: { pageId, state: 'open'|'close', Seite, Page }
+  if (data.state === 'open') td.log(`Page ${data.Page} opened`);
+});
+
+// own live display from "lives": text, number 0–100 (progress bar), "on" look
+td.live.set('unread', { text: '3 new', value: 30, on: true });
+td.live.set('unread', 'just a text');
+
+// needs "deck"
+td.deck.pages();                        // [{ id, name, buttons: [{ id, title }] }]
+td.deck.showPage('OBS');                // id or name, shown on all devices
+td.deck.setLook(buttonId, { title: 'Live', color: '#c0392b', textColor: '#fff', icon: '🔴' });
+td.deck.resetLook(buttonId);            // back to the original look
+td.deck.timer('Break', 'start', 300);   // start | stop | reset | toggle, seconds
+
+// needs "status"
+td.status();  // { version, devices: [{ name, ip, page }], obs, twitch, discord }
 ```
+
+Event names are the trigger types of the editor, e.g. `page_view`, `audio_mute`,
+`app_focus`, `timer_done`, `value_change`, `obs_scene`. Event data carries the
+German and English field names (`Seite` and `Page`). Plugin triggers reported with
+`td.fire` are not passed on to plugins.
+
+Plugin actions and triggers work everywhere in TouchDeck: on press, hold and double
+press, in page logic (“Page opened / left”), in flows and in events.
 
 All calls are synchronous (no `await` needed). Each plugin runs in its own thread;
 long network requests do not hold up TouchDeck.
@@ -151,6 +188,8 @@ TouchDeck restarts it, at most three times per minute.
 | `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.9.0"}` | The program has started |
 | `{"type":"action","requestId":"r_1","id":"go","params":{…},"info":{…}}` | Run an action, answer with `result` |
 | `{"type":"value","requestId":"…","value":"…"}` | Answer to `getValue` |
+| `{"type":"event","kind":"page_view","data":{…}}` | A TouchDeck event (always sent, no permission needed) |
+| `{"type":"reply","requestId":"…","ok":true,"result":…}` | Answer to `call` (or `"ok":false,"error":"…"`) |
 | `{"type":"stop"}` | Quit (otherwise stopped after 2 s) |
 
 | To TouchDeck | Meaning |
@@ -161,6 +200,7 @@ TouchDeck restarts it, at most three times per minute.
 | `{"type":"fire","trigger":"done","data":{…}}` | Report a trigger |
 | `{"type":"notify","title":"…","body":"…"}` | Notification |
 | `{"type":"log","level":"info","message":"…"}` | Log |
+| `{"type":"call","requestId":"…","op":"deck.showPage","args":{"page":"OBS"}}` | Advanced plugins need no permissions for it, `live.set` only needs the id in `lives`. Same functions as `td.live` / `td.deck` / `td.status` in JavaScript: `live.set` (`id`, `value`), `deck.pages`, `deck.showPage` (`page`), `deck.setLook` (`button`, `look`), `deck.resetLook` (`button`), `deck.timer` (`name`, `op`, `seconds`), `status` |
 
 Complete examples in Python (standard library only) and Node.js:
 [`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) and [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).

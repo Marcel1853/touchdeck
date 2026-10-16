@@ -135,6 +135,8 @@ pub struct App {
     holds: Mutex<HashMap<(u64, String), Hold>>,
     sliders: Mutex<HashMap<String, SliderQueue>>,
     live: Mutex<serde_json::Map<String, Value>>,
+    /// Live-Anzeigen, die Plugins mit td.live.set(…) füllen ("plugin:<id>:<anzeige>" → Wert).
+    pub plugin_lives: Mutex<serde_json::Map<String, Value>>,
     live_busy: AtomicBool,
     live_again: AtomicBool,
     on_pair_request: Option<Box<dyn Fn(PairRequest) + Send + Sync>>,
@@ -179,7 +181,7 @@ impl App {
             "settings": store.public_settings(),
             "actionTypes": with_plugins(&catalog::localized(&catalog::ACTION_TYPES, Section::Actions, lang), plugin_actions),
             "triggerTypes": with_plugins(&catalog::localized(&catalog::TRIGGER_TYPES, Section::Triggers, lang), plugin_triggers),
-            "liveSources": catalog::localized(catalog::live_sources(), Section::LiveSources, lang),
+            "liveSources": with_plugins(&catalog::localized(catalog::live_sources(), Section::LiveSources, lang), self.plugins.live_sources(lang)),
             "sliderTargets": catalog::localized(catalog::slider_targets(), Section::SliderTargets, lang),
             "pairingUrls": self.pairing_urls(store),
             "port": self.port,
@@ -193,6 +195,26 @@ impl App {
     fn pairing_urls(&self, store: &Store) -> Vec<String> {
         let token = &store.settings().token;
         linux::lan_addresses().iter().map(|ip| format!("http://{ip}:{}/deck/?token={token}", self.port)).collect()
+    }
+
+    /** Live-Wert eines Plugins setzen und die Anzeigen gleich aktualisieren. */
+    pub fn set_plugin_live(self: &Arc<Self>, key: &str, value: Value) {
+        self.plugin_lives.lock().unwrap().insert(key.to_string(), value);
+        refresh_live(self);
+    }
+
+    /** Verbundene Geräte (Name, Adresse, angezeigte Seite) – für Statusleiste und Plugins. */
+    pub fn device_list(&self) -> Vec<Value> {
+        let store = self.store.lock().unwrap();
+        let clients = self.clients.lock().unwrap();
+        clients
+            .values()
+            .filter(|c| c.role == Role::Device)
+            .map(|c| {
+                let page = c.viewing.as_deref().and_then(|p| store.page(p)).map(|p| p.name.clone());
+                json!({ "name": c.name, "ip": c.ip, "page": page })
+            })
+            .collect()
     }
 
     /** Ein Timer wurde gesteuert: Anzeige sofort aktualisieren und, solange einer läuft, jede Sekunde. */
@@ -659,18 +681,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         // Information
         "GET /api/info" => {
             let devices = app.device_count();
-            let device_list: Vec<Value> = {
-                let store = app.store.lock().unwrap();
-                let clients = app.clients.lock().unwrap();
-                clients
-                    .values()
-                    .filter(|c| c.role == Role::Device)
-                    .map(|c| {
-                        let page = c.viewing.as_deref().and_then(|p| store.page(p)).map(|p| p.name.clone());
-                        json!({ "name": c.name, "ip": c.ip, "page": page })
-                    })
-                    .collect()
-            };
+            let device_list = app.device_list();
             let (twitch, discord) = (app.twitch.status(), app.discord.status());
             let obs_connected = app.obs.connected();
             let store = app.store.lock().unwrap();
@@ -1262,6 +1273,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         holds: Mutex::new(HashMap::new()),
         sliders: Mutex::new(HashMap::new()),
         live: Mutex::new(serde_json::Map::new()),
+        plugin_lives: Mutex::new(serde_json::Map::new()),
         live_busy: AtomicBool::new(false),
         live_again: AtomicBool::new(false),
         on_pair_request: opts.on_pair_request,

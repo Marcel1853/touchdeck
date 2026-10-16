@@ -127,6 +127,18 @@ Datum: 2026-10-16
       Sprache.
     - Den Bestätigungssatz für den erweiterten Modus gibt es auch auf Englisch.
     - Tests prüfen, dass beide Sprachen dieselben Schlüssel und Platzhalter haben.
+  Modding:
+    - Plugin-Schnittstelle erweitert: Plugins können auf TouchDeck-Ereignisse reagieren (td.on,
+      z. B. Seite geöffnet, stummgeschaltet, Programm im Vordergrund, Timer abgelaufen), Seiten
+      auf allen Geräten anzeigen, das Aussehen von Buttons ändern und zurücksetzen, Timer steuern
+      und verbundene Geräte sowie den Zustand von OBS, Twitch und Discord lesen. Neue
+      Berechtigungen „events“, „deck“ und „status“.
+    - Plugins können eigene Live-Anzeigen mitbringen („lives“ in plugin.json) mit Text,
+      Fortschrittsbalken und Aussehen „an“; sie erscheinen in der Liste der Live-Anzeigen.
+    - Erweiterte Plugins bekommen alle Ereignisse und nutzen dieselben Funktionen über
+      „call“ / „reply“.
+    - Plugin-Aktionen und -Auslöser funktionieren auch beim Doppelt-Drücken und in der
+      Seiten-Logik.
   Android-App:
     - App 0.6.0: Die App gibt es auf Deutsch und Englisch.
     - App 0.6.1: Die Sprache der App folgt der TouchDeck-Einstellung, auch auf dem
