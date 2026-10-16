@@ -28,6 +28,11 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - „Tastenkürzel drücken“ kann das Kürzel an ein gewähltes Programm schicken: es wird vorher nach
+      vorn geholt, danach geht TouchDeck auf Wunsch zum vorigen Fenster zurück.
+    - Neue Aktionen „In die Zwischenablage kopieren“ (mit Platzhaltern, auf Wunsch gleich einfügen
+      – auch für Text mit Zeichen, die das Tastaturlayout nicht hat) und „Zwischenablage in Wert
+      speichern“.
     - „Uhrzeit erreicht“ kennt mehrere Uhrzeiten (08:00, 18:30), einzelne Wochentage und einen Tag
       im Monat.
     - Timer-Aktion „Wecker: bis Uhrzeit herunterzählen“ (z. B. 07:30, heute oder morgen); „Timer

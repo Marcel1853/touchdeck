@@ -75,6 +75,12 @@
         "keys": {
           "label": "Tastenkürzel",
           "placeholder": "ctrl+shift+s"
+        },
+        "window": {
+          "label": "An dieses Programm senden (leer = Fenster im Vordergrund)"
+        },
+        "back": {
+          "label": "Danach zum vorigen Fenster zurück"
         }
       }
     },
@@ -1180,6 +1186,25 @@
         },
         "speed": {
           "label": "Tempo in % (200 = doppelt so schnell)"
+        }
+      }
+    },
+    "clipboard_set": {
+      "label": "In die Zwischenablage kopieren",
+      "fields": {
+        "text": {
+          "label": "Text (Platzhalter erlaubt)"
+        },
+        "paste": {
+          "label": "Danach einfügen (Strg+V)"
+        }
+      }
+    },
+    "clipboard_get": {
+      "label": "Zwischenablage in Wert speichern",
+      "fields": {
+        "saveTo": {
+          "label": "Wert"
         }
       }
     }

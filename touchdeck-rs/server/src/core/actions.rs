@@ -594,7 +594,12 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if keys.is_empty() {
                 bail!(t!("actions.noShortcutGiven"));
             }
-            x11::send_hotkey(&keys).await?;
+            let window = p.s("window");
+            if window.is_empty() {
+                x11::send_hotkey(&keys).await?;
+            } else {
+                x11::send_hotkey_to(&window, &keys, p.t("back")).await?;
+            }
             none
         }
         "key_sequence" => {
@@ -608,6 +613,23 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                     x11::send_hotkey(&step).await.map_err(|e| anyhow!("{step}: {e}"))?;
                 }
             }
+            none
+        }
+        "clipboard_set" => {
+            x11::clipboard_set(&fill(app, ctx, &p.s("text"))).await?;
+            if p.t("paste") {
+                tokio::time::sleep(Duration::from_millis(60)).await;
+                x11::send_hotkey("ctrl+v").await?;
+            }
+            none
+        }
+        "clipboard_get" => {
+            let name = p.s("saveTo");
+            if name.is_empty() {
+                bail!(t!("actions.noValueGiven"));
+            }
+            let text = x11::clipboard_get().await?;
+            set_variable(app, &name, &truncate(&text, 2000))?;
             none
         }
         "type_text" => {

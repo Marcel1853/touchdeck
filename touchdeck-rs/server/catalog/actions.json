@@ -71,6 +71,17 @@
    {
     "key": "keys",
     "type": "hotkey"
+   },
+   {
+    "key": "window",
+    "type": "dynamic",
+    "source": "windows",
+    "allowNew": true
+   },
+   {
+    "key": "back",
+    "type": "checkbox",
+    "default": true
    }
   ]
  },
@@ -83,6 +94,37 @@
    {
     "key": "text",
     "type": "textarea"
+   }
+  ]
+ },
+ {
+  "type": "clipboard_set",
+  "category": "input",
+  "group": "general",
+  "icon": "📋",
+  "fields": [
+   {
+    "key": "text",
+    "type": "textarea"
+   },
+   {
+    "key": "paste",
+    "type": "checkbox",
+    "default": false
+   }
+  ]
+ },
+ {
+  "type": "clipboard_get",
+  "category": "input",
+  "group": "general",
+  "icon": "📥",
+  "fields": [
+   {
+    "key": "saveTo",
+    "type": "dynamic",
+    "source": "variables",
+    "allowNew": true
    }
   ]
  },

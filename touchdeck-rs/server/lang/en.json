@@ -274,7 +274,9 @@
     "unknownPowerAction": "Unknown power action: {0}",
     "unknownVolumeAction": "Unknown volume action: {0}",
     "libMissing": "{0} is missing: {1}",
-    "unknownKey": "Unknown key: {0}"
+    "unknownKey": "Unknown key: {0}",
+    "clipboardNoAnswer": "The program holding the clipboard does not answer.",
+    "clipboardNotTaken": "Could not take over the clipboard."
   },
   "obs": {
     "disconnectedFromObs": "Disconnected from OBS.",

@@ -374,12 +374,18 @@ impl Keyboard {
             .or_else(|| wins.iter().find(|w| w.class.to_lowercase().contains(&q)))
             .or_else(|| wins.iter().find(|w| w.title.to_lowercase().contains(&q)))
             .ok_or_else(|| anyhow!(t!("system.noOpenWindowFound", query)))?;
+        self.raise(found.id);
+        Ok(found.title.clone())
+    }
+
+    /** Bittet den Fenstermanager, ein Fenster nach vorn zu holen und zu fokussieren. */
+    fn raise(&self, id: u64) {
         // SAFETY: Ereignis wird vollständig initialisiert und an das Wurzelfenster geschickt.
         unsafe {
             let mut ev: xlib::XEvent = std::mem::zeroed();
             ev.client_message.type_ = CLIENT_MESSAGE;
             ev.client_message.send_event = 1;
-            ev.client_message.window = found.id as c_ulong;
+            ev.client_message.window = id as c_ulong;
             ev.client_message.message_type = self.atom("_NET_ACTIVE_WINDOW");
             ev.client_message.format = 32;
             ev.client_message.data.as_longs_mut()[0] = 2; // Quelle: Werkzeug wie Pager/Taskleiste
@@ -387,7 +393,29 @@ impl Keyboard {
             (self.x.XSendEvent)(self.dpy, root, 0, SUBSTRUCTURE_REDIRECT_AND_NOTIFY, &mut ev);
             (self.x.XFlush)(self.dpy);
         }
-        Ok(found.title.clone())
+    }
+
+    /**
+     * Tastenkürzel an ein bestimmtes Programm: Fenster nach vorn holen, warten bis es den Fokus hat,
+     * Kürzel senden und auf Wunsch zum vorigen Fenster zurückkehren.
+     */
+    fn hotkey_to(&self, query: &str, keys: &str, back: bool) -> Result<()> {
+        let before = self.active();
+        self.activate(query)?;
+        let q = query.to_lowercase();
+        for _ in 0..40 {
+            if self.active().is_some_and(|w| w.class.to_lowercase().contains(&q) || w.title.to_lowercase().contains(&q)) {
+                break;
+            }
+            sleep(Duration::from_millis(25));
+        }
+        sleep(Duration::from_millis(60));
+        let result = self.hotkey(keys);
+        if back && let Some(w) = before {
+            sleep(Duration::from_millis(60));
+            self.raise(w.id);
+        }
+        result
     }
 }
 
@@ -399,6 +427,11 @@ async fn with_keyboard<T: Send + 'static>(f: impl FnOnce(&Keyboard) -> Result<T>
 pub async fn send_hotkey(keys: &str) -> Result<()> {
     let keys = keys.to_string();
     with_keyboard(move |kb| kb.hotkey(&keys)).await
+}
+
+pub async fn send_hotkey_to(window: &str, keys: &str, back: bool) -> Result<()> {
+    let (window, keys) = (window.to_string(), keys.to_string());
+    with_keyboard(move |kb| kb.hotkey_to(&window, &keys, back)).await
 }
 
 pub async fn type_text(text: &str) -> Result<()> {
@@ -449,6 +482,133 @@ pub async fn open_windows() -> Result<Vec<(String, String)>> {
     }
     out.sort_by_key(|(_, label)| super::sort_key(label));
     Ok(out)
+}
+
+// ---------- Zwischenablage ----------
+
+/** Stopp-Signal des Threads, der gerade die Zwischenablage hält. */
+static CLIPBOARD_OWNER: std::sync::Mutex<Option<std::sync::Arc<std::sync::atomic::AtomicBool>>> = std::sync::Mutex::new(None);
+
+impl Keyboard {
+    /** Eigenes, unsichtbares Fenster für die Zwischenablage. */
+    fn helper_window(&self) -> c_ulong {
+        // SAFETY: offene Verbindung; 1×1-Fenster wird nie angezeigt.
+        unsafe {
+            let root = (self.x.XDefaultRootWindow)(self.dpy);
+            (self.x.XCreateSimpleWindow)(self.dpy, root, 0, 0, 1, 1, 0, 0, 0)
+        }
+    }
+
+    /** Text der Zwischenablage (CLIPBOARD) lesen; leer, wenn nichts darin ist. */
+    fn clipboard_text(&self) -> Result<String> {
+        let win = self.helper_window();
+        let (clip, utf8, prop) = (self.atom("CLIPBOARD"), self.atom("UTF8_STRING"), self.atom("TOUCHDECK_CLIP"));
+        // SAFETY: offene Verbindung, eigenes Fenster; Ereignisse werden vollständig gelesen.
+        unsafe {
+            if (self.x.XGetSelectionOwner)(self.dpy, clip) == 0 {
+                (self.x.XDestroyWindow)(self.dpy, win);
+                return Ok(String::new());
+            }
+            (self.x.XConvertSelection)(self.dpy, clip, utf8, prop, win, 0);
+            (self.x.XFlush)(self.dpy);
+            let mut ev: xlib::XEvent = std::mem::zeroed();
+            let mut got = false;
+            for _ in 0..120 {
+                if (self.x.XCheckTypedWindowEvent)(self.dpy, win, xlib::SelectionNotify, &mut ev) != 0 {
+                    got = true;
+                    break;
+                }
+                sleep(Duration::from_millis(25));
+            }
+            let text = if got && ev.selection.property != 0 { self.prop(win, "TOUCHDECK_CLIP").map(|(b, _, _)| String::from_utf8_lossy(&b).into_owned()) } else { None };
+            (self.x.XDestroyWindow)(self.dpy, win);
+            (self.x.XFlush)(self.dpy);
+            if !got {
+                bail!(t!("system.clipboardNoAnswer"));
+            }
+            Ok(text.unwrap_or_default())
+        }
+    }
+
+    /**
+     * Text in die Zwischenablage legen und dort halten, bis ein anderes Programm etwas kopiert
+     * oder TouchDeck einen neuen Text setzt. Läuft im eigenen Thread (blockiert).
+     */
+    fn serve_clipboard(&self, text: &str, stop: &std::sync::atomic::AtomicBool, ready: impl FnOnce(Result<()>)) {
+        use std::sync::atomic::Ordering;
+        let win = self.helper_window();
+        let (clip, utf8, targets, string, txt) = (self.atom("CLIPBOARD"), self.atom("UTF8_STRING"), self.atom("TARGETS"), self.atom("STRING"), self.atom("TEXT"));
+        // SAFETY: offene Verbindung, eigenes Fenster; Antworten an Anfragende werden vollständig gefüllt.
+        unsafe {
+            (self.x.XSetSelectionOwner)(self.dpy, clip, win, 0);
+            (self.x.XSync)(self.dpy, 0);
+            if (self.x.XGetSelectionOwner)(self.dpy, clip) != win {
+                ready(Err(anyhow!(t!("system.clipboardNotTaken"))));
+                (self.x.XDestroyWindow)(self.dpy, win);
+                return;
+            }
+            ready(Ok(()));
+            let bytes = text.as_bytes();
+            'outer: while !stop.load(Ordering::Relaxed) {
+                while (self.x.XPending)(self.dpy) > 0 {
+                    let mut ev: xlib::XEvent = std::mem::zeroed();
+                    (self.x.XNextEvent)(self.dpy, &mut ev);
+                    match ev.get_type() {
+                        xlib::SelectionClear => break 'outer,
+                        xlib::SelectionRequest => {
+                            let req = ev.selection_request;
+                            let mut reply: xlib::XEvent = std::mem::zeroed();
+                            reply.selection.type_ = xlib::SelectionNotify;
+                            reply.selection.requestor = req.requestor;
+                            reply.selection.selection = req.selection;
+                            reply.selection.target = req.target;
+                            reply.selection.time = req.time;
+                            reply.selection.property = req.property;
+                            if req.target == targets {
+                                let list: [c_ulong; 4] = [targets, utf8, string, txt];
+                                (self.x.XChangeProperty)(self.dpy, req.requestor, req.property, 4, 32, xlib::PropModeReplace, list.as_ptr().cast(), list.len() as c_int);
+                            } else if [utf8, string, txt].contains(&req.target) {
+                                let kind = if req.target == string { 31 } else { utf8 };
+                                (self.x.XChangeProperty)(self.dpy, req.requestor, req.property, kind, 8, xlib::PropModeReplace, bytes.as_ptr(), bytes.len() as c_int);
+                            } else {
+                                reply.selection.property = 0;
+                            }
+                            (self.x.XSendEvent)(self.dpy, req.requestor, 0, 0, &mut reply);
+                            (self.x.XFlush)(self.dpy);
+                        }
+                        _ => {}
+                    }
+                }
+                sleep(Duration::from_millis(20));
+            }
+            (self.x.XDestroyWindow)(self.dpy, win);
+            (self.x.XSync)(self.dpy, 0);
+        }
+    }
+}
+
+pub async fn clipboard_get() -> Result<String> {
+    with_keyboard(|kb| kb.clipboard_text()).await
+}
+
+/** Text in die Zwischenablage legen (höchstens 200 000 Zeichen); der vorige Halter von TouchDeck endet. */
+pub async fn clipboard_set(text: &str) -> Result<()> {
+    use std::sync::{Arc, atomic::AtomicBool};
+    let text: String = text.chars().take(200_000).collect();
+    let flag = Arc::new(AtomicBool::new(false));
+    if let Some(old) = CLIPBOARD_OWNER.lock().unwrap().replace(flag.clone()) {
+        old.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    std::thread::spawn(move || match Keyboard::open() {
+        Ok(kb) => kb.serve_clipboard(&text, &flag, |r| {
+            let _ = tx.send(r);
+        }),
+        Err(e) => {
+            let _ = tx.send(Err(e));
+        }
+    });
+    rx.await.map_err(|e| anyhow!("X11: {e}"))?
 }
 
 // ---------- Globale Tastenkürzel ----------

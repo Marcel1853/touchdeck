@@ -75,6 +75,12 @@
         "keys": {
           "label": "Keyboard shortcut",
           "placeholder": "ctrl+shift+s"
+        },
+        "window": {
+          "label": "Send to this program (empty = window in the foreground)"
+        },
+        "back": {
+          "label": "Go back to the previous window afterwards"
         }
       }
     },
@@ -1180,6 +1186,25 @@
         },
         "speed": {
           "label": "Speed in % (200 = twice as fast)"
+        }
+      }
+    },
+    "clipboard_set": {
+      "label": "Copy to clipboard",
+      "fields": {
+        "text": {
+          "label": "Text (placeholders allowed)"
+        },
+        "paste": {
+          "label": "Paste afterwards (Ctrl+V)"
+        }
+      }
+    },
+    "clipboard_get": {
+      "label": "Save clipboard in value",
+      "fields": {
+        "saveTo": {
+          "label": "Value"
         }
       }
     }

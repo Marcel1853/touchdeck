@@ -27,6 +27,10 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - "Press keyboard shortcut" can send the shortcut to a chosen program: it is brought to the
+      front first and TouchDeck optionally returns to the previous window afterwards.
+    - New actions "Copy to clipboard" (with placeholders, optionally paste right away – also for
+      text with characters the keyboard layout does not have) and "Save clipboard in value".
     - "Time reached" knows several times (08:00, 18:30), single weekdays and a day of the month.
     - Timer action "Alarm: count down to a time" (e.g. 07:30, today or tomorrow); "Timer
       finished" fires when it is reached.

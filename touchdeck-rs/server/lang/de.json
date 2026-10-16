@@ -274,7 +274,9 @@
     "unknownPowerAction": "Unbekannte Energie-Aktion: {0}",
     "unknownVolumeAction": "Unbekannte Lautstärke-Aktion: {0}",
     "libMissing": "{0} fehlt: {1}",
-    "unknownKey": "Unbekannte Taste: {0}"
+    "unknownKey": "Unbekannte Taste: {0}",
+    "clipboardNoAnswer": "Das Programm mit der Zwischenablage antwortet nicht.",
+    "clipboardNotTaken": "Die Zwischenablage konnte nicht übernommen werden."
   },
   "obs": {
     "disconnectedFromObs": "OBS-Verbindung getrennt.",
