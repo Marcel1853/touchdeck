@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Optionale Fußleiste im Bedienfeld (Einstellungen › Bedienfeld › „Fußleiste anzeigen“):
+      Verbindung mit dem Namen des PCs und in der Android-App ein Knopf „PC wechseln“.
     - Icon-Editor (Icon-Pakete › „Icon erstellen“): baut aus Hintergrund (Farbe, Verlauf oder
       durchsichtig; Quadrat, abgerundet oder Kreis), Emoji und Text ein PNG mit Live-Vorschau und
       speichert es bei den eigenen Bildern oder direkt in einem Icon-Paket.
@@ -80,6 +82,8 @@ Datum: 2026-10-16
       Gerätenamen aus ihren Einstellungen, Browser ihre Kennung.
     - /api/info liefert die Liste der verbundenen Geräte.
   Änderungen:
+    - Auswahl eines Buttons aufheben ist einfacher: Klick neben die Seite oder auf das neue „✕“
+      in den Button-Eigenschaften (Esc geht weiter) – dann erscheinen die Seiten-Einstellungen.
     - Die Seiten-Einstellungen (wenn kein Button gewählt ist) sind in die Reiter „Logik“ und
       „Raster“ / „Fläche“ aufgeteilt, die Logik zuerst.
     - Ein einfacher Klick auf ein leeres Rasterfeld oder die freie Fläche legt keinen Button mehr

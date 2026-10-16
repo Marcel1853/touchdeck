@@ -122,6 +122,7 @@ function deck() {
       check(tr('settings.vibrateOnPress'), d.vibrate, (v) => set('vibrate', v)),
       check(tr('settings.clickSoundOnPress'), d.sound, (v) => set('sound', v)),
       check(tr('settings.showLabels'), d.showLabels, (v) => set('showLabels', v)),
+      check(tr('settings.showFooter'), !!d.footer, (v) => set('footer', v)),
       h('div', { class: 'field' }, tr('settings.orientationOnPhoneAnd'),
         segmented([['auto', tr('settings.automatic')], ['portrait', tr('settings.portrait')], ['landscape', tr('settings.landscape')]], d.orientation ?? 'auto', (v) => set('orientation', v))),
       h('p', { class: 'hint-text' }, tr('settings.androidAppTurnsTo')),

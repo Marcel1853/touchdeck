@@ -512,6 +512,9 @@ pub struct DeckSettings {
     /// Form der Felder: fill (dürfen sich bis 1,6-fach dehnen, nutzen die Fläche) oder square.
     #[serde(default = "default_cell_shape")]
     pub cell_shape: String,
+    /// Fußleiste im Bedienfeld: Verbindung und (in der App) PC wechseln.
+    #[serde(default)]
+    pub footer: bool,
 }
 
 fn default_orientation() -> String {
@@ -615,7 +618,7 @@ fn default_settings(start_page: &str) -> Settings {
         start_page: start_page.into(),
         lan_enabled: true,
         pin: String::new(),
-        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape() },
+        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
         twitch: TwitchSettings {
             client_id: String::new(),
@@ -978,6 +981,9 @@ impl Store {
             }
             if let Some(c) = d["cellShape"].as_str().filter(|c| ["fill", "square"].contains(c)) {
                 s.deck.cell_shape = c.into();
+            }
+            if let Some(f) = d["footer"].as_bool() {
+                s.deck.footer = f;
             }
         }
         let o = &patch["obs"];

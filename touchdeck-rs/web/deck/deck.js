@@ -53,8 +53,11 @@ function toast(text, isError = false) {
   toast.timer = setTimeout(() => (t.className = ''), isError ? 3500 : 1800);
 }
 
+let pcName = '';
 function setConnected(ok, text) {
   $('status').classList.toggle('ok', ok);
+  $('foot-dot').classList.toggle('ok', ok);
+  $('foot-text').textContent = ok ? tr('deck.connectedTo', [pcName || location.hostname]) : tr('deck.disconnectedShort');
   $('overlay').classList.toggle('hidden', ok);
   if (text) $('overlay-text').textContent = text;
 }
@@ -124,7 +127,7 @@ function render() {
   $('page-name').textContent = page.name;
   $('back').hidden = history_.length === 0;
   applyOrientation(state.deck.orientation);
-  document.body.className = `anim-${state.deck.pressAnimation}${state.deck.showLabels ? '' : ' hide-labels'}${page.cols > page.rows + 1 ? ' wide-page' : ''}`;
+  document.body.className = `anim-${state.deck.pressAnimation}${state.deck.showLabels ? '' : ' hide-labels'}${page.cols > page.rows + 1 ? ' wide-page' : ''}${state.deck.footer ? ' with-footer' : ''}`;
   // „Fläche füllen“: Felder dürfen bis 1,4-mal so breit und 1,25-mal so hoch wie quadratisch werden.
   // Freie Seiten immer im gewählten Format zeigen, sonst verschiebt sich die Gestaltung.
   const square = state.deck.cellShape === 'square' || page.layout === 'free';
@@ -285,6 +288,11 @@ const release = (e, fire) => {
 grid.addEventListener('pointerup', (e) => release(e, true));
 grid.addEventListener('pointercancel', (e) => release(e, false));
 grid.addEventListener('contextmenu', (e) => e.preventDefault());
+// In der App: über die Fußleiste zum Verbinden-Bildschirm (anderen PC wählen).
+if (app?.openConnection) {
+  $('foot-switch').hidden = false;
+  $('foot-switch').addEventListener('click', () => app.openConnection());
+}
 
 // Nach dem Drehen oder einer Größenänderung neu zeichnen – manche Android-WebViews berechnen
 // die an der Buttongröße ausgerichteten Schriftgrößen sonst erst beim nächsten Neuzeichnen.
@@ -368,6 +376,11 @@ async function connect() {
     announcedPage = null;
     setConnected(true);
     ws.send(JSON.stringify({ type: 'hello', name: deviceName() }));
+    // Name des PCs für die Fußleiste.
+    fetch('/api/hello').then((r) => r.json()).then((h) => {
+      pcName = h.name ?? '';
+      setConnected(true);
+    }).catch(() => {});
   };
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);

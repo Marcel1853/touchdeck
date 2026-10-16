@@ -126,7 +126,8 @@ export function mountPages(root) {
           oninput: (e) => mutate(() => (page().background = e.target.value), { coalesce: `${S.pageId}:bg`, detail: false }) })),
         h('button', { class: 'btn small ghost', onclick: duplicatePage }, tr('common.duplicate')),
         h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: deletePage }, tr('common.delete'))),
-      h('div', { class: 'canvas-wrap' }, h('div', { id: 'canvas', class: 'td-grid canvas' })),
+      // Klick neben die Seite hebt die Auswahl auf (dann erscheinen die Seiten-Einstellungen).
+      h('div', { class: 'canvas-wrap', onclick: (e) => e.target === e.currentTarget && S.selId && select(null) }, h('div', { id: 'canvas', class: 'td-grid canvas' })),
       h('p', { id: 'canvas-hint', class: 'hint' }, tr('pages.clickEmptyFieldNew'))),
     h('aside', { id: 'inspector', class: 'inspector' }),
   );
@@ -899,7 +900,8 @@ function renderInspector() {
   root.replaceChildren(
     h('div', { class: 'insp-head' },
       h('h2', {}, b.title || tr('pages.button')),
-      b.mode !== 'slider' && h('button', { class: 'btn small primary', title: tr('pages.runActionsOnPc'), onclick: () => testActions(b.actions, tr('pages.button'), { buttonId: b.id }) }, tr('pages.test'))),
+      b.mode !== 'slider' && h('button', { class: 'btn small primary', title: tr('pages.runActionsOnPc'), onclick: () => testActions(b.actions, tr('pages.button'), { buttonId: b.id }) }, tr('pages.test')),
+      h('button', { class: 'btn small ghost', title: tr('pages.deselectHint'), onclick: () => select(null) }, '✕')),
     h('div', { class: 'tabs' },
       tab('look', tr('common.look')),
       tab('actions', b.mode === 'slider' ? tr('pages.slider') : `${tr('pages.press')}${counts.actions ? ` (${counts.actions})` : ''}`),

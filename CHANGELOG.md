@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Optional footer in the deck (Settings › Deck › "Show footer"): connection state with the
+      PC's name and, in the Android app, a "Switch PC" button.
     - Icon editor (Icon packs › "Create icon"): builds a PNG from background (colour, gradient
       or transparent; square, rounded or circle), emoji and text with live preview and saves it
       to the own images or straight into an icon pack.
@@ -77,6 +79,8 @@ Date: 2026-10-16
       settings, browsers send their ID.
     - /api/info lists the connected devices.
   Changes:
+    - Deselecting a button is easier: click next to the page or the new "✕" in the button
+      properties (Esc still works) – then the page settings appear.
     - Page settings (shown when no button is selected) are split into the tabs "Logic" and
       "Grid" / "Area", with the logic first.
     - A single click on an empty grid field or the free area no longer creates a button, it only

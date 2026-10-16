@@ -62,7 +62,7 @@ html, body {
 .dot.ok { background: #30a46c; }
 
 #wrap {
-  height: calc(100% - var(--bar-h) - env(safe-area-inset-top));
+  height: calc(100% - var(--bar-h) - env(safe-area-inset-top) - var(--foot-h, 0px));
   /* Rand: auf kleinen Bildschirmen schmaler, damit mehr Platz für Buttons bleibt. */
   --pad: clamp(4px, 1.4vmin, 10px);
   padding: var(--pad) max(var(--pad), env(safe-area-inset-right)) max(var(--pad), env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
@@ -87,7 +87,7 @@ html, body {
   display: none;
   position: fixed;
   left: 50%;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  bottom: calc(14px + env(safe-area-inset-bottom) + var(--foot-h, 0px));
   transform: translateX(-50%);
   padding: 8px 14px;
   border-radius: 10px;
@@ -219,3 +219,14 @@ body.hide-labels .td-title { display: none; }
 /* In der Android-App: immer Vollbild, also kein Vollbild-Knopf */
 .in-app #fullscreen { display: none; }
 .menu-box button.menu-extra { margin-top: 6px; border-top: 1px solid #262c3a; border-radius: 0 0 10px 10px; color: #aab2c8; }
+
+/* Fußleiste (Einstellung „Fußleiste anzeigen“): Verbindung und PC wechseln. */
+#foot { display: none; }
+body.with-footer { --foot-h: calc(30px + env(safe-area-inset-bottom)); }
+body.with-footer #foot {
+  display: flex; align-items: center; gap: 8px; height: var(--foot-h);
+  padding: 0 max(12px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(12px, env(safe-area-inset-left));
+  background: #0d0f14; border-top: 1px solid #1f2430; color: #aab2c8; font-size: 12px; white-space: nowrap; overflow: hidden;
+}
+#foot-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.foot-btn { border: 0; border-radius: 8px; padding: 4px 10px; background: #1f2430; color: #e6e9f2; font: inherit; }
