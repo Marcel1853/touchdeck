@@ -321,7 +321,12 @@ function iconPacksSection() {
 }
 
 /** Bildauswahl beim Button: eigene Bilder und alle Icon-Pakete, mit Suche. key: icon oder iconOn. */
-export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
+/**
+ * Bildauswahl (eigene Bilder und Icon-Pakete) mit Vorschau. Ohne opts schreibt sie in b[key];
+ * mit opts.onPick bekommt der Aufrufer den Bildnamen (z. B. für Aktionsfelder), opts.rerender zeichnet neu.
+ */
+export function iconPicker(b, key = 'icon', toggle = 'showIcons', opts = {}) {
+  const redraw = opts.rerender ?? render;
   const sources = [['own', tr('iconpacks.ownImages', [S.icons.length]), S.icons.map((n) => ({ value: n, label: n }))],
     ...S.iconPacks.map((p) => [p.id, `${p.name} (${p.icons.length})`,
       p.icons.map((i) => ({ value: packIcon(p.id, i), label: iconName(p, i), search: [i, iconName(p, i), ...iconTags(p, i)].join(' ').toLowerCase(), color: p.color }))])];
@@ -337,7 +342,7 @@ export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
     return [
       shown.length
         ? h('div', { class: 'icon-grid' }, shown.slice(0, MAX).map((i) => h('button', { type: 'button', title: i.label, class: b[key]?.value === i.value ? 'active' : '',
-          onclick: () => mutate(() => {
+          onclick: () => opts.onPick ? opts.onPick(i.value) : mutate(() => {
             b[key] = { type: 'image', value: i.value };
             // Paket-Farbe übernehmen, solange der Button noch die Standardfarbe hat.
             if (key === 'icon' && i.color && b.color === '#2b2f3a') b.color = i.color;
@@ -348,11 +353,11 @@ export function iconPicker(b, key = 'icon', toggle = 'showIcons') {
   };
   const box = h('div', { class: 'picker-results' }, results());
   return h('div', {},
-    h('button', { class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S[toggle] = !S[toggle]; render(); } },
+    h('button', { type: 'button', class: 'btn small ghost', style: 'margin-top:8px', onclick: () => { S[toggle] = !S[toggle]; redraw(); } },
       tr('iconpacks.imagesIconPacks', [S[toggle] ? '▾' : '▸'])),
     S[toggle] && h('div', { class: 'picker' },
       h('div', { class: 'row' },
-        h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; render(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
+        h('select', { value: S.iconSource, onchange: (e) => { S.iconSource = e.target.value; redraw(); } }, sources.map(([id, label]) => h('option', { value: id }, label))),
         h('input', { type: 'search', placeholder: tr('common.search'), value: S.iconSearch ?? '', oninput: (e) => {
           S.iconSearch = e.target.value;
           box.replaceChildren(...results().filter(Boolean));

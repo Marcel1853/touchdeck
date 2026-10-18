@@ -2,6 +2,7 @@
 import { t as tr, getLang } from '/shared/i18n.js';
 import { $, h, api, toast, uid } from './dom.js';
 import { iconUrl } from '/shared/render.js';
+import { iconPicker } from './views/iconpacks.js';
 import { S, mutate, render, save, onRender } from './state.js';
 
 const refresh = () => render();
@@ -29,6 +30,7 @@ function describeParams(def, params) {
       : S.pages.find((p) => p.id === v)?.name ?? tr('actions.pageMissing'));
     else if (f.type === 'app') parts.push(params.appName || v);
     else if (f.source === 'flows') parts.push(S.flows.find((fl) => fl.id === v)?.name ?? tr('actions.flowMissing'));
+    else if (f.type === 'image') parts.push(`🖼️ ${String(v).replace(/^packs\/[^/]+\//, '').replace(/\.[^.]+$/, '')}`);
     else if (f.source === 'buttons') parts.push(v === 'self' ? tr('actions.thisButton') : tr('actions.otherButton'));
     else parts.push(String(v).split('\n')[0].replace('␟', ' › '));
   }
@@ -249,17 +251,15 @@ export function fieldInput(f, obj, setParam) {
       } }, options));
     }
     case 'image': {
-      // Eigene Bilder und Bilder aus Icon-Paketen; Eingabe sucht in der Liste (leer = nicht ändern).
-      const listId = `dl-img-${Math.random().toString(36).slice(2, 8)}`;
-      const options = [...(S.icons ?? []).map((n) => h('option', { value: n })),
-        ...(S.iconPacks ?? []).flatMap((pk) => pk.icons.map((i) => h('option', { value: `packs/${pk.id}/${i}` }, `${pk.name} › ${i}`)))];
-      const preview = h('img', { class: 'field-image-preview', alt: '', src: v ? iconUrl(v) : '', hidden: !v });
-      const input = h('input', { value: v, list: listId, placeholder: tr('actions.imageSearch'), oninput: (e) => {
-        setParam(f.key, e.target.value.trim());
-        preview.hidden = !e.target.value.trim();
-        preview.src = iconUrl(e.target.value.trim());
-      } });
-      return h('label', { class: 'field' }, f.label, h('div', { class: 'field-image' }, preview, input), h('datalist', { id: listId }, options));
+      // Vorschau des gewählten Bildes und dieselbe Auswahl mit Bildern wie beim Symbol eines Buttons.
+      const has = !!v;
+      const pick = (value) => setParam(f.key, value, { structural: true });
+      return h('div', { class: 'field' }, f.label,
+        h('div', { class: 'icon-preview' },
+          h('div', { class: 'icon-box' }, has && h('img', { src: iconUrl(v), alt: '' })),
+          h('span', { class: 'hint-text', style: 'flex:1;margin:0;overflow:hidden;text-overflow:ellipsis' }, has ? v.replace(/^packs\/[^/]+\//, '') : tr('actions.noImageChosen')),
+          has && h('button', { type: 'button', class: 'btn small ghost', title: tr('common.remove'), onclick: () => pick('') }, '✕')),
+        iconPicker({ [f.key]: { value: v } }, f.key, `pick:${obj.id ?? ''}:${f.key}`, { onPick: pick, rerender: refresh }));
     }
     case 'keySequence': {
       const area = h('textarea', { value: v, rows: 6, placeholder: 'ctrl+c\n250ms\nctrl+v', oninput: (e) => setParam(f.key, e.target.value) });

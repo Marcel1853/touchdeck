@@ -40,7 +40,7 @@ Datum: 2026-10-16
       ein einstellbarer Farbschleier über der Textur (0 % = Textur unverändert); „Aussehen
       übertragen“ nimmt sie mit.
     - „Aussehen ändern“ kann auch ein Bild als Symbol, eine Textur und ein Overlay setzen, z. B. aus
-      einem Event.
+      einem Event; die Bilder werden mit Vorschau aus eigenen Bildern und Icon-Paketen gewählt.
     - Neue Live-Anzeigen: Temperatur und Auslastung der Grafikkarte, belegte Festplatte,
       Netzwerk-Tempo (↓/↑) und wie lange der PC schon läuft.
     - Neue Aktion „Bildschirm (aus / Helligkeit)“: schaltet den Bildschirm sofort aus (die Maus weckt

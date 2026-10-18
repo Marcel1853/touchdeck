@@ -36,7 +36,8 @@ Date: 2026-10-16
     - Values are grouped by folder in collapsible sections, with "New folder" and a "＋" per folder.
     - Icon size per button (30–200 %), texture fit (fill, show completely, stretch, tile) and an
       adjustable colour veil over the texture (0 % = texture unchanged); "Copy look" includes them.
-    - "Change look" can also set an image as icon, a texture and an overlay, e.g. from an event.
+    - "Change look" can also set an image as icon, a texture and an overlay, e.g. from an event; the
+      images are picked with previews from your own images and icon packs.
     - New live displays: graphics card temperature and load, disk usage, network speed (↓/↑) and
       how long the PC has been running.
     - New action "Screen (off / brightness)": turns the screen off right away (the mouse wakes it)
