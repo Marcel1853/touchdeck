@@ -323,8 +323,40 @@ pub fn graph_number(v: &Value) -> Option<f64> {
 }
 
 /** Verläufe für Graphen: je Button die letzten Zahlen und wann zuletzt gemessen wurde. */
-/** Verlauf eines Buttons und Zeitpunkt der letzten Messung. */
-type GraphData = (std::collections::VecDeque<f64>, Option<std::time::Instant>);
+/** Datenreihen eines Graphen (Name, Werte; fehlende Messungen als None) und Zeitpunkt der letzten Messung. */
+#[derive(Default)]
+struct GraphData {
+    series: Vec<(String, std::collections::VecDeque<Option<f64>>)>,
+    last: Option<std::time::Instant>,
+}
+
+impl GraphData {
+    /** Eine Messung: alle Reihen gleich lang halten, neue Reihen vorne mit None auffüllen. */
+    fn push(&mut self, values: Vec<(String, Option<f64>)>, max: usize) {
+        let len = self.series.first().map_or(0, |(_, v)| v.len());
+        for (name, _) in &values {
+            if !self.series.iter().any(|(s, _)| s == name) && self.series.len() < 12 {
+                self.series.push((name.clone(), std::iter::repeat_n(None, len).collect()));
+            }
+        }
+        for (name, v) in &mut self.series {
+            v.push_back(values.iter().find(|(n, _)| n == name).and_then(|(_, x)| *x));
+            while v.len() > max {
+                v.pop_front();
+            }
+        }
+        // Reihen, die im ganzen sichtbaren Verlauf keinen Wert mehr haben, verschwinden.
+        self.series.retain(|(_, v)| v.iter().any(Option::is_some));
+    }
+}
+
+/** Erste Zahl je Datenreihe aus einem Live-Wert: „series“ (vom Plugin, Name → Zahl) oder die eine Zahl. */
+fn series_of(v: &Value, name: &str) -> Vec<(String, Option<f64>)> {
+    match v["series"].as_object() {
+        Some(map) => map.iter().take(12).map(|(k, x)| (k.chars().take(40).collect(), x.as_f64().filter(|n| n.is_finite()))).collect(),
+        None => vec![(name.to_string(), graph_number(v))],
+    }
+}
 
 #[derive(Default)]
 pub struct Graphs {
@@ -332,9 +364,11 @@ pub struct Graphs {
 }
 
 impl Graphs {
-    /** Verlauf eines Buttons (älteste zuerst). */
-    pub fn history(&self, id: &str) -> Option<Vec<f64>> {
-        self.data.lock().unwrap().get(id).map(|(v, _)| v.iter().copied().collect())
+    /** Verlauf eines Buttons: [{ name, values }] (älteste zuerst). */
+    pub fn history(&self, id: &str) -> Option<Value> {
+        let data = self.data.lock().unwrap();
+        let g = data.get(id)?;
+        Some(Value::Array(g.series.iter().map(|(name, v)| json!({ "name": name, "values": v.iter().collect::<Vec<_>>() })).collect()))
     }
 
     /** Einmal pro Sekunde: fällige Graph-Buttons messen. Ohne Graph-Buttons passiert nichts. */
@@ -346,13 +380,25 @@ impl Graphs {
             let all: Vec<&Button> = store.config.pages.iter().flat_map(|p| &p.buttons).filter(|b| !b.live.graph.is_empty() && b.live.source != "none").collect();
             // Verläufe von Buttons ohne Graph vergessen.
             data.retain(|id, _| all.iter().any(|b| b.id == *id));
-            let due = |b: &Button| data.get(&b.id).and_then(|(_, t)| *t).is_none_or(|t| now.duration_since(t).as_secs() >= b.live.graph_interval.max(1) as u64);
+            let due = |b: &Button| data.get(&b.id).and_then(|g| g.last).is_none_or(|t| now.duration_since(t).as_secs() >= b.live.graph_interval.max(1) as u64);
             let pages: Vec<Page> = store
                 .config
                 .pages
                 .iter()
                 .filter_map(|p| {
-                    let buttons: Vec<Button> = p.buttons.iter().filter(|b| !b.live.graph.is_empty() && b.live.source != "none" && due(b)).cloned().collect();
+                    let mut buttons: Vec<Button> = Vec::new();
+                    for b in p.buttons.iter().filter(|b| !b.live.graph.is_empty() && b.live.source != "none" && due(b)) {
+                        buttons.push(b.clone());
+                        // Weitere Reihen als eigene, unsichtbare Messpunkte „<id>#<n>“.
+                        for (i, x) in b.live.series.iter().enumerate() {
+                            let mut extra = b.clone();
+                            extra.id = format!("{}#{i}", b.id);
+                            extra.mode = "press".into();
+                            extra.live.source = x.source.clone();
+                            extra.live.variable = x.variable.clone();
+                            buttons.push(extra);
+                        }
+                    }
                     (!buttons.is_empty()).then(|| Page { buttons, ..p.clone() })
                 })
                 .collect();
@@ -363,15 +409,18 @@ impl Graphs {
         }
         let values = collect_live(app, &pages, &variables).await;
         let mut data = self.data.lock().unwrap();
-        for b in pages.iter().flat_map(|p| &p.buttons) {
-            let entry = data.entry(b.id.clone()).or_default();
-            entry.1 = Some(now);
-            if let Some(n) = values.get(&b.id).and_then(graph_number) {
-                entry.0.push_back(n);
-                while entry.0.len() > b.live.graph_points.max(2) as usize {
-                    entry.0.pop_front();
+        for b in pages.iter().flat_map(|p| &p.buttons).filter(|b| !b.id.contains('#')) {
+            let main = if b.title.is_empty() { "1".to_string() } else { b.title.replace('\n', " ") };
+            let mut row = values.get(&b.id).map(|v| series_of(v, &main)).unwrap_or_default();
+            for (i, x) in b.live.series.iter().enumerate() {
+                let name = if x.label.is_empty() { format!("{}", i + 2) } else { x.label.clone() };
+                if let Some(v) = values.get(&format!("{}#{i}", b.id)) {
+                    row.extend(series_of(v, &name));
                 }
             }
+            let entry = data.entry(b.id.clone()).or_default();
+            entry.last = Some(now);
+            entry.push(row, b.live.graph_points.max(2) as usize);
         }
     }
 }
@@ -379,6 +428,21 @@ impl Graphs {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn graph_reihen() {
+        let mut g = GraphData::default();
+        g.push(vec![("A".into(), Some(1.0))], 3);
+        g.push(vec![("A".into(), Some(2.0)), ("B".into(), Some(5.0))], 3);
+        g.push(vec![("B".into(), Some(6.0))], 3);
+        g.push(vec![("B".into(), Some(7.0))], 3);
+        let names: Vec<&str> = g.series.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["A", "B"], "A hat im Fenster noch einen Wert");
+        assert_eq!(g.series[1].1.iter().copied().collect::<Vec<_>>(), vec![Some(5.0), Some(6.0), Some(7.0)]);
+        g.push(vec![("B".into(), Some(8.0))], 3);
+        assert_eq!(g.series.len(), 1, "A ohne Werte im Fenster fällt weg");
+        assert_eq!(series_of(&json!({ "series": { "Dampf": 30.5, "Solar": 12 } }), "x").len(), 2);
+    }
 
     #[test]
     fn graph_zahlen() {

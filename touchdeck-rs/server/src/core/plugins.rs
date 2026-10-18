@@ -476,6 +476,12 @@ pub fn host_call(app: &Arc<App>, plugin: &str, op: &str, args: &Value) -> Result
             // „number“: echte Zahl für Graphen (z. B. 35.2 für MW), sonst der Wert selbst.
             let number = v["number"].as_f64().filter(|n| n.is_finite()).or(raw);
             let mut live = json!({ "text": text(&v["text"], 200), "value": value, "number": number });
+            // Mehrere Datenreihen für Graphen: { "Dampf": 30.5, "Solar": 12 } (höchstens 12).
+            if let Some(map) = v["series"].as_object() {
+                let series: serde_json::Map<String, Value> =
+                    map.iter().filter_map(|(k, x)| x.as_f64().filter(|n| n.is_finite()).map(|n| (k.chars().take(40).collect(), json!(n)))).take(12).collect();
+                live["series"] = Value::Object(series);
+            }
             if let Some(on) = v["on"].as_bool() {
                 live["on"] = json!(on);
             }

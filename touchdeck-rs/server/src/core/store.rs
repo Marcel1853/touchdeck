@@ -159,6 +159,17 @@ pub struct Live {
     pub graph_color: String,
     /// Text unter dem Graphen: left, center, right.
     pub graph_align: String,
+    /// Weitere Datenreihen im selben Graphen (je eigene Quelle, Name, Farbe).
+    pub series: Vec<GraphSeries>,
+}
+
+/** Weitere Datenreihe eines Graphen. */
+#[derive(Clone, Debug, Serialize)]
+pub struct GraphSeries {
+    pub source: String,
+    pub variable: String,
+    pub label: String,
+    pub color: String,
 }
 
 /** Ursprünge (schema://host:port) aller Webseiten-Buttons; das Programmfenster lässt sie in Rahmen laden. */
@@ -466,7 +477,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         tex_veil: clamp(&b["texVeil"], 0, 100, 35),
         bg_image: sanitize_icon(&b["bgImage"]),
         overlay: one_of(&b["overlay"], &OVERLAYS, ""),
-        mode: one_of(&b["mode"], &["toggle", "slider", "web"], "press"),
+        mode: one_of(&b["mode"], &["toggle", "slider", "web", "display"], "press"),
         live: Live {
             source: live["source"]
                 .as_str()
@@ -475,13 +486,29 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             command: text(&live["command"], "", 1000),
             variable: text(&live["variable"], "", 40),
             bar: live["bar"] == Value::Bool(true),
-            graph: one_of(&live["graph"], &["line", "area", "bars"], ""),
+            graph: one_of(&live["graph"], &["line", "area", "stack", "bars"], ""),
             graph_points: clamp(&live["graphPoints"], 10, 300, 60),
             graph_interval: clamp(&live["graphInterval"], 1, 3600, 2),
             graph_min: live["graphMin"].as_f64().filter(|n| n.is_finite()),
             graph_max: live["graphMax"].as_f64().filter(|n| n.is_finite()),
             graph_color: color(&live["graphColor"], ""),
             graph_align: one_of(&live["graphAlign"], &["center", "right"], "left"),
+            series: live["series"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .take(8)
+                .map(|x| GraphSeries {
+                    source: x["source"]
+                        .as_str()
+                        .filter(|s| s.starts_with("plugin:") && s.len() <= 80 && s.chars().all(|c| c.is_ascii_alphanumeric() || ":-_".contains(c)))
+                        .map_or_else(|| one_of(&x["source"], &catalog::live_source_ids(), "none"), String::from),
+                    variable: text(&x["variable"], "", 40),
+                    label: text(&x["label"], "", 40),
+                    color: color(&x["color"], ""),
+                })
+                .filter(|x| x.source != "none")
+                .collect(),
         },
         slider: Slider {
             target: one_of(&slider["target"], &catalog::slider_target_ids(), "volume"),

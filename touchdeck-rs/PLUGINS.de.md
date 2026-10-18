@@ -136,6 +136,8 @@ td.live.set('ungelesen', { text: '3 neu', value: 30, on: true });
 td.live.set('ungelesen', 'nur ein Text');
 // echte Zahl für Graphen (nicht auf 0–100 begrenzt), z. B. Strom in MW:
 td.live.set('strom', { text: '35,2 MW', number: 35.2 });
+// mehrere Datenreihen für einen Graphen (bis 12); neue Namen werden automatisch zu neuen Linien:
+td.live.set('strom', { text: '66 MW', number: 66, series: { Dampf: 30.5, Solar: 12, Kernkraft: 23.5 } });
 
 // braucht "deck"
 td.deck.pages();                        // [{ id, name, buttons: [{ id, title }] }]

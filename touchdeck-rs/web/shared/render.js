@@ -24,7 +24,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   const el = document.createElement('div');
   const isSlider = b.mode === 'slider';
   const cover = b.iconFit === 'cover' && b.icon?.type === 'image' && b.icon.value;
-  el.className = `td-btn pos-${b.titlePos}${on ? ' is-on' : ''}${b.mode === 'toggle' ? ' is-toggle' : ''}${cover ? ' is-cover' : ''}`;
+  el.className = `td-btn pos-${b.titlePos}${on ? ' is-on' : ''}${b.mode === 'toggle' ? ' is-toggle' : ''}${b.mode === 'display' ? ' is-display' : ''}${cover ? ' is-cover' : ''}`;
   el.dataset.id = b.id;
   const free = isFree(page) && b.free;
   if (free) {
@@ -132,8 +132,10 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     el.append(icon);
   }
   // Graph: Verlauf der Live-Anzeige hinter Symbol und Text (Linie, Fläche oder Balken).
-  if (!isSlider && b.live?.graph && Array.isArray(live?.history) && live.history.length > 1) {
-    el.append(graphElement(b.live, live.history));
+  // Reihen vom Server ([{ name, values }]); „history“ ist eine einzelne Reihe (Vorschau im Editor).
+  const series = Array.isArray(live?.series) ? live.series : Array.isArray(live?.history) ? [{ name: '', values: live.history }] : null;
+  if (!isSlider && b.live?.graph && series?.some((x) => x.values.filter((v) => v !== null).length > 1)) {
+    el.append(graphElement(b.live, series));
     el.classList.add('has-graph', `galign-${b.live.graphAlign ?? 'left'}`);
   }
   // Fortschrittsbalken: Zahlenwert 0–100 der Live-Anzeige, unten im Button.
@@ -168,49 +170,95 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   return el;
 }
 
-/** SVG mit dem Verlauf; Grenzen fest (graphMin/graphMax) oder aus den Werten, Null bleibt sichtbar. */
-function graphElement(cfg, history) {
+const PALETTE = ['#5aa9e6', '#e6b45a', '#6fd36f', '#e65a8a', '#a37be6', '#5ae6d8', '#e6e65a', '#e6865a', '#9ad0f5', '#c8e65a', '#f5a3c8', '#b0b0b0'];
+
+/**
+ * Graph mit einer oder mehreren Reihen: Linie, Fläche, gestapelte Fläche oder Balken (bei mehreren Reihen gestapelt).
+ * Grenzen fest (graphMin/graphMax) oder aus den Werten; neueste Werte rechts.
+ */
+function graphElement(cfg, series) {
   const ns = 'http://www.w3.org/2000/svg';
   const W = 100;
   const H = 100;
-  const points = Math.max(cfg.graphPoints ?? 60, history.length);
-  let min = Number.isFinite(cfg.graphMin) ? cfg.graphMin : Math.min(...history);
-  let max = Number.isFinite(cfg.graphMax) ? cfg.graphMax : Math.max(...history);
+  const stacked = cfg.graph === 'stack' || (cfg.graph === 'bars' && series.length > 1);
+  const len = Math.max(...series.map((x) => x.values.length));
+  const points = Math.max(cfg.graphPoints ?? 60, len);
+  // Farbe je Reihe: erste = Graph-Farbe, benannte Zusatzreihen = ihre Farbe, sonst Palette.
+  const color = (x, i) => (i === 0 && cfg.graphColor) || cfg.series?.find((c) => c.label && c.label === x.name)?.color || PALETTE[i % PALETTE.length];
+  // Gestapelt: Summen von unten nach oben, fehlende Werte zählen als 0.
+  const tops = series.map(() => []);
+  for (let k = 0; k < len; k++) {
+    let acc = 0;
+    series.forEach((x, i) => {
+      const v = x.values[k - (len - x.values.length)] ?? null;
+      if (stacked) {
+        acc += v ?? 0;
+        tops[i][k] = acc;
+      } else tops[i][k] = v;
+    });
+  }
+  const all = tops.flat().filter((v) => v !== null && Number.isFinite(v));
+  let min = Number.isFinite(cfg.graphMin) ? cfg.graphMin : Math.min(...all, stacked ? 0 : Infinity);
+  let max = Number.isFinite(cfg.graphMax) ? cfg.graphMax : Math.max(...all);
   if (!Number.isFinite(cfg.graphMin) && min > 0 && min < max * 0.5) min = 0;
   if (max <= min) max = min + 1;
   const y = (v) => H - ((Math.min(max, Math.max(min, v)) - min) / (max - min)) * H;
-  // Neueste Werte rechts; fehlt noch Verlauf, beginnt die Kurve weiter rechts.
   const step = W / Math.max(1, points - 1);
-  const x0 = W - (history.length - 1) * step;
+  const x0 = W - (len - 1) * step;
+  const xs = (k) => (x0 + k * step).toFixed(2);
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('class', `td-graph graph-${cfg.graph}`);
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio', 'none');
-  if (cfg.graphColor) svg.style.setProperty('--gc', cfg.graphColor);
+  const make = (tag, attrs, c) => {
+    const n = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    n.style.setProperty('--gc', c);
+    return n;
+  };
   if (cfg.graph === 'bars') {
     const bw = Math.max(0.6, step * 0.7);
-    history.forEach((v, i) => {
-      const r = document.createElementNS(ns, 'rect');
-      const top = y(v);
-      r.setAttribute('x', (x0 + i * step - bw / 2).toFixed(2));
-      r.setAttribute('y', top.toFixed(2));
-      r.setAttribute('width', bw.toFixed(2));
-      r.setAttribute('height', (H - top).toFixed(2));
-      svg.append(r);
-    });
-  } else {
-    const pts = history.map((v, i) => `${(x0 + i * step).toFixed(2)},${y(v).toFixed(2)}`);
-    if (cfg.graph === 'area') {
-      const area = document.createElementNS(ns, 'polygon');
-      area.setAttribute('points', `${x0.toFixed(2)},${H} ${pts.join(' ')} ${W},${H}`);
-      svg.append(area);
+    // Von oben nach unten zeichnen, damit untere Stapel vorne liegen.
+    for (let i = series.length - 1; i >= 0; i--) {
+      tops[i].forEach((v, k) => {
+        if (v === null) return;
+        const top = y(v);
+        // Gestapelt: nur das eigene Stück zwischen der Reihe darunter und dieser.
+        const bottom = stacked && i > 0 ? y(tops[i - 1][k] ?? min) : H;
+        if (bottom - top <= 0) return;
+        svg.append(make('rect', { x: (x0 + k * step - bw / 2).toFixed(2), y: top.toFixed(2), width: bw.toFixed(2), height: (bottom - top).toFixed(2) }, color(series[i], i)));
+      });
     }
-    const line = document.createElementNS(ns, 'polyline');
-    line.setAttribute('points', pts.join(' '));
-    line.setAttribute('vector-effect', 'non-scaling-stroke');
-    svg.append(line);
+  } else {
+    series.forEach((x, i) => {
+      const c = color(x, i);
+      // Linien an Lücken (fehlende Werte) unterbrechen.
+      const segs = [[]];
+      tops[i].forEach((v, k) => (v === null ? segs.push([]) : segs[segs.length - 1].push([xs(k), y(v).toFixed(2)])));
+      for (const seg of segs.filter((g) => g.length)) {
+        const pts = seg.map(([a, b]) => `${a},${b}`).join(' ');
+        if (cfg.graph === 'area' || cfg.graph === 'stack') {
+          const below = stacked && i > 0 ? seg.map(([a]) => [a, y(tops[i - 1][Math.round((a - x0) / step)] ?? min).toFixed(2)]).reverse() : [[seg[seg.length - 1][0], H], [seg[0][0], H]];
+          svg.append(make('polygon', { points: `${pts} ${below.map(([a, b]) => `${a},${b}`).join(' ')}` }, c));
+        }
+        svg.append(make('polyline', { points: pts, 'vector-effect': 'non-scaling-stroke' }, c));
+      }
+    });
   }
-  return svg;
+  if (series.length < 2) return svg;
+  // Legende: Farbe und Name je Reihe, oben links über dem Graphen.
+  const box = document.createElement('div');
+  box.className = 'td-graph-box';
+  const legend = document.createElement('div');
+  legend.className = 'td-legend';
+  series.forEach((x, i) => {
+    const item = document.createElement('span');
+    item.style.setProperty('--gc', color(x, i));
+    item.textContent = x.name;
+    legend.append(item);
+  });
+  box.append(svg, legend);
+  return box;
 }
 
 const sum = (list) => list.reduce((a, n) => a + n, 0);

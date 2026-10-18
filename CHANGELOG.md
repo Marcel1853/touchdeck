@@ -9,6 +9,11 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - Graphs with several data series: add more sources (each with name and colour) or let a plugin
+      deliver them with "series" – new names become new lines by themselves. New style "stacked
+      area"; bars with several series are stacked; a legend shows the names.
+    - New button type "Display": does not react to taps (no actions, no press animation) – for live
+      values and graphs. With "Transparent" only the content stays; on free pages any size.
     - Graphs: every live display with a number can show its history as a line, area or bars
       (number of values, interval, fixed or automatic range, colour). The history is recorded in
       the background even when the page is not open; bigger buttons make bigger charts. Plugins can

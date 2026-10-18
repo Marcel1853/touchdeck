@@ -9,6 +9,13 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - Graphen mit mehreren Datenreihen: weitere Quellen hinzufügen (je mit Name und Farbe) oder von
+      einem Plugin mit „series“ liefern lassen – neue Namen werden von selbst zu neuen Linien. Neue
+      Darstellung „Fläche gestapelt“; Balken mit mehreren Reihen werden gestapelt; eine Legende
+      zeigt die Namen.
+    - Neue Button-Art „Anzeige“: reagiert nicht auf Antippen (keine Aktionen, keine
+      Drück-Animation) – für Live-Werte und Graphen. Mit „Transparent“ bleibt nur der Inhalt; auf
+      freien Seiten beliebig groß.
     - Graphen: jede Live-Anzeige mit einer Zahl kann ihren Verlauf als Linie, Fläche oder Balken
       zeigen (Anzahl Werte, Abstand, feste oder automatische Grenzen, Farbe). Der Verlauf wird im
       Hintergrund auch aufgezeichnet, wenn die Seite nicht offen ist; größere Buttons ergeben größere

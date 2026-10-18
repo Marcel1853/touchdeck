@@ -267,7 +267,8 @@ function sendSlide(el, value, final = false) {
 // Zeiger-Ereignisse statt click: reagiert sofort und funktioniert mit Maus und Touch gleich.
 grid.addEventListener('pointerdown', (e) => {
   const el = e.target.closest('.td-btn');
-  if (!el || el.classList.contains('is-blank')) return;
+  // Leere Felder und Anzeigen reagieren nicht auf Antippen.
+  if (!el || el.classList.contains('is-blank') || el.classList.contains('is-display')) return;
   el.setPointerCapture(e.pointerId);
   if (el.classList.contains('is-slider')) {
     el.classList.add('sliding');

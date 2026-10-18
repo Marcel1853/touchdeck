@@ -308,9 +308,11 @@ async fn press(app: &Arc<App>, page_id: &str, button_id: &str, double: bool) -> 
         let mut store = app.store.lock().unwrap();
         let found = store.page(page_id).and_then(|p| p.buttons.iter().find(|b| b.id == button_id).map(|b| (p.name.clone(), b.clone())));
         found.map(|(page_name, b)| {
-            let mut actions = b.actions.clone();
+            // Anzeigen sind nicht zum Drücken da.
+            let mut actions = if b.mode == "display" { Vec::new() } else { b.actions.clone() };
             let mut toggled = None;
-            if double && !b.double_actions.is_empty() {
+            if b.mode == "display" {
+            } else if double && !b.double_actions.is_empty() {
                 actions = b.double_actions.clone();
             } else if b.mode == "toggle" {
                 let on = store.config.toggles.get(button_id) != Some(&Value::Bool(true));
@@ -431,8 +433,8 @@ fn refresh_live(app: &Arc<App>) {
             let mut fresh = collect_live(&a, &pages, &variables).await;
             // Graph-Buttons bekommen ihren Verlauf mit.
             for b in pages.iter().flat_map(|p| &p.buttons).filter(|b| !b.live.graph.is_empty()) {
-                if let (Some(entry), Some(history)) = (fresh.get_mut(&b.id), a.graphs.history(&b.id)) {
-                    entry["history"] = json!(history);
+                if let (Some(entry), Some(series)) = (fresh.get_mut(&b.id), a.graphs.history(&b.id)) {
+                    entry["series"] = series;
                 }
             }
             let changed = {

@@ -658,3 +658,5 @@ button.status-chip:hover { color: var(--text); }
 .markdown th, .markdown td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
 .markdown hr { border: 0; border-top: 1px solid var(--line); margin: 18px 0; }
 .markdown a { color: var(--accent); }
+.series-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+.series-row select, .series-row input:not([type=color]) { flex: 1 1 110px; min-width: 0; }

@@ -134,6 +134,8 @@ td.live.set('unread', { text: '3 new', value: 30, on: true });
 td.live.set('unread', 'just a text');
 // real number for graphs (not limited to 0–100), e.g. power in MW:
 td.live.set('power', { text: '35.2 MW', number: 35.2 });
+// several data series for one graph (up to 12); new names become new lines automatically:
+td.live.set('power', { text: '66 MW', number: 66, series: { Steam: 30.5, Solar: 12, Nuclear: 23.5 } });
 
 // needs "deck"
 td.deck.pages();                        // [{ id, name, buttons: [{ id, title }] }]

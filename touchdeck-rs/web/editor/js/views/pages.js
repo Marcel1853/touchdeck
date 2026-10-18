@@ -995,7 +995,9 @@ function renderInspector() {
     hold: b.holdActions.length + b.releaseActions.length,
   };
   const tab = (id, label) => h('button', { class: S.tab === id ? 'active' : '', onclick: () => { S.tab = id; render(); } }, label);
-  if (b.mode === 'slider' && S.tab === 'hold') S.tab = 'look';
+  const noPress = b.mode === 'display' || b.mode === 'web';
+  if ((b.mode === 'slider' || noPress) && S.tab === 'hold') S.tab = 'look';
+  if (noPress && S.tab === 'actions') S.tab = 'look';
   const content = {
     look: lookTab,
     actions: b.mode === 'slider' ? sliderTab : pressTab,
@@ -1005,13 +1007,13 @@ function renderInspector() {
   root.replaceChildren(
     h('div', { class: 'insp-head' },
       h('h2', {}, b.title || tr('pages.button')),
-      b.mode !== 'slider' && h('button', { class: 'btn small primary', title: tr('pages.runActionsOnPc'), onclick: () => testActions(b.actions, tr('pages.button'), { buttonId: b.id }) }, tr('pages.test')),
+      b.mode !== 'slider' && !noPress && h('button', { class: 'btn small primary', title: tr('pages.runActionsOnPc'), onclick: () => testActions(b.actions, tr('pages.button'), { buttonId: b.id }) }, tr('pages.test')),
       h('button', { class: 'btn small ghost', title: tr('pages.deselectHint'), onclick: () => select(null) }, '✕')),
     h('div', { class: 'tabs' },
       tab('look', tr('common.look')),
-      tab('actions', b.mode === 'slider' ? tr('pages.slider') : `${tr('pages.press')}${counts.actions ? ` (${counts.actions})` : ''}`),
+      !noPress && tab('actions', b.mode === 'slider' ? tr('pages.slider') : `${tr('pages.press')}${counts.actions ? ` (${counts.actions})` : ''}`),
       tab('events', `${tr('common.event')}${counts.events ? ` (${counts.events})` : ''}`),
-      b.mode !== 'slider' && tab('hold', `${tr('pages.hold')}${counts.hold ? ` (${counts.hold})` : ''}`)),
+      b.mode !== 'slider' && !noPress && tab('hold', `${tr('pages.hold')}${counts.hold ? ` (${counts.hold})` : ''}`)),
     ...content(b).filter(Boolean),
     h('div', { class: 'insp-footer' },
       h('button', { class: 'btn small', onclick: duplicateButton }, tr('common.duplicate')),
@@ -1130,8 +1132,9 @@ function lookTab(b) {
       h('label', { class: 'field' }, tr('pages.heightFields'),
         h('input', { type: 'number', min: 1, max: p.rows - b.row, value: b.rowSpan, onchange: (e) => resizeButton(b, Number(e.target.value), b.colSpan) }))),
     h('div', { class: 'field' }, tr('pages.type'),
-      segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')], ['web', tr('pages.web')]], b.mode, (v) => mutate(() => (b.mode = v)))),
+      segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')], ['display', tr('pages.display')], ['web', tr('pages.web')]], b.mode, (v) => mutate(() => (b.mode = v)))),
     b.mode === 'web' && webSection(b),
+    b.mode === 'display' && h('p', { class: 'hint-text' }, tr('pages.displayHint')),
     b.mode !== 'slider' && b.mode !== 'web' && liveSection(b),
   ];
 }
@@ -1159,8 +1162,27 @@ const DEMO_HISTORY = Array.from({ length: 40 }, (_, i) => 50 + 25 * Math.sin(i /
 /** Was die Vorschau im Editor anzeigt: Regler halb, Graph-Buttons mit Beispielkurve. */
 function previewLive(b) {
   if (b.mode === 'slider') return { value: 50 };
-  if (b.live?.graph && b.live.source !== 'none') return { text: '42', history: DEMO_HISTORY };
+  if (b.live?.graph && b.live.source !== 'none') {
+    const extra = (b.live.series ?? []).map((x, i) => ({ name: x.label || String(i + 2), values: DEMO_HISTORY.map((v, k) => Math.max(0, v * (0.7 - i * 0.15) + 10 * Math.sin(k / (3 + i)))) }));
+    return { text: '42', series: [{ name: b.title || '1', values: DEMO_HISTORY }, ...extra] };
+  }
   return null;
+}
+
+/** Weitere Datenreihen im Graphen: je Quelle (wie bei der Live-Anzeige), Name und Farbe. */
+function seriesEditor(b) {
+  const list = (b.live.series ??= []);
+  const sources = S.liveSources.filter((o) => !['none', 'clock', 'date', 'page_indicator', 'track', 'command'].includes(o.value));
+  const set = (fn) => mutate(fn, { detail: true });
+  return h('div', { class: 'field' }, tr('pages.graphSeries'),
+    list.map((x, i) => h('div', { class: 'series-row' },
+      h('select', { value: x.source, onchange: (e) => set(() => (x.source = e.target.value)) }, sources.map((o) => h('option', { value: o.value }, o.label))),
+      x.source === 'variable' && dynamicSelect({ key: 'variable', source: 'variables', allowNew: true }, x.variable, (v) => set(() => (x.variable = v))),
+      h('input', { value: x.label, placeholder: tr('pages.seriesName'), maxlength: 40, onchange: (e) => set(() => (x.label = e.target.value.trim())) }),
+      h('input', { type: 'color', value: x.color || '#e6b45a', onchange: (e) => set(() => (x.color = e.target.value)) }),
+      h('button', { type: 'button', class: 'btn icon ghost danger', title: tr('common.remove'), onclick: () => set(() => list.splice(i, 1)) }, '✕'))),
+    list.length < 8 && h('button', { type: 'button', class: 'btn small', onclick: () => set(() => list.push({ source: 'cpu', variable: '', label: '', color: '' })) }, tr('pages.addSeries')),
+    h('p', { class: 'hint-text' }, tr('pages.seriesHint')));
 }
 
 /** Graph: Verlauf der Live-Anzeige als Linie, Fläche oder Balken. */
@@ -1171,7 +1193,7 @@ function graphSettings(b) {
   return h('div', {},
     h('label', { class: 'field' }, tr('pages.graph'),
       h('select', { value: live.graph ?? '', onchange: (e) => set('graph', e.target.value, { detail: true }) },
-        [['', tr('pages.graphNone')], ['line', tr('pages.graphLine')], ['area', tr('pages.graphArea')], ['bars', tr('pages.graphBars')]].map(([v, l]) => h('option', { value: v }, l)))),
+        [['', tr('pages.graphNone')], ['line', tr('pages.graphLine')], ['area', tr('pages.graphArea')], ['stack', tr('pages.graphStack')], ['bars', tr('pages.graphBars')]].map(([v, l]) => h('option', { value: v }, l)))),
     live.graph && h('div', { class: 'row' },
       h('label', { class: 'field' }, tr('pages.graphPoints'),
         h('input', { type: 'number', min: 10, max: 300, value: live.graphPoints ?? 60, onchange: (e) => set('graphPoints', Math.max(10, Math.min(300, Number(e.target.value) || 60))) })),
@@ -1184,6 +1206,7 @@ function graphSettings(b) {
         h('input', { value: live.graphMax ?? '', placeholder: tr('pages.graphAuto'), onchange: (e) => set('graphMax', num(e.target.value)) })),
       h('label', { class: 'field' }, tr('pages.graphColor'),
         h('input', { type: 'color', value: live.graphColor || '#5aa9e6', onchange: (e) => set('graphColor', e.target.value) }))),
+    live.graph && seriesEditor(b),
     live.graph && h('div', { class: 'field' }, tr('pages.graphAlign'),
       segmented([['left', tr('pages.alignLeft')], ['center', tr('pages.alignCenter')], ['right', tr('pages.alignRight')]], live.graphAlign ?? 'left', (v) => set('graphAlign', v, { detail: true }))),
     live.graph && h('p', { class: 'hint-text' }, tr('pages.graphHint')));
