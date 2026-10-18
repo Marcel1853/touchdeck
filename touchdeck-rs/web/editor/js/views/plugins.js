@@ -3,6 +3,7 @@ import { t as tr, getLang } from '/shared/i18n.js';
 import { h, api, toast, ask, prompt } from '../dom.js';
 import { S, render, loadState, save } from '../state.js';
 import { importPluginPage } from './pages.js';
+import { renderMarkdown } from '../markdown.js';
 
 /** Seite im Plugin-Wiki in der passenden Sprache. */
 const wikiPage = (de, en) => `https://github.com/Marcel1853/touchdeck-plugins/wiki/${getLang() === 'de' ? de : en}`;
@@ -45,6 +46,34 @@ async function call(path, body, okText) {
 }
 
 /** GitHub-Repo prüfen, Berechtigungen zeigen, nach Bestätigung installieren. */
+/** GitHub-Adresse eines Plugins; bei „owner/repo/ordner“ die Ordner-Ansicht. */
+function githubUrl(repo) {
+  const [owner, name, ...path] = repo.split('/');
+  return path.length ? `https://github.com/${owner}/${name}/tree/HEAD/${path.join('/')}` : `https://github.com/${owner}/${name}`;
+}
+
+/** Beschreibung (README) eines Marktplatz-Plugins in einem eigenen Fenster, mit Installieren-Knopf. */
+async function showReadme(p, installed) {
+  const body = h('div', { class: 'readme-body' }, h('p', { class: 'hint-text' }, tr('common.loading')));
+  const dlg = h('dialog', { class: 'dialog readme-dialog' },
+    h('div', { class: 'readme-head' },
+      h('div', {}, h('h2', {}, p.name || p.repo), h('p', { class: 'hint-text' }, [p.author && tr('plugins.by2', [p.author]), p.license && tr('plugins.license2', [p.license])].filter(Boolean).join(' ').replace(/[\s·]+$/, ''))),
+      h('div', { class: 'spacer' }),
+      h('button', { class: `btn small ${installed ? '' : 'primary'}`, onclick: () => { dlg.close(); installFromGitHub(p.repo); } }, installed ? tr('common.update') : tr('plugins.install')),
+      h('button', { class: 'btn small ghost', title: tr('common.close'), onclick: () => dlg.close() }, '✕')),
+    body);
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  dlg.showModal();
+  try {
+    const r = await api('GET', `/api/plugins/readme?repo=${encodeURIComponent(p.repo)}`);
+    body.replaceChildren(renderMarkdown(r.text, r.base),
+      h('p', { class: 'hint-text' }, h('a', { href: r.page, target: '_blank', rel: 'noopener' }, tr('plugins.viewOnGithub'))));
+  } catch (err) {
+    body.replaceChildren(h('p', { class: 'hint-text' }, p.description || ''), h('p', { class: 'hint-text error' }, err.message));
+  }
+}
+
 async function installFromGitHub(repo) {
   let preview;
   try {
@@ -164,8 +193,10 @@ function marketTab() {
       return h('div', { class: 'settings-card plugin' },
         h('div', { class: 'plugin-head' },
           h('div', {}, h('b', {}, p.name || p.repo), h('p', { class: 'hint-text' }, p.description),
-            h('p', { class: 'hint-text' }, p.author && tr('plugins.by2', [p.author]), p.license && tr('plugins.license2', [p.license]), h('a', { href: `https://github.com/${p.repo}`, target: '_blank', rel: 'noopener' }, p.repo))),
-          h('button', { class: `btn small ${installed ? '' : 'primary'}`, onclick: () => installFromGitHub(p.repo) }, installed ? tr('common.update') : tr('plugins.install'))));
+            h('p', { class: 'hint-text' }, p.author && tr('plugins.by2', [p.author]), p.license && tr('plugins.license2', [p.license]), h('a', { href: githubUrl(p.repo), target: '_blank', rel: 'noopener' }, p.repo))),
+          h('div', { class: 'plugin-buttons' },
+            h('button', { class: 'btn small', onclick: () => showReadme(p, installed) }, tr('plugins.readMore')),
+            h('button', { class: `btn small ${installed ? '' : 'primary'}`, onclick: () => installFromGitHub(p.repo) }, installed ? tr('common.update') : tr('plugins.install')))));
     }),
   ];
 }

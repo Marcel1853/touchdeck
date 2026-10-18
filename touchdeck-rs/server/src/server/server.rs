@@ -515,11 +515,12 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 58] = [
+const ROUTES: [&str; 59] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
     "GET /api/plugins/market",
+    "GET /api/plugins/readme",
     "POST /api/plugins/preview",
     "POST /api/plugins/install",
     "POST /api/plugins/dev",
@@ -860,6 +861,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             app.plugins.set_advanced(app, body["enabled"] == true, str_of(&body, "confirm")).map_err(bad)?;
             Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list(&lang(app)) }))
         }
+        "GET /api/plugins/readme" => app.plugins.readme(query.get("repo").map_or("", String::as_str), &lang(app)).await.map_err(user_error),
         "GET /api/plugins/market" => app.plugins.market(&lang(app)).await.map_err(user_error),
         "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo"), &lang(app)).await.map_err(user_error),
         "POST /api/plugins/install" => {

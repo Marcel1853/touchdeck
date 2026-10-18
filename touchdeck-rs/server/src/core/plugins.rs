@@ -1240,6 +1240,28 @@ impl Plugins {
     }
 
     /** Liste aus dem öffentlichen Marktplatz-Repo. */
+    /**
+     * README eines Plugins für die Beschreibung im Marktplatz: README.<sprache>.md, sonst README.md
+     * (aus dem Hauptzweig). base = Adresse des Ordners, damit relative Bilder gefunden werden.
+     */
+    pub async fn readme(&self, repo_input: &str, lang: &str) -> Result<Value> {
+        let r = parse_repo(repo_input)?;
+        let dir = if r.path.is_empty() { String::new() } else { format!("{}/", r.path) };
+        let base = format!("https://raw.githubusercontent.com/{}/{}/HEAD/{dir}", r.owner, r.repo);
+        let page = format!("https://github.com/{}/{}/tree/HEAD/{dir}", r.owner, r.repo);
+        let names = [format!("README.{lang}.md"), "README.md".to_string(), "readme.md".to_string()];
+        for name in names {
+            let res = self.http.get(format!("{base}{name}")).timeout(std::time::Duration::from_secs(10)).send().await?;
+            if !res.status().is_success() {
+                continue;
+            }
+            let bytes = res.bytes().await?;
+            let text = String::from_utf8_lossy(&bytes[..bytes.len().min(300_000)]).into_owned();
+            return Ok(json!({ "text": text, "base": base, "page": page, "file": name }));
+        }
+        bail!(t!("plugins.noReadme"))
+    }
+
     pub async fn market(&self, lang: &str) -> Result<Value> {
         let lang = lang.to_string();
         let url = std::env::var("TOUCHDECK_MARKET").unwrap_or_else(|_| MARKET_URL.into());

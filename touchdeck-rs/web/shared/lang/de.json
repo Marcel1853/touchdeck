@@ -3,6 +3,7 @@
     "active": "aktiv",
     "allowAccessFromWi": "Zugriff aus dem WLAN erlauben",
     "cancel": "Abbrechen",
+    "close": "Schließen",
     "delete": "Löschen",
     "done": "Fertig",
     "duplicate": "Duplizieren",
@@ -614,6 +615,7 @@
     "pluginWiki": "Plugin-Wiki",
     "pluginsAreSandboxedAnd": "Plugins laufen abgeschottet und können nur das oben Genannte. Installiere trotzdem nur Plugins, deren Quelle du vertraust.",
     "pluginsHaveToBe": "Plugins müssen öffentlich auf GitHub liegen – so kann jeder den Quelltext prüfen. Installiert wird die neueste Veröffentlichung (Release), sonst der Hauptzweig.",
+    "readMore": "📖 Beschreibung",
     "readyPages": "Fertige Seiten in diesem Plugin:",
     "regularPluginsAreSandboxed": "Normale Plugins laufen abgeschottet. Erweiterte Plugins sind eigene Programme (z. B. in Python oder Node.js), die TouchDeck startet – so mächtig wie Plugins anderer Makro- und Streaming-Programme, aber damit eben auch in der Lage, Schaden anzurichten.",
     "reload": "↻ Neu laden",
@@ -633,6 +635,7 @@
     "understoodContinue": "Verstanden, weiter",
     "unknown": "unbekannt",
     "updated": "{0} aktualisiert ✓",
+    "viewOnGithub": "Auf GitHub ansehen ↗",
     "whatPluginLooksLike": "So sieht ein Plugin aus",
     "willBeRemovedButtons": "„{0}“ wird entfernt. Buttons mit Aktionen dieses Plugins melden danach einen Fehler.",
     "yesGiveFullRights": "Ja, volle Rechte geben"

@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Marktplatz: „📖 Beschreibung“ zeigt die README eines Plugins (auf Deutsch die README.de.md) mit
+      Überschriften, Listen, Tabellen und Bildern, mit Installieren-Knopf direkt dabei.
     - Plugins dürfen in einem Unterordner eines Repos liegen (mehrere Plugins in einem Repo):
       Marktplatz-Einträge kennen „path“, und „besitzer/repo/ordner“ oder ein kopierter
       GitHub-Ordner-Link lassen sich direkt eingeben.

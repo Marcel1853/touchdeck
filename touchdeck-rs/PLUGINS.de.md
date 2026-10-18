@@ -229,7 +229,10 @@ Der Tab **Marktplatz** liest eine Liste aus einem öffentlichen Repo
 }
 ```
 
-Liegt das Plugin in einem Unterordner eines Repos, kommt `"path": "ordner/des/plugins"`
+Der Marktplatz zeigt deine `README.md` als Beschreibung des Plugins (Knopf „📖 Beschreibung“);
+für deutsche Nutzer die `README.de.md`, falls es sie gibt. Bilder mit relativem Pfad
+(`![Bildschirmfoto](bildschirmfoto.png)`) werden aus deinem Repo geladen – ein Bild deiner
+Seite hilft sehr. Liegt das Plugin in einem Unterordner eines Repos, kommt `"path": "ordner/des/plugins"`
 dazu (oder in TouchDeck direkt `besitzer/repo/ordner` eingeben). Wer sein Plugin dort
 eintragen möchte, schickt einen Pull Request mit einer neuen Zeile. Vor dem Installieren zeigt TouchDeck immer Quelle, Version und Berechtigungen
 an. Installiert wird genau der geprüfte Stand.

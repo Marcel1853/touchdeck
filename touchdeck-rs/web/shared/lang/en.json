@@ -3,6 +3,7 @@
     "active": "active",
     "allowAccessFromWi": "Allow access from the Wi-Fi",
     "cancel": "Cancel",
+    "close": "Close",
     "delete": "Delete",
     "done": "Done",
     "duplicate": "Duplicate",
@@ -614,6 +615,7 @@
     "pluginWiki": "plugin wiki",
     "pluginsAreSandboxedAnd": "Plugins are sandboxed and can only do what is listed above. Still, only install plugins whose source you trust.",
     "pluginsHaveToBe": "Plugins have to be public on GitHub – so everyone can check the source. The latest release is installed, otherwise the default branch.",
+    "readMore": "📖 Description",
     "readyPages": "Ready-made pages in this plugin:",
     "regularPluginsAreSandboxed": "Regular plugins are sandboxed. Advanced plugins are programs of their own (e.g. in Python or Node.js) that TouchDeck starts – as powerful as plugins of other macro and streaming programs, but therefore also able to do harm.",
     "reload": "↻ Reload",
@@ -633,6 +635,7 @@
     "understoodContinue": "Understood, continue",
     "unknown": "unknown",
     "updated": "{0} updated ✓",
+    "viewOnGithub": "View on GitHub ↗",
     "whatPluginLooksLike": "What a plugin looks like",
     "willBeRemovedButtons": "“{0}” will be removed. Buttons with actions of this plugin will report an error afterwards.",
     "yesGiveFullRights": "Yes, give full rights"
