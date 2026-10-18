@@ -9,6 +9,8 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - Right-click on a page in the page list: open, rename, duplicate, make start page, move up/down
+      and delete, besides export and import.
     - Graphs with several data series: add more sources (each with name and colour) or let a plugin
       deliver them with "series" – new names become new lines by themselves. New style "stacked
       area"; bars with several series are stacked; a legend shows the names.

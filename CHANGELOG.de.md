@@ -9,6 +9,8 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - Rechtsklick auf eine Seite in der Seitenliste: öffnen, umbenennen, duplizieren, als Startseite,
+      nach oben/unten und löschen, neben Export und Import.
     - Graphen mit mehreren Datenreihen: weitere Quellen hinzufügen (je mit Name und Farbe) oder von
       einem Plugin mit „series“ liefern lassen – neue Namen werden von selbst zu neuen Linien. Neue
       Darstellung „Fläche gestapelt“; Balken mit mehreren Reihen werden gestapelt; eine Legende

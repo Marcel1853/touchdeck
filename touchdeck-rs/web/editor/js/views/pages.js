@@ -1,7 +1,7 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
 import { t as tr, getLang } from '/shared/i18n.js';
 import { buttonElement, setupGrid, iconUrl, isFree } from '/shared/render.js';
-import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu, saveFile } from '../dom.js';
+import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu, saveFile, prompt } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
 import { iconPicker, readDataUrl } from './iconpacks.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
@@ -124,8 +124,8 @@ export function mountPages(root) {
           h('select', { id: 'page-ratio', onchange: (e) => setRatio(e.target.value) }, RATIOS.map((r) => h('option', { value: r }, r)))),
         h('label', { class: 'field-inline' }, tr('pages.background'), h('input', { id: 'page-bg', type: 'color',
           oninput: (e) => mutate(() => (page().background = e.target.value), { coalesce: `${S.pageId}:bg`, detail: false }) })),
-        h('button', { class: 'btn small ghost', onclick: duplicatePage }, tr('common.duplicate')),
-        h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: deletePage }, tr('common.delete'))),
+        h('button', { class: 'btn small ghost', onclick: () => duplicatePage() }, tr('common.duplicate')),
+        h('button', { id: 'page-delete', class: 'btn small ghost danger', onclick: () => deletePage() }, tr('common.delete'))),
       // Klick neben die Seite hebt die Auswahl auf (dann erscheinen die Seiten-Einstellungen).
       h('div', { class: 'canvas-wrap', onclick: (e) => e.target === e.currentTarget && S.selId && select(null) }, h('div', { id: 'canvas', class: 'td-grid canvas' })),
       h('p', { id: 'canvas-hint', class: 'hint' }, tr('pages.clickEmptyFieldNew'))),
@@ -155,7 +155,7 @@ function renderPageList() {
     onclick: () => selectPage(p.id),
     oncontextmenu: (e) => {
       e.preventDefault();
-      profileMenu(e.clientX, e.clientY, p);
+      pageMenu(e.clientX, e.clientY, p);
     },
     ondragstart: (e) => {
       dragFrom = i;
@@ -504,16 +504,37 @@ async function applyImport(request) {
   }
 }
 
-function profileMenu(x, y, p) {
-  const input = h('input', { type: 'file', accept: '.tdprofile,.zip', hidden: true, onchange: (e) => e.target.files[0] && importProfile(e.target.files[0]) });
+/** Rechtsklick auf eine Seite in der Liste: Seite bearbeiten, dann Export/Import. */
+function pageMenu(x, y, p) {
+  const i = S.pages.indexOf(p);
   contextMenu(x, y, [
+    p.id !== S.pageId && { icon: '📂', label: tr('pages.openPage'), onclick: () => selectPage(p.id) },
+    { icon: '✏️', label: tr('pages.renamePage'), onclick: () => renamePage(p) },
+    { icon: '⧉', label: tr('common.duplicate'), onclick: () => duplicatePage(p) },
+    { icon: '⭐', label: tr('pages.makeStartPage'), disabled: p.id === S.settings.startPage, onclick: () => setStartPage(p) },
+    { icon: '↑', label: tr('pages.moveUp'), disabled: i === 0, onclick: () => movePage(p, -1) },
+    { icon: '↓', label: tr('pages.moveDown'), disabled: i === S.pages.length - 1, onclick: () => movePage(p, 1) },
+    '-',
+    ...profileItems(p),
+    '-',
+    { icon: '🗑', label: tr('common.delete'), danger: true, disabled: S.pages.length < 2, onclick: () => deletePage(p) },
+  ]);
+}
+
+function profileMenu(x, y, p) {
+  contextMenu(x, y, profileItems(p));
+}
+
+function profileItems(p) {
+  const input = h('input', { type: 'file', accept: '.tdprofile,.zip', hidden: true, onchange: (e) => e.target.files[0] && importProfile(e.target.files[0]) });
+  return [
     { icon: '📤', label: tr('pages.exportThisPage', [p.name]), onclick: () => exportProfile([p], p.name) },
     { icon: '📦', label: tr('pages.exportAllPages'), onclick: () => exportProfile([], 'TouchDeck') },
     '-',
     { icon: '📥', label: tr('pages.importProfile'), onclick: () => input.click() },
     '-',
     { icon: '⌨️', label: tr('pages.shortcutPage'), onclick: () => shortcutPageDialog() },
-  ]);
+  ];
 }
 
 // ---------- Tastenkürzel-Seite ----------
@@ -627,29 +648,57 @@ function addPage() {
   $('#page-name').select();
 }
 
-function duplicatePage() {
-  const copy = structuredClone(page());
+function duplicatePage(src = page()) {
+  const copy = structuredClone(src);
   copy.id = uid('p_');
   copy.name = tr('pages.copy2', [copy.name]);
   copy.template = '';
   copy.buttons = copy.buttons.map(cloneButton);
   mutate(() => {
-    S.pages.splice(S.pages.indexOf(page()) + 1, 0, copy);
+    S.pages.splice(S.pages.indexOf(src) + 1, 0, copy);
     S.pageId = copy.id;
     S.selId = null;
   });
 }
 
-function deletePage() {
-  const p = page();
+function deletePage(p = page()) {
   if (S.pages.length < 2) return;
   if (p.buttons.length && !confirm(tr('pages.deletePageWithButtons', [p.name, p.buttons.length]))) return;
   mutate(() => {
     const i = S.pages.indexOf(p);
     S.pages.splice(i, 1);
-    S.pageId = S.pages[Math.max(0, i - 1)].id;
-    S.selId = null;
+    // Nur wenn die offene Seite gelöscht wurde, zur Nachbarseite wechseln.
+    if (S.pageId === p.id) {
+      S.pageId = S.pages[Math.max(0, i - 1)].id;
+      S.selId = null;
+    }
   });
+}
+
+async function renamePage(p) {
+  const name = await prompt(tr('pages.renamePage'), tr('pages.newPageName'), p.name);
+  if (name) mutate(() => (p.name = name.slice(0, 100)));
+}
+
+function movePage(p, d) {
+  const i = S.pages.indexOf(p);
+  const j = i + d;
+  if (j < 0 || j >= S.pages.length) return;
+  mutate(() => {
+    S.pages.splice(i, 1);
+    S.pages.splice(j, 0, p);
+  });
+}
+
+async function setStartPage(p) {
+  try {
+    const r = await api('PUT', '/api/settings', { startPage: p.id });
+    S.settings = r.settings;
+    render();
+    toast(tr('pages.isNowStartPage', [p.name]), 'ok');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 
 function resizePage(rows, cols) {
