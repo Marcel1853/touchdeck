@@ -162,6 +162,9 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Sicherheit: Seiten in Webseiten-Buttons können keine Popups oder neuen Fenster mehr öffnen, das
+      Bedienfeld nicht wegnavigieren und das Programmfenster nicht dazu bringen, den Browser zu
+      öffnen; das Programm öffnet den Browser höchstens einmal alle 3 Sekunden.
     - Webseiten-Buttons: das Programmfenster öffnet die Seite nicht mehr bei jeder Änderung im
       Browser, Webseiten-Buttons ohne Beschriftung sind im Bedienfeld nicht mehr unsichtbar, und der
       Editor warnt, wenn eine Seite das Einbetten verbietet. Adressen ohne „https://“ (z. B.

@@ -65,20 +65,15 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
                 let h = handle.clone();
                 tauri::async_runtime::spawn(async move { open_preview_window(&h) });
             } else {
-                let _ = linux::open_with_default(url.as_str());
+                open_external(url.as_str());
             }
             NewWindowResponse::Deny
         })
         .on_navigation(|url| {
-            let inside = url.as_str().starts_with(&format!("{}/", base()));
-            // Webseiten-Buttons laden ihre Seite in einem Rahmen; die Navigation dorthin nicht an den Browser geben.
-            if !inside && touchdeck_server::core::store::is_web_button_url(url.as_str()) {
-                return true;
-            }
-            if !inside {
-                let _ = linux::open_with_default(url.as_str());
-            }
-            inside
+            // Nur TouchDeck selbst und die Adressen von Webseiten-Buttons (in deren Rahmen) dürfen laden.
+            // Alles andere wird still verworfen – nie an den Browser gegeben, sonst könnte eine
+            // eingebettete Seite endlos Fenster öffnen.
+            url.as_str().starts_with(&format!("{}/", base())) || touchdeck_server::core::store::is_web_button_url(url.as_str())
         })
         .build()?;
     // Schließen schließt nur das Fenster (und gibt dessen Speicher frei): der Server läuft weiter,
@@ -94,6 +89,20 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
         }
     });
     Ok(window)
+}
+
+/** Link im Standard-Browser öffnen – nur http(s) und höchstens einmal alle 3 Sekunden (Schutz vor Fensterfluten). */
+fn open_external(url: &str) {
+    static LAST: std::sync::Mutex<Option<std::time::Instant>> = std::sync::Mutex::new(None);
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return;
+    }
+    let mut last = LAST.lock().unwrap();
+    if last.is_some_and(|t| t.elapsed() < std::time::Duration::from_secs(3)) {
+        return;
+    }
+    *last = Some(std::time::Instant::now());
+    let _ = linux::open_with_default(url);
 }
 
 /** Fenstersymbol (für Taskleiste und Alt+Tab). Unter Linux geht das beim Anlegen eines unsichtbaren Fensters

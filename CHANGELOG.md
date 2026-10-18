@@ -150,6 +150,9 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Security: pages in website buttons can no longer open pop-ups or new windows, navigate the deck
+      away or make the program window open the web browser; the program opens the browser at most
+      once every 3 seconds.
     - Website buttons: the program window no longer opens the page in the web browser on every
       change, website buttons without a label are no longer hidden on the deck, and the editor warns
       when a site forbids being embedded. Addresses without "https://" (e.g. www.example.com) are

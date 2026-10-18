@@ -106,7 +106,8 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     frame.src = b.web.url;
     frame.loading = 'lazy';
     frame.referrerPolicy = 'no-referrer';
-    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+    // Keine Popups, keine neuen Fenster, kein Wegnavigieren des Bedienfelds – nur die Seite selbst.
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
     frame.style.width = `${100 / zoom}%`;
     frame.style.height = `${100 / zoom}%`;
     frame.style.transform = `scale(${zoom})`;
