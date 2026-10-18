@@ -1418,6 +1418,20 @@ impl Plugins {
     }
 }
 
+/** Name eines Icon-Pakets aus seiner .tdicons-Datei (pack.json), ohne es zu importieren. */
+fn pack_name(bytes: &[u8]) -> Option<String> {
+    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
+    for i in 0..zip.len() {
+        let mut f = zip.by_index(i).ok()?;
+        if f.name().ok()?.rsplit('/').next()? == "pack.json" {
+            let mut t = String::new();
+            f.read_to_string(&mut t).ok()?;
+            return serde_json::from_str::<Value>(&t).ok()?["name"].as_str().map(String::from);
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1515,18 +1529,4 @@ mod tests {
         assert!(parse_repo("nur-name").is_err());
         assert!(parse_repo("a/b c").is_err());
     }
-}
-
-/** Name eines Icon-Pakets aus seiner .tdicons-Datei (pack.json), ohne es zu importieren. */
-fn pack_name(bytes: &[u8]) -> Option<String> {
-    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
-    for i in 0..zip.len() {
-        let mut f = zip.by_index(i).ok()?;
-        if f.name().ok()?.rsplit('/').next()? == "pack.json" {
-            let mut t = String::new();
-            f.read_to_string(&mut t).ok()?;
-            return serde_json::from_str::<Value>(&t).ok()?["name"].as_str().map(String::from);
-        }
-    }
-    None
 }
