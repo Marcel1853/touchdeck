@@ -511,7 +511,7 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 55] = [
+const ROUTES: [&str; 56] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -532,6 +532,7 @@ const ROUTES: [&str; 55] = [
     "POST /api/iconpacks/import",
     "POST /api/iconpacks/icon",
     "POST /api/profiles/import",
+    "POST /api/save-file",
     "GET /api/state",
     "PUT /api/pages",
     "PUT /api/settings",
@@ -906,6 +907,25 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             Ok(json!({ "ok": true, "id": id, "count": count, "packCount": imported.len(), "packs": app.iconpacks.list() }))
         }
 
+        "POST /api/save-file" => {
+            // Exporte direkt in den Download-Ordner schreiben (im Programmfenster gibt es keinen Browser-Download).
+            let (file, bytes) = match str_of(&body, "kind") {
+                "profile" => {
+                    let pages: Vec<String> = body["pages"].as_array().into_iter().flatten().filter_map(|v| v.as_str().map(String::from)).collect();
+                    profiles::export(&app.store.lock().unwrap(), &pages, str_of(&body, "name")).map_err(bad)?
+                }
+                "iconpack" => app.iconpacks.export(str_of(&body, "id")).map_err(bad)?,
+                "backup" => {
+                    let name = str_of(&body, "name").to_string();
+                    let cfg = app.backups.read(&name)?;
+                    (name, serde_json::to_vec_pretty(&cfg).unwrap_or_default())
+                }
+                _ => return Err(HttpError::new(400, t!("server.unknownKind"))),
+            };
+            let path = linux::save_download(&file, &bytes).map_err(bad)?;
+            linux::show_in_file_manager(&path);
+            Ok(json!({ "ok": true, "path": path.to_string_lossy() }))
+        }
         "POST /api/profiles/import" => {
             let data = str_of(&body, "data");
             let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);

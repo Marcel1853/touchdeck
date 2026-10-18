@@ -143,6 +143,8 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Exporting profiles, icon packs and backups works in the program window: the file is saved to
+      the Downloads folder, shown in the file manager and its path is displayed.
     - Notifications, "Type text", "Open website" and other text actions now replace placeholders
       such as {Event.Loop} or {Input.Name} (shell commands deliberately not, for safety).
     - Programs, commands and advanced plugins (e.g. Python) started from the AppImage no longer

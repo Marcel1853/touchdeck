@@ -154,6 +154,8 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Profile, Icon-Pakete und Sicherungen lassen sich im Programmfenster exportieren: die Datei
+      landet im Download-Ordner, wird im Dateimanager gezeigt und ihr Pfad angezeigt.
     - Benachrichtigungen, „Text tippen“, „Website öffnen“ und weitere Textaktionen setzen jetzt
       Platzhalter wie {Event.Durchlauf} oder {Eingabe.Name} ein (Shell-Befehle aus Sicherheitsgründen
       bewusst nicht).

@@ -2,7 +2,7 @@
 // Eigener Bereich in der linken Leiste, Auswahl beim Button (iconPicker). Pro Bild Name und Schlagwörter
 // (für die Suche), pro Paket Titelbild, Beschreibung, Version, Lizenztext und eine passende Button-Farbe.
 import { t as tr } from '/shared/i18n.js';
-import { h, api, toast, ask } from '../dom.js';
+import { h, api, toast, ask, saveFile } from '../dom.js';
 import { S, render, mutate } from '../state.js';
 import { iconUrl } from '/shared/render.js';
 
@@ -136,7 +136,7 @@ function packCard(pack) {
     head,
     h('div', { class: 'pack-actions' },
       h('label', { class: 'btn small primary' }, tr('iconpacks.addImages'), upload),
-      h('a', { class: 'btn small', href: `/iconpacks/export?id=${encodeURIComponent(pack.id)}`, download: '' }, tr('iconpacks.export')),
+      h('button', { class: 'btn small', onclick: () => saveFile({ kind: 'iconpack', id: pack.id }) }, tr('iconpacks.export')),
       h('button', { class: 'btn small ghost', onclick: () => { S.editPack = S.editPack === pack.id ? null : pack.id; render(); } }, tr('iconpacks.description')),
       h('div', { class: 'spacer' }),
       h('button', { class: 'btn small ghost danger', onclick: async () => {

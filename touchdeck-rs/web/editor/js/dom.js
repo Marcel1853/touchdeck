@@ -205,3 +205,12 @@ export function resizer(root, panel, varName, { min = 160, max = 640, invert = f
   return el;
 }import { t as tr } from '/shared/i18n.js';
 
+/** Export in den Download-Ordner speichern (der Server zeigt die Datei im Dateimanager) und Pfad melden. */
+export async function saveFile(body) {
+  try {
+    const r = await api('POST', '/api/save-file', body);
+    toast(tr('common.savedTo', [r.path]), 'ok');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}

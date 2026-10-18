@@ -42,7 +42,8 @@
     "tooManyOpenRequests": "Zu viele offene Anfragen. Bitte kurz warten.",
     "touchdeckIsRunningOn": "TouchDeck {1} läuft auf Port {0}",
     "uploadedFile": "hochgeladene Datei",
-    "wantsToConnect": "{0} ({1}) möchte sich verbinden"
+    "wantsToConnect": "{0} ({1}) möchte sich verbinden",
+    "unknownKind": "Unbekannte Art."
   },
   "actions": {
     "actionIsNotSupported": "Die Aktion „{0}“ wird noch nicht unterstützt.",

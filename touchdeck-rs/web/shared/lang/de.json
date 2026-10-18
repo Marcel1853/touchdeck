@@ -22,6 +22,7 @@
     "plugins": "Plugins",
     "remove": "Entfernen",
     "save": "Speichern",
+    "savedTo": "Gespeichert in {0}",
     "search": "Suchen …",
     "settings": "Einstellungen",
     "system": "System",

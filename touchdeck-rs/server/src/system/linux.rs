@@ -130,6 +130,48 @@ pub fn open_with_default(target: &str) -> Result<()> {
     spawn_detached("xdg-open", &[target], None)
 }
 
+/** Download-Ordner des Nutzers (xdg-user-dirs), sonst ~/Downloads, sonst der Persönliche Ordner. */
+pub fn download_dir() -> PathBuf {
+    let home = home();
+    let from_config = std::fs::read_to_string(home.join(".config/user-dirs.dirs")).ok().and_then(|t| {
+        t.lines().find_map(|l| l.strip_prefix("XDG_DOWNLOAD_DIR=")).map(|v| PathBuf::from(v.trim_matches('"').replace("$HOME", &home.to_string_lossy())))
+    });
+    [from_config, Some(home.join("Downloads"))].into_iter().flatten().find(|d| d.is_dir()).unwrap_or(home)
+}
+
+/** Datei im Download-Ordner speichern; gibt es den Namen schon, wird „ (2)“ usw. angehängt. */
+pub fn save_download(file: &str, bytes: &[u8]) -> Result<PathBuf> {
+    let dir = download_dir();
+    let name: String = file.chars().filter(|c| !['/', '\\', '\0'].contains(c)).collect();
+    let name = if name.trim().is_empty() || name.starts_with('.') { "TouchDeck-Export".to_string() } else { name };
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((s, e)) => (s.to_string(), format!(".{e}")),
+        None => (name.clone(), String::new()),
+    };
+    let mut path = dir.join(&name);
+    let mut n = 2;
+    while path.exists() {
+        path = dir.join(format!("{stem} ({n}){ext}"));
+        n += 1;
+    }
+    std::fs::write(&path, bytes)?;
+    Ok(path)
+}
+
+/** Datei im Dateimanager zeigen (markiert, wenn er das kann), sonst den Ordner öffnen. */
+pub fn show_in_file_manager(path: &Path) {
+    let uri = format!("file://{}", path.to_string_lossy());
+    let shown = command("gdbus")
+        .args(["call", "--session", "--dest", "org.freedesktop.FileManager1", "--object-path", "/org/freedesktop/FileManager1", "--method", "org.freedesktop.FileManager1.ShowItems", &format!("['{uri}']"), ""])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|s| s.success());
+    if !shown && let Some(dir) = path.parent() {
+        let _ = open_with_default(&dir.to_string_lossy());
+    }
+}
+
 /** Befehl in der Shell ausführen; wait = auf Ende warten und Ausgabe liefern. */
 pub async fn shell(command: &str, wait: bool, timeout: Duration) -> Result<String> {
     let home = home();

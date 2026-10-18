@@ -1,7 +1,7 @@
 // Bereich „Seiten“: Seitenliste, Raster mit Buttons und die Eigenschaften des gewählten Buttons.
 import { t as tr, getLang } from '/shared/i18n.js';
 import { buttonElement, setupGrid, iconUrl, isFree } from '/shared/render.js';
-import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu } from '../dom.js';
+import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu, saveFile } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
 import { iconPicker, readDataUrl } from './iconpacks.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
@@ -461,18 +461,9 @@ export function nudgeButton(dx, dy, big) {
 
 // ---------- Profile (.tdprofile): Seiten mit Bildern, Vorlagen und Werten weitergeben ----------
 
-function download(url) {
-  const a = h('a', { href: url, download: '' });
-  document.body.append(a);
-  a.click();
-  a.remove();
-}
-
 async function exportProfile(pages, name) {
   await save();
-  const query = new URLSearchParams({ name });
-  if (pages.length) query.set('pages', pages.map((p) => p.id).join(','));
-  download(`/profiles/export?${query}`);
+  await saveFile({ kind: 'profile', name, pages: pages.map((p) => p.id) });
 }
 
 async function importProfile(file) {

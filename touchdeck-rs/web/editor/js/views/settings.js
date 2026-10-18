@@ -1,6 +1,6 @@
 // Bereich „Einstellungen“: Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen, Integrationen, Backups, Protokoll, Information.
 import { t as tr } from '/shared/i18n.js';
-import { h, api, toast, ask, segmented } from '../dom.js';
+import { h, api, toast, ask, segmented, saveFile } from '../dom.js';
 import { S, render, loadState } from '../state.js';
 import { openPairing } from '../main.js';
 
@@ -366,7 +366,7 @@ function backupsSection() {
             h('td', {}, tr('settings.kb', [Math.round(bk.size / 1024)])),
             h('td', { class: 'right' },
               h('button', { class: 'btn small', onclick: () => restore(bk.name) }, tr('settings.restore')),
-              h('a', { class: 'btn small ghost', href: `/backups/download?name=${encodeURIComponent(bk.name)}`, download: bk.name }, tr('settings.download')),
+              h('button', { class: 'btn small ghost', onclick: () => saveFile({ kind: 'backup', name: bk.name }) }, tr('settings.download')),
               h('button', { class: 'btn icon ghost danger', title: tr('common.delete'), onclick: async () => {
                 const r = await api('POST', '/api/backups/delete', { name: bk.name });
                 backups = r.list;
