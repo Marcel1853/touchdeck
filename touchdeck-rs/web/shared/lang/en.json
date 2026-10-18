@@ -94,6 +94,9 @@
   "pages": {
     "addButton": "＋ Button",
     "addEvent": "＋ Add event",
+    "alignCenter": "centre",
+    "alignLeft": "left",
+    "alignRight": "right",
     "allEqual": "All equal",
     "allGamesWithCover": "All games with cover",
     "allInstalledSteamGames": "All installed Steam games with cover. A game lights up while it is running; at the bottom library, downloads, Big Picture and friends.",
@@ -168,6 +171,7 @@
     "fromPlugin": "from plugin {0}",
     "gpu": "Graphics card",
     "graph": "History as graph",
+    "graphAlign": "Text below the graph",
     "graphArea": "Area",
     "graphAuto": "automatic",
     "graphBars": "Bars",

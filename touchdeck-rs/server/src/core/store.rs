@@ -157,6 +157,8 @@ pub struct Live {
     pub graph_max: Option<f64>,
     /// Farbe des Graphen ("" = Textfarbe).
     pub graph_color: String,
+    /// Text unter dem Graphen: left, center, right.
+    pub graph_align: String,
 }
 
 /** Ursprünge (schema://host:port) aller Webseiten-Buttons; das Programmfenster lässt sie in Rahmen laden. */
@@ -479,6 +481,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             graph_min: live["graphMin"].as_f64().filter(|n| n.is_finite()),
             graph_max: live["graphMax"].as_f64().filter(|n| n.is_finite()),
             graph_color: color(&live["graphColor"], ""),
+            graph_align: one_of(&live["graphAlign"], &["center", "right"], "left"),
         },
         slider: Slider {
             target: one_of(&slider["target"], &catalog::slider_target_ids(), "volume"),

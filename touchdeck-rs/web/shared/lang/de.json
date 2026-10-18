@@ -94,6 +94,9 @@
   "pages": {
     "addButton": "＋ Button",
     "addEvent": "＋ Event hinzufügen",
+    "alignCenter": "mittig",
+    "alignLeft": "links",
+    "alignRight": "rechts",
     "allEqual": "Alle gleich",
     "allGamesWithCover": "Alle Spiele mit Cover",
     "allInstalledSteamGames": "Alle installierten Steam-Spiele mit Cover. Ein Spiel leuchtet, solange es läuft; unten Bibliothek, Downloads, Big Picture und Freunde.",
@@ -168,6 +171,7 @@
     "fromPlugin": "aus Plugin {0}",
     "gpu": "Grafikkarte",
     "graph": "Verlauf als Graph",
+    "graphAlign": "Text unter dem Graphen",
     "graphArea": "Fläche",
     "graphAuto": "automatisch",
     "graphBars": "Balken",

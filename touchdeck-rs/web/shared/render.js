@@ -134,7 +134,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   // Graph: Verlauf der Live-Anzeige hinter Symbol und Text (Linie, Fläche oder Balken).
   if (!isSlider && b.live?.graph && Array.isArray(live?.history) && live.history.length > 1) {
     el.append(graphElement(b.live, live.history));
-    el.classList.add('has-graph');
+    el.classList.add('has-graph', `galign-${b.live.graphAlign ?? 'left'}`);
   }
   // Fortschrittsbalken: Zahlenwert 0–100 der Live-Anzeige, unten im Button.
   if (!isSlider && b.live?.bar && Number.isFinite(live?.value)) {

@@ -1174,6 +1174,8 @@ function graphSettings(b) {
         h('input', { value: live.graphMax ?? '', placeholder: tr('pages.graphAuto'), onchange: (e) => set('graphMax', num(e.target.value)) })),
       h('label', { class: 'field' }, tr('pages.graphColor'),
         h('input', { type: 'color', value: live.graphColor || '#5aa9e6', onchange: (e) => set('graphColor', e.target.value) }))),
+    live.graph && h('div', { class: 'field' }, tr('pages.graphAlign'),
+      segmented([['left', tr('pages.alignLeft')], ['center', tr('pages.alignCenter')], ['right', tr('pages.alignRight')]], live.graphAlign ?? 'left', (v) => set('graphAlign', v, { detail: true }))),
     live.graph && h('p', { class: 'hint-text' }, tr('pages.graphHint')));
 }
 

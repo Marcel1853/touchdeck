@@ -226,9 +226,18 @@
 .td-btn.is-web .td-title { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 2px 6px; background: rgb(0 0 0 / 0.55); color: #fff; font-size: calc(var(--fs) * 0.8cqmin); }
 
 /* Graph: Verlauf einer Live-Anzeige hinter Symbol und Text. */
-.td-graph { position: absolute; left: 0; bottom: 0; width: 100%; height: 62%; pointer-events: none; overflow: visible; --gc: var(--fg); }
-.td-btn.has-graph > :not(.td-graph, .td-overlay, .td-bar) { position: relative; z-index: 1; }
-.td-btn.has-graph .td-live { text-shadow: 0 1px 3px rgb(0 0 0 / 0.7); }
+.td-graph { position: absolute; left: 0; top: 6%; width: 100%; height: 60%; pointer-events: none; overflow: visible; --gc: var(--fg); }
+/* Text unter dem Graphen: Wert, darunter der Titel; links, mittig oder rechts. */
+.td-btn.has-graph { flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 0; padding-bottom: 5%; }
+.td-btn.has-graph.galign-center { align-items: center; }
+.td-btn.has-graph.galign-right { align-items: flex-end; }
+.td-btn.has-graph > :not(.td-graph, .td-overlay, .td-bar) { position: relative; z-index: 1; text-align: inherit; }
+.td-btn.has-graph.galign-left { text-align: left; }
+.td-btn.has-graph.galign-center { text-align: center; }
+.td-btn.has-graph.galign-right { text-align: right; }
+.td-btn.has-graph .td-icon { display: none; }
+.td-btn.has-graph .td-live { order: 1; font-size: calc(var(--fs) * 1.25cqmin); line-height: 1.1; }
+.td-btn.has-graph .td-title { order: 2; position: relative; inset: auto; font-size: calc(var(--fs) * 0.8cqmin); opacity: 0.8; }
 .td-graph polyline { fill: none; stroke: var(--gc); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; opacity: 0.9; }
 .td-graph polygon { fill: color-mix(in srgb, var(--gc) 28%, transparent); stroke: none; }
 .td-graph rect { fill: color-mix(in srgb, var(--gc) 55%, transparent); }

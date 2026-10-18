@@ -30,7 +30,8 @@ Date: 2026-10-16
     - Graphs: every live display with a number can show its history as a line, area or bars
       (number of values, interval, fixed or automatic range, colour). The history is recorded in
       the background even when the page is not open; bigger buttons make bigger charts. Plugins can
-      report real numbers (e.g. 35.2 MW) with "number".
+      report real numbers (e.g. 35.2 MW) with "number". Value and label sit below the graph, aligned
+      left, centre or right.
     - Marketplace: "📖 Description" shows a plugin's README (README.de.md for German) with headings,
       lists, tables and images, with an install button right there.
     - Plugins can live in a sub-folder of a repo (several plugins in one repo): marketplace entries
