@@ -252,7 +252,7 @@ function renderCanvas() {
   }
 
   const buttons = p.buttons.map((b) => {
-    const el = buttonElement(b, { on: false, live: b.mode === 'slider' ? { value: 50 } : null, page: p });
+    const el = buttonElement(b, { on: false, live: previewLive(b), page: p });
     if (b.id === S.selId) el.classList.add('selected');
     addBadges(el, b);
     el.draggable = true;
@@ -329,7 +329,7 @@ function renderFreeCanvas(p, canvas) {
 
   const buttons = p.buttons.map((b) => {
     b.free ??= freeFromCell(p, b);
-    const el = buttonElement(b, { on: false, live: b.mode === 'slider' ? { value: 50 } : null, page: p });
+    const el = buttonElement(b, { on: false, live: previewLive(b), page: p });
     el.draggable = false;
     addBadges(el, b);
     if (b.id === S.selId) {
@@ -1151,6 +1151,16 @@ function webCheck(url) {
   if (webChecks.has(url)) show(webChecks.get(url));
   else api('POST', '/api/web-check', { url }).then((r) => { webChecks.set(url, r); show(r); }).catch(() => {});
   return box;
+}
+
+// Beispielkurve für die Vorschau im Editor (dort gibt es keine echten Live-Werte).
+const DEMO_HISTORY = Array.from({ length: 40 }, (_, i) => 50 + 25 * Math.sin(i / 4) + 12 * Math.sin(i * 1.7));
+
+/** Was die Vorschau im Editor anzeigt: Regler halb, Graph-Buttons mit Beispielkurve. */
+function previewLive(b) {
+  if (b.mode === 'slider') return { value: 50 };
+  if (b.live?.graph && b.live.source !== 'none') return { text: '42', history: DEMO_HISTORY };
+  return null;
 }
 
 /** Graph: Verlauf der Live-Anzeige als Linie, Fläche oder Balken. */

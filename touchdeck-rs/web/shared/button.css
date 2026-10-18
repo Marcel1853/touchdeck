@@ -239,5 +239,5 @@
 .td-btn.has-graph .td-live { order: 1; font-size: calc(var(--fs) * 1.25cqmin); line-height: 1.1; }
 .td-btn.has-graph .td-title { order: 2; position: relative; inset: auto; font-size: calc(var(--fs) * 0.8cqmin); opacity: 0.8; }
 .td-graph polyline { fill: none; stroke: var(--gc); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; opacity: 0.9; }
-.td-graph polygon { fill: color-mix(in srgb, var(--gc) 28%, transparent); stroke: none; }
-.td-graph rect { fill: color-mix(in srgb, var(--gc) 55%, transparent); }
+.td-graph polygon { fill: var(--gc); fill-opacity: 0.28; stroke: none; }
+.td-graph rect { fill: var(--gc); fill-opacity: 0.55; }
