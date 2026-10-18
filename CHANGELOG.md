@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - New button type "Website": shows a web page right in the button (address, zoom, usable on the
+      device, reload every n seconds) – e.g. a dashboard or a status page in the home network.
     - New slider style "Fader (like a mixing desk)": dark rail, coloured fill and a square handle.
       Sliders with a rail now take the value along the rail.
     - Values are grouped by folder in collapsible sections, with "New folder" and a "＋" per folder.

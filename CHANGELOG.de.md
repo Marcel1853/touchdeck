@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Neue Button-Art „Webseite“: zeigt eine Webseite direkt im Button (Adresse, Zoom, auf dem Gerät
+      bedienbar, alle n Sekunden neu laden) – z. B. ein Dashboard oder eine Status-Seite im Heimnetz.
     - Neuer Regler-Stil „Fader (wie am Mischpult)“: dunkle Schiene, farbige Füllung und eckiger
       Griff. Regler mit Schiene nehmen den Wert jetzt entlang der Schiene.
     - Werte werden nach Ordnern in einklappbaren Gruppen gezeigt, mit „Neuer Ordner“ und einem „＋“

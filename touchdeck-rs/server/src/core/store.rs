@@ -148,6 +148,15 @@ pub struct Live {
     pub bar: bool,
 }
 
+/** Webseite im Button (Art „web“): Adresse, Zoom in Prozent, bedienbar, Neu laden alle n Sekunden. */
+#[derive(Clone, Debug, Serialize)]
+pub struct Web {
+    pub url: String,
+    pub zoom: i64,
+    pub interactive: bool,
+    pub refresh: i64,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Slider {
     pub target: String,
@@ -199,6 +208,7 @@ pub struct Button {
     pub mode: String,
     pub live: Live,
     pub slider: Slider,
+    pub web: Web,
     pub actions: Vec<Action>,
     pub actions_off: Vec<Action>,
     /// Gedrückthalten: Aktionen beim langen Drücken (optional wiederholt) und beim Loslassen danach.
@@ -414,7 +424,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         tex_veil: clamp(&b["texVeil"], 0, 100, 35),
         bg_image: sanitize_icon(&b["bgImage"]),
         overlay: one_of(&b["overlay"], &OVERLAYS, ""),
-        mode: one_of(&b["mode"], &["toggle", "slider"], "press"),
+        mode: one_of(&b["mode"], &["toggle", "slider", "web"], "press"),
         live: Live {
             source: live["source"]
                 .as_str()
@@ -431,6 +441,12 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             shape: one_of(&slider["shape"], &["rail", "fader", "knob", "dial"], "fill"),
             color: slider["color"].as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).unwrap_or("").to_lowercase(),
             thickness: clamp(&slider["thickness"], 2, 30, 10),
+        },
+        web: Web {
+            url: b["web"]["url"].as_str().filter(|u| u.starts_with("http://") || u.starts_with("https://")).map(|u| truncate(u, 1000)).unwrap_or_default(),
+            zoom: clamp(&b["web"]["zoom"], 25, 300, 100),
+            interactive: b["web"]["interactive"] != Value::Bool(false),
+            refresh: clamp(&b["web"]["refresh"], 0, 86_400, 0),
         },
         actions: action_list(&b["actions"]),
         actions_off: action_list(&b["actionsOff"]),

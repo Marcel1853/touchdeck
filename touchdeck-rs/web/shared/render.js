@@ -97,7 +97,25 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   }
 
   // Beim Drehregler steht der Wert in der Mitte, ein Symbol würde den Ring verdecken.
-  const hasIcon = b.icon?.value && !cover && !isKnob;
+  // Webseite im Button: eingebettete Seite mit Zoom; Symbol entfällt.
+  const isWeb = b.mode === 'web' && b.web?.url;
+  if (isWeb) {
+    const zoom = (b.web.zoom ?? 100) / 100;
+    const frame = document.createElement('iframe');
+    frame.className = 'td-web';
+    frame.src = b.web.url;
+    frame.loading = 'lazy';
+    frame.referrerPolicy = 'no-referrer';
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+    frame.style.width = `${100 / zoom}%`;
+    frame.style.height = `${100 / zoom}%`;
+    frame.style.transform = `scale(${zoom})`;
+    if (!b.web.interactive) frame.style.pointerEvents = 'none';
+    if (b.web.refresh > 0) frame.dataset.refresh = b.web.refresh;
+    el.classList.add('is-web');
+    el.append(frame);
+  }
+  const hasIcon = b.icon?.value && !cover && !isKnob && !isWeb;
   if (hasIcon) {
     const icon = document.createElement('div');
     icon.className = 'td-icon';

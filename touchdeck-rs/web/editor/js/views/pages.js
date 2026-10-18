@@ -1108,9 +1108,26 @@ function lookTab(b) {
       h('label', { class: 'field' }, tr('pages.heightFields'),
         h('input', { type: 'number', min: 1, max: p.rows - b.row, value: b.rowSpan, onchange: (e) => resizeButton(b, Number(e.target.value), b.colSpan) }))),
     h('div', { class: 'field' }, tr('pages.type'),
-      segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')]], b.mode, (v) => mutate(() => (b.mode = v)))),
-    b.mode !== 'slider' && liveSection(b),
+      segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')], ['web', tr('pages.web')]], b.mode, (v) => mutate(() => (b.mode = v)))),
+    b.mode === 'web' && webSection(b),
+    b.mode !== 'slider' && b.mode !== 'web' && liveSection(b),
   ];
+}
+
+/** Webseite im Button: Adresse, Zoom, bedienbar und automatisch neu laden. */
+function webSection(b) {
+  b.web ??= { url: '', zoom: 100, interactive: true, refresh: 0 };
+  const set = (k, v, opts) => mutate(() => (b.web[k] = v), { coalesce: `${b.id}:web-${k}`, ...opts });
+  return h('div', { class: 'field-group' },
+    h('label', { class: 'field' }, tr('pages.webUrl'),
+      h('input', { value: b.web.url, placeholder: 'https://…', onchange: (e) => set('url', e.target.value.trim()) })),
+    h('div', { class: 'row' },
+      h('label', { class: 'field' }, tr('pages.webZoom'),
+        h('input', { type: 'number', min: 25, max: 300, step: 5, value: b.web.zoom ?? 100, onchange: (e) => set('zoom', Number(e.target.value) || 100) })),
+      h('label', { class: 'field' }, tr('pages.webRefresh'),
+        h('input', { type: 'number', min: 0, max: 86400, value: b.web.refresh ?? 0, onchange: (e) => set('refresh', Math.max(0, Number(e.target.value) || 0)) }))),
+    h('label', { class: 'switch-row' }, h('input', { type: 'checkbox', checked: b.web.interactive !== false, onchange: (e) => set('interactive', e.target.checked) }), tr('pages.webInteractive')),
+    h('p', { class: 'hint-text' }, tr('pages.webHint')));
 }
 
 /** Textur: Hintergrundbild unter Symbol und Text und ein Overlay darüber. */

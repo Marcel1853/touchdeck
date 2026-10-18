@@ -157,10 +157,24 @@ function updateLive(values) {
   const page = state.pages.find((p) => p.id === currentPage);
   for (const b of page?.buttons ?? []) {
     const el = grid.querySelector(`[data-id="${CSS.escape(b.id)}"]`);
-    if (!el || el.classList.contains('pressed') || el.classList.contains('sliding')) continue;
+    // Webseiten nicht neu aufbauen, sonst lädt die Seite bei jedem Live-Wert neu.
+    if (!el || el.classList.contains('pressed') || el.classList.contains('sliding') || el.classList.contains('is-web')) continue;
     el.replaceWith(element(b, page));
   }
 }
+
+/** Webseiten-Buttons mit „Neu laden alle n Sekunden“. */
+setInterval(() => {
+  const now = Date.now();
+  for (const f of grid.querySelectorAll('iframe.td-web[data-refresh]')) {
+    const due = Number(f.dataset.loaded ?? now) + Number(f.dataset.refresh) * 1000;
+    if (!f.dataset.loaded) f.dataset.loaded = now;
+    else if (now >= due) {
+      f.dataset.loaded = now;
+      f.src = f.src;
+    }
+  }
+}, 1000);
 
 /** Für die Zurück-Taste der Android-App: eine Seite zurück, falls möglich. */
 window.deckBack = () => {

@@ -219,3 +219,8 @@
 .td-knob .pointer { stroke: var(--slider-color); stroke-width: calc(var(--thick) * 0.5px + 2px); stroke-linecap: round; transform: rotate(calc(var(--val) * 2.7deg - 135deg)); transform-origin: 50px 50px; }
 .td-btn.shape-knob .td-live, .td-btn.shape-dial .td-live { font-size: calc(var(--fs) * 1.3cqmin); font-weight: 700; }
 .td-btn.shape-dial .td-live { margin-top: 38%; }
+
+/* Webseite im Button: füllt den Button, Beschriftung darüber am Rand. */
+.td-btn.is-web { padding: 0; overflow: hidden; background: #fff; }
+.td-web { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: #fff; }
+.td-btn.is-web .td-title { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 2px 6px; background: rgb(0 0 0 / 0.55); color: #fff; font-size: calc(var(--fs) * 0.8cqmin); }
