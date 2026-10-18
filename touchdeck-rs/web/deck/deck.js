@@ -232,8 +232,18 @@ const send = (msg) => {
 let lastSlideSent = 0;
 let slideTimer = null;
 
+/** Drehwinkel um die Mitte von r als Wert 0–100 (unten links 0 %, unten rechts 100 %). */
+function knobValue(r, e) {
+  const deg = (Math.atan2(e.clientX - (r.left + r.width / 2), r.top + r.height / 2 - e.clientY) * 180) / Math.PI;
+  let from = (deg + 360 + 135) % 360;
+  if (from > 270) from = from > 315 ? 0 : 270;
+  return Math.round((from / 270) * 100);
+}
+
 function sliderValue(el, e) {
-  const r = el.getBoundingClientRect();
+  // Fader + Drehknopf: der Teil, an dem das Ziehen begann (2 = Knopf).
+  if (el.dataset.part === '2') return knobValue(el.querySelector('.td-combo-knob').getBoundingClientRect(), e);
+  const r = el.dataset.knob ? (el.querySelector('.td-knob')?.getBoundingClientRect() ?? el.getBoundingClientRect()) : el.getBoundingClientRect();
   if (el.dataset.knob) {
     // Winkel um die Mitte: 0 % unten links (225°), 100 % unten rechts (135°), 270° dazwischen im Uhrzeigersinn.
     const deg = (Math.atan2(e.clientX - (r.left + r.width / 2), r.top + r.height / 2 - e.clientY) * 180) / Math.PI;
@@ -249,13 +259,14 @@ function sliderValue(el, e) {
 }
 
 function sendSlide(el, value, final = false) {
-  el.style.setProperty('--val', value);
+  const part = el.dataset.part === '2' ? 2 : 1;
+  el.style.setProperty(part === 2 ? '--val2' : '--val', value);
   const live = el.querySelector('.td-live');
-  if (live) live.textContent = `${value} %`;
+  if (live && part === 1) live.textContent = `${value} %`;
   clearTimeout(slideTimer);
   const go = () => {
     lastSlideSent = Date.now();
-    ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify({ type: 'slide', pageId: currentPage, buttonId: el.dataset.id, value }));
+    ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify({ type: 'slide', pageId: currentPage, buttonId: el.dataset.id, value, part }));
   };
   // Höchstens alle 60 ms senden, den letzten Wert aber immer.
   if (final || Date.now() - lastSlideSent > 60) go();
@@ -271,6 +282,8 @@ grid.addEventListener('pointerdown', (e) => {
   if (!el || el.classList.contains('is-blank') || el.classList.contains('is-display')) return;
   el.setPointerCapture(e.pointerId);
   if (el.classList.contains('is-slider')) {
+    const knob = el.querySelector('.td-combo-knob')?.getBoundingClientRect();
+    el.dataset.part = knob && e.clientX >= knob.left && e.clientX <= knob.right && e.clientY >= knob.top && e.clientY <= knob.bottom ? '2' : '1';
     el.classList.add('sliding');
     if (state.deck.vibrate) vibrate(8);
     sendSlide(el, sliderValue(el, e));

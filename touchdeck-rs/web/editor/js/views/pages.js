@@ -1222,7 +1222,7 @@ const DEMO_HISTORY = Array.from({ length: 40 }, (_, i) => 50 + 25 * Math.sin(i /
 
 /** Was die Vorschau im Editor anzeigt: Regler halb, Graph-Buttons mit Beispielkurve. */
 function previewLive(b) {
-  if (b.mode === 'slider') return { value: 50 };
+  if (b.mode === 'slider') return { value: 50, value2: 35 };
   if (b.live?.graph && b.live.source !== 'none') {
     const extra = (b.live.series ?? []).map((x, i) => ({ name: x.label || String(i + 2), values: DEMO_HISTORY.map((v, k) => Math.max(0, v * (0.7 - i * 0.15) + 10 * Math.sin(k / (3 + i)))) }));
     return { text: '42', series: [{ name: b.title || '1', values: DEMO_HISTORY }, ...extra] };
@@ -1403,7 +1403,9 @@ function sliderTab(b) {
     h('h3', {}, tr('pages.sliderLook')),
     h('label', { class: 'field' }, tr('pages.sliderShape'),
       h('select', { value: sl.shape ?? 'fill', onchange: (e) => edit(() => (sl.shape = e.target.value)) },
-        [['fill', tr('pages.shapeFill')], ['rail', tr('pages.shapeRail')], ['fader', tr('pages.shapeFader')], ['knob', tr('pages.shapeKnob')], ['dial', tr('pages.shapeDial')]].map(([v, l]) => h('option', { value: v }, l)))),
+        [['fill', tr('pages.shapeFill')], ['rail', tr('pages.shapeRail')], ['fader', tr('pages.shapeFader')], ['knob', tr('pages.shapeKnob')], ['dial', tr('pages.shapeDial')],
+          ['mixer', tr('pages.shapeMixer')], ['combo', tr('pages.shapeCombo')]].map(([v, l]) => h('option', { value: v }, l)))),
+    sl.shape === 'combo' && comboSettings(b, edit),
     h('div', { class: 'row' },
       h('div', { class: 'field' }, tr('pages.sliderColor'),
         h('div', { class: 'colors' },
@@ -1416,6 +1418,21 @@ function sliderTab(b) {
         } }))),
     h('p', { class: 'hint-text' }, tr('pages.sliderShapeHint')),
   ];
+}
+
+/** Zweites Ziel für den Drehknopf beim Regler „Fader + Drehknopf“. */
+function comboSettings(b, edit) {
+  const s2 = (b.slider2 ??= { target: 'mic', input: '', command: '', color: '' });
+  return h('div', { class: 'field-group' },
+    h('h3', {}, tr('pages.comboKnob')),
+    h('label', { class: 'field' }, tr('pages.comboKnobTarget'),
+      h('select', { value: s2.target, onchange: (e) => edit(() => (s2.target = e.target.value)) }, S.sliderTargets.map((o) => h('option', { value: o.value }, o.label)))),
+    s2.target === 'obs_volume' && dynamicSelect({ key: 'input', label: tr('pages.obsAudioSource'), source: 'obs-inputs' }, s2.input, (v) => edit(() => (s2.input = v))),
+    s2.target === 'command' && h('label', { class: 'field' }, tr('pages.commandIsReplacedBy'),
+      h('textarea', { value: s2.command, placeholder: tr('pages.exampleDdcutilSetvcp10'), oninput: (e) => edit(() => (s2.command = e.target.value), 'sl2cmd') })),
+    h('label', { class: 'field' }, tr('pages.comboKnobColor'),
+      h('input', { type: 'color', value: s2.color || '#e6b45a', oninput: (e) => edit(() => (s2.color = e.target.value), 'sl2color') })),
+    h('p', { class: 'hint-text' }, tr('pages.comboHint')));
 }
 
 /** Event-Karten für einen Button oder eine Seite (owner.events). */

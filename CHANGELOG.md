@@ -9,6 +9,9 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - New slider styles "Knob (like a mixing desk)" with scale, grip ring and pointer, and "Fader +
+      knob": one button with a fader for one target and a knob for a second one (e.g. volume and
+      microphone).
     - Ready-made pages of plugins may also lie in sub-folders of the plugin (e.g. pages/power/…);
       page folders are kept when exporting and importing profiles.
     - Folders for pages and flows: create your own folders (also empty ones), collapse them, move
@@ -75,6 +78,7 @@ Date: 2026-10-18
     - Conditions can compare placeholders (e.g. {Event.User}) and know "greater or equal", "less or
       equal" and "is not empty".
   Bugfixes:
+    - Horizontal faders sit in the middle of the button.
     - Open decks (phone, tablet, browser) reload by themselves when TouchDeck on the PC was restarted
       or updated, instead of running old code until the app is restarted.
     - Security: pages in website buttons can no longer open pop-ups or new windows, navigate the deck

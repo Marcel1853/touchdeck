@@ -264,7 +264,20 @@ pub async fn collect_live(app: &Arc<App>, pages: &[Page], variables: &Map<String
     let jobs = pages.iter().flat_map(|p| &p.buttons).filter(|b| b.mode == "slider" || !["none", "page_indicator"].contains(&b.live.source.as_str())).map(|b| {
         let snap = &snap;
         async move {
-            let r = if b.mode == "slider" { slider_value(app, b, snap).await } else { live_value(app, b, snap, variables).await };
+            let r = if b.mode == "slider" {
+                // „Fader + Drehknopf“: Wert des zweiten Ziels als value2 dazu.
+                let mut r = slider_value(app, b, snap).await;
+                if b.slider.shape == "combo" {
+                    let mut second = b.clone();
+                    second.slider = b.slider2.clone();
+                    if let (Ok(Some(v)), Ok(Some(v2))) = (&mut r, slider_value(app, &second, snap).await) {
+                        v["value2"] = v2["value"].clone();
+                    }
+                }
+                r
+            } else {
+                live_value(app, b, snap, variables).await
+            };
             (b.id.clone(), r)
         }
     });

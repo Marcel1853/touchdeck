@@ -377,13 +377,19 @@ fn hold_end(app: &Arc<App>, client: u64, button_id: &str, release: bool) {
     }
 }
 
-fn slide(app: &Arc<App>, page_id: &str, button_id: &str, value: &Value, tx: &mpsc::UnboundedSender<Message>) {
+fn slide(app: &Arc<App>, page_id: &str, button_id: &str, value: &Value, part: u8, tx: &mpsc::UnboundedSender<Message>) {
     let button = app.store.lock().unwrap().page(page_id).and_then(|p| p.buttons.iter().find(|b| b.id == button_id && b.mode == "slider").cloned());
     let v = crate::core::actions::js_number(Some(value));
-    let Some(button) = button.filter(|_| v.is_finite()) else { return };
+    let Some(mut button) = button.filter(|_| v.is_finite()) else { return };
+    // Teil 2 = Drehknopf beim Regler „Fader + Drehknopf“: eigenes Ziel, eigene Warteschlange.
+    let second = part == 2 && button.slider.shape == "combo";
+    if second {
+        button.slider = button.slider2.clone();
+    }
+    let key = if second { format!("{button_id}#2") } else { button_id.to_string() };
     {
         let mut queues = app.sliders.lock().unwrap();
-        let q = queues.entry(button_id.into()).or_default();
+        let q = queues.entry(key.clone()).or_default();
         q.next = Some(v);
         if q.busy {
             return;
@@ -393,20 +399,20 @@ fn slide(app: &Arc<App>, page_id: &str, button_id: &str, value: &Value, tx: &mps
     let (a, tx) = (app.clone(), tx.clone());
     tokio::spawn(async move {
         loop {
-            let next = a.sliders.lock().unwrap().get_mut(&button.id).and_then(|q| q.next.take());
+            let next = a.sliders.lock().unwrap().get_mut(&key).and_then(|q| q.next.take());
             let Some(v) = next else { break };
             match apply_slider(&a, &button, v).await {
                 Ok(()) => {
                     let mut live = a.live.lock().unwrap();
                     let entry = live.entry(button.id.clone()).or_insert_with(|| json!({}));
-                    entry["value"] = json!(v.round() as i64);
+                    entry[if second { "value2" } else { "value" }] = json!(v.round() as i64);
                 }
                 Err(err) => {
                     let _ = tx.send(Message::Text(json!({ "type": "result", "buttonId": button.id, "ok": false, "error": err.to_string() }).to_string().into()));
                 }
             }
         }
-        if let Some(q) = a.sliders.lock().unwrap().get_mut(&button.id) {
+        if let Some(q) = a.sliders.lock().unwrap().get_mut(&key) {
             q.busy = false;
         }
     });
@@ -1232,7 +1238,7 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
                 hold_end(app, id, &button, true);
             }
         }
-        Some("slide") => slide(app, &page, &button, &msg["value"], tx),
+        Some("slide") => slide(app, &page, &button, &msg["value"], if msg["part"] == 2 { 2 } else { 1 }, tx),
         Some("hello") => {
             // Name des Geräts (Android-App: Gerätename, Browser: aus der Kennung abgeleitet).
             let name: String = msg["name"].as_str().unwrap_or("").chars().filter(|c| !c.is_control()).take(60).collect();

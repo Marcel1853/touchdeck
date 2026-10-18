@@ -65,7 +65,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
 
 
   const shape = isSlider ? b.slider?.shape ?? 'fill' : null;
-  const isKnob = shape === 'knob' || shape === 'dial';
+  const isKnob = shape === 'knob' || shape === 'dial' || shape === 'mixer';
   if (isSlider) {
     // Regler: hoch, wenn der Button höher als breit ist, sonst quer. Alles hängt an --val (0–100).
     const vertical = free ? b.free.h * page.ratioH >= b.free.w * page.ratioW : b.rowSpan >= b.colSpan;
@@ -85,6 +85,20 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
       rail.className = 'td-rail';
       rail.innerHTML = '<span class="td-rail-fill"></span><i class="td-rail-handle"></i>';
       el.append(rail);
+    } else if (shape === 'mixer') {
+      el.append(mixerKnob('--val'));
+    } else if (shape === 'combo') {
+      // Fader (erstes Ziel) und Drehknopf (zweites Ziel) in einem Button.
+      el.classList.add('shape-fader');
+      const v2 = Number.isFinite(live?.value2) ? live.value2 : 0;
+      el.style.setProperty('--val2', v2);
+      if (b.slider2?.color) el.style.setProperty('--sc2', b.slider2.color);
+      const knob = mixerKnob('--val2');
+      knob.classList.add('td-combo-knob');
+      const rail = document.createElement('div');
+      rail.className = 'td-rail';
+      rail.innerHTML = '<span class="td-rail-fill"></span><i class="td-rail-handle"></i>';
+      el.append(knob, rail);
     } else {
       // Drehregler: Ring über 270° (unten links bis unten rechts), wahlweise mit Zeiger.
       const knob = document.createElement('div');
@@ -168,6 +182,28 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   }
   if (!hasIcon && !cover && !isSlider && !isWeb && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
   return el;
+}
+
+let mixerId = 0;
+
+/** Drehknopf wie am Mischpult: Skala ringsum, Knopf mit Rillenrand und Zeiger; dreht mit der CSS-Variable v. */
+function mixerKnob(v) {
+  const id = `mx${++mixerId}`;
+  const ticks = Array.from({ length: 11 }, (_, i) => {
+    const a = ((-135 + i * 27) * Math.PI) / 180;
+    const r1 = i % 5 === 0 ? 41 : 43;
+    return `<line x1="${(50 + r1 * Math.sin(a)).toFixed(2)}" y1="${(50 - r1 * Math.cos(a)).toFixed(2)}" x2="${(50 + 48 * Math.sin(a)).toFixed(2)}" y2="${(50 - 48 * Math.cos(a)).toFixed(2)}"/>`;
+  }).join('');
+  const knob = document.createElement('div');
+  knob.className = 'td-knob td-mixer';
+  knob.style.setProperty('--mv', `var(${v})`);
+  knob.innerHTML = `<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="40%" cy="32%" r="75%">`
+    + '<stop offset="0" stop-color="#9aa0aa"/><stop offset="0.55" stop-color="#4d525b"/><stop offset="1" stop-color="#2a2d33"/></radialGradient></defs>'
+    + `<g class="ticks">${ticks}</g>`
+    + '<circle class="value-arc" cx="50" cy="50" r="38" pathLength="100"/>'
+    + '<g class="cap"><circle class="grip" cx="50" cy="50" r="33"/>'
+    + `<circle cx="50" cy="50" r="29" fill="url(#${id})"/><line class="mark" x1="50" y1="49" x2="50" y2="25"/></g></svg>`;
+  return knob;
 }
 
 const PALETTE = ['#5aa9e6', '#e6b45a', '#6fd36f', '#e65a8a', '#a37be6', '#5ae6d8', '#e6e65a', '#e6865a', '#9ad0f5', '#c8e65a', '#f5a3c8', '#b0b0b0'];

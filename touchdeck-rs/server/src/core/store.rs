@@ -261,6 +261,8 @@ pub struct Button {
     pub mode: String,
     pub live: Live,
     pub slider: Slider,
+    /// Zweites Ziel für den Drehknopf beim Regler „Fader + Drehknopf“ (combo).
+    pub slider2: Slider,
     pub web: Web,
     pub actions: Vec<Action>,
     pub actions_off: Vec<Action>,
@@ -518,9 +520,20 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             target: one_of(&slider["target"], &catalog::slider_target_ids(), "volume"),
             input: text(&slider["input"], "", 200),
             command: text(&slider["command"], "", 1000),
-            shape: one_of(&slider["shape"], &["rail", "fader", "knob", "dial"], "fill"),
+            shape: one_of(&slider["shape"], &["rail", "fader", "knob", "dial", "mixer", "combo"], "fill"),
             color: slider["color"].as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).unwrap_or("").to_lowercase(),
             thickness: clamp(&slider["thickness"], 2, 30, 10),
+        },
+        slider2: {
+            let s2 = &b["slider2"];
+            Slider {
+                target: one_of(&s2["target"], &catalog::slider_target_ids(), "mic"),
+                input: text(&s2["input"], "", 200),
+                command: text(&s2["command"], "", 1000),
+                shape: "mixer".into(),
+                color: s2["color"].as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).unwrap_or("").to_lowercase(),
+                thickness: 10,
+            }
         },
         web: Web {
             url: web_url(b["web"]["url"].as_str().unwrap_or("")),

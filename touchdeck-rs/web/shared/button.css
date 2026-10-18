@@ -201,7 +201,7 @@
 .td-btn.shape-fader { --slider-color: var(--sc, #5aa9e6); }
 .td-btn.shape-fader .td-rail { background: rgb(0 0 0 / 0.55); border-radius: 2px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); }
 .td-btn.shape-fader.vertical .td-rail { left: 50%; top: 10%; bottom: 26%; width: calc(var(--thick) * 1.2cqmin + 4cqmin); }
-.td-btn.shape-fader.horizontal .td-rail { top: 40%; bottom: auto; left: 10%; right: 10%; height: calc(var(--thick) * 1.2cqmin + 4cqmin); transform: translateY(-50%); }
+.td-btn.shape-fader.horizontal .td-rail { top: 50%; bottom: auto; left: 10%; right: 10%; height: calc(var(--thick) * 1.2cqmin + 4cqmin); transform: translateY(-50%); }
 .td-btn.shape-fader .td-rail-fill { border-radius: 1px; inset: 2px auto 2px 2px; }
 .td-btn.shape-fader.vertical .td-rail-fill { inset: auto 2px 2px 2px; height: calc(var(--val) * 1% - 4px); }
 .td-btn.shape-fader.horizontal .td-rail-fill { width: calc(var(--val) * 1% - 4px); }
@@ -213,9 +213,9 @@
 .td-btn.shape-fader .td-title { z-index: 1; margin-top: auto; text-shadow: 0 1px 3px rgb(0 0 0 / 0.8); }
 .td-knob { position: absolute; inset: 6%; display: grid; place-items: center; }
 .td-knob svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
-.td-knob circle { fill: none; stroke-width: calc(var(--thick) * 1px); stroke-linecap: round; transform: rotate(135deg); transform-origin: 50px 50px; }
-.td-knob circle.track { stroke: rgb(255 255 255 / 0.14); stroke-dasharray: 75 100; }
-.td-knob circle.value { stroke: var(--slider-color); stroke-dasharray: calc(var(--val) * 0.75) 100; transition: stroke-dasharray 0.08s linear; }
+.td-knob:not(.td-mixer) circle { fill: none; stroke-width: calc(var(--thick) * 1px); stroke-linecap: round; transform: rotate(135deg); transform-origin: 50px 50px; }
+.td-knob:not(.td-mixer) circle.track { stroke: rgb(255 255 255 / 0.14); stroke-dasharray: 75 100; }
+.td-knob:not(.td-mixer) circle.value { stroke: var(--slider-color); stroke-dasharray: calc(var(--val) * 0.75) 100; transition: stroke-dasharray 0.08s linear; }
 .td-knob .pointer { stroke: var(--slider-color); stroke-width: calc(var(--thick) * 0.5px + 2px); stroke-linecap: round; transform: rotate(calc(var(--val) * 2.7deg - 135deg)); transform-origin: 50px 50px; }
 .td-btn.shape-knob .td-live, .td-btn.shape-dial .td-live { font-size: calc(var(--fs) * 1.3cqmin); font-weight: 700; }
 .td-btn.shape-dial .td-live { margin-top: 38%; }
@@ -249,3 +249,24 @@
 /* Anzeige: nicht zum Drücken – keine Drück-Animation, normaler Mauszeiger. */
 .td-btn.is-display { cursor: default; }
 .td-btn.is-display.pressed, .td-btn.is-display:active { transform: none !important; filter: none !important; }
+
+/* Drehknopf wie am Mischpult: Skala, Rillenrand, Zeiger. --mv = Wert 0–100. */
+.td-mixer { display: block; }
+.td-mixer svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.td-mixer .ticks line { stroke: color-mix(in srgb, var(--fg) 55%, transparent); stroke-width: 1.6; stroke-linecap: round; }
+.td-mixer .value-arc { fill: none; stroke: var(--slider-color); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: calc(var(--mv) * 0.75) 100; transform: rotate(135deg); transform-origin: 50px 50px; opacity: 0.9; }
+.td-mixer .cap { transform: rotate(calc(var(--mv) * 2.7deg - 135deg)); transform-origin: 50px 50px; transition: transform 0.06s linear; }
+.td-mixer .grip { fill: #1e2126; stroke: #4a4f57; stroke-width: 3.5; stroke-dasharray: 1.6 1.6; }
+.td-mixer .mark { stroke: #f2f2f2; stroke-width: 3; stroke-linecap: round; }
+.td-btn.shape-mixer { justify-content: flex-end; gap: 0; }
+.td-btn.shape-mixer .td-knob { inset: 4% 10% 22%; }
+.td-btn.shape-mixer:has(.td-title) .td-knob { bottom: 32%; }
+.td-btn.shape-mixer .td-live, .td-btn.shape-mixer .td-title { z-index: 1; }
+.td-btn.shape-mixer .td-live { font-size: calc(var(--fs) * 0.9cqmin); }
+
+/* Fader + Drehknopf: Knopf oben (liegend: links), Fader darunter (liegend: rechts). */
+.td-btn.shape-combo .td-combo-knob { --slider-color: var(--sc2, #e6b45a); }
+.td-btn.shape-combo.vertical .td-combo-knob { inset: 4% 15% auto; height: 34%; }
+.td-btn.shape-combo.vertical .td-rail { top: 42%; bottom: 22%; }
+.td-btn.shape-combo.horizontal .td-combo-knob { inset: 8% auto 22% 4%; width: 34%; }
+.td-btn.shape-combo.horizontal .td-rail { left: 42%; right: 6%; }

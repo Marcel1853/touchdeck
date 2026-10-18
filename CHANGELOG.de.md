@@ -9,6 +9,9 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - Neue Regler-Stile „Drehknopf (wie am Mischpult)“ mit Skala, Rillenrand und Zeiger sowie „Fader +
+      Drehknopf“: ein Button mit Fader für ein Ziel und Drehknopf für ein zweites (z. B. Lautstärke
+      und Mikrofon).
     - Fertige Seiten eines Plugins dürfen auch in Unterordnern des Plugins liegen (z. B.
       pages/strom/…); Seiten-Ordner bleiben beim Export und Import von Profilen erhalten.
     - Ordner für Seiten und Vorlagen: eigene Ordner anlegen (auch leere), einklappen, Seiten und
@@ -86,6 +89,7 @@ Datum: 2026-10-18
     - Bedingungen können Platzhalter vergleichen (z. B. {Event.Nutzer}) und kennen „größer oder
       gleich“, „kleiner oder gleich“ und „ist nicht leer“.
   Fehlerbehebungen:
+    - Liegende Fader sitzen mittig im Button.
     - Offene Bedienfelder (Handy, Tablet, Browser) laden sich selbst neu, wenn TouchDeck am PC neu
       gestartet oder aktualisiert wurde, statt bis zum App-Neustart mit altem Code zu laufen.
     - Sicherheit: Seiten in Webseiten-Buttons können keine Popups oder neuen Fenster mehr öffnen, das
