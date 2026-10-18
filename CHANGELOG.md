@@ -150,6 +150,8 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Running a flow from the flow editor (or testing single actions in it) fills its inputs with
+      their default values, so {Input.Name} is no longer empty.
     - Test mode loads plugins from ZIP files too (path or "Choose ZIP file …"), with or without a
       main folder inside the ZIP.
     - Exporting profiles, icon packs and backups works in the program window: the file is saved to

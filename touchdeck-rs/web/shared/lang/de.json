@@ -420,6 +420,7 @@
     "notUsedAnywhereYet": "Noch nirgends benutzt. Füge in einem Button oder Event „Vorlage ausführen“ hinzu.",
     "placeholderPrefix": "Eingabe",
     "run": "▶ Ausführen",
+    "runWithDefaults": "Jetzt ausführen – Eingaben bekommen ihre Standardwerte",
     "usedBy": "Benutzt von: {0}"
   },
   "events": {

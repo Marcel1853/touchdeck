@@ -67,7 +67,7 @@ export function renderFlows({ detail = true } = {}) {
     h('div', { class: 'detail-head' },
       h('input', { class: 'page-name', value: flow.name, maxlength: 100, oninput: (e) => mutate(() => (flow.name = e.target.value || tr('flows.flow')), { coalesce: `${flow.id}:name`, detail: false }) }),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn primary small', onclick: () => testActions(flow.actions, flow.name) }, tr('flows.run')),
+      h('button', { class: 'btn primary small', title: tr('flows.runWithDefaults'), onclick: () => testActions(flow.actions, flow.name, { flowId: flow.id }) }, tr('flows.run')),
       h('button', { class: 'btn ghost danger small', onclick: () => deleteFlow(flow) }, tr('common.delete'))),
     h('p', { class: 'hint-text' }, used.length ? tr('flows.usedBy', [used.join(', ')]) : tr('flows.notUsedAnywhereYet')),
     inputsEditor(flow),

@@ -68,11 +68,11 @@ export function triggerSummary(t) {
 
 // ---------- Testen ----------
 
-export async function testActions(actions, label, { buttonId } = {}) {
+export async function testActions(actions, label, { buttonId, flowId } = {}) {
   if (!actions.length) return toast(tr('actions.noActionsToTest'), 'error');
   await save();
   try {
-    const r = await api('POST', '/api/test-actions', { actions, buttonId });
+    const r = await api('POST', '/api/test-actions', { actions, buttonId, flowId });
     if (!r.ok) return toast(r.error, 'error');
     const extra = [...r.messages];
     if (r.navigate) {
@@ -93,18 +93,20 @@ export async function testActions(actions, label, { buttonId } = {}) {
  */
 export function actionList(owner, key, title, { hint, buttonId, compact = false, context = '' } = {}) {
   const list = owner[key];
+  // In einer Vorlage testen: ihre Eingaben bekommen die Standardwerte.
+  const flowId = S.flows.includes(owner) ? owner.id : undefined;
   const open = (focusId) => openActionEditor(owner, key, context ? `${context} · ${title}` : title, { buttonId, focusId });
   return h('div', { class: `action-section${compact ? ' compact' : ''}` },
     h('div', { class: 'list-title' },
       h('h3', {}, title),
-      list.length > 0 && h('button', { class: 'btn small ghost', title: tr('actions.runTheseActionsNow'), onclick: () => testActions(list, title, { buttonId }) }, '▶'),
+      list.length > 0 && h('button', { class: 'btn small ghost', title: tr('actions.runTheseActionsNow'), onclick: () => testActions(list, title, { buttonId, flowId }) }, '▶'),
       h('button', { class: 'btn small', onclick: () => open() }, compact && list.length ? tr('actions.edit') : tr('actions.action'))),
     hint && h('p', { class: 'hint-text' }, hint),
     !list.length
       ? h('button', { type: 'button', class: 'empty-drop', onclick: () => open() }, tr('actions.addFirstAction'))
       : compact
         ? h('div', { class: 'action-mini-list' }, list.map((a, i, all) => miniRow(a, () => open(a.id), blockDepths(all)[i])))
-        : flowList(list, buttonId));
+        : flowList(list, buttonId, flowId));
 }
 
 /** Kurze Zeile für die Übersicht: Klick öffnet den Editor mit dieser Aktion. */
@@ -119,9 +121,9 @@ function miniRow(a, onOpen, depth = 0) {
 let drag = null;
 
 /** Bearbeitbare Liste mit Ziehen zum Sortieren und Ablegen neuer Aktionen. */
-function flowList(list, buttonId) {
+function flowList(list, buttonId, flowId) {
   const depths = blockDepths(list);
-  const box = h('div', { class: 'action-list flow-list' }, list.map((a, i) => actionCard(list, a, i, buttonId, depths[i])));
+  const box = h('div', { class: 'action-list flow-list' }, list.map((a, i) => actionCard(list, a, i, buttonId, depths[i], flowId)));
   const marker = h('div', { class: 'drop-marker' });
   const indexAt = (y) => {
     const cards = [...box.querySelectorAll(':scope > .action-card')];
@@ -156,7 +158,7 @@ function flowList(list, buttonId) {
   return box;
 }
 
-function actionCard(list, a, i, buttonId, depth = 0) {
+function actionCard(list, a, i, buttonId, depth = 0, flowId = undefined) {
   const def = S.typeMap.get(a.type) ?? { label: a.type, icon: '❔', fields: [] };
   const open = S.expanded.has(a.id);
   const sum = h('span', {}, summary(a));
@@ -176,7 +178,7 @@ function actionCard(list, a, i, buttonId, depth = 0) {
   const body = open && h('div', { class: 'action-body' },
     def.fields.filter((f) => fieldVisible(f, a.params, def)).map((f) => fieldInput(f, a, setParam)),
     a.type === 'unsupported' && h('p', { class: 'hint-text' }, tr('actions.thisActionWasImported')),
-    h('button', { class: 'btn small', onclick: () => testActions([{ ...a, enabled: true }], def.label, { buttonId }) }, tr('actions.testOnlyThisAction')));
+    h('button', { class: 'btn small', onclick: () => testActions([{ ...a, enabled: true }], def.label, { buttonId, flowId }) }, tr('actions.testOnlyThisAction')));
 
   const card = h('div', { class: `action-card${a.enabled ? '' : ' disabled'}${a.type === 'unsupported' ? ' unsupported' : ''}${a.type === 'comment' ? ' comment' : ''}${open ? ' open' : ''}${blockClass(a)}`, 'data-id': a.id, style: depth ? `margin-left: ${depth * 22}px` : null },
     h('div', { class: 'action-head', onclick: () => { open ? S.expanded.delete(a.id) : S.expanded.add(a.id); refresh(); } },
@@ -458,7 +460,7 @@ function editorDialog() {
     h('div', { class: 'ae-head' },
       h('div', {}, h('h2', { id: 'ae-title' }), h('p', { class: 'hint-text' }, tr('actions.clickActionOnLeft'))),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn', id: 'ae-test', onclick: () => ed && testActions(ed.owner[ed.key], ed.title, { buttonId: ed.buttonId }) }, tr('actions.testFlow')),
+      h('button', { class: 'btn', id: 'ae-test', onclick: () => ed && testActions(ed.owner[ed.key], ed.title, { buttonId: ed.buttonId, flowId: S.flows.includes(ed.owner) ? ed.owner.id : undefined }) }, tr('actions.testFlow')),
       h('button', { class: 'btn primary', onclick: () => dlg.close() }, tr('common.done'))),
     h('div', { class: 'ae-body' },
       h('aside', { class: 'ae-nav' },
@@ -562,7 +564,7 @@ function renderFlow() {
   const list = ed.owner[ed.key];
   document.getElementById('ae-count').textContent = list.length === 1 ? tr('actions.oneAction') : tr('actions.actions', [list.length]);
   document.getElementById('ae-test').disabled = !list.length;
-  const flow = flowList(list, ed.buttonId);
+  const flow = flowList(list, ed.buttonId, S.flows.includes(ed.owner) ? ed.owner.id : undefined);
   if (!list.length) flow.append(h('div', { class: 'ae-empty' }, h('div', { class: 'empty-icon' }, '⬅️'), h('p', {}, tr('actions.clickActionOnLeft2'))));
   document.getElementById('ae-flow').replaceChildren(flow);
 }

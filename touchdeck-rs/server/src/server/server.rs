@@ -278,7 +278,11 @@ impl App {
 
 /** Aktionen ausführen und Fehler protokollieren. */
 async fn run(app: &Arc<App>, actions: &[Action], button_id: Option<String>, source: &str) -> Value {
-    let r = run_actions(app, actions, RunOpts { button_id, ..Default::default() }).await;
+    run_with(app, actions, RunOpts { button_id, ..Default::default() }, source).await
+}
+
+async fn run_with(app: &Arc<App>, actions: &[Action], opts: RunOpts, source: &str) -> Value {
+    let r = run_actions(app, actions, opts).await;
     if r["ok"] != true {
         let prefix = if source.is_empty() { String::new() } else { format!("{source}: ") };
         app.log.error(t!("server.action"), format!("{prefix}{}", r["error"].as_str().unwrap_or("")));
@@ -619,7 +623,16 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "POST /api/press" => Ok(press(app, str_of(&body, "pageId"), str_of(&body, "buttonId"), body["double"] == true).await),
         "POST /api/test-actions" => {
             let actions = action_list(&body["actions"]);
-            Ok(run(app, &actions, body["buttonId"].as_str().map(String::from), "Test").await)
+            // Test aus einer Vorlage: deren Eingaben mit den Standardwerten belegen ({Eingabe.Name}).
+            let mut event_data = serde_json::Map::new();
+            if let Some(flow) = body["flowId"].as_str().and_then(|id| app.store.lock().unwrap().config.flows.iter().find(|f| f.id == id).cloned()) {
+                for input in &flow.inputs {
+                    for prefix in ["Eingabe", "Input"] {
+                        event_data.insert(format!("{prefix}.{}", input.name), json!(input.default));
+                    }
+                }
+            }
+            Ok(run_with(app, &actions, RunOpts { button_id: body["buttonId"].as_str().map(String::from), event_data, ..Default::default() }, "Test").await)
         }
 
         // Werte

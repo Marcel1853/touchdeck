@@ -162,6 +162,8 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - „Ausführen“ im Vorlagen-Editor (und das Testen einzelner Aktionen darin) belegt die Eingaben
+      mit ihren Standardwerten, {Eingabe.Name} ist dann nicht mehr leer.
     - Der Testmodus lädt Plugins auch aus ZIP-Dateien (Pfad oder „ZIP-Datei wählen …“), mit oder
       ohne Hauptordner im ZIP.
     - Profile, Icon-Pakete und Sicherungen lassen sich im Programmfenster exportieren: die Datei

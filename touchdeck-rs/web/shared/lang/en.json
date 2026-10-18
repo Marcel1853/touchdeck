@@ -420,6 +420,7 @@
     "notUsedAnywhereYet": "Not used anywhere yet. Add “Run flow” to a button or event.",
     "placeholderPrefix": "Input",
     "run": "▶ Run",
+    "runWithDefaults": "Run now – inputs get their default values",
     "usedBy": "Used by: {0}"
   },
   "events": {
