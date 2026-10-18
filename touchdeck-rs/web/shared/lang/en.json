@@ -141,6 +141,9 @@
     "del": "Del",
     "deleteButton": "Delete button",
     "deletePageWithButtons": "Delete page “{0}” with {1} buttons?",
+    "deletePagesText": "{0}\n\nThis deletes {1} buttons. Undo with Ctrl+Z.",
+    "deletePagesTitle": "Delete {0} page(s)?",
+    "deleteSelected": "Delete {0} pages",
     "deselectHint": "Deselect (Esc) – shows the page settings",
     "disk": "Disk",
     "display": "Display",
@@ -158,6 +161,7 @@
     "exampleUptimeP": "e.g. uptime -p",
     "exportAllPages": "Export all pages (.tdprofile)",
     "exportImport": "Export / import",
+    "exportSelected": "Export {0} pages (.tdprofile)",
     "exportThisPage": "Export “{0}” (.tdprofile)",
     "firstLineOfOutput": "The first line of the output is shown (refreshed every 5 seconds).",
     "folder": "Folder",
@@ -200,6 +204,7 @@
     "importProfile": "Import profile (.tdprofile) …",
     "isNowStartPage": "“{0}” is now the start page.",
     "italic": "Italic",
+    "keepOnePage": "At least one page has to stay.",
     "labelPosition": "Label position",
     "labelShowsValue": "Label ({Value} shows a value)",
     "labelWhenOnEmpty": "Label when on (empty = same as normal)",
@@ -445,6 +450,9 @@
     "buttonOrEventCalls": "A button or event calls them with “Logic › Run flow” – also several times in a row (repeat).",
     "createFirstFlow": "＋ Create first flow",
     "deleteFlow": "Delete flow “{0}”?",
+    "deleteFlowsTitle": "Delete {0} flow(s)?",
+    "deleteSelected": "Delete {0} flows",
+    "deleted": "{0} deleted.",
     "flow": "Flow",
     "flowsAreActionLists": "Flows are action lists you build once and reuse everywhere.",
     "inputDefault": "Default value (if the call leaves it empty)",
@@ -459,6 +467,7 @@
     "placeholderPrefix": "Input",
     "run": "▶ Run",
     "runWithDefaults": "Run now – inputs get their default values",
+    "stillUsed": "Still used by:",
     "usedBy": "Used by: {0}"
   },
   "events": {
@@ -478,6 +487,7 @@
     "allFolders": "All folders",
     "createOneOrUse": "Create one or use “Set value” in an action – it then shows up here.",
     "currentContent": "Current content",
+    "deleteFolderValues": "Delete folder “{0}” with {1} values? Undo with Ctrl+Z.",
     "description": "Description",
     "empty": "(empty)",
     "event": "{0} (event)",
@@ -822,5 +832,16 @@
     "noEntries": "No entries.",
     "problemsOnly": "Problems only",
     "warning": "Warning"
+  },
+  "folders": {
+    "deleteWithContents": "Delete folder with contents ({0})",
+    "dissolve": "Dissolve folder (contents stay)",
+    "folderName": "Folder name:",
+    "itemHint": "Ctrl+click or Shift+click selects several · drag to sort or move into a folder",
+    "moveToFolder": "Move to folder",
+    "newFolder": "New folder",
+    "noFolder": "No folder",
+    "rename": "Rename folder",
+    "selectAll": "Select everything in the folder"
   }
 }

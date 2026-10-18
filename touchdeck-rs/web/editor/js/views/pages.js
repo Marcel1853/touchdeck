@@ -4,6 +4,7 @@ import { buttonElement, setupGrid, iconUrl, isFree } from '/shared/render.js';
 import { $, h, api, toast, ask, uid, segmented, setIfChanged, empty, prefs, contextMenu, saveFile, prompt } from '../dom.js';
 import { S, page, sel, mutate, render, save, pushUndo } from '../state.js';
 import { iconPicker, readDataUrl } from './iconpacks.js';
+import { renderFolderList, moveToFolderItem, addFolder, clearSelection } from '../folders.js';
 import { actionList, testActions, dynamicSelect, triggerEditor, newTrigger, triggerSummary } from '../actions-ui.js';
 
 const EMOJIS = '⏯️ ⏮️ ⏭️ ⏹️ 🔊 🔉 🔇 🎙️ 🎧 🎵 🎬 📷 🎥 🖥️ 💻 ⌨️ 🖱️ 📁 📂 📄 📝 🌐 🔍 ⚙️ 🔧 🔒 🔓 💡 🔔 💬 📧 📅 ⏰ ⏱️ 🚀 🎮 🕹️ 🏠 ⬅️ ➡️ ⬆️ ⬇️ ↩️ 🔄 ✅ ❌ ⭐ ❤️ 🔥 ⚡ 🌙 ☀️ 🎨 ✂️ 📋 🗑️ 💾 📤 📥 🔴 🟢 🔵 🟡'.split(' ');
@@ -97,6 +98,7 @@ export function mountPages(root) {
             const r = e.currentTarget.getBoundingClientRect();
             profileMenu(r.left, r.bottom + 4, page());
           } }, '⋯'),
+          h('button', { class: 'btn small ghost', title: tr('folders.newFolder'), onclick: () => addFolder('pages') }, '📁'),
           h('button', { class: 'btn small', title: tr('pages.newPage'), onclick: addPage }, '＋'))),
       h('ul', { id: 'page-list', class: 'page-list' }),
       h('div', { class: `templates${prefs.get('touchdeck.templatesOpen') === '1' ? '' : ' collapsed'}` },
@@ -147,39 +149,17 @@ export function renderPages({ detail = true } = {}) {
 }
 
 function renderPageList() {
-  let dragFrom = null;
-  $('#page-list').replaceChildren(...S.pages.map((p, i) => h('li', {
-    class: p.id === S.pageId ? 'active' : '',
-    draggable: 'true',
-    title: tr('pages.dragToReorder'),
-    onclick: () => selectPage(p.id),
-    oncontextmenu: (e) => {
-      e.preventDefault();
-      pageMenu(e.clientX, e.clientY, p);
-    },
-    ondragstart: (e) => {
-      dragFrom = i;
-      e.dataTransfer.setData('text/x-page', String(i));
-    },
-    ondragover: (e) => {
-      if (!e.dataTransfer.types.includes('text/x-page')) return;
-      e.preventDefault();
-      e.currentTarget.classList.add('drag-over');
-    },
-    ondragleave: (e) => e.currentTarget.classList.remove('drag-over'),
-    ondrop: (e) => {
-      e.preventDefault();
-      const from = Number(e.dataTransfer.getData('text/x-page') || dragFrom);
-      if (from === i) return render({ detail: false });
-      mutate(() => {
-        const [moved] = S.pages.splice(from, 1);
-        S.pages.splice(i, 0, moved);
-      }, { detail: false });
-    },
-  },
-  h('span', { class: 'name' }, p.name),
-  p.id === S.settings.startPage && h('span', { class: 'badge' }, tr('pages.start')),
-  h('span', { class: 'count' }, String(p.buttons.length)))));
+  renderFolderList($('#page-list'), {
+    kind: 'pages',
+    items: S.pages,
+    activeId: S.pageId,
+    open: (p) => selectPage(p.id),
+    row: (p) => [h('span', { class: 'name' }, p.name),
+      p.id === S.settings.startPage && h('span', { class: 'badge' }, tr('pages.start')),
+      h('span', { class: 'count' }, String(p.buttons.length))],
+    menu: (items, x, y) => pageMenu(x, y, items),
+    deleteItems: (items) => deletePages(items),
+  });
 }
 
 function renderTemplateState() {
@@ -504,8 +484,17 @@ async function applyImport(request) {
   }
 }
 
-/** Rechtsklick auf eine Seite in der Liste: Seite bearbeiten, dann Export/Import. */
-function pageMenu(x, y, p) {
+/** Rechtsklick auf eine oder mehrere Seiten in der Liste. */
+function pageMenu(x, y, items) {
+  if (items.length > 1) {
+    return contextMenu(x, y, [
+      moveToFolderItem('pages', S.pages, items),
+      { icon: '📤', label: tr('pages.exportSelected', [items.length]), onclick: () => exportProfile(items, 'TouchDeck') },
+      '-',
+      { icon: '🗑', label: tr('pages.deleteSelected', [items.length]), danger: true, disabled: items.length >= S.pages.length, onclick: () => deletePages(items) },
+    ]);
+  }
+  const p = items[0];
   const i = S.pages.indexOf(p);
   contextMenu(x, y, [
     p.id !== S.pageId && { icon: '📂', label: tr('pages.openPage'), onclick: () => selectPage(p.id) },
@@ -514,6 +503,7 @@ function pageMenu(x, y, p) {
     { icon: '⭐', label: tr('pages.makeStartPage'), disabled: p.id === S.settings.startPage, onclick: () => setStartPage(p) },
     { icon: '↑', label: tr('pages.moveUp'), disabled: i === 0, onclick: () => movePage(p, -1) },
     { icon: '↓', label: tr('pages.moveDown'), disabled: i === S.pages.length - 1, onclick: () => movePage(p, 1) },
+    moveToFolderItem('pages', S.pages, [p]),
     '-',
     ...profileItems(p),
     '-',
@@ -673,6 +663,28 @@ function deletePage(p = page()) {
       S.selId = null;
     }
   });
+}
+
+/** Mehrere Seiten auf einmal löschen (mindestens eine Seite bleibt). */
+async function deletePages(list) {
+  if (list.length >= S.pages.length) {
+    toast(tr('pages.keepOnePage'), 'error');
+    return false;
+  }
+  const buttons = list.reduce((n, p) => n + p.buttons.length, 0);
+  const r = await ask(tr('pages.deletePagesTitle', [list.length]), tr('pages.deletePagesText', [list.map((p) => p.name).join(', '), buttons]),
+    [{ value: 'delete', label: tr('common.delete'), kind: 'danger' }]);
+  if (r !== 'delete') return false;
+  const ids = new Set(list.map((p) => p.id));
+  mutate(() => {
+    S.pages = S.pages.filter((p) => !ids.has(p.id));
+    if (ids.has(S.pageId)) {
+      S.pageId = S.pages[0].id;
+      S.selId = null;
+    }
+  });
+  clearSelection('pages');
+  return true;
 }
 
 async function renamePage(p) {

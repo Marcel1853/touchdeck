@@ -1,6 +1,6 @@
 // Bereich „Werte“: eigene Variablen mit aktuellem Inhalt, Startwert, Ordner und Verwendungen.
 import { t as tr } from '/shared/i18n.js';
-import { h, api, toast, prompt, empty } from '../dom.js';
+import { h, api, toast, prompt, empty, contextMenu } from '../dom.js';
 import { S, mutate, render } from '../state.js';
 
 const NAME = /^[\p{L}\p{N} _.-]{1,40}$/u;
@@ -109,6 +109,46 @@ async function deleteValue(name) {
   render();
 }
 
+/** Rechtsklick auf einen Wert: umbenennen, in Ordner verschieben, löschen. */
+function valueMenu(name, x, y, folders) {
+  const m = meta(name);
+  const move = (f) => editMeta(name, { folder: f });
+  contextMenu(x, y, [
+    { icon: '✏️', label: tr('values.rename'), onclick: () => renameValue(name) },
+    { icon: '📁', label: tr('folders.moveToFolder'), submenu: [
+      ...folders.map((f) => ({ icon: '📁', label: f, disabled: m.folder === f, onclick: () => move(f) })),
+      { icon: '＋', label: tr('folders.newFolder'), onclick: async () => {
+        const f = (await prompt(tr('folders.newFolder'), tr('folders.folderName')))?.slice(0, 60).trim();
+        if (f) move(f);
+      } },
+      '-',
+      { icon: '↩', label: tr('folders.noFolder'), disabled: !m.folder, onclick: () => move('') },
+    ] },
+    '-',
+    { icon: '🗑', label: tr('common.delete'), danger: true, onclick: () => deleteValue(name) },
+  ]);
+}
+
+/** Rechtsklick auf einen Ordner der Werte: umbenennen, auflösen oder samt Werten löschen. */
+function valueFolderMenu(f, list, x, y) {
+  contextMenu(x, y, [
+    { icon: '✏️', label: tr('folders.rename'), onclick: async () => {
+      const name = (await prompt(tr('folders.rename'), tr('folders.folderName'), f))?.slice(0, 60).trim();
+      if (name && name !== f) mutate(() => list.forEach((n) => (S.values[n] = { ...meta(n), folder: name })));
+    } },
+    '-',
+    { icon: '📤', label: tr('folders.dissolve'), onclick: () => mutate(() => list.forEach((n) => (S.values[n] = { ...meta(n), folder: '' }))) },
+    { icon: '🗑', label: tr('folders.deleteWithContents', [list.length]), danger: true, onclick: async () => {
+      if (!confirm(tr('values.deleteFolderValues', [f, list.length]))) return;
+      mutate(() => list.forEach((n) => delete S.values[n]));
+      for (const n of list) await api('POST', '/api/variables/delete', { name: n }).catch(() => null);
+      const r = await api('GET', '/api/state').catch(() => null);
+      if (r) S.variables = r.variables;
+      render();
+    } },
+  ]);
+}
+
 /** Neuer Ordner: gleich mit dem ersten Wert darin (Ordner gibt es nur, solange Werte darin sind). */
 async function addFolder() {
   const name = await prompt(tr('values.newFolder'), tr('values.folderName'));
@@ -149,7 +189,10 @@ export function renderValues({ detail = true } = {}) {
   const row = (name) => {
     const m = meta(name);
     const used = usages(name);
-    return h('tr', {},
+    return h('tr', { oncontextmenu: (e) => {
+      e.preventDefault();
+      valueMenu(name, e.clientX, e.clientY, folders);
+    } },
       h('td', {}, h('button', { class: 'linklike', title: tr('values.rename'), onclick: () => renameValue(name) }, name)),
       h('td', {}, h('input', { value: S.variables[name] ?? '', placeholder: tr('values.empty'), onchange: (e) => setCurrent(name, e.target.value) })),
       h('td', {}, h('input', { value: m.default, placeholder: tr('values.empty'), oninput: (e) => editMeta(name, { default: e.target.value }, { detail: false }) })),
@@ -163,7 +206,10 @@ export function renderValues({ detail = true } = {}) {
   // Gruppen: erst die Ordner (alphabetisch), dann die Werte ohne Ordner.
   const groups = [...folders.filter((f) => shown.some((n) => meta(n).folder === f)).map((f) => [f, shown.filter((n) => meta(n).folder === f)]),
     ['', shown.filter((n) => !meta(n).folder)]].filter(([, list]) => list.length);
-  const head = (f, list) => h('tr', { class: 'folder-row' }, h('td', { colspan: 8 },
+  const head = (f, list) => h('tr', { class: 'folder-row', oncontextmenu: (e) => {
+    e.preventDefault();
+    if (f) valueFolderMenu(f, list, e.clientX, e.clientY);
+  } }, h('td', { colspan: 8 },
     h('button', { class: 'linklike folder-toggle', onclick: () => { collapsed.has(f) ? collapsed.delete(f) : collapsed.add(f); render(); } },
       `${collapsed.has(f) ? '▸' : '▾'} ${f ? `📁 ${f}` : tr('values.noFolder')} (${list.length})`),
     h('button', { class: 'btn small ghost', title: tr('values.addToFolder'), onclick: () => addValue(f) }, '＋')));

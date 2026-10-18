@@ -1,6 +1,7 @@
 // Bereich „Vorlagen“: wiederverwendbare Aktionslisten, die Buttons und Events mit „Vorlage ausführen“ aufrufen.
 import { t as tr } from '/shared/i18n.js';
-import { h, uid, prompt, empty } from '../dom.js';
+import { h, uid, prompt, empty, ask, contextMenu, toast } from '../dom.js';
+import { renderFolderList, moveToFolderItem, addFolder, clearSelection } from '../folders.js';
 import { S, mutate, render } from '../state.js';
 import { actionList, testActions } from '../actions-ui.js';
 
@@ -29,6 +30,42 @@ async function addFlow() {
   });
 }
 
+/** Rechtsklick auf eine oder mehrere Vorlagen. */
+function flowMenu(items, x, y) {
+  const one = items.length === 1 ? items[0] : null;
+  contextMenu(x, y, [
+    one && { icon: '📂', label: tr('pages.openPage'), onclick: () => { S.flowId = one.id; render(); } },
+    one && { icon: '✏️', label: tr('pages.renamePage'), onclick: async () => {
+      const name = await prompt(tr('pages.renamePage'), tr('flows.nameOfFlowStart'), one.name);
+      if (name) mutate(() => (one.name = name.slice(0, 100)));
+    } },
+    one && { icon: '⧉', label: tr('common.duplicate'), onclick: () => mutate(() => {
+      const copy = { ...structuredClone(one), id: uid('f_'), name: tr('pages.copy2', [one.name]) };
+      S.flows.splice(S.flows.indexOf(one) + 1, 0, copy);
+      S.flowId = copy.id;
+    }) },
+    moveToFolderItem('flows', S.flows, items),
+    '-',
+    { icon: '🗑', label: one ? tr('common.delete') : tr('flows.deleteSelected', [items.length]), danger: true, onclick: () => deleteFlows(items) },
+  ]);
+}
+
+/** Mehrere Vorlagen löschen; benutzte werden genannt. */
+async function deleteFlows(list) {
+  const used = list.flatMap((f) => usages(f.id).map((u) => `${f.name}: ${u}`));
+  const r = await ask(tr('flows.deleteFlowsTitle', [list.length]), [list.map((f) => f.name).join(', '), used.length ? `\n\n${tr('flows.stillUsed')}\n${used.slice(0, 10).join('\n')}` : ''].join(''),
+    [{ value: 'delete', label: tr('common.delete'), kind: 'danger' }]);
+  if (r !== 'delete') return false;
+  const ids = new Set(list.map((f) => f.id));
+  mutate(() => {
+    S.flows = S.flows.filter((f) => !ids.has(f.id));
+    if (ids.has(S.flowId)) S.flowId = S.flows[0]?.id ?? null;
+  });
+  clearSelection('flows');
+  toast(tr('flows.deleted', [list.length]), 'ok');
+  return true;
+}
+
 function deleteFlow(flow) {
   const used = usages(flow.id);
   if (!confirm(used.length ? tr('flows.isStillUsedBy', [flow.name, used.join('\n')]) : tr('flows.deleteFlow', [flow.name]))) return;
@@ -42,7 +79,10 @@ export function mountFlows(root) {
   root.className = 'view view-master';
   root.replaceChildren(
     h('aside', { class: 'sidebar' },
-      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.flows')), h('button', { class: 'btn small', title: tr('flows.newFlow'), onclick: addFlow }, '＋')),
+      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.flows')),
+        h('div', { class: 'head-buttons' },
+          h('button', { class: 'btn small ghost', title: tr('folders.newFolder'), onclick: () => addFolder('flows') }, '📁'),
+          h('button', { class: 'btn small', title: tr('flows.newFlow'), onclick: addFlow }, '＋'))),
       h('ul', { id: 'flow-list', class: 'page-list' })),
     h('section', { id: 'flow-detail', class: 'detail' }),
   );
@@ -51,8 +91,15 @@ export function mountFlows(root) {
 export function renderFlows({ detail = true } = {}) {
   const flow = S.flows.find((f) => f.id === S.flowId) ?? S.flows[0];
   S.flowId = flow?.id ?? null;
-  document.getElementById('flow-list').replaceChildren(...S.flows.map((f) => h('li', { class: f === flow ? 'active' : '', onclick: () => { S.flowId = f.id; S.expanded.clear(); render(); } },
-    h('span', { class: 'name' }, f.name), h('span', { class: 'count' }, String(f.actions.length)))));
+  renderFolderList(document.getElementById('flow-list'), {
+    kind: 'flows',
+    items: S.flows,
+    activeId: flow?.id,
+    open: (f) => { S.flowId = f.id; S.expanded.clear(); render(); },
+    row: (f) => [h('span', { class: 'name' }, f.name), h('span', { class: 'count' }, String(f.actions.length))],
+    menu: (items, x, y) => flowMenu(items, x, y),
+    deleteItems: (items) => deleteFlows(items),
+  });
   if (!detail) return;
   const root = document.getElementById('flow-detail');
   if (!flow) {

@@ -9,6 +9,13 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - Folders for pages and flows: create your own folders (also empty ones), collapse them, move
+      pages and flows into them by dragging or right-click › "Move to folder"; right-click on a
+      folder renames it, dissolves it (contents stay) or deletes it with its contents.
+    - Several pages or flows at once: Ctrl+click or Shift+click selects several, right-click deletes,
+      moves or (pages) exports them together.
+    - Values: right-click on a value (rename, move to folder, delete) and on a folder (rename,
+      dissolve, delete with values).
     - Right-click on a page in the page list: open, rename, duplicate, make start page, move up/down
       and delete, besides export and import.
     - Graphs with several data series: add more sources (each with name and colour) or let a plugin

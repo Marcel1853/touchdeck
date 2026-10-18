@@ -141,6 +141,9 @@
     "del": "Entf",
     "deleteButton": "Button löschen",
     "deletePageWithButtons": "Seite „{0}“ mit {1} Buttons löschen?",
+    "deletePagesText": "{0}\n\nDabei werden {1} Buttons gelöscht. Rückgängig geht mit Strg+Z.",
+    "deletePagesTitle": "{0} Seite(n) löschen?",
+    "deleteSelected": "{0} Seiten löschen",
     "deselectHint": "Auswahl aufheben (Esc) – zeigt die Seiten-Einstellungen",
     "disk": "Festplatte",
     "display": "Anzeige",
@@ -158,6 +161,7 @@
     "exampleUptimeP": "z. B. uptime -p",
     "exportAllPages": "Alle Seiten exportieren (.tdprofile)",
     "exportImport": "Exportieren / Importieren",
+    "exportSelected": "{0} Seiten exportieren (.tdprofile)",
     "exportThisPage": "„{0}“ exportieren (.tdprofile)",
     "firstLineOfOutput": "Die erste Zeile der Ausgabe wird angezeigt (alle 5 Sekunden neu).",
     "folder": "Ordner",
@@ -200,6 +204,7 @@
     "importProfile": "Profil importieren (.tdprofile) …",
     "isNowStartPage": "„{0}“ ist jetzt die Startseite.",
     "italic": "Kursiv",
+    "keepOnePage": "Mindestens eine Seite muss bleiben.",
     "labelPosition": "Position der Beschriftung",
     "labelShowsValue": "Beschriftung ({Wert} zeigt einen Wert an)",
     "labelWhenOnEmpty": "Beschriftung wenn an (leer = wie normal)",
@@ -445,6 +450,9 @@
     "buttonOrEventCalls": "Ein Button oder Event ruft sie mit „Logik › Vorlage ausführen“ auf – auch mehrfach hintereinander (Wiederholen).",
     "createFirstFlow": "＋ Erste Vorlage anlegen",
     "deleteFlow": "Vorlage „{0}“ löschen?",
+    "deleteFlowsTitle": "{0} Vorlage(n) löschen?",
+    "deleteSelected": "{0} Vorlagen löschen",
+    "deleted": "{0} gelöscht.",
     "flow": "Vorlage",
     "flowsAreActionLists": "Vorlagen sind Aktionslisten, die du einmal baust und überall wiederverwendest.",
     "inputDefault": "Standardwert (wenn der Aufruf nichts angibt)",
@@ -459,6 +467,7 @@
     "placeholderPrefix": "Eingabe",
     "run": "▶ Ausführen",
     "runWithDefaults": "Jetzt ausführen – Eingaben bekommen ihre Standardwerte",
+    "stillUsed": "Noch benutzt von:",
     "usedBy": "Benutzt von: {0}"
   },
   "events": {
@@ -478,6 +487,7 @@
     "allFolders": "Alle Ordner",
     "createOneOrUse": "Lege einen an oder benutze in einer Aktion „Wert setzen“ – er erscheint dann hier.",
     "currentContent": "Aktueller Inhalt",
+    "deleteFolderValues": "Ordner „{0}“ mit {1} Werten löschen? Rückgängig geht mit Strg+Z.",
     "description": "Beschreibung",
     "empty": "(leer)",
     "event": "{0} (Event)",
@@ -822,5 +832,16 @@
     "noEntries": "Keine Einträge.",
     "problemsOnly": "Nur Probleme",
     "warning": "Warnung"
+  },
+  "folders": {
+    "deleteWithContents": "Ordner samt Inhalt löschen ({0})",
+    "dissolve": "Ordner auflösen (Inhalt bleibt)",
+    "folderName": "Name des Ordners:",
+    "itemHint": "Strg+Klick oder Shift+Klick wählt mehrere aus · Ziehen sortiert oder schiebt in einen Ordner",
+    "moveToFolder": "In Ordner verschieben",
+    "newFolder": "Neuer Ordner",
+    "noFolder": "Ohne Ordner",
+    "rename": "Ordner umbenennen",
+    "selectAll": "Alles im Ordner auswählen"
   }
 }

@@ -660,3 +660,10 @@ button.status-chip:hover { color: var(--text); }
 .markdown a { color: var(--accent); }
 .series-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
 .series-row select, .series-row input:not([type=color]) { flex: 1 1 110px; min-width: 0; }
+/* Ordner in Seiten- und Vorlagenliste */
+.page-list li.folder-head { font-weight: 700; gap: 6px; color: var(--text); }
+.page-list li.folder-head .chevron { width: 1em; opacity: 0.7; }
+.page-list li.in-folder { padding-left: 28px; }
+.page-list li.selected { background: color-mix(in srgb, var(--accent) 22%, transparent); outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); }
+.page-list li.drag-over { outline: 2px dashed var(--accent); }
+.head-buttons { display: flex; gap: 6px; }

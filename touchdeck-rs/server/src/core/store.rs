@@ -296,6 +296,8 @@ pub struct Page {
     pub background: String,
     /// Woher die Seite stammt, damit Vorlagen sie wiederfinden statt doppelt anzulegen.
     pub template: String,
+    /// Ordner in der Seitenliste des Editors ("" = keiner).
+    pub folder: String,
     /// grid: Buttons im Raster; free: Buttons frei auf einer Fläche mit Seitenverhältnis ratio_w:ratio_h.
     pub layout: String,
     pub ratio_w: i64,
@@ -313,6 +315,8 @@ pub struct Page {
 pub struct Flow {
     pub id: String,
     pub name: String,
+    /// Ordner in der Liste der Vorlagen ("" = keiner).
+    pub folder: String,
     /** Eingaben, die „Vorlage ausführen“ mitgibt; im Ablauf als {Eingabe.Name}. */
     pub inputs: Vec<FlowInput>,
     pub actions: Vec<Action>,
@@ -550,6 +554,7 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
         cols,
         background: color(&p["background"], "#14161b"),
         template: one_of(&p["template"], &TEMPLATES, ""),
+        folder: folder_name(&p["folder"]),
         layout,
         ratio_w: clamp(&p["ratioW"], 1, 32, 16),
         ratio_h: clamp(&p["ratioH"], 1, 32, 10),
@@ -581,6 +586,26 @@ pub fn sanitize_page(p: &Value) -> Option<Page> {
     Some(page)
 }
 
+/** Name eines Ordners: höchstens 60 Zeichen, ohne Zeilenumbrüche. */
+fn folder_name(v: &Value) -> String {
+    v.as_str().unwrap_or("").chars().filter(|c| !c.is_control()).take(60).collect::<String>().trim().to_string()
+}
+
+/** Eigene Ordner (auch leere) für Seiten und Vorlagen: { pages: [...], flows: [...] }. */
+pub fn sanitize_folders(v: &Value) -> Value {
+    let list = |k: &str| {
+        let mut out: Vec<String> = Vec::new();
+        for f in v[k].as_array().into_iter().flatten().take(100) {
+            let name = folder_name(f);
+            if !name.is_empty() && !out.contains(&name) {
+                out.push(name);
+            }
+        }
+        out
+    };
+    json!({ "pages": list("pages"), "flows": list("flows") })
+}
+
 fn sanitize_flow(f: &Value) -> Option<Flow> {
     f.as_object()?;
     let mut inputs: Vec<FlowInput> = Vec::new();
@@ -590,7 +615,7 @@ fn sanitize_flow(f: &Value) -> Option<Flow> {
             inputs.push(FlowInput { name, default: truncate(i["default"].as_str().unwrap_or(""), MAX_TEXT) });
         }
     }
-    Some(Flow { id: id_or_new(&f["id"], "f_"), name: text_or(&f["name"], t!("store.template"), 100), inputs, actions: action_list(&f["actions"]) })
+    Some(Flow { id: id_or_new(&f["id"], "f_"), name: text_or(&f["name"], t!("store.template"), 100), folder: folder_name(&f["folder"]), inputs, actions: action_list(&f["actions"]) })
 }
 
 fn sanitize_event(e: &Value) -> Option<Event> {
@@ -1036,6 +1061,9 @@ impl Store {
         }
         if body["events"].is_array() {
             cfg.events = list(&body["events"], sanitize_event);
+        }
+        if body["folders"].is_object() {
+            cfg.extra.insert("folders".into(), sanitize_folders(&body["folders"]));
         }
         if body["values"].is_object() {
             cfg.values = sanitize_values(&body["values"]);

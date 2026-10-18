@@ -183,6 +183,7 @@ impl App {
         };
         let extra = json!({
             "flows": store.config.flows,
+            "folders": crate::core::store::sanitize_folders(store.config.extra.get("folders").unwrap_or(&Value::Null)),
             "events": store.config.events,
             "values": store.config.values,
             "settings": store.public_settings(),

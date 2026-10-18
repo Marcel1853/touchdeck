@@ -65,7 +65,7 @@ const redoStack = [];
 let lastCoalesce = null;
 let lastEdit = 0;
 
-const snapshot = () => JSON.stringify({ pages: S.pages, flows: S.flows, events: S.events, values: S.values });
+const snapshot = () => JSON.stringify({ pages: S.pages, flows: S.flows, events: S.events, values: S.values, folders: S.folders });
 function apply(json) {
   Object.assign(S, JSON.parse(json));
   if (!S.pages.some((p) => p.id === S.pageId)) S.pageId = S.pages[0].id;
@@ -123,7 +123,7 @@ export async function save() {
   if (saving) await saving;
   if (!dirty) return;
   dirty = false;
-  saving = api('PUT', '/api/pages', { pages: S.pages, flows: S.flows, events: S.events, values: S.values, revision: S.revision })
+  saving = api('PUT', '/api/pages', { pages: S.pages, flows: S.flows, events: S.events, values: S.values, folders: S.folders, revision: S.revision })
     .then((r) => {
       S.revision = r.revision;
       setSaveState(dirty ? tr('editor.savingShortly') : tr('editor.allChangesSaved'));
@@ -152,7 +152,7 @@ window.addEventListener('beforeunload', (e) => {
 export async function loadState({ keepUndo = false } = {}) {
   const st = await api('GET', '/api/state');
   Object.assign(S, {
-    pages: st.pages, flows: st.flows, events: st.events, values: st.values, variables: st.variables,
+    pages: st.pages, flows: st.flows, events: st.events, values: st.values, variables: st.variables, folders: st.folders ?? { pages: [], flows: [] },
     settings: st.settings, revision: st.revision, version: st.version,
     actionTypes: st.actionTypes, typeMap: new Map(st.actionTypes.map((t) => [t.type, t])),
     triggerTypes: st.triggerTypes, triggerMap: new Map(st.triggerTypes.map((t) => [t.type, t])),
