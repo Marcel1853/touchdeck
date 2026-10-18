@@ -9,6 +9,9 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - Marktplatz: Knopf „Marktplatz neu laden“ holt die Liste frisch von GitHub, neue Plugins
+      erscheinen sofort (kein Neustart nötig).
+    - Menü am Symbol in der Systemleiste: „TouchDeck neu starten“.
     - USB-Verbindung: Einstellungen › Handy & Sicherheit › „Android-Geräte per USB-Kabel verbinden“
       leitet den Port an angeschlossene Geräte mit USB-Debugging weiter („adb reverse“, braucht adb
       am PC); in der App „Per USB-Kabel verbinden“ wählen. Kein WLAN nötig.

@@ -171,6 +171,36 @@ fn launch_command() -> String {
     format!("\"{exe}\" --hidden")
 }
 
+/** Neu starten: dieselbe Datei noch einmal starten (beim AppImage die AppImage-Datei) und dieses Programm beenden. */
+fn restart(app: &AppHandle) {
+    let program = std::env::var_os("APPIMAGE").map(PathBuf::from).or_else(|| std::env::current_exe().ok());
+    let Some(program) = program else { return eprintln!("Neustart: Programmdatei nicht gefunden") };
+    let visible = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
+    let mut cmd = linux::command(&program);
+    cmd.arg(format!("--restart-of={}", std::process::id()));
+    if !visible {
+        cmd.arg("--hidden");
+    }
+    cmd.stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+    if let Err(err) = cmd.spawn() {
+        return eprintln!("Neustart: {err}");
+    }
+    QUITTING.store(true, Ordering::Relaxed);
+    app.exit(0);
+}
+
+/** Beim Neustart: warten, bis das alte Programm beendet ist (Port frei, kein „läuft schon“), höchstens 15 Sekunden. */
+fn wait_for_restart() {
+    let Some(pid) = std::env::args().find_map(|a| a.strip_prefix("--restart-of=").and_then(|p| p.parse::<u32>().ok())) else { return };
+    let proc = PathBuf::from(format!("/proc/{pid}"));
+    for _ in 0..150 {
+        if !proc.exists() {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+}
+
 fn set_autostart(on: bool) -> std::io::Result<()> {
     let file = autostart_file();
     if !on {
@@ -236,8 +266,9 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
     let pair = MenuItem::with_id(app, "pair", t!("desktop.connectPhone"), true, None::<&str>)?;
     let preview = MenuItem::with_id(app, "preview", t!("desktop.openPreview"), true, None::<&str>)?;
     let autostart = CheckMenuItem::with_id(app, "autostart", t!("desktop.startAtLogin"), true, autostart_file().exists(), None::<&str>)?;
+    let restart_item = MenuItem::with_id(app, "restart", t!("desktop.restart"), true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", t!("desktop.quit"), true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&editor, &pair, &preview, &PredefinedMenuItem::separator(app)?, &autostart, &PredefinedMenuItem::separator(app)?, &quit])?;
+    let menu = Menu::with_items(app, &[&editor, &pair, &preview, &PredefinedMenuItem::separator(app)?, &autostart, &PredefinedMenuItem::separator(app)?, &restart_item, &quit])?;
     let check = autostart.clone();
     TrayIconBuilder::with_id("main")
         .icon(Image::from_bytes(include_bytes!("../icons/tray.png"))?)
@@ -257,6 +288,7 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
                 }
                 let _ = check.set_checked(autostart_file().exists());
             }
+            "restart" => restart(app),
             "quit" => {
                 QUITTING.store(true, Ordering::Relaxed);
                 app.exit(0);
@@ -270,6 +302,7 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
 // ---------- Start ----------
 
 fn main() {
+    wait_for_restart();
     let hidden = std::env::args().any(|a| a == "--hidden");
     tauri::Builder::default()
         // Zweiter Start (z. B. Klick im Startmenü, während TouchDeck im Hintergrund läuft): Editor zeigen.

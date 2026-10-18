@@ -651,6 +651,8 @@
     "license2": "License: {0} · ",
     "load": "Load",
     "loadingMarketplace": "Loading marketplace …",
+    "reloadMarket": "Reload marketplace",
+    "reloadMarketHint": "Fetch the list fresh from GitHub (new plugins show up right away, no restart)",
     "marketplace": "Marketplace",
     "noDescription": "No description.",
     "noPluginsInstalledYet": "No plugins installed yet. You find some in the marketplace – or enter a GitHub repo.",

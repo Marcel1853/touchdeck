@@ -207,12 +207,18 @@ function repoInput() {
 }
 
 function marketTab() {
-  if (market === null) {
-    api('GET', '/api/plugins/market').then((r) => (market = r)).catch((err) => (market = { plugins: [], note: err.message })).then(render);
+  if (market === null || market === 'fresh') {
+    const fresh = market === 'fresh';
+    market = 'loading';
+    api('GET', `/api/plugins/market${fresh ? '?fresh=1' : ''}`).then((r) => (market = r)).catch((err) => (market = { plugins: [], note: err.message })).then(render);
+  }
+  if (market === 'loading') {
     return [repoInput(), h('p', { class: 'hint-text' }, tr('plugins.loadingMarketplace'))];
   }
   return [
     repoInput(),
+    h('div', { class: 'market-bar' },
+      h('button', { class: 'btn small', title: tr('plugins.reloadMarketHint'), onclick: () => { market = 'fresh'; render(); } }, `⟳ ${tr('plugins.reloadMarket')}`)),
     market.note && h('p', { class: 'hint-text' }, market.note),
     !market.note && !market.plugins.length && h('p', { class: 'hint-text' }, tr('plugins.thereAreNoPlugins'),
       h('a', { href: wikiPage('Veröffentlichen', 'Publishing'), target: '_blank', rel: 'noopener' }, tr('plugins.pluginWiki')), '.'),

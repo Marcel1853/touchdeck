@@ -364,6 +364,7 @@
     "portInUse": "Port {0} ist schon belegt. Läuft TouchDeck bereits (z. B. die ältere Fassung)? Diese bitte zuerst beenden.",
     "previewTitle": "TouchDeck – Vorschau",
     "quit": "TouchDeck beenden",
+    "restart": "TouchDeck neu starten",
     "running": "TouchDeck läuft auf {0} – Daten: {1}",
     "startAtLogin": "Beim Anmelden starten"
   },

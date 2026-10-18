@@ -9,6 +9,9 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - Marketplace: button "Reload marketplace" fetches the list fresh from GitHub, so new plugins
+      show up right away (no restart).
+    - Tray menu: "Restart TouchDeck".
     - USB connection: Settings › Phone & security › "Connect Android devices via USB cable" forwards
       the port to devices plugged in with USB debugging ("adb reverse", needs adb on the PC); in the
       app choose "Connect via USB cable". No Wi-Fi needed.

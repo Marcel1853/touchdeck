@@ -364,6 +364,7 @@
     "portInUse": "Port {0} is already in use. Is TouchDeck already running (e.g. the older version)? Please quit it first.",
     "previewTitle": "TouchDeck – Preview",
     "quit": "Quit TouchDeck",
+    "restart": "Restart TouchDeck",
     "running": "TouchDeck is running on {0} – data: {1}",
     "startAtLogin": "Start at login"
   },

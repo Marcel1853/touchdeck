@@ -1181,7 +1181,7 @@ impl Plugins {
         let native = is_native(&m);
         // Steht das Plugin im Marktplatz? Sonst zeigt der Editor „auf eigene Gefahr“.
         let full = r.to_string().to_lowercase();
-        let listed = self.market(lang).await.is_ok_and(|v| v["plugins"].as_array().into_iter().flatten().any(|p| p["repo"].as_str().is_some_and(|x| x.to_lowercase() == full)));
+        let listed = self.market(lang, false).await.is_ok_and(|v| v["plugins"].as_array().into_iter().flatten().any(|p| p["repo"].as_str().is_some_and(|x| x.to_lowercase() == full)));
         Ok(json!({ "listed": listed, "repo": r.to_string(), "ref": git_ref, "url": url, "manifest": localize(&m, lang), "permissions": describe_permissions(&m),
             "digest": digest, "native": native, "advanced": self.advanced(), "files": chosen.len() }))
     }
@@ -1386,9 +1386,24 @@ impl Plugins {
         bail!(t!("plugins.noReadme"))
     }
 
-    pub async fn market(&self, lang: &str) -> Result<Value> {
+    /** Neuester Commit des Marktplatz-Repos (ohne Zwischenspeicher); None bei Fehler. */
+    async fn latest_market_commit(&self) -> Option<String> {
+        let res = self.http.get("https://api.github.com/repos/Marcel1853/touchdeck-plugins/commits/main").header("Accept", "application/vnd.github.sha").send().await.ok()?;
+        let sha = res.error_for_status().ok()?.text().await.ok()?;
+        let sha = sha.trim();
+        (sha.len() == 40 && sha.chars().all(|c| c.is_ascii_hexdigit())).then(|| sha.to_string())
+    }
+
+    /** Marktplatz-Liste. `fresh`: am neuesten Commit vorbei am GitHub-Zwischenspeicher (hält die Datei sonst bis zu 5 Minuten). */
+    pub async fn market(&self, lang: &str, fresh: bool) -> Result<Value> {
         let lang = lang.to_string();
-        let url = std::env::var("TOUCHDECK_MARKET").unwrap_or_else(|_| MARKET_URL.into());
+        let mut url = std::env::var("TOUCHDECK_MARKET").unwrap_or_else(|_| MARKET_URL.into());
+        if fresh
+            && url == MARKET_URL
+            && let Some(sha) = self.latest_market_commit().await
+        {
+            url = MARKET_URL.replace("/main/", &format!("/{sha}/"));
+        }
         let res = self.http.get(&url).send().await.map_err(|e| anyhow!(t!("plugins.marketplaceNotReachable", e)))?;
         if res.status().as_u16() == 404 {
             return Ok(json!({ "plugins": [], "note": t!("plugins.marketplaceIsStillEmpty") }));

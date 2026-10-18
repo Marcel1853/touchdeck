@@ -905,7 +905,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             Ok(json!(looks))
         }
         "GET /api/plugins/readme" => app.plugins.readme(query.get("repo").map_or("", String::as_str), &lang(app)).await.map_err(user_error),
-        "GET /api/plugins/market" => app.plugins.market(&lang(app)).await.map_err(user_error),
+        "GET /api/plugins/market" => app.plugins.market(&lang(app), query.contains_key("fresh")).await.map_err(user_error),
         "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo"), &lang(app)).await.map_err(user_error),
         "POST /api/plugins/install" => {
             let id = app.plugins.install(app, str_of(&body, "repo"), str_of(&body, "digest"), body["acceptRisk"] == true).await.map_err(user_error)?;
