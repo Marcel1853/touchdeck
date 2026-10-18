@@ -172,6 +172,24 @@ pub fn show_in_file_manager(path: &Path) {
     }
 }
 
+/**
+ * USB-Verbindung: für jedes per USB angeschlossene Android-Gerät (USB-Debugging an) den Port per
+ * „adb reverse“ auf den PC umleiten – die App verbindet sich dann mit 127.0.0.1. Liefert die Geräte.
+ */
+pub async fn usb_reverse(port: u16) -> Result<Vec<String>> {
+    let list = run("adb", &["devices"]).await?;
+    let devices: Vec<String> = list.lines().skip(1).filter_map(|l| l.split_once('\t')).filter(|(_, st)| st.trim() == "device").map(|(id, _)| id.trim().to_string()).collect();
+    let spec = format!("tcp:{port}");
+    for d in &devices {
+        // Nur einrichten, wenn die Umleitung noch fehlt (adb reverse --list zeigt bestehende).
+        let current = run("adb", &["-s", d, "reverse", "--list"]).await.unwrap_or_default();
+        if !current.lines().any(|l| l.contains(&format!("{spec} {spec}"))) {
+            run("adb", &["-s", d, "reverse", &spec, &spec]).await?;
+        }
+    }
+    Ok(devices)
+}
+
 /** Befehl in der Shell ausführen; wait = auf Ende warten und Ausgabe liefern. */
 pub async fn shell(command: &str, wait: bool, timeout: Duration) -> Result<String> {
     let home = home();

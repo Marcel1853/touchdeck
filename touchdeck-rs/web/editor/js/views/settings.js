@@ -82,6 +82,18 @@ function general() {
   ];
 }
 
+/** Zustand der USB-Verbindung (wird alle paar Sekunden am PC geprüft). */
+function usbStatus() {
+  const box = h('p', { class: 'hint-text' }, tr('common.loading'));
+  api('GET', '/api/usb').then((u) => {
+    if (u.error) {
+      box.classList.add('error');
+      box.textContent = /not installed|nicht installiert|No such file/i.test(u.error) ? tr('settings.usbNoAdb') : u.error;
+    } else box.textContent = u.devices.length ? tr('settings.usbDevices', [u.devices.join(', ')]) : tr('settings.usbNone');
+  }).catch(() => {});
+  return box;
+}
+
 function security() {
   const st = S.settings;
   return [
@@ -109,6 +121,11 @@ function security() {
         h('label', { class: 'field' }, tr('settings.publicHost'),
           h('input', { value: st.publicHost ?? '', placeholder: tr('settings.publicHostAuto'), onchange: (e) => updateSettings({ publicHost: e.target.value.trim() }) }))),
       (st.port ?? 8770) !== S.port && h('p', { class: 'hint-text warn' }, tr('settings.portPending', [S.port, st.port]))),
+    card(
+      h('h3', {}, tr('settings.usb')),
+      check(tr('settings.usbEnable'), !!st.usb, (v) => updateSettings({ usb: v })),
+      h('p', { class: 'hint-text' }, tr('settings.usbHint')),
+      st.usb && usbStatus()),
     card(
       h('h3', {}, 'PIN'),
       h('p', { class: 'hint-text' }, tr('settings.extraProtectionWhoeverSees')),

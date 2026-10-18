@@ -9,6 +9,9 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - USB connection: Settings › Phone & security › "Connect Android devices via USB cable" forwards
+      the port to devices plugged in with USB debugging ("adb reverse", needs adb on the PC); in the
+      app choose "Connect via USB cable". No Wi-Fi needed.
     - Designs from plugins and icon packs: Look › Designs shows them as previews, a click takes over
       colours, font, texture, overlay and slider shape. Plugins can require icon packs, which are
       imported on installation.
@@ -108,6 +111,7 @@ Date: 2026-10-18
   Android app:
     - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser;
       links without a matching app no longer crash the app.
+    - App 0.6.4: new button "Connect via USB cable".
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.0

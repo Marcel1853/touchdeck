@@ -116,6 +116,11 @@ class ConnectActivity : Activity() {
         column.addView(sectionTitle(getString(R.string.or)))
         column.addView(button(getString(R.string.scan_qr)) { scanQr() }, fullWidth())
         column.addView(button(getString(R.string.enter_address)) { manualDialog() }, fullWidth(top = 10))
+        // USB-Kabel: TouchDeck am PC leitet den Port per „adb reverse“ um, die App spricht mit 127.0.0.1.
+        column.addView(button(getString(R.string.connect_usb)) {
+            val usb = prefs.servers.find { it.host == "127.0.0.1" } ?: Server("127.0.0.1", Prefs.DEFAULT_PORT, name = "USB")
+            if (usb.token.isNotEmpty()) connectSaved(usb) else pair(usb)
+        }, fullWidth(top = 10))
         column.addView(text(getString(R.string.where_on_pc), 13f, Ui.MUTED).apply {
             setPadding(0, dp(18), 0, 0)
         })

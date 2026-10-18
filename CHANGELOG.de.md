@@ -9,6 +9,9 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - USB-Verbindung: Einstellungen › Handy & Sicherheit › „Android-Geräte per USB-Kabel verbinden“
+      leitet den Port an angeschlossene Geräte mit USB-Debugging weiter („adb reverse“, braucht adb
+      am PC); in der App „Per USB-Kabel verbinden“ wählen. Kein WLAN nötig.
     - Designs aus Plugins und Icon-Paketen: Aussehen › Designs zeigt sie als Vorschau, ein Klick
       übernimmt Farben, Schrift, Textur, Overlay und Regler-Form. Plugins können Icon-Pakete
       voraussetzen, die beim Installieren importiert werden.
@@ -121,6 +124,7 @@ Datum: 2026-10-18
   Android-App:
     - App 0.6.3: eingebettete Seiten von Webseiten-Buttons bleiben im Button, statt den Browser zu
       öffnen; Links ohne passende App bringen die App nicht mehr zum Absturz.
+    - App 0.6.4: neuer Knopf „Per USB-Kabel verbinden“.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.0

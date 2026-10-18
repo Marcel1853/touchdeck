@@ -42,4 +42,5 @@
     <string name="change_connection">Verbindung ändern</string>
     <string name="pairing_invalid">Die Kopplung mit „%1$s“ gilt nicht mehr (z. B. neuer Schlüssel am PC). Bitte neu verbinden.</string>
     <string name="offline">„%1$s“ ist gerade nicht erreichbar.\nLäuft TouchDeck am PC, und ist das Handy im selben WLAN?\n\nNeuer Versuch in wenigen Sekunden …</string>
+    <string name="connect_usb">🔌  Per USB-Kabel verbinden</string>
 </resources>

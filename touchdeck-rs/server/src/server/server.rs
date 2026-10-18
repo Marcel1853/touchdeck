@@ -143,6 +143,8 @@ pub struct App {
     pub plugin_lives: Mutex<serde_json::Map<String, Value>>,
     /// Verläufe für Live-Anzeigen mit Graph.
     pub graphs: crate::core::live::Graphs,
+    /// Zustand der USB-Verbindung: { devices: [...], error }.
+    pub usb: Mutex<Value>,
     live_busy: AtomicBool,
     live_again: AtomicBool,
     on_pair_request: Option<Box<dyn Fn(PairRequest) + Send + Sync>>,
@@ -540,13 +542,14 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 60] = [
+const ROUTES: [&str; 61] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
     "GET /api/plugins/market",
     "GET /api/plugins/readme",
     "GET /api/looks",
+    "GET /api/usb",
     "POST /api/plugins/preview",
     "POST /api/plugins/install",
     "POST /api/plugins/dev",
@@ -887,6 +890,7 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             app.plugins.set_advanced(app, body["enabled"] == true, str_of(&body, "confirm")).map_err(bad)?;
             Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list(&lang(app)) }))
         }
+        "GET /api/usb" => Ok(app.usb.lock().unwrap().clone()),
         "GET /api/looks" => {
             // Designs aus Plugins und Icon-Paketen für den Reiter „Aussehen“.
             let mut looks = app.plugins.looks(&lang(app));
@@ -1387,6 +1391,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         live: Mutex::new(serde_json::Map::new()),
         plugin_lives: Mutex::new(serde_json::Map::new()),
         graphs: Default::default(),
+        usb: Mutex::new(json!({ "devices": [] })),
         live_busy: AtomicBool::new(false),
         live_again: AtomicBool::new(false),
         on_pair_request: opts.on_pair_request,
@@ -1457,6 +1462,23 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         loop {
             t.tick().await;
             a.graphs.sample(&a).await;
+        }
+    });
+
+    // USB-Verbindung: alle 5 Sekunden angeschlossene Android-Geräte per „adb reverse“ verbinden.
+    let a = app.clone();
+    tokio::spawn(async move {
+        let mut t = tokio::time::interval(Duration::from_secs(5));
+        loop {
+            t.tick().await;
+            if !a.store.lock().unwrap().settings().usb {
+                continue;
+            }
+            let status = match linux::usb_reverse(a.port).await {
+                Ok(devices) => json!({ "devices": devices }),
+                Err(e) => json!({ "devices": [], "error": e.to_string() }),
+            };
+            *a.usb.lock().unwrap() = status;
         }
     });
 

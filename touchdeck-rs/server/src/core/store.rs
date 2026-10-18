@@ -771,6 +771,9 @@ pub struct Settings {
     /// Adresse für Links und QR-Codes ("" = alle Adressen im Heimnetz), z. B. 192.168.1.20 oder pc.local.
     #[serde(default)]
     pub public_host: String,
+    /// USB-Verbindung über „adb reverse“ für angeschlossene Android-Geräte.
+    #[serde(default)]
+    pub usb: bool,
     /// Unbekannte Einträge bleiben erhalten.
     #[serde(flatten)]
     pub extra: Map<String, Value>,
@@ -801,6 +804,7 @@ fn default_settings(start_page: &str) -> Settings {
         lan_enabled: true,
         port: default_port(),
         public_host: String::new(),
+        usb: false,
         pin: String::new(),
         deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
@@ -1153,6 +1157,9 @@ impl Store {
         }
         if let Some(p) = patch["port"].as_u64().filter(|p| (1024..65536).contains(p)) {
             s.port = p as u16;
+        }
+        if let Some(b) = patch["usb"].as_bool() {
+            s.usb = b;
         }
         if let Some(h) = patch["publicHost"].as_str() {
             let h = h.trim();
