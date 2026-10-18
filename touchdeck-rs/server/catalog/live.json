@@ -19,6 +19,21 @@
    "value": "temp"
   },
   {
+   "value": "gpu_temp"
+  },
+  {
+   "value": "gpu_load"
+  },
+  {
+   "value": "disk"
+  },
+  {
+   "value": "net"
+  },
+  {
+   "value": "uptime"
+  },
+  {
    "value": "volume"
   },
   {

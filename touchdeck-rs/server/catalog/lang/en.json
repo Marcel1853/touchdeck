@@ -1207,6 +1207,21 @@
           "label": "Value"
         }
       }
+    },
+    "screen": {
+      "label": "Screen (off / brightness)",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "off": "turn off (mouse wakes it)",
+            "brightness": "set brightness"
+          }
+        },
+        "percent": {
+          "label": "Brightness in %"
+        }
+      }
     }
   },
   "triggers": {
@@ -1675,7 +1690,12 @@
     "variable": "Value of a variable",
     "command": "Output of a command",
     "timer": "Timer (time left) – enter the name below",
-    "page_indicator": "Page indicator (●○○)"
+    "page_indicator": "Page indicator (●○○)",
+    "gpu_temp": "Graphics card temperature",
+    "gpu_load": "Graphics card load",
+    "disk": "Disk used (/)",
+    "net": "Network ↓ / ↑",
+    "uptime": "PC running for"
   },
   "sliderTargets": {
     "volume": "Volume (PC)",

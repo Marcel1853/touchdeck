@@ -403,6 +403,39 @@
   ]
  },
  {
+  "type": "screen",
+  "category": "services",
+  "group": "general",
+  "icon": "🖥️",
+  "fields": [
+   {
+    "key": "op",
+    "type": "select",
+    "default": "off",
+    "options": [
+     {
+      "value": "off"
+     },
+     {
+      "value": "brightness"
+     }
+    ]
+   },
+   {
+    "key": "percent",
+    "type": "number",
+    "default": 70,
+    "min": 10,
+    "max": 100,
+    "showIf": {
+     "op": [
+      "brightness"
+     ]
+    }
+   }
+  ]
+ },
+ {
   "type": "lock_screen",
   "category": "services",
   "group": "general",

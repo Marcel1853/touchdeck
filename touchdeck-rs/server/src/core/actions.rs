@@ -723,6 +723,15 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             linux::screenshot(&p.s("mode"))?;
             none
         }
+        "screen" => {
+            if p.or("op", "off") == "off" {
+                linux::screen_off().await?;
+                return none;
+            }
+            let pct = clamp(p.n_or("percent", 100.0), 10.0, 100.0) as u32;
+            let how = linux::screen_brightness(pct).await?;
+            Ok(Some(if how == "ddc" { t!("actions.brightnessDdc", pct) } else { t!("actions.brightnessSoft", pct) }.to_string()))
+        }
         "lock_screen" => {
             linux::lock_screen().await?;
             none

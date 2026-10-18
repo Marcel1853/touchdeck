@@ -1207,6 +1207,21 @@
           "label": "Wert"
         }
       }
+    },
+    "screen": {
+      "label": "Bildschirm (aus / Helligkeit)",
+      "fields": {
+        "op": {
+          "label": "Aktion",
+          "options": {
+            "off": "ausschalten (Maus weckt ihn)",
+            "brightness": "Helligkeit setzen"
+          }
+        },
+        "percent": {
+          "label": "Helligkeit in %"
+        }
+      }
     }
   },
   "triggers": {
@@ -1675,7 +1690,12 @@
     "variable": "Wert einer Variable",
     "command": "Ausgabe eines Befehls",
     "timer": "Timer (Restzeit) – Name unten eintragen",
-    "page_indicator": "Seitenanzeige (●○○)"
+    "page_indicator": "Seitenanzeige (●○○)",
+    "gpu_temp": "Grafikkarten-Temperatur",
+    "gpu_load": "Grafikkarten-Auslastung",
+    "disk": "Festplatte belegt (/)",
+    "net": "Netzwerk ↓ / ↑",
+    "uptime": "PC läuft seit"
   },
   "sliderTargets": {
     "volume": "Lautstärke (PC)",

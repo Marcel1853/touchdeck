@@ -122,7 +122,9 @@
     "calcError": "Calculation “{0}”: {1}",
     "responseNotJson": "The response is not JSON.",
     "jsonFieldMissing": "Field “{0}” is not in the response.",
-    "timeFormat": "Please give the time as HH:MM, e.g. 07:30."
+    "timeFormat": "Please give the time as HH:MM, e.g. 07:30.",
+    "brightnessDdc": "Brightness {0} %",
+    "brightnessSoft": "Brightness {0} % (dimmed; real brightness with ddcutil)"
   },
   "events": {
     "activeEvents": "{0} event(s) active",
@@ -276,7 +278,8 @@
     "libMissing": "{0} is missing: {1}",
     "unknownKey": "Unknown key: {0}",
     "clipboardNoAnswer": "The program holding the clipboard does not answer.",
-    "clipboardNotTaken": "Could not take over the clipboard."
+    "clipboardNotTaken": "Could not take over the clipboard.",
+    "noMonitorFound": "No screen found."
   },
   "obs": {
     "disconnectedFromObs": "Disconnected from OBS.",

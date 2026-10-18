@@ -496,6 +496,97 @@ pub fn cpu_temp() -> Option<i64> {
     None
 }
 
+/** Grafikkarten-Temperatur aus hwmon (amdgpu, radeon, nouveau). */
+pub fn gpu_temp() -> Option<i64> {
+    for e in std::fs::read_dir("/sys/class/hwmon").ok()?.flatten() {
+        let Ok(name) = std::fs::read_to_string(e.path().join("name")) else { continue };
+        if !["amdgpu", "radeon", "nouveau"].contains(&name.trim()) {
+            continue;
+        }
+        if let Some(t) = std::fs::read_to_string(e.path().join("temp1_input")).ok().and_then(|t| t.trim().parse::<f64>().ok()) {
+            return Some((t / 1000.0).round() as i64);
+        }
+    }
+    None
+}
+
+/** Auslastung der Grafikkarte in Prozent (amdgpu/i915 über sysfs). */
+pub fn gpu_load() -> Option<i64> {
+    for e in std::fs::read_dir("/sys/class/drm").ok()?.flatten() {
+        if let Some(v) = std::fs::read_to_string(e.path().join("device/gpu_busy_percent")).ok().and_then(|t| t.trim().parse::<i64>().ok()) {
+            return Some(v.clamp(0, 100));
+        }
+    }
+    None
+}
+
+/** Belegung eines Laufwerks in Prozent (Standard: „/“). */
+pub fn disk_percent(path: &str) -> Option<i64> {
+    let c = std::ffi::CString::new(if path.is_empty() { "/" } else { path }).ok()?;
+    // SAFETY: statvfs füllt die Struktur, c ist ein gültiger Pfad.
+    unsafe {
+        let mut st: libc::statvfs = std::mem::zeroed();
+        if libc::statvfs(c.as_ptr(), &mut st) != 0 || st.f_blocks == 0 {
+            return None;
+        }
+        let used = (st.f_blocks - st.f_bfree) as f64;
+        Some((100.0 * used / (used + st.f_bavail as f64)).round() as i64)
+    }
+}
+
+static LAST_NET: Mutex<Option<(u64, u64, std::time::Instant)>> = Mutex::new(None);
+
+/** Netzwerk: (Empfang, Senden) in Bytes pro Sekunde seit der letzten Abfrage. */
+pub fn net_rate() -> Option<(f64, f64)> {
+    let dev = std::fs::read_to_string("/proc/net/dev").ok()?;
+    let (mut rx, mut tx) = (0u64, 0u64);
+    for line in dev.lines().skip(2) {
+        let Some((name, rest)) = line.split_once(':') else { continue };
+        if name.trim() == "lo" {
+            continue;
+        }
+        let v: Vec<u64> = rest.split_whitespace().filter_map(|x| x.parse().ok()).collect();
+        rx += v.first().copied().unwrap_or(0);
+        tx += v.get(8).copied().unwrap_or(0);
+    }
+    let now = std::time::Instant::now();
+    let prev = LAST_NET.lock().unwrap().replace((rx, tx, now));
+    let (prx, ptx, pt) = prev?;
+    let secs = now.duration_since(pt).as_secs_f64();
+    if secs < 0.2 {
+        return None;
+    }
+    Some((rx.saturating_sub(prx) as f64 / secs, tx.saturating_sub(ptx) as f64 / secs))
+}
+
+/** Laufzeit des PCs in Sekunden. */
+pub fn uptime_secs() -> Option<u64> {
+    std::fs::read_to_string("/proc/uptime").ok()?.split_whitespace().next()?.parse::<f64>().ok().map(|v| v as u64)
+}
+
+/** Bildschirm sofort ausschalten (DPMS, X11); eine Bewegung der Maus weckt ihn wieder. */
+pub async fn screen_off() -> Result<()> {
+    run("xset", &["dpms", "force", "off"]).await.map(|_| ())
+}
+
+/** Helligkeit aller Bildschirme: über DDC (ddcutil, echte Helligkeit), sonst per xrandr (abgedunkelt). */
+pub async fn screen_brightness(percent: u32) -> Result<&'static str> {
+    let p = percent.clamp(10, 100);
+    let has_ddc = std::env::var_os("PATH").is_some_and(|path| std::env::split_paths(&path).any(|d| d.join("ddcutil").is_file()));
+    if has_ddc && run("ddcutil", &["setvcp", "10", &p.to_string()]).await.is_ok() {
+        return Ok("ddc");
+    }
+    let list = run("xrandr", &["--listactivemonitors"]).await?;
+    let outputs: Vec<&str> = list.lines().skip(1).filter_map(|l| l.split_whitespace().last()).collect();
+    if outputs.is_empty() {
+        bail!(t!("system.noMonitorFound"));
+    }
+    for o in outputs {
+        run("xrandr", &["--output", o, "--brightness", &format!("{:.2}", p as f64 / 100.0)]).await?;
+    }
+    Ok("xrandr")
+}
+
 // ---------- Desktop & System ----------
 
 pub fn screenshot(mode: &str) -> Result<()> {

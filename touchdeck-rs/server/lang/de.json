@@ -122,7 +122,9 @@
     "calcError": "Rechnung „{0}“: {1}",
     "responseNotJson": "Die Antwort ist kein JSON.",
     "jsonFieldMissing": "Feld „{0}“ steht nicht in der Antwort.",
-    "timeFormat": "Uhrzeit bitte als HH:MM angeben, z. B. 07:30."
+    "timeFormat": "Uhrzeit bitte als HH:MM angeben, z. B. 07:30.",
+    "brightnessDdc": "Helligkeit {0} %",
+    "brightnessSoft": "Helligkeit {0} % (abgedunkelt; echte Helligkeit mit ddcutil)"
   },
   "events": {
     "activeEvents": "{0} Event(s) aktiv",
@@ -276,7 +278,8 @@
     "libMissing": "{0} fehlt: {1}",
     "unknownKey": "Unbekannte Taste: {0}",
     "clipboardNoAnswer": "Das Programm mit der Zwischenablage antwortet nicht.",
-    "clipboardNotTaken": "Die Zwischenablage konnte nicht übernommen werden."
+    "clipboardNotTaken": "Die Zwischenablage konnte nicht übernommen werden.",
+    "noMonitorFound": "Kein Bildschirm gefunden."
   },
   "obs": {
     "disconnectedFromObs": "OBS-Verbindung getrennt.",

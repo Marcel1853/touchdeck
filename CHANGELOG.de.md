@@ -28,6 +28,10 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Neue Live-Anzeigen: Temperatur und Auslastung der Grafikkarte, belegte Festplatte,
+      Netzwerk-Tempo (↓/↑) und wie lange der PC schon läuft.
+    - Neue Aktion „Bildschirm (aus / Helligkeit)“: schaltet den Bildschirm sofort aus (die Maus weckt
+      ihn) oder setzt die Helligkeit – echt über ddcutil, falls installiert, sonst abgedunkelt.
     - „Tastenkürzel-Seite erstellen …“ (Seitenmenü „⋯“): eine Liste wie „Rückgängig = ctrl+z | ↩️“
       wird zu einer Seite, deren Buttons die Kürzel an ein gewähltes Programm schicken; Listen lassen
       sich aus Textdateien laden.

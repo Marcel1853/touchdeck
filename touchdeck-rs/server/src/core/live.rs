@@ -96,6 +96,30 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             let t = *snap.temp.get_or_init(|| async { linux::cpu_temp() }).await;
             json!({ "text": t.map_or_else(|| "–".into(), |t| format!("{t} °C")), "on": t.is_some_and(|t| t >= 80), "value": t.map(|t| t.clamp(0, 100)) })
         }
+        "gpu_temp" => {
+            let t = linux::gpu_temp();
+            json!({ "text": t.map_or_else(|| "–".into(), |t| format!("{t} °C")), "on": t.is_some_and(|t| t >= 85), "value": t.map(|t| t.clamp(0, 100)) })
+        }
+        "gpu_load" => {
+            let v = linux::gpu_load();
+            json!({ "text": v.map_or_else(|| "–".into(), |v| format!("{v} %")), "value": v })
+        }
+        "disk" => {
+            let v = linux::disk_percent("/");
+            json!({ "text": v.map_or_else(|| "–".into(), |v| format!("{v} %")), "on": v.is_some_and(|v| v >= 90), "value": v })
+        }
+        "net" => {
+            let rate = |b: f64| if b >= 1_000_000.0 { format!("{:.1} MB/s", b / 1_000_000.0) } else { format!("{:.0} KB/s", b / 1000.0) };
+            match linux::net_rate() {
+                Some((down, up)) => json!({ "text": format!("↓ {}\n↑ {}", rate(down), rate(up)) }),
+                None => json!({ "text": "…" }),
+            }
+        }
+        "uptime" => {
+            let s = linux::uptime_secs().unwrap_or(0);
+            let (d, h, m) = (s / 86_400, s / 3600 % 24, s / 60 % 60);
+            json!({ "text": if d > 0 { format!("{d} d {h} h") } else { format!("{h} h {m:02} min") } })
+        }
         "volume" => {
             let v = snap.sink().await?;
             let vol = v.volume.map_or_else(|| "?".into(), |x| x.to_string());

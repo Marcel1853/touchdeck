@@ -27,6 +27,10 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - New live displays: graphics card temperature and load, disk usage, network speed (↓/↑) and
+      how long the PC has been running.
+    - New action "Screen (off / brightness)": turns the screen off right away (the mouse wakes it)
+      or sets the brightness – real brightness via ddcutil if installed, otherwise dimmed.
     - "Create shortcut page …" (page menu "⋯"): a list like "Undo = ctrl+z | ↩️" becomes a page
       whose buttons send the shortcuts to a chosen program; lists can be loaded from text files.
     - "Press keyboard shortcut" can send the shortcut to a chosen program: it is brought to the
