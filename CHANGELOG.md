@@ -9,6 +9,13 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - Designs from plugins and icon packs: Look › Designs shows them as previews, a click takes over
+      colours, font, texture, overlay and slider shape. Plugins can require icon packs, which are
+      imported on installation.
+    - Port and address (IP or name for links and QR codes) can be set under Settings › Phone &
+      security.
+    - Events get folders, multi-selection and a right-click menu; plugin cards can be collapsed;
+      plugins and icon packs have a right-click menu.
     - New slider styles "Knob (like a mixing desk)" with scale, grip ring and pointer, and "Fader +
       knob": one button with a fader for one target and a knob for a second one (e.g. volume and
       microphone).

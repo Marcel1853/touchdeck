@@ -229,7 +229,9 @@
     "blockedNeedsAdvanced": "Blocked: needs advanced mode.",
     "pageNotFound": "The plugin has no such page.",
     "folderNotInRepo": "The folder “{0}” does not exist in this repo (or is empty).",
-    "noReadme": "This plugin has no README."
+    "noReadme": "This plugin has no README.",
+    "iconPackImported": "{0}: icon pack “{1}” imported (required by the plugin)",
+    "iconPackFailed": "{0}: icon pack {1} could not be imported: {2}"
   },
   "iconpacks": {
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",

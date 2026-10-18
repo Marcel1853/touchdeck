@@ -171,11 +171,25 @@ impl IconPacks {
                     "cover": cover,
                     "icons": icons,
                     "info": info,
+                    "looks": Self::looks_of(&id, &meta["looks"]),
                 }))
             })
             .collect();
         packs.sort_by_key(|p| sort_key(p["name"].as_str().unwrap_or("")));
         packs
+    }
+
+    /** Designs eines Pakets; Bilder werden zu „packs/<id>/<datei>“. */
+    fn looks_of(id: &str, looks: &Value) -> Value {
+        let mut v = crate::core::plugins::sanitize_looks(looks);
+        for l in v.as_array_mut().into_iter().flatten() {
+            for k in ["bgImage", "icon"] {
+                if let Some(f) = l["style"][k].as_str().filter(|f| !f.contains('/') && !f.starts_with('.')) {
+                    l["style"][k] = json!(format!("packs/{id}/{f}"));
+                }
+            }
+        }
+        v
     }
 
     fn write_meta(dir: &Path, meta: &Value) -> Result<()> {
@@ -222,7 +236,12 @@ impl IconPacks {
     pub fn update(&self, id: &str, body: &Value) -> Result<()> {
         let dir = self.pack_dir(id)?;
         let mut meta = Self::meta_from(body)?;
-        meta["icons"] = Self::read_meta(&dir)["icons"].clone();
+        let old = Self::read_meta(&dir);
+        meta["icons"] = old["icons"].clone();
+        // Designs bleiben beim Bearbeiten der Beschreibung erhalten.
+        if old["looks"].is_array() {
+            meta["looks"] = old["looks"].clone();
+        }
         if !meta["icons"].is_object() {
             meta["icons"] = json!({});
         }
@@ -449,6 +468,10 @@ impl IconPacks {
         let dir = self.dir.join(&id);
         let count = images.len();
         let mut final_meta = Self::read_meta(&dir);
+        // Designs aus dem Paket übernehmen (Bilder relativ zum Paket).
+        if meta["looks"].is_array() {
+            final_meta["looks"] = crate::core::plugins::sanitize_looks(&meta["looks"]);
+        }
         for (path, data) in images {
             let base = clean_file_name(&path).unwrap_or_default();
             let saved = free_name(&dir, &base);

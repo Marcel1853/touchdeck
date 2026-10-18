@@ -229,7 +229,9 @@
     "blockedNeedsAdvanced": "Gesperrt: braucht den erweiterten Modus.",
     "pageNotFound": "Diese Seite gibt es im Plugin nicht.",
     "folderNotInRepo": "Den Ordner „{0}“ gibt es in diesem Repo nicht (oder er ist leer).",
-    "noReadme": "Dieses Plugin hat keine README."
+    "noReadme": "Dieses Plugin hat keine README.",
+    "iconPackImported": "{0}: Icon-Paket „{1}“ importiert (vom Plugin vorausgesetzt)",
+    "iconPackFailed": "{0}: Icon-Paket {1} ließ sich nicht importieren: {2}"
   },
   "iconpacks": {
     "fileContainsNoImages": "In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).",

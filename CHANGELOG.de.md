@@ -9,6 +9,13 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - Designs aus Plugins und Icon-Paketen: Aussehen › Designs zeigt sie als Vorschau, ein Klick
+      übernimmt Farben, Schrift, Textur, Overlay und Regler-Form. Plugins können Icon-Pakete
+      voraussetzen, die beim Installieren importiert werden.
+    - Port und Adresse (IP oder Name für Links und QR-Codes) lassen sich unter Einstellungen ›
+      Handy & Sicherheit einstellen.
+    - Events bekommen Ordner, Mehrfachauswahl und ein Rechtsklick-Menü; Plugin-Karten lassen sich
+      einklappen; Plugins und Icon-Pakete haben ein Rechtsklick-Menü.
     - Neue Regler-Stile „Drehknopf (wie am Mischpult)“ mit Skala, Rillenrand und Zeiger sowie „Fader +
       Drehknopf“: ein Button mit Fader für ein Ziel und Drehknopf für ein zweites (z. B. Lautstärke
       und Mikrofon).

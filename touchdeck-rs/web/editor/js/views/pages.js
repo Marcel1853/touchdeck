@@ -1083,6 +1083,43 @@ function renderInspector() {
   );
 }
 
+// Designs aus Plugins und Icon-Paketen (einmal geladen, nach Plugin-/Paket-Änderungen neu).
+let looksCache = null;
+export function reloadLooks() {
+  looksCache = null;
+}
+
+/** Designs als kleine Vorschau-Buttons; ein Klick übernimmt Farben, Schrift, Textur und Regler-Form. */
+function looksSection(b) {
+  if (looksCache === null) {
+    looksCache = [];
+    api('GET', '/api/looks').then((l) => { looksCache = l; render({ detail: true }); }).catch(() => {});
+    return null;
+  }
+  if (!looksCache.length) return null;
+  const apply = (l) => mutate(() => {
+    for (const [k, v] of Object.entries(l.style ?? {})) {
+      if (k === 'bgImage' || k === 'icon') b[k] = { type: 'image', value: String(v) };
+      else b[k] = v;
+    }
+    if (b.mode === 'slider' && l.slider) Object.assign(b.slider, l.slider);
+  });
+  const groups = new Map();
+  for (const l of looksCache) groups.set(l.source, [...(groups.get(l.source) ?? []), l]);
+  return h('details', { class: 'looks', open: S.looksOpen ?? false, ontoggle: (e) => (S.looksOpen = e.target.open) },
+    h('summary', {}, tr('pages.looks', [looksCache.length])),
+    [...groups].map(([source, list]) => h('div', {},
+      h('p', { class: 'hint-text' }, source),
+      h('div', { class: 'looks-grid' }, list.map((l) => {
+        const preview = { ...structuredClone(b), ...l.style, free: null, colSpan: 1, rowSpan: 1, row: 0, col: 0 };
+        for (const k of ['bgImage', 'icon']) if (l.style?.[k]) preview[k] = { type: 'image', value: String(l.style[k]) };
+        if (b.mode === 'slider' && l.slider) preview.slider = { ...b.slider, ...l.slider };
+        const el = buttonElement(preview, { on: false, live: previewLive(b) });
+        return h('button', { type: 'button', class: 'look-item', title: l.name, onclick: () => apply(l) }, el, h('span', {}, l.name));
+      })))),
+    h('p', { class: 'hint-text' }, tr('pages.looksHint')));
+}
+
 function lookTab(b) {
   const edit = (key, fn, opts) => mutate(fn, { coalesce: `${b.id}:${key}`, ...opts });
   const p = page();
@@ -1119,6 +1156,7 @@ function lookTab(b) {
   });
 
   return [
+    looksSection(b),
     h('label', { class: 'field' }, tr('pages.labelShowsValue'),
       h('input', { value: b.title, maxlength: 200, placeholder: tr('pages.exampleLouder'), oninput: (e) => edit('title', () => (b.title = e.target.value), { detail: false }) })),
     h('div', { class: 'field' }, tr('pages.labelPosition'),

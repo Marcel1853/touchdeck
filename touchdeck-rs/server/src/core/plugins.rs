@@ -48,7 +48,7 @@ pub const ADVANCED_CONFIRM_EN: &str = "AT MY OWN RISK";
 pub fn advanced_confirm(lang: &str) -> &'static str {
     if lang == "de" { ADVANCED_CONFIRM } else { ADVANCED_CONFIRM_EN }
 }
-const ALLOWED_EXT: [&str; 8] = ["js", "json", "md", "txt", "png", "svg", "jpg", "tdprofile"];
+const ALLOWED_EXT: [&str; 11] = ["js", "json", "md", "txt", "png", "svg", "jpg", "webp", "gif", "tdprofile", "tdicons"];
 pub const MARKET_URL: &str = "https://raw.githubusercontent.com/Marcel1853/touchdeck-plugins/main/plugins.json";
 
 /** Vorgefertigte Hilfen, aus denen das Plugin `td` nutzt. Die __-Funktionen stellt TouchDeck bereit. */
@@ -218,7 +218,41 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "actions": items("actions")?,
         "triggers": items("triggers")?,
         "lives": items("lives")?,
+        // Designs für Buttons und Regler, Bilder relativ zum Plugin-Ordner.
+        "looks": sanitize_looks(&raw["looks"]),
+        // Icon-Pakete, die das Plugin mitbringt und voraussetzt (.tdicons im Plugin-Ordner).
+        "iconPacks": raw["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str)
+            .filter(|p| p.to_lowercase().ends_with(".tdicons") && safe_rel_path(p)).take(10).collect::<Vec<_>>(),
     }))
+}
+
+/** Relativer Pfad im Plugin: keine „..“, keine versteckten Teile, höchstens 4 Ebenen. */
+pub fn safe_rel_path(p: &str) -> bool {
+    !p.is_empty() && p.split('/').count() <= 4 && p.split('/').all(|c| !c.is_empty() && !c.starts_with('.') && !c.contains('\\'))
+}
+
+/**
+ * Designs (aus Plugins oder Icon-Paketen): [{ id, name, style: {…}, slider: {…} }].
+ * Nur bekannte Felder; endgültig geprüft wird beim Speichern des Buttons.
+ */
+pub fn sanitize_looks(v: &Value) -> Value {
+    const STYLE: [&str; 17] = ["color", "colorOn", "textColor", "bgOpacity", "fontSize", "fontFamily", "bold", "italic", "textOutline", "titlePos", "iconSize",
+        "iconFit", "overlay", "texFit", "texVeil", "bgImage", "icon"];
+    const SLIDER: [&str; 3] = ["shape", "color", "thickness"];
+    let pick = |o: &Value, keys: &[&str]| -> Value {
+        Value::Object(o.as_object().map(|m| m.iter().filter(|(k, _)| keys.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())).collect()).unwrap_or_default())
+    };
+    Value::Array(
+        v.as_array()
+            .into_iter()
+            .flatten()
+            .take(50)
+            .filter_map(|l| {
+                let id = text(&l["id"], 40);
+                (!id.is_empty()).then(|| json!({ "id": id, "name": ltext(&l["name"], 60), "style": pick(&l["style"], &STYLE), "slider": pick(&l["slider"], &SLIDER) }))
+            })
+            .collect(),
+    )
 }
 
 /** Lesbare Liste der Berechtigungen (für die Anzeige vor dem Installieren). */
@@ -769,7 +803,7 @@ fn manifest_of(files: Vec<PluginFile>) -> Result<(Value, String, Vec<PluginFile>
         for f in files {
             let ext = Path::new(&f.0).extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
             // Unterordner nur für fertige Seiten (.tdprofile), alles andere im Hauptordner.
-            let nested_ok = ext == "tdprofile" && f.0.matches('/').count() <= 3;
+            let nested_ok = ["tdprofile", "tdicons", "png", "svg", "jpg", "webp", "gif"].contains(&ext.as_str()) && f.0.matches('/').count() <= 3;
             if (f.0.contains('/') && !nested_ok) || !ALLOWED_EXT.contains(&ext.as_str()) || f.1.len() as u64 > MAX_FILE {
                 continue;
             }
@@ -935,6 +969,63 @@ impl Plugins {
             })
             .collect();
         out.sort_by_key(|p| p["manifest"]["name"].as_str().unwrap_or("").to_lowercase());
+        out
+    }
+
+    /**
+     * Icon-Pakete, die ein Plugin voraussetzt, importieren – nur wenn es noch kein Paket mit diesem Namen gibt.
+     * Liefert die Namen der neu importierten Pakete.
+     */
+    pub fn ensure_icon_packs(&self, app: &Arc<App>, id: &str) -> Vec<String> {
+        let Some(entry) = self.read_installed().get(id).cloned() else { return Vec::new() };
+        let dir = self.plugin_dir(id, &entry);
+        let manifest = self.manifests.lock().unwrap().get(id).cloned().unwrap_or_default();
+        let mut added = Vec::new();
+        for rel in manifest["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+            let Ok(bytes) = std::fs::read(dir.join(rel)) else { continue };
+            let name = pack_name(&bytes).unwrap_or_default();
+            let exists = app.iconpacks.list().iter().any(|p| !name.is_empty() && p["name"] == name.as_str());
+            if exists {
+                continue;
+            }
+            let stem = rel.rsplit('/').next().unwrap_or(rel).trim_end_matches(".tdicons");
+            match app.iconpacks.import(&bytes, stem) {
+                Ok(r) => {
+                    app.log.info("Plugins", t!("plugins.iconPackImported", id, if name.is_empty() { stem } else { &name }));
+                    added.extend(r.into_iter().map(|(pid, _)| pid));
+                }
+                Err(e) => app.log.warn("Plugins", t!("plugins.iconPackFailed", id, rel, e)),
+            }
+        }
+        added
+    }
+
+    /** Ordner eines installierten Plugins (für seine Bilder). */
+    pub fn dir_of(&self, id: &str) -> Option<PathBuf> {
+        self.read_installed().get(id).map(|e| self.plugin_dir(id, e))
+    }
+
+    /** Designs aller eingeschalteten Plugins; Bilder als „plugins/<id>/<pfad>“. */
+    pub fn looks(&self, lang: &str) -> Vec<Value> {
+        let installed = self.read_installed();
+        let manifests = self.manifests.lock().unwrap();
+        let mut out = Vec::new();
+        for (id, e) in installed.iter().filter(|(_, e)| e["enabled"] != false) {
+            let Some(m) = manifests.get(id) else { continue };
+            let m = localize(m, lang);
+            for l in m["looks"].as_array().into_iter().flatten() {
+                let mut l = l.clone();
+                for k in ["bgImage", "icon"] {
+                    if let Some(f) = l["style"][k].as_str().filter(|f| safe_rel_path(f) && !f.starts_with("packs/")) {
+                        l["style"][k] = json!(format!("plugins/{id}/{f}"));
+                    }
+                }
+                l["source"] = json!(m["name"]);
+                l["key"] = json!(format!("plugin:{id}:{}", l["id"].as_str().unwrap_or("")));
+                out.push(l);
+            }
+            let _ = e;
+        }
         out
     }
 
@@ -1174,6 +1265,7 @@ impl Plugins {
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m);
         self.start(app, &id);
+        self.ensure_icon_packs(app, &id);
         app.log.info("Plugins", t!("plugins.installedFrom", id, format!("{r} @ {git_ref}")));
         Ok(id)
     }
@@ -1197,6 +1289,7 @@ impl Plugins {
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m);
         self.start(app, &id);
+        self.ensure_icon_packs(app, &id);
         app.log.warn("Plugins", t!("plugins.devLoaded", id, dir.display()));
         Ok(id)
     }
@@ -1422,4 +1515,18 @@ mod tests {
         assert!(parse_repo("nur-name").is_err());
         assert!(parse_repo("a/b c").is_err());
     }
+}
+
+/** Name eines Icon-Pakets aus seiner .tdicons-Datei (pack.json), ohne es zu importieren. */
+fn pack_name(bytes: &[u8]) -> Option<String> {
+    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
+    for i in 0..zip.len() {
+        let mut f = zip.by_index(i).ok()?;
+        if f.name().ok()?.rsplit('/').next()? == "pack.json" {
+            let mut t = String::new();
+            f.read_to_string(&mut t).ok()?;
+            return serde_json::from_str::<Value>(&t).ok()?["name"].as_str().map(String::from);
+        }
+    }
+    None
 }

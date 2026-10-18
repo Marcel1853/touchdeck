@@ -540,12 +540,13 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 59] = [
+const ROUTES: [&str; 60] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
     "GET /api/plugins/market",
     "GET /api/plugins/readme",
+    "GET /api/looks",
     "POST /api/plugins/preview",
     "POST /api/plugins/install",
     "POST /api/plugins/dev",
@@ -886,6 +887,19 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             app.plugins.set_advanced(app, body["enabled"] == true, str_of(&body, "confirm")).map_err(bad)?;
             Ok(json!({ "ok": true, "advanced": app.plugins.advanced(), "plugins": app.plugins.list(&lang(app)) }))
         }
+        "GET /api/looks" => {
+            // Designs aus Plugins und Icon-Paketen für den Reiter „Aussehen“.
+            let mut looks = app.plugins.looks(&lang(app));
+            for p in app.iconpacks.list() {
+                for l in p["looks"].as_array().into_iter().flatten() {
+                    let mut l = l.clone();
+                    l["source"] = p["name"].clone();
+                    l["key"] = json!(format!("pack:{}:{}", p["id"].as_str().unwrap_or(""), l["id"].as_str().unwrap_or("")));
+                    looks.push(l);
+                }
+            }
+            Ok(json!(looks))
+        }
         "GET /api/plugins/readme" => app.plugins.readme(query.get("repo").map_or("", String::as_str), &lang(app)).await.map_err(user_error),
         "GET /api/plugins/market" => app.plugins.market(&lang(app)).await.map_err(user_error),
         "POST /api/plugins/preview" => app.plugins.preview(str_of(&body, "repo"), &lang(app)).await.map_err(user_error),
@@ -1087,6 +1101,14 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         let dir = app.store.lock().unwrap().icon_dir.clone();
         // SVGs dürfen hier keine Skripte ausführen.
         let csp = ("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox".to_string());
+        // Bilder aus Plugins („plugins/<id>/<pfad>“), nur Bilddateien.
+        if let Some((id, file)) = rel.strip_prefix("plugins/").and_then(|r| r.split_once('/')) {
+            let image = [".png", ".svg", ".jpg", ".jpeg", ".webp", ".gif"].iter().any(|e| file.to_lowercase().ends_with(e));
+            return match app.plugins.dir_of(id).filter(|_| image && crate::core::plugins::safe_rel_path(file)) {
+                Some(pdir) => serve_file(&pdir, file, &[csp]).await,
+                None => text_response(404, t!("server.notFound")),
+            };
+        }
         return serve_file(&dir, rel, &[csp]).await;
     }
     let lan = app.store.lock().unwrap().settings().lan_enabled;

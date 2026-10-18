@@ -105,6 +105,30 @@ mehrere Seiten enthalten; ihre Ordner in der Seitenliste bleiben erhalten. Touch
 und unter **Fertige Seiten** in der Seitenliste; ein Klick importiert die Seite samt
 Vorlagen, Werten und Bildern. Der Import fügt nur hinzu und überschreibt nichts.
 
+## Designs und Icon-Pakete
+
+Ein Plugin kann Designs für Buttons und Regler mitbringen (`looks` in plugin.json). Sie
+erscheinen im Editor unter **Aussehen › Designs**; ein Klick übernimmt sie. Bilder sind
+Pfade im Plugin (`icons/…`, png/svg/jpg/webp/gif).
+
+```json
+"looks": [
+  { "id": "rost", "name": { "en": "Rust", "de": "Rost" },
+    "style": { "color": "#7a3b1e", "textColor": "#ffe2c4", "bgImage": "icons/rost.jpg",
+               "texFit": "cover", "texVeil": 20, "overlay": "frame", "iconSize": 120 },
+    "slider": { "shape": "mixer", "color": "#ff8a3d", "thickness": 12 } }
+],
+"iconPacks": ["packs/factorio.tdicons"]
+```
+
+`style` kennt color, colorOn, textColor, bgOpacity, fontSize, fontFamily, bold, italic,
+textOutline, titlePos, iconSize, iconFit, overlay, texFit, texVeil, bgImage und icon;
+`slider` kennt shape (fill, rail, fader, knob, dial, mixer, combo), color und thickness.
+
+`iconPacks` nennt Icon-Pakete (`.tdicons`, aus TouchDeck exportiert), die das Plugin braucht.
+TouchDeck importiert sie beim Installieren – nur wenn es noch kein Paket mit diesem Namen gibt.
+Icon-Pakete können selbst Designs mitbringen: `looks` in ihrer `pack.json`, Bilder per Dateiname.
+
 ## Das Objekt `td`
 
 ```js

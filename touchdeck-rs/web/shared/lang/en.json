@@ -229,6 +229,8 @@
     "logicPasted": "Logic pasted ✓",
     "longPressFromAbout": "A long press (from about 0.5 s) runs these actions instead of the normal ones. When you let go afterwards, the ones below run.",
     "lookCopiedApplyIt": "Look copied – apply it to other buttons with right-click › Paste look",
+    "looks": "Designs ({0})",
+    "looksHint": "Designs come with plugins and icon packs. A click takes over colours, font, texture, overlay and, for sliders, the shape.",
     "makeStartPage": "Make start page",
     "micOff": "Mic off",
     "microphone": "Microphone",
