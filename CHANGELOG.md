@@ -27,6 +27,7 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Values are grouped by folder in collapsible sections, with "New folder" and a "＋" per folder.
     - Icon size per button (30–200 %), texture fit (fill, show completely, stretch, tile) and an
       adjustable colour veil over the texture (0 % = texture unchanged); "Copy look" includes them.
     - "Change look" can also set an image as icon, a texture and an overlay, e.g. from an event.

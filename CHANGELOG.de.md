@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Werte werden nach Ordnern in einklappbaren Gruppen gezeigt, mit „Neuer Ordner“ und einem „＋“
+      je Ordner.
     - Symbolgröße je Button (30–200 %), Textur anpassen (füllen, ganz zeigen, strecken, kacheln) und
       ein einstellbarer Farbschleier über der Textur (0 % = Textur unverändert); „Aussehen
       übertragen“ nimmt sie mit.

@@ -6,6 +6,8 @@ import { S, mutate, render } from '../state.js';
 const NAME = /^[\p{L}\p{N} _.-]{1,40}$/u;
 let filter = '';
 let folder = '';
+// Eingeklappte Ordner in der Liste.
+const collapsed = new Set();
 
 /** Alle Stellen, an denen Werte vorkommen: Aktionen, Auslöser, Live-Anzeigen, Beschriftungen. */
 function* references() {
@@ -65,12 +67,12 @@ async function setCurrent(name, value) {
   }
 }
 
-async function addValue() {
+async function addValue(inFolder = folder) {
   const name = await prompt(tr('values.newValue'), tr('values.nameOfValueGoals'));
   if (!name) return;
   if (!NAME.test(name)) return toast(tr('values.name140Characters'), 'error');
   if (allNames().includes(name)) return toast(tr('values.thisValueAlreadyExists'), 'error');
-  mutate(() => (S.values[name] = { default: '', description: '', folder, resetOnStart: false }));
+  mutate(() => (S.values[name] = { default: '', description: '', folder: inFolder, resetOnStart: false }));
   await setCurrent(name, '');
 }
 
@@ -107,6 +109,14 @@ async function deleteValue(name) {
   render();
 }
 
+/** Neuer Ordner: gleich mit dem ersten Wert darin (Ordner gibt es nur, solange Werte darin sind). */
+async function addFolder() {
+  const name = await prompt(tr('values.newFolder'), tr('values.folderName'));
+  if (!name) return;
+  collapsed.delete(name);
+  await addValue(name.slice(0, 60));
+}
+
 export function mountValues(root) {
   root.className = 'view view-list';
   root.replaceChildren(
@@ -116,7 +126,8 @@ export function mountValues(root) {
         h('div', { class: 'spacer' }),
         h('input', { class: 'search', placeholder: tr('common.search'), value: filter, oninput: (e) => { filter = e.target.value; render(); } }),
         h('select', { id: 'value-folder', onchange: (e) => { folder = e.target.value; render(); } }),
-        h('button', { class: 'btn primary', onclick: addValue }, tr('values.value'))),
+        h('button', { class: 'btn', onclick: addFolder }, tr('values.newFolder')),
+        h('button', { class: 'btn primary', onclick: () => addValue() }, tr('values.value'))),
       h('div', { id: 'values-body' })),
   );
 }
@@ -135,20 +146,32 @@ export function renderValues({ detail = true } = {}) {
     body.replaceChildren(empty('🏷️', tr('values.noValuesYet'), tr('values.createOneOrUse')));
     return;
   }
+  const row = (name) => {
+    const m = meta(name);
+    const used = usages(name);
+    return h('tr', {},
+      h('td', {}, h('button', { class: 'linklike', title: tr('values.rename'), onclick: () => renameValue(name) }, name)),
+      h('td', {}, h('input', { value: S.variables[name] ?? '', placeholder: tr('values.empty'), onchange: (e) => setCurrent(name, e.target.value) })),
+      h('td', {}, h('input', { value: m.default, placeholder: tr('values.empty'), oninput: (e) => editMeta(name, { default: e.target.value }, { detail: false }) })),
+      // Ordner erst beim Verlassen übernehmen, dann wird neu gruppiert.
+      h('td', {}, h('input', { value: m.folder, list: 'value-folders', placeholder: '–', onchange: (e) => editMeta(name, { folder: e.target.value.trim().slice(0, 60) }) })),
+      h('td', {}, h('input', { value: m.description, placeholder: '–', oninput: (e) => editMeta(name, { description: e.target.value }, { detail: false }) })),
+      h('td', { class: 'center' }, h('input', { type: 'checkbox', checked: m.resetOnStart, onchange: (e) => editMeta(name, { resetOnStart: e.target.checked }) })),
+      h('td', { class: 'center', title: used.join('\n') || tr('values.nowhere') }, used.length ? `${used.length}×` : '–'),
+      h('td', {}, h('button', { class: 'btn icon ghost danger', title: tr('common.delete'), onclick: () => deleteValue(name) }, '✕')));
+  };
+  // Gruppen: erst die Ordner (alphabetisch), dann die Werte ohne Ordner.
+  const groups = [...folders.filter((f) => shown.some((n) => meta(n).folder === f)).map((f) => [f, shown.filter((n) => meta(n).folder === f)]),
+    ['', shown.filter((n) => !meta(n).folder)]].filter(([, list]) => list.length);
+  const head = (f, list) => h('tr', { class: 'folder-row' }, h('td', { colspan: 8 },
+    h('button', { class: 'linklike folder-toggle', onclick: () => { collapsed.has(f) ? collapsed.delete(f) : collapsed.add(f); render(); } },
+      `${collapsed.has(f) ? '▸' : '▾'} ${f ? `📁 ${f}` : tr('values.noFolder')} (${list.length})`),
+    h('button', { class: 'btn small ghost', title: tr('values.addToFolder'), onclick: () => addValue(f) }, '＋')));
   body.replaceChildren(h('table', { class: 'values-table' },
     h('thead', {}, h('tr', {}, [tr('common.name'), tr('values.currentContent'), tr('values.startValue'), tr('values.folder'), tr('values.description'), tr('values.resetAtStart'), tr('values.usedIn'), ''].map((t) => h('th', {}, t)))),
-    h('tbody', {}, shown.map((name) => {
-      const m = meta(name);
-      const used = usages(name);
-      return h('tr', {},
-        h('td', {}, h('button', { class: 'linklike', title: tr('values.rename'), onclick: () => renameValue(name) }, name)),
-        h('td', {}, h('input', { value: S.variables[name] ?? '', placeholder: '(leer)', onchange: (e) => setCurrent(name, e.target.value) })),
-        h('td', {}, h('input', { value: m.default, placeholder: '(leer)', oninput: (e) => editMeta(name, { default: e.target.value }, { detail: false }) })),
-        h('td', {}, h('input', { value: m.folder, list: 'value-folders', placeholder: '–', oninput: (e) => editMeta(name, { folder: e.target.value }, { detail: false }) })),
-        h('td', {}, h('input', { value: m.description, placeholder: '–', oninput: (e) => editMeta(name, { description: e.target.value }, { detail: false }) })),
-        h('td', { class: 'center' }, h('input', { type: 'checkbox', checked: m.resetOnStart, onchange: (e) => editMeta(name, { resetOnStart: e.target.checked }) })),
-        h('td', { class: 'center', title: used.join('\n') || tr('values.nowhere') }, used.length ? `${used.length}×` : '–'),
-        h('td', {}, h('button', { class: 'btn icon ghost danger', title: tr('common.delete'), onclick: () => deleteValue(name) }, '✕')));
-    })),
+    h('tbody', {}, groups.flatMap(([f, list]) => [
+      (folders.length > 0) && head(f, list),
+      ...(collapsed.has(f) ? [] : list.map(row)),
+    ])),
   ), h('datalist', { id: 'value-folders' }, folders.map((f) => h('option', { value: f }))));
 }

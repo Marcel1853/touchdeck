@@ -501,6 +501,8 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .field-image { display: flex; gap: 8px; align-items: center; }
 .field-image input { flex: 1; }
 .field-image-preview { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; background: var(--panel-2); }
+.values-table .folder-row td { padding-top: 14px; border-bottom: 1px solid var(--line); }
+.values-table .folder-toggle { font-weight: 700; margin-right: 8px; }
 .flow-input code { font-size: 12px; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-row .ai { font-size: 17px; }
 .mini-row .al { flex: 1; min-width: 0; }
