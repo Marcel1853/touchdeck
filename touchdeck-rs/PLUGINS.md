@@ -97,7 +97,9 @@ events as `{Event.Name}`.
 ## Ready-made pages
 
 Put one or more `.tdprofile` files (exported from TouchDeck via the page menu “⋯”) into
-the main folder of your plugin. TouchDeck shows them on the plugin card and under
+your plugin – in the main folder or in sub-folders (up to 3 levels, e.g.
+`pages/power/Overview.tdprofile`, shown as “power › Overview”). One file may contain
+several pages; their folders in the page list are kept. TouchDeck shows them on the plugin card and under
 **Ready-made pages** in the page list; one click imports the page with its flows,
 values and images. Importing only adds, it never overwrites anything.
 

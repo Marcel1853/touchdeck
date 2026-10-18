@@ -99,7 +99,9 @@ als `{Event.Name}` zur Verfügung.
 ## Fertige Seiten
 
 Lege eine oder mehrere `.tdprofile`-Dateien (in TouchDeck über das Seitenmenü „⋯“
-exportiert) in den Hauptordner deines Plugins. TouchDeck zeigt sie in der Plugin-Karte
+exportiert) in dein Plugin – in den Hauptordner oder in Unterordner (bis 3 Ebenen, z. B.
+`pages/strom/Übersicht.tdprofile`, angezeigt als „strom › Übersicht“). Eine Datei darf
+mehrere Seiten enthalten; ihre Ordner in der Seitenliste bleiben erhalten. TouchDeck zeigt sie in der Plugin-Karte
 und unter **Fertige Seiten** in der Seitenliste; ein Klick importiert die Seite samt
 Vorlagen, Werten und Bildern. Der Import fügt nur hinzu und überschreibt nichts.
 

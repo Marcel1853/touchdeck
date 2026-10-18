@@ -9,6 +9,8 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.10.0
 Datum: 2026-10-18
   Neuerungen:
+    - Fertige Seiten eines Plugins dürfen auch in Unterordnern des Plugins liegen (z. B.
+      pages/strom/…); Seiten-Ordner bleiben beim Export und Import von Profilen erhalten.
     - Ordner für Seiten und Vorlagen: eigene Ordner anlegen (auch leere), einklappen, Seiten und
       Vorlagen per Ziehen oder Rechtsklick › „In Ordner verschieben“ hineinlegen; Rechtsklick auf einen
       Ordner benennt ihn um, löst ihn auf (Inhalt bleibt) oder löscht ihn samt Inhalt.

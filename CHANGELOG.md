@@ -9,6 +9,8 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.10.0
 Date: 2026-10-18
   Features:
+    - Ready-made pages of plugins may also lie in sub-folders of the plugin (e.g. pages/power/…);
+      page folders are kept when exporting and importing profiles.
     - Folders for pages and flows: create your own folders (also empty ones), collapse them, move
       pages and flows into them by dragging or right-click › "Move to folder"; right-click on a
       folder renames it, dissolves it (contents stay) or deletes it with its contents.

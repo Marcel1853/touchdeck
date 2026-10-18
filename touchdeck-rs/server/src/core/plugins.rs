@@ -768,7 +768,9 @@ fn manifest_of(files: Vec<PluginFile>) -> Result<(Value, String, Vec<PluginFile>
         let mut out = Vec::new();
         for f in files {
             let ext = Path::new(&f.0).extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
-            if f.0.contains('/') || !ALLOWED_EXT.contains(&ext.as_str()) || f.1.len() as u64 > MAX_FILE {
+            // Unterordner nur für fertige Seiten (.tdprofile), alles andere im Hauptordner.
+            let nested_ok = ext == "tdprofile" && f.0.matches('/').count() <= 3;
+            if (f.0.contains('/') && !nested_ok) || !ALLOWED_EXT.contains(&ext.as_str()) || f.1.len() as u64 > MAX_FILE {
                 continue;
             }
             total += f.1.len() as u64;
@@ -938,15 +940,35 @@ impl Plugins {
 
     /** Fertige Seiten eines Plugins: alle .tdprofile-Dateien im Hauptordner (Name ohne Endung, Dateiname). */
     fn page_files(dir: &Path) -> Vec<Value> {
-        let mut files: Vec<String> = std::fs::read_dir(dir)
-            .into_iter()
-            .flatten()
-            .flatten()
-            .filter_map(|e| e.file_name().into_string().ok())
-            .filter(|n| n.to_lowercase().ends_with(".tdprofile") && !n.starts_with('.'))
-            .collect();
+        // Auch in Unterordnern (bis 3 Ebenen tief), z. B. pages/strom.tdprofile.
+        fn walk(dir: &Path, rel: &str, depth: u32, out: &mut Vec<String>) {
+            for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+                let Ok(name) = e.file_name().into_string() else { continue };
+                if name.starts_with('.') || name == "node_modules" {
+                    continue;
+                }
+                let path = if rel.is_empty() { name.clone() } else { format!("{rel}/{name}") };
+                match e.file_type() {
+                    Ok(t) if t.is_dir() && depth < 3 => walk(&e.path(), &path, depth + 1, out),
+                    Ok(t) if t.is_file() && name.to_lowercase().ends_with(".tdprofile") => out.push(path),
+                    _ => {}
+                }
+            }
+        }
+        let mut files = Vec::new();
+        walk(dir, "", 0, &mut files);
         files.sort();
-        files.into_iter().map(|f| json!({ "file": f, "name": f.trim_end_matches(".tdprofile").replace(['-', '_'], " ") })).collect()
+        files.truncate(50);
+        files
+            .into_iter()
+            .map(|f| {
+                // Sammelordner wie „pages/“ nicht im Namen zeigen.
+                let parts: Vec<&str> = f.trim_end_matches(".tdprofile").split('/').collect();
+                let skip = usize::from(parts.len() > 1 && ["pages", "seiten", "profiles", "profile"].contains(&parts[0].to_lowercase().as_str()));
+                let name = parts[skip..].iter().map(|p| p.replace(['-', '_'], " ")).collect::<Vec<_>>().join(" › ");
+                json!({ "file": f, "name": name })
+            })
+            .collect()
     }
 
     /** Inhalt einer Seiten-Datei eines Plugins (nur Dateien aus page_files). */
