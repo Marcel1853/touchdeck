@@ -211,7 +211,7 @@ Datum: 2026-10-16
     - App 0.6.2: Die App liefert den Gerätenamen aus ihren Einstellungen für die Statusleiste
       im Editor.
     - App 0.6.3: eingebettete Seiten von Webseiten-Buttons bleiben im Button, statt den Browser zu
-      öffnen.
+      öffnen; Links ohne passende App bringen die App nicht mehr zum Absturz.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0

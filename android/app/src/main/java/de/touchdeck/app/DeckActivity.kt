@@ -185,8 +185,12 @@ class DeckActivity : Activity() {
             // Webseiten-Buttons: eingebettete Seiten (Rahmen) bleiben im Button.
             if (!request.isForMainFrame) return false
             if (url.host == server.host) return false
-            // Fremde Links im normalen Browser öffnen.
-            startActivity(Intent(Intent.ACTION_VIEW, url))
+            // Fremde Links im normalen Browser öffnen; ohne passendes Programm nichts tun statt abzustürzen.
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, url))
+            } catch (e: Exception) {
+                // z. B. ActivityNotFoundException bei unbekannten Schemata
+            }
             return true
         }
     }

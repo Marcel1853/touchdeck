@@ -189,7 +189,8 @@ Date: 2026-10-16
     - App 0.6.1: the app language follows the TouchDeck setting, including the connect screen
       (before the first connection: language of the found PC, otherwise the phone's language).
     - App 0.6.2: the app sends the device name from its settings for the editor's status bar.
-    - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser.
+    - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser;
+      links without a matching app no longer crash the app.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0
