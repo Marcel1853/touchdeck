@@ -140,6 +140,8 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Programs, commands and advanced plugins (e.g. Python) started from the AppImage no longer
+      inherit its library paths (PYTHONHOME, LD_LIBRARY_PATH …) and work as when started normally.
     - Typing in the image search no longer loses focus after each letter (a following Backspace
       could delete the selected button).
     - Fixed the autostart entry pointing to a file that no longer existed after an update; it now

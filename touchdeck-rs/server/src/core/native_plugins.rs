@@ -117,7 +117,7 @@ async fn run_once(
         Some(rel) => dir.join(rel).to_string_lossy().into_owned(),
         None => program.clone(),
     };
-    let mut child = Command::new(&program)
+    let mut child = Command::from(crate::system::linux::command(&program))
         .args(args)
         .current_dir(dir)
         .env("TOUCHDECK_PLUGIN_DIR", dir)

@@ -454,7 +454,7 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
             if !h.notify {
                 return Err(js_err(&ctx, t!("plugins.noPermissionForNotifications")));
             }
-            let _ = std::process::Command::new("notify-send").args(["-a", "TouchDeck", &title, &body]).spawn();
+            let _ = crate::system::linux::command("notify-send").args(["-a", "TouchDeck", &title, &body]).spawn();
             Ok(())
         })?,
     )?;

@@ -44,13 +44,47 @@ pub fn lan_addresses() -> Vec<String> {
         .collect()
 }
 
+/**
+ * Umgebung für gestartete Programme. Die AppImage setzt PYTHONHOME, LD_LIBRARY_PATH usw. auf ihre
+ * eigenen Ordner; Kindprozesse (Befehle, Programme, Plugins) sollen aber die normale Umgebung sehen.
+ */
+static HOST_ENV: LazyLock<Vec<(String, Option<String>)>> = LazyLock::new(|| {
+    let Ok(appdir) = std::env::var("APPDIR") else { return Vec::new() };
+    let mut out: Vec<(String, Option<String>)> = [
+        "PYTHONHOME", "PYTHONPATH", "PYTHONDONTWRITEBYTECODE", "PERLLIB", "LD_LIBRARY_PATH", "QT_PLUGIN_PATH", "GST_PLUGIN_SYSTEM_PATH",
+        "GST_PLUGIN_SYSTEM_PATH_1_0", "GDK_PIXBUF_MODULE_FILE", "GSETTINGS_SCHEMA_DIR", "GIO_MODULE_DIR", "APPDIR", "APPIMAGE", "ARGV0", "OWD",
+    ]
+    .iter()
+    .map(|k| (k.to_string(), None))
+    .collect();
+    for key in ["PATH", "XDG_DATA_DIRS"] {
+        if let Ok(v) = std::env::var(key) {
+            let kept: Vec<&str> = v.split(':').filter(|p| !p.is_empty() && !p.starts_with(&appdir)).collect();
+            out.push((key.into(), (!kept.is_empty()).then(|| kept.join(":"))));
+        }
+    }
+    out
+});
+
+/** Neuer Prozess mit bereinigter Umgebung (siehe HOST_ENV); für tokio: `Command::from(command(..))`. */
+pub fn command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
+    let mut c = std::process::Command::new(program);
+    for (k, v) in HOST_ENV.iter() {
+        match v {
+            Some(v) => c.env(k, v),
+            None => c.env_remove(k),
+        };
+    }
+    c
+}
+
 fn not_installed(cmd: &str, err: std::io::Error) -> anyhow::Error {
     if err.kind() == std::io::ErrorKind::NotFound { anyhow!(t!("system.programIsNotInstalled", cmd)) } else { anyhow!("{cmd}: {err}") }
 }
 
 /** Führt ein Programm aus und liefert die Ausgabe; Fehlertext ist die Fehlerausgabe des Programms. */
 pub async fn run_with(cmd: &str, args: &[&str], timeout: Duration, input: Option<&str>) -> Result<String> {
-    let mut c = Command::new(cmd);
+    let mut c = Command::from(command(cmd));
     c.args(args).kill_on_drop(true).stdout(Stdio::piped()).stderr(Stdio::piped());
     c.stdin(if input.is_some() { Stdio::piped() } else { Stdio::null() });
     let mut child = c.spawn().map_err(|e| not_installed(cmd, e))?;
@@ -76,7 +110,7 @@ pub async fn run(cmd: &str, args: &[&str]) -> Result<String> {
 
 /** Startet ein Programm im Hintergrund, ohne auf das Ende zu warten. */
 pub fn spawn_detached(cmd: &str, args: &[&str], cwd: Option<&Path>) -> Result<()> {
-    let mut c = std::process::Command::new(cmd);
+    let mut c = command(cmd);
     c.args(args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     if let Some(dir) = cwd {
         c.current_dir(dir);
@@ -103,7 +137,7 @@ pub async fn shell(command: &str, wait: bool, timeout: Duration) -> Result<Strin
         spawn_detached("sh", &["-c", command], Some(&home))?;
         return Ok(String::new());
     }
-    let child = Command::new("sh")
+    let child = Command::from(self::command("sh"))
         .args(["-c", command])
         .current_dir(&home)
         .kill_on_drop(true)
@@ -695,7 +729,7 @@ pub fn play_sound(file: &str, volume: f64, exclusive: bool) -> Result<()> {
         stop_sounds();
     }
     let vol = if volume.is_finite() { volume.clamp(0.0, 100.0) } else { 0.0 } / 100.0;
-    let mut child = std::process::Command::new("pw-play")
+    let mut child = command("pw-play")
         .arg("--volume")
         .arg(vol.to_string())
         .arg(&f)

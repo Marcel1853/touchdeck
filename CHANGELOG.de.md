@@ -149,6 +149,9 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Programme, Befehle und erweiterte Plugins (z. B. Python), die aus der AppImage gestartet
+      werden, erben nicht mehr deren Bibliothekspfade (PYTHONHOME, LD_LIBRARY_PATH …) und laufen wie
+      normal gestartet.
     - Beim Tippen in der Bildsuche geht der Fokus nicht mehr nach jedem Buchstaben verloren (eine
       folgende Rücktaste konnte den ausgewählten Button löschen).
     - Der Autostart-Eintrag zeigte nach einem Update auf eine nicht mehr vorhandene Datei; er
