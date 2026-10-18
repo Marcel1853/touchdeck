@@ -6,7 +6,8 @@ use std::sync::LazyLock;
 
 use serde_json::Value;
 
-static ENGLISH: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(super::store::system_language() != "de"));
+// Tests prüfen deutsche Texte – dort immer Deutsch, unabhängig von der Sprache des Rechners.
+static ENGLISH: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(!cfg!(test) && super::store::system_language() != "de"));
 static DE: LazyLock<Value> = LazyLock::new(|| serde_json::from_str(include_str!("../../lang/de.json")).expect("Sprachdatei ist gültiges JSON"));
 static EN: LazyLock<Value> = LazyLock::new(|| serde_json::from_str(include_str!("../../lang/en.json")).expect("Sprachdatei ist gültiges JSON"));
 
