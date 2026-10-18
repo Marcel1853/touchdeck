@@ -173,6 +173,9 @@ jobs:
 
       - name: Dateien benennen
         run: |
+          # Die Artefakte bringen Unterordner mit (appimage/, deb/) – alle Dateien flach in ausgabe/.
+          find ausgabe -mindepth 2 -type f -exec mv -t ausgabe {} +
+          find ausgabe -mindepth 1 -type d -empty -delete
           mv ausgabe/app-release.apk "ausgabe/TouchDeck-Android-${{ needs.pruefen.outputs.app }}.apk"
           ls -la ausgabe
 
