@@ -1159,7 +1159,11 @@ function webSection(b) {
   const set = (k, v, opts) => mutate(() => (b.web[k] = v), { coalesce: `${b.id}:web-${k}`, ...opts });
   return h('div', { class: 'field-group' },
     h('label', { class: 'field' }, tr('pages.webUrl'),
-      h('input', { value: b.web.url, placeholder: 'https://…', onchange: (e) => set('url', e.target.value.trim()) })),
+      h('input', { value: b.web.url, placeholder: 'https://…', onchange: (e) => {
+        // „www.beispiel.de“ ohne Schema: https:// davor, sonst würde die Adresse verworfen.
+        const v = e.target.value.trim();
+        set('url', v && !v.includes('://') ? `https://${v}` : v, { detail: true });
+      } })),
     webCheck(b.web.url),
     h('div', { class: 'row' },
       h('label', { class: 'field' }, tr('pages.webZoom'),

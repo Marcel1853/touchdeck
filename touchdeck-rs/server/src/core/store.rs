@@ -162,6 +162,16 @@ fn remember_web_origins(config: &Config) {
     *WEB_ORIGINS.lock().unwrap() = list;
 }
 
+/** Adresse eines Webseiten-Buttons: „www.beispiel.de“ wird zu „https://www.beispiel.de“, andere Schemata fallen weg. */
+fn web_url(raw: &str) -> String {
+    let u = raw.trim();
+    if u.is_empty() {
+        return String::new();
+    }
+    let u = if u.contains("://") { u.to_string() } else { format!("https://{u}") };
+    if u.starts_with("http://") || u.starts_with("https://") { truncate(&u, 1000) } else { String::new() }
+}
+
 /** Gehört die Adresse zu einem Webseiten-Button? (gleicher Ursprung wie dessen Adresse) */
 pub fn is_web_button_url(url: &str) -> bool {
     origin_of(url).is_some_and(|o| WEB_ORIGINS.lock().unwrap().contains(&o))
@@ -462,7 +472,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             thickness: clamp(&slider["thickness"], 2, 30, 10),
         },
         web: Web {
-            url: b["web"]["url"].as_str().filter(|u| u.starts_with("http://") || u.starts_with("https://")).map(|u| truncate(u, 1000)).unwrap_or_default(),
+            url: web_url(b["web"]["url"].as_str().unwrap_or("")),
             zoom: clamp(&b["web"]["zoom"], 25, 300, 100),
             interactive: b["web"]["interactive"] != Value::Bool(false),
             refresh: clamp(&b["web"]["refresh"], 0, 86_400, 0),

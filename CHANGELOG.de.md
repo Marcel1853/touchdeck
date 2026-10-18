@@ -164,7 +164,8 @@ Datum: 2026-10-16
   Fehlerbehebungen:
     - Webseiten-Buttons: das Programmfenster öffnet die Seite nicht mehr bei jeder Änderung im
       Browser, Webseiten-Buttons ohne Beschriftung sind im Bedienfeld nicht mehr unsichtbar, und der
-      Editor warnt, wenn eine Seite das Einbetten verbietet.
+      Editor warnt, wenn eine Seite das Einbetten verbietet. Adressen ohne „https://“ (z. B.
+      www.beispiel.de) werden ergänzt statt verworfen.
     - „Ausführen“ im Vorlagen-Editor (und das Testen einzelner Aktionen darin) belegt die Eingaben
       mit ihren Standardwerten, {Eingabe.Name} ist dann nicht mehr leer.
     - Der Testmodus lädt Plugins auch aus ZIP-Dateien (Pfad oder „ZIP-Datei wählen …“), mit oder

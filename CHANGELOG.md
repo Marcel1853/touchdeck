@@ -152,7 +152,8 @@ Date: 2026-10-16
   Bugfixes:
     - Website buttons: the program window no longer opens the page in the web browser on every
       change, website buttons without a label are no longer hidden on the deck, and the editor warns
-      when a site forbids being embedded.
+      when a site forbids being embedded. Addresses without "https://" (e.g. www.example.com) are
+      completed instead of being dropped.
     - Running a flow from the flow editor (or testing single actions in it) fills its inputs with
       their default values, so {Input.Name} is no longer empty.
     - Test mode loads plugins from ZIP files too (path or "Choose ZIP file …"), with or without a
