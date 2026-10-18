@@ -96,6 +96,13 @@ Ein Auslöser passt, wenn jedes ausgefüllte Feld gleich dem gleichnamigen Eintr
 den Daten von `td.fire` ist. Leere Felder passen immer. Alle Daten stehen in Events
 als `{Event.Name}` zur Verfügung.
 
+## Fertige Seiten
+
+Lege eine oder mehrere `.tdprofile`-Dateien (in TouchDeck über das Seitenmenü „⋯“
+exportiert) in den Hauptordner deines Plugins. TouchDeck zeigt sie in der Plugin-Karte
+und unter **Fertige Seiten** in der Seitenliste; ein Klick importiert die Seite samt
+Vorlagen, Werten und Bildern. Der Import fügt nur hinzu und überschreibt nichts.
+
 ## Das Objekt `td`
 
 ```js

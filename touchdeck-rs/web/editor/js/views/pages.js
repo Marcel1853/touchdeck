@@ -110,7 +110,8 @@ export function mountPages(root) {
         }, h('span', { class: 'chevron' }, '▸'), tr('pages.readyMadePages')),
         tplButton('steam', '🎮', tr('pages.steamGames'), tr('pages.allGamesWithCover'), steamTemplate),
         tplButton('system', '📊', tr('common.system'), tr('pages.clockCpuAudioLock'), systemTemplate),
-        tplButton('obs', '🎬', tr('pages.obsStudio'), tr('pages.scenesStreamRecording'), obsTemplate))),
+        tplButton('obs', '🎬', tr('pages.obsStudio'), tr('pages.scenesStreamRecording'), obsTemplate),
+        h('div', { id: 'plugin-pages' }))),
     h('section', { class: 'workspace' },
       h('div', { class: 'page-toolbar' },
         h('input', { id: 'page-name', class: 'page-name', maxlength: 100, 'aria-label': tr('pages.pageName'),
@@ -130,6 +131,7 @@ export function mountPages(root) {
       h('p', { id: 'canvas-hint', class: 'hint' }, tr('pages.clickEmptyFieldNew'))),
     h('aside', { id: 'inspector', class: 'inspector' }),
   );
+  loadPluginPages();
 }
 
 function tplButton(template, icon, title, sub, onclick) {
@@ -466,10 +468,30 @@ async function exportProfile(pages, name) {
   await saveFile({ kind: 'profile', name, pages: pages.map((p) => p.id) });
 }
 
+/** Fertige Seiten aus Plugins unter „Fertige Seiten“ zeigen (je .tdprofile-Datei eines eingeschalteten Plugins). */
+async function loadPluginPages() {
+  const box = $('#plugin-pages');
+  if (!box) return;
+  const plugins = await api('GET', '/api/plugins').catch(() => []);
+  box.replaceChildren(...plugins.filter((p) => p.enabled && p.pages?.length).flatMap((p) => p.pages.map((pg) =>
+    h('button', { class: 'tpl', title: tr('pages.pluginPageHint', [p.manifest.name]), onclick: () => importPluginPage(p.id, pg.file) },
+      h('span', {}, '🧩'), pg.name, h('small', {}, tr('pages.fromPlugin', [p.manifest.name]))))));
+}
+
+/** Seite aus einem Plugin importieren (fügt nur hinzu, überschreibt nichts). */
+export async function importPluginPage(id, file) {
+  await save();
+  await applyImport(() => api('POST', '/api/plugins/import-page', { id, file }));
+}
+
 async function importProfile(file) {
   await save();
+  await applyImport(async () => api('POST', '/api/profiles/import', { data: await readDataUrl(file) }));
+}
+
+async function applyImport(request) {
   try {
-    const r = await api('POST', '/api/profiles/import', { data: await readDataUrl(file) });
+    const r = await request();
     pushUndo();
     Object.assign(S, { pages: r.pages, flows: r.flows, events: r.events, values: r.values, revision: r.revision });
     S.pageId = r.created[0] ?? S.pageId;

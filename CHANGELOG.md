@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Plugins can bring ready-made pages: .tdprofile files in the plugin folder appear on the plugin
+      card and under "Ready-made pages" and are imported with one click.
     - New button type "Website": shows a web page right in the button (address, zoom, usable on the
       device, reload every n seconds) – e.g. a dashboard or a status page in the home network.
     - New slider style "Fader (like a mixing desk)": dark rail, coloured fill and a square handle.
@@ -148,6 +150,8 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Test mode loads plugins from ZIP files too (path or "Choose ZIP file …"), with or without a
+      main folder inside the ZIP.
     - Exporting profiles, icon packs and backups works in the program window: the file is saved to
       the Downloads folder, shown in the file manager and its path is displayed.
     - Notifications, "Type text", "Open website" and other text actions now replace placeholders

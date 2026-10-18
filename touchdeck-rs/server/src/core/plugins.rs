@@ -48,7 +48,7 @@ pub const ADVANCED_CONFIRM_EN: &str = "AT MY OWN RISK";
 pub fn advanced_confirm(lang: &str) -> &'static str {
     if lang == "de" { ADVANCED_CONFIRM } else { ADVANCED_CONFIRM_EN }
 }
-const ALLOWED_EXT: [&str; 7] = ["js", "json", "md", "txt", "png", "svg", "jpg"];
+const ALLOWED_EXT: [&str; 8] = ["js", "json", "md", "txt", "png", "svg", "jpg", "tdprofile"];
 pub const MARKET_URL: &str = "https://raw.githubusercontent.com/Marcel1853/touchdeck-plugins/main/plugins.json";
 
 /** Vorgefertigte Hilfen, aus denen das Plugin `td` nutzt. Die __-Funktionen stellt TouchDeck bereit. */
@@ -690,6 +690,8 @@ pub type PluginFile = (String, Vec<u8>, bool);
 /** Alle Dateien aus einem GitHub-ZIP: Hauptordner abschneiden, keine versteckten Ordner, Größen begrenzt. */
 fn unpack(bytes: &[u8]) -> Result<Vec<PluginFile>> {
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!(t!("plugins.downloadIsNotValid")))?;
+    // GitHub-ZIPs haben einen Hauptordner; selbst gepackte ZIPs oft nicht (plugin.json liegt dann ganz oben).
+    let flat = zip.file_names().any(|n| n.is_ok_and(|n| n == "plugin.json"));
     let mut files = Vec::new();
     let mut total = 0;
     for i in 0..zip.len() {
@@ -698,8 +700,13 @@ fn unpack(bytes: &[u8]) -> Result<Vec<PluginFile>> {
             continue;
         }
         let name = f.name()?.to_string();
-        let mut parts = name.splitn(2, '/');
-        let (_, Some(rel)) = (parts.next(), parts.next()) else { continue };
+        let rel = if flat {
+            name.as_str()
+        } else {
+            let mut parts = name.splitn(2, '/');
+            let (_, Some(rel)) = (parts.next(), parts.next()) else { continue };
+            rel
+        };
         let safe = rel.split('/').all(|c| !c.is_empty() && !c.starts_with('.') && c != ".." && !c.contains('\\'));
         if !safe || f.size() > NATIVE_MAX_FILE {
             continue;
@@ -816,7 +823,7 @@ impl Plugins {
     }
 
     fn load_manifest(dir: &Path) -> Result<Value> {
-        let raw: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("plugin.json")).map_err(|_| anyhow!("plugin.json fehlt."))?)?;
+        let raw: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("plugin.json")).map_err(|_| anyhow!(t!("plugins.pluginJsonMissing")))?)?;
         check_manifest(&raw)
     }
 
@@ -881,7 +888,7 @@ impl Plugins {
                 let m = localize(&manifests.get(id).cloned().unwrap_or_else(|| json!({ "id": id, "name": id })), lang);
                 let blocked = is_native(&m) && !advanced;
                 let state = match running.get(id) {
-                    _ if blocked => json!({ "state": "blocked", "error": "Gesperrt: braucht den erweiterten Modus." }),
+                    _ if blocked => json!({ "state": "blocked", "error": t!("plugins.blockedNeedsAdvanced") }),
                     Some(r) => r.error.lock().unwrap().clone().map_or_else(|| json!({ "state": "running" }), |e| json!({ "state": "error", "error": e })),
                     None if e["enabled"] == false => json!({ "state": "off" }),
                     None => json!({ "state": "error", "error": t!("plugins.couldNotBeLoaded") }),
@@ -889,6 +896,7 @@ impl Plugins {
                 json!({
                     "id": id, "manifest": m, "permissions": describe_permissions(&m), "enabled": e["enabled"] != false, "native": is_native(&m),
                     "source": e["source"], "ref": e["ref"], "url": e["url"], "settings": e["settings"], "status": state,
+                    "pages": Self::page_files(&self.plugin_dir(id, e)),
                 })
             })
             .collect();
@@ -896,7 +904,29 @@ impl Plugins {
         out
     }
 
-    /** Aktionen und Auslöser der eingeschalteten Plugins für den Editor-Katalog. */
+    /** Fertige Seiten eines Plugins: alle .tdprofile-Dateien im Hauptordner (Name ohne Endung, Dateiname). */
+    fn page_files(dir: &Path) -> Vec<Value> {
+        let mut files: Vec<String> = std::fs::read_dir(dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|e| e.file_name().into_string().ok())
+            .filter(|n| n.to_lowercase().ends_with(".tdprofile") && !n.starts_with('.'))
+            .collect();
+        files.sort();
+        files.into_iter().map(|f| json!({ "file": f, "name": f.trim_end_matches(".tdprofile").replace(['-', '_'], " ") })).collect()
+    }
+
+    /** Inhalt einer Seiten-Datei eines Plugins (nur Dateien aus page_files). */
+    pub fn page_bytes(&self, id: &str, file: &str) -> Result<Vec<u8>> {
+        let entry = self.read_installed().get(id).cloned().ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
+        let dir = self.plugin_dir(id, &entry);
+        if !Self::page_files(&dir).iter().any(|p| p["file"] == file) {
+            bail!(t!("plugins.pageNotFound"));
+        }
+        Ok(std::fs::read(dir.join(file))?)
+    }
+
     /** Ein TouchDeck-Ereignis an alle Plugins weitergeben, die darauf hören dürfen. */
     pub fn broadcast_event(&self, kind: &str, data: &Value) {
         for r in self.running.lock().unwrap().values().filter(|r| r.events) {
@@ -1079,13 +1109,17 @@ impl Plugins {
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m);
         self.start(app, &id);
-        app.log.info("Plugins", format!("{id} installiert ({owner}/{repo} @ {git_ref})"));
+        app.log.info("Plugins", t!("plugins.installedFrom", id, format!("{owner}/{repo} @ {git_ref}")));
         Ok(id)
     }
 
     /** Testmodus: Plugin direkt aus einem lokalen Ordner laden (zum Entwickeln, bevor es veröffentlicht ist). */
     pub fn install_local(&self, app: &Arc<App>, path: &str) -> Result<String> {
         let dir = crate::system::linux::expand_home(path.trim());
+        if dir.is_file() && dir.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip")) {
+            let bytes = std::fs::read(&dir)?;
+            return self.install_zip(app, &bytes);
+        }
         let dir = dir.canonicalize().map_err(|_| anyhow!(t!("plugins.folderDoesNotExist", dir.display())))?;
         let m = Self::load_manifest(&dir)?;
         if is_native(&m) && !self.advanced() {
@@ -1102,9 +1136,31 @@ impl Plugins {
         Ok(id)
     }
 
+    /** Testmodus mit einer ZIP-Datei: auspacken nach plugins/_zip/<id> und von dort laden. */
+    pub fn install_zip(&self, app: &Arc<App>, bytes: &[u8]) -> Result<String> {
+        let files = unpack(bytes)?;
+        let raw = files.iter().find(|(n, _, _)| n == "plugin.json").ok_or_else(|| anyhow!(t!("plugins.zipHasNoPlugin")))?;
+        let m = check_manifest(&serde_json::from_slice(&raw.1).map_err(|e| anyhow!(t!("plugins.pluginJsonIsNot", e)))?)?;
+        let id = m["id"].as_str().unwrap_or("").to_string();
+        self.stop(&id);
+        let dir = self.dir.join("_zip").join(&id);
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir)?;
+        for (name, data, exec) in &files {
+            use std::os::unix::fs::PermissionsExt;
+            let target = dir.join(name);
+            if let Some(parent) = target.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&target, data)?;
+            std::fs::set_permissions(&target, std::fs::Permissions::from_mode(if *exec { 0o755 } else { 0o644 }))?;
+        }
+        self.install_local(app, &dir.to_string_lossy())
+    }
+
     /** Neu laden (z. B. nach Änderungen im Testmodus). */
     pub fn reload(&self, app: &Arc<App>, id: &str) -> Result<()> {
-        let entry = self.read_installed().get(id).cloned().ok_or_else(|| anyhow!("Unbekanntes Plugin."))?;
+        let entry = self.read_installed().get(id).cloned().ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
         let m = Self::load_manifest(&self.plugin_dir(id, &entry))?;
         self.manifests.lock().unwrap().insert(id.into(), m);
         if entry["enabled"] != false {
@@ -1115,7 +1171,7 @@ impl Plugins {
 
     pub fn set_enabled(&self, app: &Arc<App>, id: &str, on: bool) -> Result<()> {
         let mut installed = self.read_installed();
-        let e = installed.get_mut(id).ok_or_else(|| anyhow!("Unbekanntes Plugin."))?;
+        let e = installed.get_mut(id).ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
         e["enabled"] = json!(on);
         self.write_installed(&installed)?;
         if on { self.start(app, id) } else { self.stop(id) }
@@ -1124,7 +1180,7 @@ impl Plugins {
 
     pub fn set_settings(&self, app: &Arc<App>, id: &str, settings: &Value) -> Result<()> {
         let mut installed = self.read_installed();
-        let e = installed.get_mut(id).ok_or_else(|| anyhow!("Unbekanntes Plugin."))?;
+        let e = installed.get_mut(id).ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
         let keys: Vec<String> = self.manifests.lock().unwrap().get(id).and_then(|m| m["settings"].as_array().cloned()).unwrap_or_default().iter().filter_map(|f| f["key"].as_str().map(String::from)).collect();
         let clean: Map<String, Value> = settings.as_object().into_iter().flatten().filter(|(k, _)| keys.contains(k)).map(|(k, v)| (k.clone(), json!(js_string(v).chars().take(2000).collect::<String>()))).collect();
         e["settings"] = Value::Object(clean);
@@ -1138,7 +1194,7 @@ impl Plugins {
 
     pub fn remove(&self, app: &Arc<App>, id: &str) -> Result<()> {
         let mut installed = self.read_installed();
-        let e = installed.remove(id).ok_or_else(|| anyhow!("Unbekanntes Plugin."))?;
+        let e = installed.remove(id).ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
         self.stop(id);
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().remove(id);

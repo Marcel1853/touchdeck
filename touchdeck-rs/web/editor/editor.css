@@ -637,3 +637,5 @@ button.status-chip:hover { color: var(--text); }
 .pack-form textarea { width: 100%; resize: vertical; }
 /* Webseiten in der Vorschau nicht bedienbar, damit Auswählen und Ziehen gehen. */
 .td-web { pointer-events: none !important; }
+.plugin-pages { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+.plugin-pages .hint-text { margin: 0 6px 0 0; }

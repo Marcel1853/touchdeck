@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Plugins können fertige Seiten mitbringen: .tdprofile-Dateien im Plugin-Ordner erscheinen in der
+      Plugin-Karte und unter „Fertige Seiten“ und werden mit einem Klick importiert.
     - Neue Button-Art „Webseite“: zeigt eine Webseite direkt im Button (Adresse, Zoom, auf dem Gerät
       bedienbar, alle n Sekunden neu laden) – z. B. ein Dashboard oder eine Status-Seite im Heimnetz.
     - Neuer Regler-Stil „Fader (wie am Mischpult)“: dunkle Schiene, farbige Füllung und eckiger
@@ -160,6 +162,8 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Der Testmodus lädt Plugins auch aus ZIP-Dateien (Pfad oder „ZIP-Datei wählen …“), mit oder
+      ohne Hauptordner im ZIP.
     - Profile, Icon-Pakete und Sicherungen lassen sich im Programmfenster exportieren: die Datei
       landet im Download-Ordner, wird im Dateimanager gezeigt und ihr Pfad angezeigt.
     - Benachrichtigungen, „Text tippen“, „Website öffnen“ und weitere Textaktionen setzen jetzt

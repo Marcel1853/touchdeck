@@ -94,6 +94,13 @@ A trigger matches when every filled-in field equals the entry of the same name i
 the data passed to `td.fire`. Empty fields always match. All data is available in
 events as `{Event.Name}`.
 
+## Ready-made pages
+
+Put one or more `.tdprofile` files (exported from TouchDeck via the page menu “⋯”) into
+the main folder of your plugin. TouchDeck shows them on the plugin card and under
+**Ready-made pages** in the page list; one click imports the page with its flows,
+values and images. Importing only adds, it never overwrites anything.
+
 ## The `td` object
 
 ```js

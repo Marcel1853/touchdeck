@@ -221,7 +221,13 @@
     "touchdeckIsShuttingDown": "TouchDeck wird beendet.",
     "unknownCall": "Unbekannter Aufruf: {0}",
     "unknownLive": "Die Live-Anzeige „{0}“ steht nicht in plugin.json (lives).",
-    "unknownPluginAction": "Unbekannte Plugin-Aktion."
+    "unknownPluginAction": "Unbekannte Plugin-Aktion.",
+    "installedFrom": "{0} installiert ({1})",
+    "zipHasNoPlugin": "In der ZIP-Datei steht keine plugin.json – weder ganz oben noch im Hauptordner.",
+    "pluginJsonMissing": "plugin.json fehlt.",
+    "unknownPlugin": "Unbekanntes Plugin.",
+    "blockedNeedsAdvanced": "Gesperrt: braucht den erweiterten Modus.",
+    "pageNotFound": "Diese Seite gibt es im Plugin nicht."
   },
   "iconpacks": {
     "fileContainsNoImages": "In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).",

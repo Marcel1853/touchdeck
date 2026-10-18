@@ -511,7 +511,7 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 56] = [
+const ROUTES: [&str; 57] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -532,6 +532,7 @@ const ROUTES: [&str; 56] = [
     "POST /api/iconpacks/import",
     "POST /api/iconpacks/icon",
     "POST /api/profiles/import",
+    "POST /api/plugins/import-page",
     "POST /api/save-file",
     "GET /api/state",
     "PUT /api/pages",
@@ -852,7 +853,15 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/dev" => {
-            let id = app.plugins.install_local(app, str_of(&body, "path")).map_err(bad)?;
+            let id = if body["data"].is_string() {
+                // ZIP-Datei aus dem Editor (Testmodus): als data-URL hochgeladen.
+                let data = str_of(&body, "data");
+                let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
+                let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?;
+                app.plugins.install_zip(app, &bytes).map_err(bad)?
+            } else {
+                app.plugins.install_local(app, str_of(&body, "path")).map_err(bad)?
+            };
             Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/reload" => {
@@ -926,10 +935,15 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             linux::show_in_file_manager(&path);
             Ok(json!({ "ok": true, "path": path.to_string_lossy() }))
         }
-        "POST /api/profiles/import" => {
-            let data = str_of(&body, "data");
-            let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
-            let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?;
+        "POST /api/profiles/import" | "POST /api/plugins/import-page" => {
+            // Profil-Datei aus dem Editor oder eine fertige Seite, die ein Plugin mitbringt.
+            let bytes = if key == "POST /api/plugins/import-page" {
+                app.plugins.page_bytes(str_of(&body, "id"), str_of(&body, "file")).map_err(bad)?
+            } else {
+                let data = str_of(&body, "data");
+                let b64 = data.split_once(";base64,").map_or(data, |(_, b)| b);
+                base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|_| HttpError::new(400, t!("server.fileIsDamaged")))?
+            };
             let mut store = app.store.lock().unwrap();
             let r = profiles::import(&mut store, &bytes).map_err(bad)?;
             app.log.info("Profile", t!("profiles.imported", r.pages.len(), r.flows, r.values, r.images));

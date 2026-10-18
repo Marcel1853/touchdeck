@@ -221,7 +221,13 @@
     "touchdeckIsShuttingDown": "TouchDeck is shutting down.",
     "unknownCall": "Unknown call: {0}",
     "unknownLive": "The live display “{0}” is not listed in plugin.json (lives).",
-    "unknownPluginAction": "Unknown plugin action."
+    "unknownPluginAction": "Unknown plugin action.",
+    "installedFrom": "{0} installed ({1})",
+    "zipHasNoPlugin": "The ZIP file has no plugin.json – neither at the top nor in its main folder.",
+    "pluginJsonMissing": "plugin.json is missing.",
+    "unknownPlugin": "Unknown plugin.",
+    "blockedNeedsAdvanced": "Blocked: needs advanced mode.",
+    "pageNotFound": "The plugin has no such page."
   },
   "iconpacks": {
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",

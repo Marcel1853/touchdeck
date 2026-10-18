@@ -2,6 +2,7 @@
 import { t as tr, getLang } from '/shared/i18n.js';
 import { h, api, toast, ask, prompt } from '../dom.js';
 import { S, render, loadState, save } from '../state.js';
+import { importPluginPage } from './pages.js';
 
 /** Seite im Plugin-Wiki in der passenden Sprache. */
 const wikiPage = (de, en) => `https://github.com/Marcel1853/touchdeck-plugins/wiki/${getLang() === 'de' ? de : en}`;
@@ -119,6 +120,9 @@ function pluginCard(p) {
     h('p', { class: 'hint-text' }, tr('plugins.allowed'), p.permissions.length ? p.permissions.join(' · ') : tr('plugins.nothingSpecial')),
     h('p', { class: 'hint-text' }, tr('plugins.actionSTriggerS', [m.actions.length, m.triggers.length, m.name])),
     settingsForm(p),
+    p.pages?.length > 0 && h('div', { class: 'plugin-pages' },
+      h('p', { class: 'hint-text' }, tr('plugins.readyPages')),
+      p.pages.map((pg) => h('button', { class: 'btn small', onclick: () => importPluginPage(p.id, pg.file).then(() => toast(tr('plugins.pageImportedHint'), 'ok')) }, `📄 ${pg.name} ${tr('plugins.importPage')}`))),
     h('div', { class: 'pack-actions' },
       local
         ? h('button', { class: 'btn small', onclick: () => call('/api/plugins/reload', { id: p.id }, tr('plugins.reloaded')) }, tr('plugins.reload'))
@@ -208,7 +212,14 @@ function devTab() {
       h('p', { class: 'hint-text' }, tr('plugins.forDevelopmentLoadPlugin')),
       h('div', { class: 'row' },
         h('input', { placeholder: '~/mein-plugin', oninput: (e) => (path = e.target.value), onkeydown: (e) => e.key === 'Enter' && call('/api/plugins/dev', { path }, tr('plugins.pluginLoadedInTest')).then((r) => r && ((tab = 'installed'), render())) }),
-        h('button', { class: 'btn primary small', onclick: () => call('/api/plugins/dev', { path }, tr('plugins.pluginLoadedInTest')).then((r) => r && ((tab = 'installed'), render())) }, tr('plugins.load')))),
+        h('button', { class: 'btn primary small', onclick: () => call('/api/plugins/dev', { path }, tr('plugins.pluginLoadedInTest')).then((r) => r && ((tab = 'installed'), render())) }, tr('plugins.load')),
+        h('label', { class: 'btn small' }, tr('plugins.chooseZip'), h('input', { type: 'file', accept: '.zip', hidden: true, onchange: async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const data = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(file); });
+          const r = await call('/api/plugins/dev', { data }, tr('plugins.pluginLoadedInTest'));
+          if (r) { tab = 'installed'; render(); }
+        } })))),
     h('div', { class: 'settings-card' },
       h('h3', {}, tr('plugins.whatPluginLooksLike')),
       h('p', { class: 'hint-text' }, tr('plugins.folderOrPublicGithub'),
