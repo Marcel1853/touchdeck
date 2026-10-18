@@ -227,7 +227,8 @@
     "pluginJsonMissing": "plugin.json is missing.",
     "unknownPlugin": "Unknown plugin.",
     "blockedNeedsAdvanced": "Blocked: needs advanced mode.",
-    "pageNotFound": "The plugin has no such page."
+    "pageNotFound": "The plugin has no such page.",
+    "folderNotInRepo": "The folder “{0}” does not exist in this repo (or is empty)."
   },
   "iconpacks": {
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",

@@ -229,6 +229,7 @@ Der Tab **Marktplatz** liest eine Liste aus einem öffentlichen Repo
 }
 ```
 
-Wer sein Plugin dort eintragen möchte, schickt einen Pull Request mit einer neuen
-Zeile. Vor dem Installieren zeigt TouchDeck immer Quelle, Version und Berechtigungen
+Liegt das Plugin in einem Unterordner eines Repos, kommt `"path": "ordner/des/plugins"`
+dazu (oder in TouchDeck direkt `besitzer/repo/ordner` eingeben). Wer sein Plugin dort
+eintragen möchte, schickt einen Pull Request mit einer neuen Zeile. Vor dem Installieren zeigt TouchDeck immer Quelle, Version und Berechtigungen
 an. Installiert wird genau der geprüfte Stand.

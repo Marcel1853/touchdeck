@@ -225,6 +225,8 @@ The **Marketplace** tab reads a list from a public repo (`plugins.json`):
 }
 ```
 
-To list your plugin there, send a pull request with a new line. Before installing,
+If the plugin lives in a sub-folder of a repo, add `"path": "folder/of/the/plugin"`
+(or enter `owner/repo/folder` directly in TouchDeck). To list your plugin there, send a
+pull request with a new line. Before installing,
 TouchDeck always shows the source, version and permissions. Exactly the reviewed
 version is installed.

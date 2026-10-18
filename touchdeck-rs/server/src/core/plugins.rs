@@ -669,19 +669,42 @@ pub struct Plugins {
     http: reqwest::Client,
 }
 
-/** owner/repo aus „owner/repo“ oder einer GitHub-Adresse. */
-pub fn parse_repo(input: &str) -> Result<(String, String)> {
+/** Ein Plugin auf GitHub: Repo und optional ein Unterordner darin (mehrere Plugins in einem Repo). */
+#[derive(Debug, Clone, PartialEq)]
+pub struct Repo {
+    pub owner: String,
+    pub repo: String,
+    pub path: String,
+}
+
+impl std::fmt::Display for Repo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.path.is_empty() { write!(f, "{}/{}", self.owner, self.repo) } else { write!(f, "{}/{}/{}", self.owner, self.repo, self.path) }
+    }
+}
+
+/**
+ * Repo aus „owner/repo“, „owner/repo/unter/ordner“ oder einer GitHub-Adresse
+ * (auch „github.com/owner/repo/tree/main/unter/ordner“).
+ */
+pub fn parse_repo(input: &str) -> Result<Repo> {
     let s = input.trim().trim_end_matches('/').trim_end_matches(".git");
     let s = s.strip_prefix("https://").or_else(|| s.strip_prefix("http://")).unwrap_or(s);
     let s = s.strip_prefix("www.").unwrap_or(s);
     let s = s.strip_prefix("github.com/").unwrap_or(s);
-    let mut parts = s.split('/');
-    let (Some(owner), Some(repo)) = (parts.next(), parts.next()) else { bail!(t!("plugins.pleaseEnterGithubRepo")) };
-    let ok = |p: &str| !p.is_empty() && p.len() <= 100 && p.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c));
-    if !ok(owner) || !ok(repo) {
+    let mut parts: Vec<&str> = s.split('/').collect();
+    if parts.len() < 2 {
+        bail!(t!("plugins.pleaseEnterGithubRepo"));
+    }
+    // „…/tree/<zweig>/ordner“ aus einer kopierten GitHub-Adresse: Zweig überspringen.
+    if parts.len() >= 4 && parts[2] == "tree" {
+        parts.drain(2..4);
+    }
+    let ok = |p: &str| !p.is_empty() && p.len() <= 100 && !p.starts_with('.') && p.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c));
+    if !parts.iter().all(|p| ok(p)) || !ok(parts[0].trim_start_matches('.')) || parts.len() > 8 {
         bail!(t!("plugins.invalidRepoName"));
     }
-    Ok((owner.into(), repo.into()))
+    Ok(Repo { owner: parts[0].into(), repo: parts[1].into(), path: parts[2..].join("/") })
 }
 
 /** Eine Datei aus dem Plugin: Pfad im Plugin, Inhalt, ausführbar? */
@@ -1030,19 +1053,20 @@ impl Plugins {
 
     /** Prüft ein GitHub-Repo: öffentlich? plugin.json gültig? Liefert Beschreibung, Berechtigungen, Version und Prüfsumme. */
     pub async fn preview(&self, repo_input: &str, lang: &str) -> Result<Value> {
-        let (owner, repo) = parse_repo(repo_input)?;
-        let (files, git_ref, url) = self.download(&owner, &repo).await?;
+        let r = parse_repo(repo_input)?;
+        let (files, git_ref, url) = self.download(&r).await?;
         let (m, digest, chosen) = manifest_of(files)?;
         let native = is_native(&m);
         // Steht das Plugin im Marktplatz? Sonst zeigt der Editor „auf eigene Gefahr“.
-        let full = format!("{owner}/{repo}").to_lowercase();
-        let listed = self.market(lang).await.is_ok_and(|v| v["plugins"].as_array().into_iter().flatten().any(|p| p["repo"].as_str().is_some_and(|r| r.to_lowercase() == full)));
-        Ok(json!({ "listed": listed, "repo": format!("{owner}/{repo}"), "ref": git_ref, "url": url, "manifest": localize(&m, lang), "permissions": describe_permissions(&m),
+        let full = r.to_string().to_lowercase();
+        let listed = self.market(lang).await.is_ok_and(|v| v["plugins"].as_array().into_iter().flatten().any(|p| p["repo"].as_str().is_some_and(|x| x.to_lowercase() == full)));
+        Ok(json!({ "listed": listed, "repo": r.to_string(), "ref": git_ref, "url": url, "manifest": localize(&m, lang), "permissions": describe_permissions(&m),
             "digest": digest, "native": native, "advanced": self.advanced(), "files": chosen.len() }))
     }
 
     /** Öffentliches Repo herunterladen: neueste Veröffentlichung (Release), sonst der Hauptzweig. */
-    async fn download(&self, owner: &str, repo: &str) -> Result<(Vec<PluginFile>, String, String)> {
+    async fn download(&self, r: &Repo) -> Result<(Vec<PluginFile>, String, String)> {
+        let (owner, repo) = (&r.owner, &r.repo);
         let api = format!("https://api.github.com/repos/{owner}/{repo}");
         let res = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?;
         if res.status().as_u16() == 404 {
@@ -1052,7 +1076,7 @@ impl Plugins {
         if info["private"] != false || info["visibility"].as_str().is_some_and(|v| v != "public") {
             bail!(t!("plugins.repoIsNotPublic"));
         }
-        let url = info["html_url"].as_str().unwrap_or("").to_string();
+        let mut url = info["html_url"].as_str().unwrap_or("").to_string();
         let release = self.http.get(format!("{api}/releases/latest")).header("Accept", "application/vnd.github+json").send().await?;
         let (zip_ref, git_ref) = match release.status().is_success() {
             true => {
@@ -1068,13 +1092,23 @@ impl Plugins {
         if zip.len() as u64 > NATIVE_MAX_TOTAL {
             bail!(t!("plugins.repoIsTooLarge"));
         }
-        Ok((unpack(&zip)?, git_ref, url))
+        let mut files = unpack(&zip)?;
+        if !r.path.is_empty() {
+            // Nur der Unterordner des Plugins, mit ihm als Hauptordner.
+            let prefix = format!("{}/", r.path);
+            files = files.into_iter().filter_map(|(n, d, x)| n.strip_prefix(&prefix).map(|rest| (rest.to_string(), d, x))).collect();
+            if files.is_empty() {
+                bail!(t!("plugins.folderNotInRepo", r.path));
+            }
+            url = format!("{url}/tree/{git_ref}/{}", r.path);
+        }
+        Ok((files, git_ref, url))
     }
 
     /** Installieren oder aktualisieren; digest muss zur angezeigten Vorschau passen (nichts Unbemerktes). */
     pub async fn install(&self, app: &Arc<App>, repo_input: &str, digest: &str, accept_risk: bool) -> Result<String> {
-        let (owner, repo) = parse_repo(repo_input)?;
-        let (files, git_ref, url) = self.download(&owner, &repo).await?;
+        let r = parse_repo(repo_input)?;
+        let (files, git_ref, url) = self.download(&r).await?;
         let (m, d, files) = manifest_of(files)?;
         if d != digest {
             bail!(t!("plugins.pluginHasChangedSince"));
@@ -1087,7 +1121,7 @@ impl Plugins {
         }
         let id = m["id"].as_str().unwrap_or("").to_string();
         let mut installed = self.read_installed();
-        if let Some(other) = installed.get(&id).and_then(|e| e["source"].as_str()).filter(|s| *s != format!("github:{owner}/{repo}"))
+        if let Some(other) = installed.get(&id).and_then(|e| e["source"].as_str()).filter(|s| *s != format!("github:{r}"))
         {
             bail!(t!("plugins.anotherPluginWithId", id, other));
         }
@@ -1105,11 +1139,11 @@ impl Plugins {
             std::fs::set_permissions(&target, std::fs::Permissions::from_mode(if *exec { 0o755 } else { 0o644 }))?;
         }
         let settings = installed.get(&id).map(|e| e["settings"].clone()).filter(Value::is_object).unwrap_or_else(|| json!({}));
-        installed.insert(id.clone(), json!({ "source": format!("github:{owner}/{repo}"), "ref": git_ref, "url": url, "enabled": true, "settings": settings }));
+        installed.insert(id.clone(), json!({ "source": format!("github:{r}"), "ref": git_ref, "url": url, "enabled": true, "settings": settings }));
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m);
         self.start(app, &id);
-        app.log.info("Plugins", t!("plugins.installedFrom", id, format!("{owner}/{repo} @ {git_ref}")));
+        app.log.info("Plugins", t!("plugins.installedFrom", id, format!("{r} @ {git_ref}")));
         Ok(id)
     }
 
@@ -1219,9 +1253,14 @@ impl Plugins {
             .into_iter()
             .flatten()
             .filter_map(|p| {
-                let (owner, repo) = parse_repo(p["repo"].as_str()?).ok()?;
+                // „path“ (Unterordner im Repo) darf auch getrennt angegeben sein.
+                let full = match p["path"].as_str().map(|x| x.trim_matches('/')).filter(|x| !x.is_empty()) {
+                    Some(path) => format!("{}/{path}", p["repo"].as_str()?),
+                    None => p["repo"].as_str()?.to_string(),
+                };
+                let r = parse_repo(&full).ok()?;
                 Some(json!({
-                    "repo": format!("{owner}/{repo}"),
+                    "repo": r.to_string(),
                     "name": localize(&ltext(&p["name"], 60), &lang),
                     "description": localize(&ltext(&p["description"], 300), &lang),
                     "author": text(&p["author"], 60),
@@ -1320,8 +1359,13 @@ mod tests {
 
     #[test]
     fn repo_namen() {
-        assert_eq!(parse_repo("https://github.com/Marcel1853/td-hue").unwrap(), ("Marcel1853".into(), "td-hue".into()));
-        assert_eq!(parse_repo("Marcel1853/td-hue.git").unwrap(), ("Marcel1853".into(), "td-hue".into()));
+        let r = |o: &str, n: &str, p: &str| Repo { owner: o.into(), repo: n.into(), path: p.into() };
+        assert_eq!(parse_repo("https://github.com/Marcel1853/td-hue").unwrap(), r("Marcel1853", "td-hue", ""));
+        assert_eq!(parse_repo("Marcel1853/td-hue.git").unwrap(), r("Marcel1853", "td-hue", ""));
+        assert_eq!(parse_repo("Marcel1853/touchdeck-plugins/plugins/clipboard-slots").unwrap(), r("Marcel1853", "touchdeck-plugins", "plugins/clipboard-slots"));
+        assert_eq!(parse_repo("https://github.com/Marcel1853/touchdeck-plugins/tree/main/plugins/x").unwrap(), r("Marcel1853", "touchdeck-plugins", "plugins/x"));
+        assert!(parse_repo("a/b/../c").is_err());
+        assert!(parse_repo("a/b/.git").is_err());
         assert!(parse_repo("nur-name").is_err());
         assert!(parse_repo("a/b c").is_err());
     }

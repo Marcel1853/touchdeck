@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Plugins can live in a sub-folder of a repo (several plugins in one repo): marketplace entries
+      take a "path", and "owner/repo/folder" or a copied GitHub folder link can be entered directly.
     - Plugins can bring ready-made pages: .tdprofile files in the plugin folder appear on the plugin
       card and under "Ready-made pages" and are imported with one click.
     - New button type "Website": shows a web page right in the button (address, zoom, usable on the
