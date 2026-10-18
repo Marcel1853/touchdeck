@@ -733,7 +733,7 @@ export function deleteButton() {
 // Die Zwischenablage bleibt beim Seitenwechsel und Neuladen erhalten (nur in diesem Editor).
 const CLIP = 'touchdeck.clipboard';
 const STYLE_CLIP = 'touchdeck.styleClipboard';
-const STYLE_KEYS = ['color', 'colorOn', 'bgOpacity', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit', 'bgImage', 'overlay'];
+const STYLE_KEYS = ['color', 'colorOn', 'bgOpacity', 'textColor', 'fontSize', 'fontFamily', 'bold', 'italic', 'textOutline', 'titlePos', 'iconFit', 'iconSize', 'bgImage', 'texFit', 'texVeil', 'overlay'];
 const LOGIC_CLIP = 'touchdeck.logicClipboard';
 // Logik eines Buttons: alle Aktionslisten (Drücken, Aus, Halten, Loslassen, Doppelt) und seine Events.
 const LOGIC_KEYS = ['actions', 'actionsOff', 'holdActions', 'releaseActions', 'doubleActions', 'holdRepeat', 'events'];
@@ -1079,6 +1079,11 @@ function lookTab(b) {
     !onLook && b.icon.type === 'image' && b.icon.value && h('label', { class: 'switch-row' },
       h('input', { type: 'checkbox', checked: b.iconFit === 'cover', onchange: (e) => mutate(() => (b.iconFit = e.target.checked ? 'cover' : 'contain')) }),
       tr('pages.imageFillsWholeButton')),
+    !onLook && h('label', { class: 'field' }, tr('pages.iconSize', [b.iconSize ?? 100]),
+      h('input', { type: 'range', min: 30, max: 200, step: 5, value: b.iconSize ?? 100, oninput: (e) => {
+        e.target.parentElement.firstChild.textContent = tr('pages.iconSize', [e.target.value]);
+        edit('iconSize', () => (b.iconSize = Number(e.target.value)), { detail: false });
+      } })),
     h('div', { class: 'emoji-grid' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => mutate(() => (b[key] = { type: 'emoji', value: em })) }, em))),
     iconPicker(b, key),
     canBeOn && h('label', { class: 'field' }, tr('pages.labelWhenOnEmpty'),
@@ -1145,6 +1150,14 @@ function textureSection(b) {
       h('label', { class: 'btn small' }, tr('pages.image'), upload),
       has && h('button', { class: 'btn small ghost', title: tr('pages.removeBackgroundImage'), onclick: () => mutate(() => (b.bgImage = { type: 'emoji', value: '' })) }, '✕')),
     iconPicker(b, 'bgImage', 'showBgPicker'),
+    has && h('label', { class: 'field' }, tr('pages.texFit'),
+      h('select', { value: b.texFit ?? 'cover', onchange: (e) => mutate(() => (b.texFit = e.target.value)) },
+        [['cover', tr('pages.texCover')], ['contain', tr('pages.texContain')], ['stretch', tr('pages.texStretch')], ['tile', tr('pages.texTile')]].map(([v, l]) => h('option', { value: v }, l)))),
+    has && h('label', { class: 'field' }, tr('pages.texVeil', [b.texVeil ?? 35]),
+      h('input', { type: 'range', min: 0, max: 100, step: 5, value: b.texVeil ?? 35, oninput: (e) => {
+        e.target.parentElement.firstChild.textContent = tr('pages.texVeil', [e.target.value]);
+        mutate(() => (b.texVeil = Number(e.target.value)), { coalesce: `${b.id}:veil`, detail: false });
+      } })),
     h('label', { class: 'field' }, tr('pages.overlay'),
       h('select', { value: b.overlay ?? '', onchange: (e) => mutate(() => (b.overlay = e.target.value)) }, overlays.map(([v, l]) => h('option', { value: v }, l)))),
     h('p', { class: 'hint-text' }, tr('pages.textureHint')));

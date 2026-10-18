@@ -187,6 +187,12 @@ pub struct Button {
     pub text_outline: i64,
     pub title_pos: String,
     pub icon_fit: String,
+    /// Größe des Symbols in Prozent der normalen Größe (30–200).
+    pub icon_size: i64,
+    /// Textur: cover (füllen), contain (ganz zeigen), stretch (strecken), tile (kacheln).
+    pub tex_fit: String,
+    /// Farbschleier der Buttonfarbe über der Textur in Prozent (0 = Textur unverändert).
+    pub tex_veil: i64,
     /// Textur: Hintergrundbild (eigenes Bild oder aus einem Icon-Paket) und Overlay darüber.
     pub bg_image: Icon,
     pub overlay: String,
@@ -403,6 +409,9 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         text_outline: clamp(&b["textOutline"], 0, 6, 0),
         title_pos: one_of(&b["titlePos"], &["top", "center", "bottom", "hidden"], "bottom"),
         icon_fit: one_of(&b["iconFit"], &["cover"], "contain"),
+        icon_size: clamp(&b["iconSize"], 30, 200, 100),
+        tex_fit: one_of(&b["texFit"], &["contain", "stretch", "tile"], "cover"),
+        tex_veil: clamp(&b["texVeil"], 0, 100, 35),
         bg_image: sanitize_icon(&b["bgImage"]),
         overlay: one_of(&b["overlay"], &OVERLAYS, ""),
         mode: one_of(&b["mode"], &["toggle", "slider"], "press"),

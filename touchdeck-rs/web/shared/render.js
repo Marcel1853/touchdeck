@@ -56,9 +56,12 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   if (cover) el.style.setProperty('--img', `url("${iconUrl(b.icon.value)}")`);
   // Textur: eigenes Hintergrundbild (unter Symbol und Text) und Overlay darüber.
   if (b.bgImage?.type === 'image' && b.bgImage.value && !cover) {
-    el.classList.add('has-texture');
+    el.classList.add('has-texture', `tex-${b.texFit ?? 'cover'}`);
     el.style.setProperty('--tex', `url("${iconUrl(b.bgImage.value)}")`);
+    el.style.setProperty('--veil', `${b.texVeil ?? 35}%`);
   }
+  // Symbolgröße in Prozent der normalen Größe.
+  if ((b.iconSize ?? 100) !== 100) el.style.setProperty('--is', (b.iconSize ?? 100) / 100);
 
 
   const shape = isSlider ? b.slider?.shape ?? 'fill' : null;

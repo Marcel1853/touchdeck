@@ -28,6 +28,9 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Symbolgröße je Button (30–200 %), Textur anpassen (füllen, ganz zeigen, strecken, kacheln) und
+      ein einstellbarer Farbschleier über der Textur (0 % = Textur unverändert); „Aussehen
+      übertragen“ nimmt sie mit.
     - „Aussehen ändern“ kann auch ein Bild als Symbol, eine Textur und ein Overlay setzen, z. B. aus
       einem Event.
     - Neue Live-Anzeigen: Temperatur und Auslastung der Grafikkarte, belegte Festplatte,

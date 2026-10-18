@@ -62,7 +62,7 @@
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  font-size: 42cqmin;
+  font-size: calc(42cqmin * var(--is, 1));
   line-height: 1;
 }
 
@@ -70,6 +70,8 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  /* Symbolgröße: kleiner oder größer als der Symbolbereich. */
+  transform: scale(var(--is, 1));
 }
 
 .td-title {
@@ -155,10 +157,13 @@
 .td-btn.has-texture {
   background:
     linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0) 55%),
-    linear-gradient(color-mix(in srgb, var(--bg) 35%, transparent), color-mix(in srgb, var(--bg) 35%, transparent)),
+    linear-gradient(color-mix(in srgb, var(--bg) var(--veil, 35%), transparent), color-mix(in srgb, var(--bg) var(--veil, 35%), transparent)),
     var(--tex) center / cover no-repeat,
     var(--bg);
 }
+.td-btn.has-texture.tex-contain { background-size: auto, auto, contain, auto; }
+.td-btn.has-texture.tex-stretch { background-size: auto, auto, 100% 100%, auto; }
+.td-btn.has-texture.tex-tile { background-size: auto, auto, 33% auto, auto; background-repeat: no-repeat, no-repeat, repeat, no-repeat; }
 /* Overlays: eigenes Element über allem (Umschalter nutzen ::after schon), Klicks gehen durch. */
 .td-overlay { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .td-overlay.ov-gloss { background: linear-gradient(160deg, rgb(255 255 255 / 0.38), rgb(255 255 255 / 0.06) 45%, transparent 55%); }
