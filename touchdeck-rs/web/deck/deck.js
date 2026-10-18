@@ -227,7 +227,10 @@ function sliderValue(el, e) {
     if (from > 270) from = from > 315 ? 0 : 270;
     return Math.round((from / 270) * 100);
   }
-  const ratio = el.dataset.vertical ? (r.bottom - e.clientY) / r.height : (e.clientX - r.left) / r.width;
+  // Schiene/Fader: Wert an der Schiene messen, nicht am ganzen Button.
+  const rail = el.querySelector('.td-rail')?.getBoundingClientRect();
+  const box = rail && rail.height > 0 && rail.width > 0 ? rail : r;
+  const ratio = el.dataset.vertical ? (box.bottom - e.clientY) / box.height : (e.clientX - box.left) / box.width;
   return Math.round(Math.max(0, Math.min(1, ratio)) * 100);
 }
 

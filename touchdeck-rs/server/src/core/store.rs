@@ -428,7 +428,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             target: one_of(&slider["target"], &catalog::slider_target_ids(), "volume"),
             input: text(&slider["input"], "", 200),
             command: text(&slider["command"], "", 1000),
-            shape: one_of(&slider["shape"], &["rail", "knob", "dial"], "fill"),
+            shape: one_of(&slider["shape"], &["rail", "fader", "knob", "dial"], "fill"),
             color: slider["color"].as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).unwrap_or("").to_lowercase(),
             thickness: clamp(&slider["thickness"], 2, 30, 10),
         },

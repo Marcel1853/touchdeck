@@ -1221,7 +1221,7 @@ function sliderTab(b) {
     h('h3', {}, tr('pages.sliderLook')),
     h('label', { class: 'field' }, tr('pages.sliderShape'),
       h('select', { value: sl.shape ?? 'fill', onchange: (e) => edit(() => (sl.shape = e.target.value)) },
-        [['fill', tr('pages.shapeFill')], ['rail', tr('pages.shapeRail')], ['knob', tr('pages.shapeKnob')], ['dial', tr('pages.shapeDial')]].map(([v, l]) => h('option', { value: v }, l)))),
+        [['fill', tr('pages.shapeFill')], ['rail', tr('pages.shapeRail')], ['fader', tr('pages.shapeFader')], ['knob', tr('pages.shapeKnob')], ['dial', tr('pages.shapeDial')]].map(([v, l]) => h('option', { value: v }, l)))),
     h('div', { class: 'row' },
       h('div', { class: 'field' }, tr('pages.sliderColor'),
         h('div', { class: 'colors' },

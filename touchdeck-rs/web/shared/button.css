@@ -197,6 +197,20 @@
 .td-btn.vertical .td-rail-handle { left: 50%; bottom: calc(var(--val) * 1%); transform: translate(-50%, 50%); }
 .td-btn.horizontal .td-rail-handle { top: 50%; left: calc(var(--val) * 1%); transform: translate(-50%, -50%); }
 .td-btn.shape-rail .td-live, .td-btn.shape-rail .td-title { z-index: 1; }
+/* Fader wie am Mischpult: dunkle Schiene in der Mitte, farbige Füllung, eckiger Griff. */
+.td-btn.shape-fader { --slider-color: var(--sc, #5aa9e6); }
+.td-btn.shape-fader .td-rail { background: rgb(0 0 0 / 0.55); border-radius: 2px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); }
+.td-btn.shape-fader.vertical .td-rail { left: 50%; top: 10%; bottom: 26%; width: calc(var(--thick) * 1.2cqmin + 4cqmin); }
+.td-btn.shape-fader.horizontal .td-rail { top: 40%; bottom: auto; left: 10%; right: 10%; height: calc(var(--thick) * 1.2cqmin + 4cqmin); transform: translateY(-50%); }
+.td-btn.shape-fader .td-rail-fill { border-radius: 1px; inset: 2px auto 2px 2px; }
+.td-btn.shape-fader.vertical .td-rail-fill { inset: auto 2px 2px 2px; height: calc(var(--val) * 1% - 4px); }
+.td-btn.shape-fader.horizontal .td-rail-fill { width: calc(var(--val) * 1% - 4px); }
+.td-btn.shape-fader .td-rail-handle { aspect-ratio: auto; border-radius: 2px; background: linear-gradient(#8a8f99, #5d626b); box-shadow: 0 2px 4px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.25); }
+.td-btn.shape-fader.vertical .td-rail-handle { width: 280%; height: calc(var(--thick) * 0.5cqmin + 7cqmin); }
+.td-btn.shape-fader.horizontal .td-rail-handle { height: 280%; width: calc(var(--thick) * 0.5cqmin + 7cqmin); }
+.td-btn.shape-fader .td-icon { display: none; }
+.td-btn.shape-fader .td-live { display: none; }
+.td-btn.shape-fader .td-title { z-index: 1; margin-top: auto; text-shadow: 0 1px 3px rgb(0 0 0 / 0.8); }
 .td-knob { position: absolute; inset: 6%; display: grid; place-items: center; }
 .td-knob svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
 .td-knob circle { fill: none; stroke-width: calc(var(--thick) * 1px); stroke-linecap: round; transform: rotate(135deg); transform-origin: 50px 50px; }

@@ -80,7 +80,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
       const fill = document.createElement('div');
       fill.className = 'td-fill';
       el.append(fill);
-    } else if (shape === 'rail') {
+    } else if (shape === 'rail' || shape === 'fader') {
       const rail = document.createElement('div');
       rail.className = 'td-rail';
       rail.innerHTML = '<span class="td-rail-fill"></span><i class="td-rail-handle"></i>';

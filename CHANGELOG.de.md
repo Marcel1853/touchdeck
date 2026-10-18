@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Neuer Regler-Stil „Fader (wie am Mischpult)“: dunkle Schiene, farbige Füllung und eckiger
+      Griff. Regler mit Schiene nehmen den Wert jetzt entlang der Schiene.
     - Werte werden nach Ordnern in einklappbaren Gruppen gezeigt, mit „Neuer Ordner“ und einem „＋“
       je Ordner.
     - Symbolgröße je Button (30–200 %), Textur anpassen (füllen, ganz zeigen, strecken, kacheln) und

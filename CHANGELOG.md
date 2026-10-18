@@ -27,6 +27,8 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - New slider style "Fader (like a mixing desk)": dark rail, coloured fill and a square handle.
+      Sliders with a rail now take the value along the rail.
     - Values are grouped by folder in collapsible sections, with "New folder" and a "＋" per folder.
     - Icon size per button (30–200 %), texture fit (fill, show completely, stretch, tile) and an
       adjustable colour veil over the texture (0 % = texture unchanged); "Copy look" includes them.
