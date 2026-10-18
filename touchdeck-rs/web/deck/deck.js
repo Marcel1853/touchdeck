@@ -424,6 +424,8 @@ async function connect() {
     if (msg.type === 'state') {
       // Neue TouchDeck-Version am PC: einmal neu laden, damit auch das Bedienfeld aktuell ist.
       if (state?.version && msg.version && msg.version !== state.version) return location.reload();
+      // TouchDeck am PC neu gestartet (z. B. neuer Build): neu laden, sonst läuft hier noch alter Code.
+      if (state?.build && msg.build && msg.build !== state.build) return location.reload();
       // Andere Sprache am PC eingestellt: neu laden, damit alle Texte passen.
       if (msg.language && msg.language !== getLang()) return location.reload();
       // Der App die Sprache sagen, damit auch ihr Verbinden-Bildschirm passt.

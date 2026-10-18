@@ -6,26 +6,8 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
-Version: 0.9.0
-Date: 2026-10-16
-  Major Features:
-    - Editor, deck, action catalog, server messages and desktop app are fully available in German
-      and English. All texts live in translation files per language; the language can be switched
-      under Settings › General and open decks reload by themselves.
-    - Free pages: besides the grid, a page can be "Free". Buttons are placed and sized freely on an
-      area with a selectable format (16:9, 16:10, 4:3 …): drag to move, drag the corner to resize,
-      arrow keys nudge (with Shift further). Switching between grid and free keeps all buttons.
-    - Grid pages can have custom column widths and row heights.
-    - Page logic: every page has its own events, with the new trigger "Page opened / left" (also
-      fires when a device disconnects) and the placeholder {Event.Page}.
-    - Double press: buttons have their own action list "When double-pressed" besides press and
-      hold. Only buttons with double-press actions wait briefly (0.3 s) for a second tap, all
-      others react immediately.
-    - Profiles can be exported and imported as .tdprofile files (one page or all pages, including
-      used templates, values, events and images). Importing adds pages and never overwrites
-      anything.
-    - Status bar at the bottom of the editor: connected devices with name, address and the page
-      they show, state of OBS, Twitch and Discord, plus address and version.
+Version: 0.10.0
+Date: 2026-10-18
   Features:
     - Graphs: every live display with a number can show its history as a line, area or bars
       (number of values, interval, fixed or automatic range, colour). The history is recorded in
@@ -76,6 +58,52 @@ Date: 2026-10-16
       itself. The current round is available as {Event.Loop}; endless loops stop after 20000 steps.
     - Conditions can compare placeholders (e.g. {Event.User}) and know "greater or equal", "less or
       equal" and "is not empty".
+  Bugfixes:
+    - Open decks (phone, tablet, browser) reload by themselves when TouchDeck on the PC was restarted
+      or updated, instead of running old code until the app is restarted.
+    - Security: pages in website buttons can no longer open pop-ups or new windows, navigate the deck
+      away or make the program window open the web browser; the program opens the browser at most
+      once every 3 seconds.
+    - Website buttons: the program window no longer opens the page in the web browser on every
+      change, website buttons without a label are no longer hidden on the deck, and the editor warns
+      when a site forbids being embedded. Addresses without "https://" (e.g. www.example.com) are
+      completed instead of being dropped.
+    - Running a flow from the flow editor (or testing single actions in it) fills its inputs with
+      their default values, so {Input.Name} is no longer empty.
+    - Test mode loads plugins from ZIP files too (path or "Choose ZIP file …"), with or without a
+      main folder inside the ZIP.
+    - Exporting profiles, icon packs and backups works in the program window: the file is saved to
+      the Downloads folder, shown in the file manager and its path is displayed.
+    - Notifications, "Type text", "Open website" and other text actions now replace placeholders
+      such as {Event.Loop} or {Input.Name} (shell commands deliberately not, for safety).
+    - Programs, commands and advanced plugins (e.g. Python) started from the AppImage no longer
+      inherit its library paths (PYTHONHOME, LD_LIBRARY_PATH …) and work as when started normally.
+  Android app:
+    - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser;
+      links without a matching app no longer crash the app.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.9.0
+Date: 2026-10-16
+  Major Features:
+    - Editor, deck, action catalog, server messages and desktop app are fully available in German
+      and English. All texts live in translation files per language; the language can be switched
+      under Settings › General and open decks reload by themselves.
+    - Free pages: besides the grid, a page can be "Free". Buttons are placed and sized freely on an
+      area with a selectable format (16:9, 16:10, 4:3 …): drag to move, drag the corner to resize,
+      arrow keys nudge (with Shift further). Switching between grid and free keeps all buttons.
+    - Grid pages can have custom column widths and row heights.
+    - Page logic: every page has its own events, with the new trigger "Page opened / left" (also
+      fires when a device disconnects) and the placeholder {Event.Page}.
+    - Double press: buttons have their own action list "When double-pressed" besides press and
+      hold. Only buttons with double-press actions wait briefly (0.3 s) for a second tap, all
+      others react immediately.
+    - Profiles can be exported and imported as .tdprofile files (one page or all pages, including
+      used templates, values, events and images). Importing adds pages and never overwrites
+      anything.
+    - Status bar at the bottom of the editor: connected devices with name, address and the page
+      they show, state of OBS, Twitch and Discord, plus address and version.
+  Features:
     - Knobs and slider styles: sliders can now be a slider (area), a slider with rail and handle,
       a knob (ring) or a knob with pointer, with their own colour and thickness. Knobs are turned
       in a circle (bottom left 0 %, bottom right 100 %) and control everything sliders can.
@@ -160,23 +188,6 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
-    - Security: pages in website buttons can no longer open pop-ups or new windows, navigate the deck
-      away or make the program window open the web browser; the program opens the browser at most
-      once every 3 seconds.
-    - Website buttons: the program window no longer opens the page in the web browser on every
-      change, website buttons without a label are no longer hidden on the deck, and the editor warns
-      when a site forbids being embedded. Addresses without "https://" (e.g. www.example.com) are
-      completed instead of being dropped.
-    - Running a flow from the flow editor (or testing single actions in it) fills its inputs with
-      their default values, so {Input.Name} is no longer empty.
-    - Test mode loads plugins from ZIP files too (path or "Choose ZIP file …"), with or without a
-      main folder inside the ZIP.
-    - Exporting profiles, icon packs and backups works in the program window: the file is saved to
-      the Downloads folder, shown in the file manager and its path is displayed.
-    - Notifications, "Type text", "Open website" and other text actions now replace placeholders
-      such as {Event.Loop} or {Input.Name} (shell commands deliberately not, for safety).
-    - Programs, commands and advanced plugins (e.g. Python) started from the AppImage no longer
-      inherit its library paths (PYTHONHOME, LD_LIBRARY_PATH …) and work as when started normally.
     - Typing in the image search no longer loses focus after each letter (a following Backspace
       could delete the selected button).
     - Fixed the autostart entry pointing to a file that no longer existed after an update; it now
@@ -202,9 +213,6 @@ Date: 2026-10-16
     - App 0.6.1: the app language follows the TouchDeck setting, including the connect screen
       (before the first connection: language of the found PC, otherwise the phone's language).
     - App 0.6.2: the app sends the device name from its settings for the editor's status bar.
-    - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser;
-      links without a matching app no longer crash the app.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0
 Date: 2026-10-14

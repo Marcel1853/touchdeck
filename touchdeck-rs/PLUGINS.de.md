@@ -197,7 +197,7 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 
 | Von TouchDeck | Bedeutung |
 |---|---|
-| `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.9.0"}` | Programm ist gestartet |
+| `{"type":"start","plugin":{…},"settings":{…},"touchdeck":"0.10.0"}` | Programm ist gestartet |
 | `{"type":"action","requestId":"r_1","id":"los","params":{…},"info":{…}}` | Aktion ausführen, mit `result` antworten |
 | `{"type":"value","requestId":"…","value":"…"}` | Antwort auf `getValue` |
 | `{"type":"event","kind":"page_view","data":{…}}` | Ein TouchDeck-Ereignis (wird immer gesendet, ohne Berechtigung) |

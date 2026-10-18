@@ -42,6 +42,10 @@ use crate::integrations::{steam, steam_pages};
 use crate::system::linux;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/** Kennung dieses Programmstarts: ändert sie sich, laden offene Bedienfelder neu (neuer Build, gleiche Version). */
+static BUILD: std::sync::LazyLock<String> =
+    std::sync::LazyLock::new(|| std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis()).to_string());
 const MAX_BODY: usize = 8 * 1024 * 1024;
 // Icon-Pakete hochladen oder importieren darf nur der Editor auf diesem PC, dafür mit größerem Limit.
 const MAX_UPLOAD: usize = 128 * 1024 * 1024;
@@ -154,6 +158,7 @@ impl App {
         let c = &store.config;
         json!({
             "version": VERSION,
+            "build": *BUILD,
             "revision": store.revision,
             "pages": c.pages,
             "toggles": c.toggles,

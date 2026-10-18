@@ -6,27 +6,8 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
-Version: 0.9.0
-Datum: 2026-10-16
-  Große Neuerungen:
-    - Editor, Bedienfeld, Aktionskatalog, Server-Meldungen und Desktop-App gibt es vollständig auf
-      Deutsch und Englisch. Alle Texte stehen in Übersetzungsdateien je Sprache; die Sprache lässt
-      sich unter Einstellungen › Allgemein umschalten, offene Bedienfelder laden von selbst neu.
-    - Freie Seiten: Neben dem Raster kann eine Seite „Frei“ sein. Buttons liegen mit beliebiger
-      Lage und Größe auf einer Fläche mit wählbarem Format (16:9, 16:10, 4:3 …): ziehen zum
-      Verschieben, an der Ecke vergrößern, Pfeiltasten schieben (mit Umschalt weiter). Der Wechsel
-      zwischen Raster und frei behält alle Buttons.
-    - Rasterseiten können eigene Spaltenbreiten und Zeilenhöhen haben.
-    - Logik für Seiten: Jede Seite hat eigene Events, mit dem neuen Auslöser „Seite geöffnet /
-      verlassen“ (auch beim Trennen eines Geräts) und dem Platzhalter {Event.Seite}.
-    - Doppelt drücken: Buttons haben neben Drücken und Halten eine eigene Aktionsliste „Beim
-      doppelten Drücken“. Nur Buttons mit Doppelt-Aktionen warten kurz (0,3 s) auf ein zweites
-      Tippen, alle anderen reagieren sofort.
-    - Profile lassen sich als .tdprofile-Datei exportieren und importieren (eine Seite oder alle
-      Seiten, samt benutzten Vorlagen, Werten, Events und Bildern). Der Import fügt hinzu und
-      überschreibt nichts.
-    - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
-      Zustand von OBS, Twitch und Discord sowie Adresse und Version.
+Version: 0.10.0
+Datum: 2026-10-18
   Neuerungen:
     - Graphen: jede Live-Anzeige mit einer Zahl kann ihren Verlauf als Linie, Fläche oder Balken
       zeigen (Anzahl Werte, Abstand, feste oder automatische Grenzen, Farbe). Der Verlauf wird im
@@ -86,6 +67,55 @@ Datum: 2026-10-16
       Endlosschleifen stoppen nach 20000 Schritten.
     - Bedingungen können Platzhalter vergleichen (z. B. {Event.Nutzer}) und kennen „größer oder
       gleich“, „kleiner oder gleich“ und „ist nicht leer“.
+  Fehlerbehebungen:
+    - Offene Bedienfelder (Handy, Tablet, Browser) laden sich selbst neu, wenn TouchDeck am PC neu
+      gestartet oder aktualisiert wurde, statt bis zum App-Neustart mit altem Code zu laufen.
+    - Sicherheit: Seiten in Webseiten-Buttons können keine Popups oder neuen Fenster mehr öffnen, das
+      Bedienfeld nicht wegnavigieren und das Programmfenster nicht dazu bringen, den Browser zu
+      öffnen; das Programm öffnet den Browser höchstens einmal alle 3 Sekunden.
+    - Webseiten-Buttons: das Programmfenster öffnet die Seite nicht mehr bei jeder Änderung im
+      Browser, Webseiten-Buttons ohne Beschriftung sind im Bedienfeld nicht mehr unsichtbar, und der
+      Editor warnt, wenn eine Seite das Einbetten verbietet. Adressen ohne „https://“ (z. B.
+      www.beispiel.de) werden ergänzt statt verworfen.
+    - „Ausführen“ im Vorlagen-Editor (und das Testen einzelner Aktionen darin) belegt die Eingaben
+      mit ihren Standardwerten, {Eingabe.Name} ist dann nicht mehr leer.
+    - Der Testmodus lädt Plugins auch aus ZIP-Dateien (Pfad oder „ZIP-Datei wählen …“), mit oder
+      ohne Hauptordner im ZIP.
+    - Profile, Icon-Pakete und Sicherungen lassen sich im Programmfenster exportieren: die Datei
+      landet im Download-Ordner, wird im Dateimanager gezeigt und ihr Pfad angezeigt.
+    - Benachrichtigungen, „Text tippen“, „Website öffnen“ und weitere Textaktionen setzen jetzt
+      Platzhalter wie {Event.Durchlauf} oder {Eingabe.Name} ein (Shell-Befehle aus Sicherheitsgründen
+      bewusst nicht).
+    - Programme, Befehle und erweiterte Plugins (z. B. Python), die aus der AppImage gestartet
+      werden, erben nicht mehr deren Bibliothekspfade (PYTHONHOME, LD_LIBRARY_PATH …) und laufen wie
+      normal gestartet.
+  Android-App:
+    - App 0.6.3: eingebettete Seiten von Webseiten-Buttons bleiben im Button, statt den Browser zu
+      öffnen; Links ohne passende App bringen die App nicht mehr zum Absturz.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.9.0
+Datum: 2026-10-16
+  Große Neuerungen:
+    - Editor, Bedienfeld, Aktionskatalog, Server-Meldungen und Desktop-App gibt es vollständig auf
+      Deutsch und Englisch. Alle Texte stehen in Übersetzungsdateien je Sprache; die Sprache lässt
+      sich unter Einstellungen › Allgemein umschalten, offene Bedienfelder laden von selbst neu.
+    - Freie Seiten: Neben dem Raster kann eine Seite „Frei“ sein. Buttons liegen mit beliebiger
+      Lage und Größe auf einer Fläche mit wählbarem Format (16:9, 16:10, 4:3 …): ziehen zum
+      Verschieben, an der Ecke vergrößern, Pfeiltasten schieben (mit Umschalt weiter). Der Wechsel
+      zwischen Raster und frei behält alle Buttons.
+    - Rasterseiten können eigene Spaltenbreiten und Zeilenhöhen haben.
+    - Logik für Seiten: Jede Seite hat eigene Events, mit dem neuen Auslöser „Seite geöffnet /
+      verlassen“ (auch beim Trennen eines Geräts) und dem Platzhalter {Event.Seite}.
+    - Doppelt drücken: Buttons haben neben Drücken und Halten eine eigene Aktionsliste „Beim
+      doppelten Drücken“. Nur Buttons mit Doppelt-Aktionen warten kurz (0,3 s) auf ein zweites
+      Tippen, alle anderen reagieren sofort.
+    - Profile lassen sich als .tdprofile-Datei exportieren und importieren (eine Seite oder alle
+      Seiten, samt benutzten Vorlagen, Werten, Events und Bildern). Der Import fügt hinzu und
+      überschreibt nichts.
+    - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
+      Zustand von OBS, Twitch und Discord sowie Adresse und Version.
+  Neuerungen:
     - Drehregler und Regler-Formen: Regler können Schieber (Fläche), Schieber mit Schiene und Griff,
       Drehregler (Ring) oder Drehregler mit Zeiger sein, mit eigener Farbe und Dicke. Drehregler
       dreht man im Kreis (unten links 0 %, unten rechts 100 %); sie steuern alles, was Regler können.
@@ -172,25 +202,6 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
-    - Sicherheit: Seiten in Webseiten-Buttons können keine Popups oder neuen Fenster mehr öffnen, das
-      Bedienfeld nicht wegnavigieren und das Programmfenster nicht dazu bringen, den Browser zu
-      öffnen; das Programm öffnet den Browser höchstens einmal alle 3 Sekunden.
-    - Webseiten-Buttons: das Programmfenster öffnet die Seite nicht mehr bei jeder Änderung im
-      Browser, Webseiten-Buttons ohne Beschriftung sind im Bedienfeld nicht mehr unsichtbar, und der
-      Editor warnt, wenn eine Seite das Einbetten verbietet. Adressen ohne „https://“ (z. B.
-      www.beispiel.de) werden ergänzt statt verworfen.
-    - „Ausführen“ im Vorlagen-Editor (und das Testen einzelner Aktionen darin) belegt die Eingaben
-      mit ihren Standardwerten, {Eingabe.Name} ist dann nicht mehr leer.
-    - Der Testmodus lädt Plugins auch aus ZIP-Dateien (Pfad oder „ZIP-Datei wählen …“), mit oder
-      ohne Hauptordner im ZIP.
-    - Profile, Icon-Pakete und Sicherungen lassen sich im Programmfenster exportieren: die Datei
-      landet im Download-Ordner, wird im Dateimanager gezeigt und ihr Pfad angezeigt.
-    - Benachrichtigungen, „Text tippen“, „Website öffnen“ und weitere Textaktionen setzen jetzt
-      Platzhalter wie {Event.Durchlauf} oder {Eingabe.Name} ein (Shell-Befehle aus Sicherheitsgründen
-      bewusst nicht).
-    - Programme, Befehle und erweiterte Plugins (z. B. Python), die aus der AppImage gestartet
-      werden, erben nicht mehr deren Bibliothekspfade (PYTHONHOME, LD_LIBRARY_PATH …) und laufen wie
-      normal gestartet.
     - Beim Tippen in der Bildsuche geht der Fokus nicht mehr nach jedem Buchstaben verloren (eine
       folgende Rücktaste konnte den ausgewählten Button löschen).
     - Der Autostart-Eintrag zeigte nach einem Update auf eine nicht mehr vorhandene Datei; er
@@ -223,9 +234,6 @@ Datum: 2026-10-16
       Handys).
     - App 0.6.2: Die App liefert den Gerätenamen aus ihren Einstellungen für die Statusleiste
       im Editor.
-    - App 0.6.3: eingebettete Seiten von Webseiten-Buttons bleiben im Button, statt den Browser zu
-      öffnen; Links ohne passende App bringen die App nicht mehr zum Absturz.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0
 Datum: 2026-10-14
