@@ -765,6 +765,12 @@ pub struct Settings {
     pub language: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub firewall_opened: Option<bool>,
+    /// Port des Servers (gilt ab dem nächsten Start; --port bzw. TOUCHDECK_PORT haben Vorrang).
+    #[serde(default = "default_port")]
+    pub port: u16,
+    /// Adresse für Links und QR-Codes ("" = alle Adressen im Heimnetz), z. B. 192.168.1.20 oder pc.local.
+    #[serde(default)]
+    pub public_host: String,
     /// Unbekannte Einträge bleiben erhalten.
     #[serde(flatten)]
     pub extra: Map<String, Value>,
@@ -774,6 +780,10 @@ pub struct Settings {
 pub fn system_language() -> String {
     let env = ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"].iter().find_map(|k| std::env::var(k).ok().filter(|v| !v.is_empty() && v != "C" && v != "POSIX"));
     if env.is_some_and(|v| v.to_lowercase().starts_with("de")) { "de".into() } else { "en".into() }
+}
+
+fn default_port() -> u16 {
+    8770
 }
 
 fn default_language() -> String {
@@ -789,6 +799,8 @@ fn default_settings(start_page: &str) -> Settings {
         token: random_token(),
         start_page: start_page.into(),
         lan_enabled: true,
+        port: default_port(),
+        public_host: String::new(),
         pin: String::new(),
         deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
@@ -1138,6 +1150,15 @@ impl Store {
         }
         if let Some(b) = patch["firewallOpened"].as_bool() {
             s.firewall_opened = Some(b);
+        }
+        if let Some(p) = patch["port"].as_u64().filter(|p| (1024..65536).contains(p)) {
+            s.port = p as u16;
+        }
+        if let Some(h) = patch["publicHost"].as_str() {
+            let h = h.trim();
+            if h.is_empty() || ((1..=253).contains(&h.len()) && h.chars().all(|c| c.is_ascii_alphanumeric() || ".-:[]".contains(c))) {
+                s.public_host = h.to_string();
+            }
         }
         let d = &patch["deck"];
         if d.is_object() {

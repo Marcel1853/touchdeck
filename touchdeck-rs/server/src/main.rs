@@ -16,7 +16,8 @@ const HELP: &str = "TouchDeck – Makro-Fernbedienung für Linux
   --no-open       Editor nicht automatisch im Browser öffnen";
 
 struct Args {
-    port: u16,
+    /// None = Port aus den Einstellungen.
+    port: Option<u16>,
     data: PathBuf,
     public: PathBuf,
     open: bool,
@@ -27,7 +28,7 @@ fn parse_args() -> Args {
     // Beim Entwickeln: Editor und Bedienfeld aus dem Quellordner.
     let dev_public = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web");
     let mut args = Args {
-        port: env("TOUCHDECK_PORT").and_then(|p| p.parse().ok()).unwrap_or(8770),
+        port: env("TOUCHDECK_PORT").and_then(|p| p.parse().ok()),
         data: env("TOUCHDECK_DATA").map_or_else(|| PathBuf::from("data"), PathBuf::from),
         public: env("TOUCHDECK_PUBLIC").map_or(dev_public, PathBuf::from),
         open: true,
@@ -42,10 +43,10 @@ fn parse_args() -> Args {
         };
         match a.as_str() {
             "--port" => {
-                args.port = value("--port").parse().unwrap_or_else(|_| {
+                args.port = Some(value("--port").parse().unwrap_or_else(|_| {
                     eprintln!("{}", t!("cli.portNotValidNumber"));
                     std::process::exit(2)
-                })
+                }))
             }
             "--data" => args.data = PathBuf::from(value("--data")),
             "--public" => args.public = PathBuf::from(value("--public")),
@@ -81,8 +82,6 @@ async fn main() {
     let args = parse_args();
     let data = std::path::absolute(&args.data).unwrap_or(args.data);
     let public = args.public.canonicalize().unwrap_or(args.public);
-    let editor_url = format!("http://localhost:{}/editor/", args.port);
-
     let store = match Store::open(&data) {
         Ok(s) => s,
         Err(err) => {
@@ -90,8 +89,11 @@ async fn main() {
             std::process::exit(1)
         }
     };
+    // --port bzw. TOUCHDECK_PORT haben Vorrang, sonst der Port aus den Einstellungen.
+    let port = args.port.unwrap_or(store.settings().port);
+    let editor_url = format!("http://localhost:{port}/editor/");
     let opts = Options {
-        port: args.port,
+        port,
         host: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
         apk: public.join("../downloads/TouchDeck.apk"),
         public_dir: public,
@@ -104,8 +106,8 @@ async fn main() {
             std::process::exit(1)
         }
         // Läuft TouchDeck schon (z. B. per Autostart), nur dessen Editor öffnen.
-        if !touchdeck_running(args.port).await {
-            eprintln!("{}", t!("cli.portIsUsedBy", args.port));
+        if !touchdeck_running(port).await {
+            eprintln!("{}", t!("cli.portIsUsedBy", port));
             std::process::exit(1)
         }
         println!("{}", t!("cli.touchdeckIsAlreadyRunning", editor_url));

@@ -97,6 +97,19 @@ function security() {
           }
         } }, tr('settings.createNewKey')))),
     card(
+      h('h3', {}, tr('settings.network')),
+      h('p', { class: 'hint-text' }, tr('settings.networkHint')),
+      h('div', { class: 'row' },
+        h('label', { class: 'field' }, tr('settings.port'),
+          h('input', { type: 'number', min: 1024, max: 65535, value: st.port ?? 8770, onchange: async (e) => {
+            const port = Number(e.target.value);
+            if (!(port >= 1024 && port <= 65535)) return toast(tr('settings.portRange'), 'error');
+            if (await updateSettings({ port })) toast(tr('settings.portAfterRestart', [port]), 'ok');
+          } })),
+        h('label', { class: 'field' }, tr('settings.publicHost'),
+          h('input', { value: st.publicHost ?? '', placeholder: tr('settings.publicHostAuto'), onchange: (e) => updateSettings({ publicHost: e.target.value.trim() }) }))),
+      (st.port ?? 8770) !== S.port && h('p', { class: 'hint-text warn' }, tr('settings.portPending', [S.port, st.port]))),
+    card(
       h('h3', {}, 'PIN'),
       h('p', { class: 'hint-text' }, tr('settings.extraProtectionWhoeverSees')),
       h('div', { class: 'hotkey' },

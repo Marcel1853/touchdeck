@@ -19,8 +19,11 @@ use touchdeck_server::t;
 static QUITTING: AtomicBool = AtomicBool::new(false);
 static HINT_SHOWN: AtomicBool = AtomicBool::new(false);
 
+/** Port dieses Starts: TOUCHDECK_PORT, sonst aus den Einstellungen (beim Start gesetzt), sonst 8770. */
+static PORT: std::sync::OnceLock<u16> = std::sync::OnceLock::new();
+
 fn port() -> u16 {
-    std::env::var("TOUCHDECK_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(8770)
+    *PORT.get_or_init(|| std::env::var("TOUCHDECK_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(8770))
 }
 
 fn base() -> String {
@@ -276,6 +279,10 @@ fn main() {
             let public = public_dir(&handle);
             let data = data_dir();
             let store = Store::open(&data).map_err(|e| e.to_string())?;
+            // Ohne TOUCHDECK_PORT gilt der Port aus den Einstellungen.
+            if std::env::var("TOUCHDECK_PORT").ok().and_then(|p| p.parse::<u16>().ok()).is_none() {
+                let _ = PORT.set(store.settings().port);
+            }
             // Kopplungsanfrage vom Handy: Fenster nach vorn holen.
             let pair_handle = handle.clone();
             let opts = Options {

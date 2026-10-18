@@ -202,7 +202,10 @@ impl App {
 
     fn pairing_urls(&self, store: &Store) -> Vec<String> {
         let token = &store.settings().token;
-        linux::lan_addresses().iter().map(|ip| format!("http://{ip}:{}/deck/?token={token}", self.port)).collect()
+        // Eigene Adresse aus den Einstellungen, sonst alle Adressen im Heimnetz.
+        let host = &store.settings().public_host;
+        let hosts = if host.is_empty() { linux::lan_addresses() } else { vec![host.clone()] };
+        hosts.iter().map(|ip| format!("http://{ip}:{}/deck/?token={token}", self.port)).collect()
     }
 
     /** Live-Wert eines Plugins setzen und die Anzeigen gleich aktualisieren. */
