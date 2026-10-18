@@ -515,7 +515,7 @@ const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 57] = [
+const ROUTES: [&str; 58] = [
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -538,6 +538,7 @@ const ROUTES: [&str; 57] = [
     "POST /api/profiles/import",
     "POST /api/plugins/import-page",
     "POST /api/save-file",
+    "POST /api/web-check",
     "GET /api/state",
     "PUT /api/pages",
     "PUT /api/settings",
@@ -929,6 +930,21 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             Ok(json!({ "ok": true, "id": id, "count": count, "packCount": imported.len(), "packs": app.iconpacks.list() }))
         }
 
+        "POST /api/web-check" => {
+            // Darf die Seite eingebettet werden? (X-Frame-Options / CSP frame-ancestors)
+            let url = str_of(&body, "url");
+            if !(url.starts_with("http://") || url.starts_with("https://")) {
+                return Ok(json!({ "ok": false, "reason": "url" }));
+            }
+            let res = reqwest::Client::new().get(url).timeout(Duration::from_secs(8)).send().await;
+            let Ok(res) = res else { return Ok(json!({ "ok": false, "reason": "unreachable" })) };
+            let header = |k: &str| res.headers().get(k).and_then(|v| v.to_str().ok()).unwrap_or("").to_lowercase();
+            let xfo = header("x-frame-options");
+            let csp = header("content-security-policy");
+            let ancestors = csp.split(';').map(str::trim).find(|d| d.starts_with("frame-ancestors")).unwrap_or("");
+            let blocked = xfo.contains("deny") || xfo.contains("sameorigin") || (!ancestors.is_empty() && !ancestors.contains('*'));
+            Ok(json!({ "ok": !blocked, "reason": if blocked { "blocked" } else { "" } }))
+        }
         "POST /api/save-file" => {
             // Exporte direkt in den Download-Ordner schreiben (im Programmfenster gibt es keinen Browser-Download).
             let (file, bytes) = match str_of(&body, "kind") {

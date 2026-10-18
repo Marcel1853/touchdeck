@@ -182,6 +182,8 @@ class DeckActivity : Activity() {
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             val url = request.url
+            // Webseiten-Buttons: eingebettete Seiten (Rahmen) bleiben im Button.
+            if (!request.isForMainFrame) return false
             if (url.host == server.host) return false
             // Fremde Links im normalen Browser öffnen.
             startActivity(Intent(Intent.ACTION_VIEW, url))

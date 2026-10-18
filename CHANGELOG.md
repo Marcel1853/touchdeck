@@ -150,6 +150,9 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Website buttons: the program window no longer opens the page in the web browser on every
+      change, website buttons without a label are no longer hidden on the deck, and the editor warns
+      when a site forbids being embedded.
     - Running a flow from the flow editor (or testing single actions in it) fills its inputs with
       their default values, so {Input.Name} is no longer empty.
     - Test mode loads plugins from ZIP files too (path or "Choose ZIP file …"), with or without a
@@ -185,6 +188,7 @@ Date: 2026-10-16
     - App 0.6.1: the app language follows the TouchDeck setting, including the connect screen
       (before the first connection: language of the found PC, otherwise the phone's language).
     - App 0.6.2: the app sends the device name from its settings for the editor's status bar.
+    - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0

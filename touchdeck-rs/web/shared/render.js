@@ -158,7 +158,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     ov.className = `td-overlay ov-${b.overlay}`;
     el.append(ov);
   }
-  if (!hasIcon && !cover && !isSlider && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
+  if (!hasIcon && !cover && !isSlider && !isWeb && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
   return el;
 }
 

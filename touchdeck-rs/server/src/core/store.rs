@@ -148,6 +148,25 @@ pub struct Live {
     pub bar: bool,
 }
 
+/** Ursprünge (schema://host:port) aller Webseiten-Buttons; das Programmfenster lässt sie in Rahmen laden. */
+static WEB_ORIGINS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+fn origin_of(url: &str) -> Option<String> {
+    let (scheme, rest) = url.split_once("://")?;
+    let host = rest.split(['/', '?', '#']).next()?;
+    (!host.is_empty()).then(|| format!("{}://{}", scheme.to_lowercase(), host.to_lowercase()))
+}
+
+fn remember_web_origins(config: &Config) {
+    let list: Vec<String> = config.pages.iter().flat_map(|p| &p.buttons).filter(|b| b.mode == "web").filter_map(|b| origin_of(&b.web.url)).collect();
+    *WEB_ORIGINS.lock().unwrap() = list;
+}
+
+/** Gehört die Adresse zu einem Webseiten-Button? (gleicher Ursprung wie dessen Adresse) */
+pub fn is_web_button_url(url: &str) -> bool {
+    origin_of(url).is_some_and(|o| WEB_ORIGINS.lock().unwrap().contains(&o))
+}
+
 /** Webseite im Button (Art „web“): Adresse, Zoom in Prozent, bedienbar, Neu laden alle n Sekunden. */
 #[derive(Clone, Debug, Serialize)]
 pub struct Web {
@@ -888,6 +907,7 @@ impl Store {
         let file = data_dir.join("config.json");
         let config = Self::load(&file)?;
         super::i18n::set_lang(&config.settings.language);
+        remember_web_origins(&config);
         Ok(Store {
             data_dir: data_dir.to_path_buf(),
             icon_dir,
@@ -921,8 +941,9 @@ impl Store {
 
     fn changed(&self, what: &'static str, detail: Value) {
         if let Err(err) = write_json(&self.file, &self.config) {
-            eprintln!("Speichern fehlgeschlagen: {err:#}");
+            eprintln!("{}", t!("store.saveFailed", format!("{err:#}")));
         }
+        remember_web_origins(&self.config);
         let change = Change { what, detail };
         if let Some(hook) = self.hook.get() {
             hook(&change);

@@ -255,7 +255,8 @@
     "quieter": "Quieter",
     "settingsDamagedUsingDefaults": "Settings damaged, using defaults: {0}",
     "soundOn": "Sound on",
-    "template": "Template"
+    "template": "Template",
+    "saveFailed": "Saving failed: {0}"
   },
   "backup": {
     "backupIsDamaged": "The backup is damaged."

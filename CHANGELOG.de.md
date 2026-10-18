@@ -162,6 +162,9 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Webseiten-Buttons: das Programmfenster öffnet die Seite nicht mehr bei jeder Änderung im
+      Browser, Webseiten-Buttons ohne Beschriftung sind im Bedienfeld nicht mehr unsichtbar, und der
+      Editor warnt, wenn eine Seite das Einbetten verbietet.
     - „Ausführen“ im Vorlagen-Editor (und das Testen einzelner Aktionen darin) belegt die Eingaben
       mit ihren Standardwerten, {Eingabe.Name} ist dann nicht mehr leer.
     - Der Testmodus lädt Plugins auch aus ZIP-Dateien (Pfad oder „ZIP-Datei wählen …“), mit oder
@@ -206,6 +209,8 @@ Datum: 2026-10-16
       Handys).
     - App 0.6.2: Die App liefert den Gerätenamen aus ihren Einstellungen für die Statusleiste
       im Editor.
+    - App 0.6.3: eingebettete Seiten von Webseiten-Buttons bleiben im Button, statt den Browser zu
+      öffnen.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0

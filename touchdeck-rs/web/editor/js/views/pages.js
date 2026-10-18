@@ -1136,6 +1136,23 @@ function lookTab(b) {
   ];
 }
 
+// Ergebnis der Prüfung je Adresse, damit nicht bei jedem Zeichnen neu gefragt wird.
+const webChecks = new Map();
+
+/** Hinweis, wenn die Seite das Einbetten verbietet oder nicht erreichbar ist. */
+function webCheck(url) {
+  if (!url) return null;
+  const box = h('p', { class: 'hint-text' });
+  const show = (r) => {
+    if (!r || r.ok) return box.replaceChildren();
+    box.classList.add('error');
+    box.textContent = r.reason === 'blocked' ? tr('pages.webBlocked') : r.reason === 'unreachable' ? tr('pages.webUnreachable') : tr('pages.webBadUrl');
+  };
+  if (webChecks.has(url)) show(webChecks.get(url));
+  else api('POST', '/api/web-check', { url }).then((r) => { webChecks.set(url, r); show(r); }).catch(() => {});
+  return box;
+}
+
 /** Webseite im Button: Adresse, Zoom, bedienbar und automatisch neu laden. */
 function webSection(b) {
   b.web ??= { url: '', zoom: 100, interactive: true, refresh: 0 };
@@ -1143,6 +1160,7 @@ function webSection(b) {
   return h('div', { class: 'field-group' },
     h('label', { class: 'field' }, tr('pages.webUrl'),
       h('input', { value: b.web.url, placeholder: 'https://…', onchange: (e) => set('url', e.target.value.trim()) })),
+    webCheck(b.web.url),
     h('div', { class: 'row' },
       h('label', { class: 'field' }, tr('pages.webZoom'),
         h('input', { type: 'number', min: 25, max: 300, step: 5, value: b.web.zoom ?? 100, onchange: (e) => set('zoom', Number(e.target.value) || 100) })),
@@ -1349,7 +1367,7 @@ const act = (type, params = {}) => ({ id: uid('a_'), type, enabled: true, params
 const onEvent = (type, params, actions) => ({ id: uid('e_'), enabled: true, trigger: { type, params }, actions });
 const look = (params) => act('change_visuals', { target: 'self', ...params });
 const restoreLook = () => act('restore_visuals', { target: 'self' });
-const liveShow = (source) => ({ live: { source, command: '', variable: '' } });
+const liveShow = (source, bar = false) => ({ live: { source, command: '', variable: '', bar } });
 
 /** Ton- oder Mikrofon-Button: bei „stumm“ anderes Aussehen, bei „laut“ wieder das normale. */
 function muteEvents(target, mutedLook) {
@@ -1369,14 +1387,14 @@ export function muteButton(row, col) {
 async function systemTemplate() {
   if (!(await askTemplate('system', tr('pages.pageWithClockCpu')))) return;
   addTemplatePage({
-    id: uid('p_'), name: tr('common.system'), rows: 3, cols: 5, background: '#14161b',
+    id: uid('p_'), name: tr('common.system'), rows: 4, cols: 5, background: '#14161b',
     buttons: [
-      // Zahlen wie Uhrzeit oder CPU gibt es nur als Live-Anzeige (Reiter „Aussehen“).
+      // Zahlen wie Uhrzeit oder CPU gibt es nur als Live-Anzeige (Reiter „Aussehen“), mit Balken.
       tplBtn(0, 0, tr('pages.clock'), '🕐', [], liveShow('clock')),
-      tplBtn(0, 1, 'CPU', '🧠', [], liveShow('cpu')),
-      tplBtn(0, 2, 'RAM', '💾', [], liveShow('ram')),
-      tplBtn(0, 3, tr('pages.temperature'), '🌡️', [], { ...liveShow('temp'), colorOn: '#a33a2a' }),
-      tplBtn(0, 4, tr('pages.volume'), '', [], { rowSpan: 3, mode: 'slider', color: '#3b3f8f' }),
+      tplBtn(0, 1, 'CPU', '🧠', [], liveShow('cpu', true)),
+      tplBtn(0, 2, 'RAM', '💾', [], liveShow('ram', true)),
+      tplBtn(0, 3, tr('pages.temperature'), '🌡️', [], { ...liveShow('temp', true), colorOn: '#a33a2a' }),
+      tplBtn(0, 4, tr('pages.volume'), '', [], { rowSpan: 4, mode: 'slider', color: '#3b3f8f', slider: { target: 'volume', input: '', command: '', shape: 'fader', color: '', thickness: 10 } }),
       tplBtn(1, 0, tr('pages.music'), '⏯️', [['media', { op: 'play-pause' }]], { colSpan: 2, ...liveShow('track'), colorOn: '#2f6e4f' }),
       muteButton(1, 2),
       tplBtn(1, 3, tr('pages.microphone'), '🎙️', [['mic_mute', { op: 'toggle' }]],
@@ -1385,6 +1403,10 @@ async function systemTemplate() {
       tplBtn(2, 1, tr('pages.photo'), '📸', [['screenshot', { mode: 'dialog' }]]),
       tplBtn(2, 2, tr('pages.nightLight'), '🌙', [['night_light', { mode: 'toggle' }]]),
       tplBtn(2, 3, tr('pages.lock'), '🔒', [['lock_screen']], { color: '#5b3fa0' }),
+      tplBtn(3, 0, tr('pages.gpu'), '🎮', [], { ...liveShow('gpu_temp', true), colorOn: '#a33a2a' }),
+      tplBtn(3, 1, tr('pages.disk'), '💽', [], liveShow('disk', true)),
+      tplBtn(3, 2, tr('pages.network'), '📶', [], liveShow('net')),
+      tplBtn(3, 3, tr('pages.screenOff'), '🖥️', [['screen', { op: 'off' }]], { color: '#30343f' }),
     ],
   }, 'system');
 }

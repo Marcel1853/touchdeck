@@ -71,6 +71,10 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
         })
         .on_navigation(|url| {
             let inside = url.as_str().starts_with(&format!("{}/", base()));
+            // Webseiten-Buttons laden ihre Seite in einem Rahmen; die Navigation dorthin nicht an den Browser geben.
+            if !inside && touchdeck_server::core::store::is_web_button_url(url.as_str()) {
+                return true;
+            }
             if !inside {
                 let _ = linux::open_with_default(url.as_str());
             }

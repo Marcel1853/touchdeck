@@ -255,7 +255,8 @@
     "quieter": "Leiser",
     "settingsDamagedUsingDefaults": "Einstellungen beschädigt, nutze Standardwerte: {0}",
     "soundOn": "Ton an",
-    "template": "Vorlage"
+    "template": "Vorlage",
+    "saveFailed": "Speichern fehlgeschlagen: {0}"
   },
   "backup": {
     "backupIsDamaged": "Die Sicherung ist beschädigt."
