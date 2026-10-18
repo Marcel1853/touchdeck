@@ -1430,6 +1430,8 @@ function comboSettings(b, edit) {
     s2.target === 'obs_volume' && dynamicSelect({ key: 'input', label: tr('pages.obsAudioSource'), source: 'obs-inputs' }, s2.input, (v) => edit(() => (s2.input = v))),
     s2.target === 'command' && h('label', { class: 'field' }, tr('pages.commandIsReplacedBy'),
       h('textarea', { value: s2.command, placeholder: tr('pages.exampleDdcutilSetvcp10'), oninput: (e) => edit(() => (s2.command = e.target.value), 'sl2cmd') })),
+    h('div', { class: 'field' }, tr('pages.comboKnobPos'),
+      segmented([['mixer', tr('pages.comboKnobFirst')], ['mixer-last', tr('pages.comboKnobLast')]], s2.shape === 'mixer-last' ? 'mixer-last' : 'mixer', (v) => edit(() => (s2.shape = v)))),
     h('label', { class: 'field' }, tr('pages.comboKnobColor'),
       h('input', { type: 'color', value: s2.color || '#e6b45a', oninput: (e) => edit(() => (s2.color = e.target.value), 'sl2color') })),
     h('p', { class: 'hint-text' }, tr('pages.comboHint')));

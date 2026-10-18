@@ -667,3 +667,7 @@ button.status-chip:hover { color: var(--text); }
 .page-list li.selected { background: color-mix(in srgb, var(--accent) 22%, transparent); outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); }
 .page-list li.drag-over { outline: 2px dashed var(--accent); }
 .head-buttons { display: flex; gap: 6px; }
+.page-list li .name.off { opacity: 0.55; }
+.plugin-title { cursor: pointer; flex: 1; }
+.plugin-title .chevron { display: inline-block; width: 1.2em; opacity: 0.7; }
+.plugin-title .hint-text { margin: 4px 0 0 1.2em; }

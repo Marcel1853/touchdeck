@@ -1,6 +1,7 @@
 // Bereich „Events“: Wenn <Auslöser>, dann <Aktionen> – unabhängig von Buttons.
 import { t as tr } from '/shared/i18n.js';
-import { h, uid, prompt, empty } from '../dom.js';
+import { h, uid, prompt, empty, ask, contextMenu, toast } from '../dom.js';
+import { renderFolderList, moveToFolderItem, addFolder, clearSelection } from '../folders.js';
 import { S, mutate, render } from '../state.js';
 import { actionList, testActions, triggerEditor, triggerSummary, newTrigger } from '../actions-ui.js';
 
@@ -14,6 +15,42 @@ async function addEvent() {
   });
 }
 
+/** Rechtsklick auf ein oder mehrere Events. */
+function eventMenu(items, x, y) {
+  const one = items.length === 1 ? items[0] : null;
+  const allOn = items.every((e) => e.enabled);
+  contextMenu(x, y, [
+    one && { icon: '📂', label: tr('pages.openPage'), onclick: () => { S.eventId = one.id; render(); } },
+    one && { icon: '✏️', label: tr('pages.renamePage'), onclick: async () => {
+      const name = await prompt(tr('pages.renamePage'), tr('events.nameOfEventSwitch'), one.name);
+      if (name) mutate(() => (one.name = name.slice(0, 100)));
+    } },
+    one && { icon: '⧉', label: tr('common.duplicate'), onclick: () => mutate(() => {
+      const copy = { ...structuredClone(one), id: uid('ev_'), name: tr('pages.copy2', [one.name]) };
+      S.events.splice(S.events.indexOf(one) + 1, 0, copy);
+      S.eventId = copy.id;
+    }) },
+    one && { icon: '▶', label: tr('events.runNow'), onclick: () => testActions(one.actions, one.name) },
+    { icon: allOn ? '⏸' : '⏵', label: allOn ? tr('events.disable', [items.length]) : tr('events.enable', [items.length]), onclick: () => mutate(() => items.forEach((e) => (e.enabled = !allOn))) },
+    moveToFolderItem('events', S.events, items),
+    '-',
+    { icon: '🗑', label: one ? tr('common.delete') : tr('events.deleteSelected', [items.length]), danger: true, onclick: () => deleteEvents(items) },
+  ]);
+}
+
+async function deleteEvents(list) {
+  const r = await ask(tr('events.deleteEventsTitle', [list.length]), list.map((e) => e.name).join(', '), [{ value: 'delete', label: tr('common.delete'), kind: 'danger' }]);
+  if (r !== 'delete') return false;
+  const ids = new Set(list.map((e) => e.id));
+  mutate(() => {
+    S.events = S.events.filter((e) => !ids.has(e.id));
+    if (ids.has(S.eventId)) S.eventId = S.events[0]?.id ?? null;
+  });
+  clearSelection('events');
+  toast(tr('flows.deleted', [list.length]), 'ok');
+  return true;
+}
+
 function buttonEventCount() {
   return S.pages.reduce((n, pg) => n + pg.buttons.reduce((m, b) => m + (b.events?.length ?? 0), 0), 0);
 }
@@ -22,7 +59,10 @@ export function mountEvents(root) {
   root.className = 'view view-master';
   root.replaceChildren(
     h('aside', { class: 'sidebar' },
-      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.events')), h('button', { class: 'btn small', title: tr('events.newEvent'), onclick: addEvent }, '＋')),
+      h('div', { class: 'sidebar-head' }, h('h2', {}, tr('common.events')),
+        h('div', { class: 'head-buttons' },
+          h('button', { class: 'btn small ghost', title: tr('folders.newFolder'), onclick: () => addFolder('events') }, '📁'),
+          h('button', { class: 'btn small', title: tr('events.newEvent'), onclick: addEvent }, '＋'))),
       h('ul', { id: 'event-list', class: 'page-list' }),
       h('p', { id: 'event-note', class: 'hint-text sidebar-note' })),
     h('section', { id: 'event-detail', class: 'detail' }),
@@ -32,9 +72,16 @@ export function mountEvents(root) {
 export function renderEvents({ detail = true } = {}) {
   const ev = S.events.find((e) => e.id === S.eventId) ?? S.events[0];
   S.eventId = ev?.id ?? null;
-  document.getElementById('event-list').replaceChildren(...S.events.map((e) => h('li', { class: `${e === ev ? 'active' : ''}${e.enabled ? '' : ' off'}`, onclick: () => { S.eventId = e.id; S.expanded.clear(); render(); } },
-    h('span', { class: `dot ${e.enabled ? 'on' : ''}` }),
-    h('span', { class: 'name' }, e.name, h('small', {}, S.triggerMap.get(e.trigger.type)?.label ?? '')))));
+  renderFolderList(document.getElementById('event-list'), {
+    kind: 'events',
+    items: S.events,
+    activeId: ev?.id,
+    open: (e) => { S.eventId = e.id; S.expanded.clear(); render(); },
+    row: (e) => [h('span', { class: `dot ${e.enabled ? 'on' : ''}` }),
+      h('span', { class: `name${e.enabled ? '' : ' off'}` }, e.name, h('small', {}, S.triggerMap.get(e.trigger.type)?.label ?? ''))],
+    menu: (items, x, y) => eventMenu(items, x, y),
+    deleteItems: (items) => deleteEvents(items),
+  });
   const bc = buttonEventCount();
   document.getElementById('event-note').textContent = bc ? tr('events.plusEventSDirectly', [bc]) : '';
   if (!detail) return;

@@ -2,7 +2,7 @@
 // Eigener Bereich in der linken Leiste, Auswahl beim Button (iconPicker). Pro Bild Name und Schlagwörter
 // (für die Suche), pro Paket Titelbild, Beschreibung, Version, Lizenztext und eine passende Button-Farbe.
 import { t as tr } from '/shared/i18n.js';
-import { h, api, toast, ask, saveFile } from '../dom.js';
+import { h, api, toast, ask, saveFile, contextMenu } from '../dom.js';
 import { S, render, mutate } from '../state.js';
 import { iconUrl } from '/shared/render.js';
 
@@ -117,11 +117,38 @@ function iconEditRow(pack, file) {
         h('button', { class: 'btn small ghost', onclick: () => { S.packIconEdit = null; render(); } }, tr('common.cancel')))));
 }
 
+async function deletePack(pack) {
+  const used = usage(pack.id);
+  const answer = await ask(tr('iconpacks.deleteIconPack'), `${tr('iconpacks.withImagesWillBe', [pack.name, pack.icons.length])}${used ? ` ${tr('iconpacks.buttonSUseImages', [used])}` : ''}`,
+    [{ value: 'delete', label: tr('common.delete'), kind: 'danger' }]);
+  if (answer !== 'delete') return;
+  try {
+    S.iconPacks = (await api('POST', '/api/iconpacks/delete', { id: pack.id })).packs;
+    render();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+/** Rechtsklick auf ein Icon-Paket. */
+function packMenu(pack, x, y) {
+  const open = S.openPack === pack.id;
+  const upload = h('input', { type: 'file', multiple: true, hidden: true, accept: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml', onchange: (e) => uploadImages(pack, e.target.files) });
+  contextMenu(x, y, [
+    { icon: open ? '▸' : '▾', label: open ? tr('plugins.collapse') : tr('plugins.expand'), onclick: () => { S.openPack = open ? null : pack.id; render(); } },
+    { icon: '＋', label: tr('iconpacks.addImages'), onclick: () => upload.click() },
+    { icon: '📝', label: tr('iconpacks.description'), onclick: () => { S.openPack = pack.id; S.editPack = pack.id; render(); } },
+    { icon: '📤', label: tr('iconpacks.export'), onclick: () => saveFile({ kind: 'iconpack', id: pack.id }) },
+    '-',
+    { icon: '🗑', label: tr('iconpacks.deletePack'), danger: true, onclick: () => deletePack(pack) },
+  ]);
+}
+
 function packCard(pack) {
   const open = S.openPack === pack.id;
   const upload = h('input', { type: 'file', multiple: true, hidden: true, accept: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml',
     onchange: (e) => uploadImages(pack, e.target.files) });
-  const head = h('div', { class: 'pack-head', onclick: () => { S.openPack = open ? null : pack.id; render(); } },
+  const head = h('div', { class: 'pack-head', onclick: () => { S.openPack = open ? null : pack.id; render(); }, oncontextmenu: (e) => { e.preventDefault(); packMenu(pack, e.clientX, e.clientY); } },
     h('div', { class: 'pack-preview' }, [pack.cover, ...pack.icons.filter((i) => i !== pack.cover)].filter(Boolean).slice(0, 4)
       .map((i) => h('img', { src: iconUrl(packIcon(pack.id, i)), alt: '', loading: 'lazy' }))),
     h('div', { class: 'pack-title' },
@@ -139,18 +166,7 @@ function packCard(pack) {
       h('button', { class: 'btn small', onclick: () => saveFile({ kind: 'iconpack', id: pack.id }) }, tr('iconpacks.export')),
       h('button', { class: 'btn small ghost', onclick: () => { S.editPack = S.editPack === pack.id ? null : pack.id; render(); } }, tr('iconpacks.description')),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn small ghost danger', onclick: async () => {
-        const used = usage(pack.id);
-        const answer = await ask(tr('iconpacks.deleteIconPack'), `${tr('iconpacks.withImagesWillBe', [pack.name, pack.icons.length])}${used ? ` ${tr('iconpacks.buttonSUseImages', [used])}` : ''}`,
-          [{ value: 'delete', label: tr('common.delete'), kind: 'danger' }]);
-        if (answer !== 'delete') return;
-        try {
-          S.iconPacks = (await api('POST', '/api/iconpacks/delete', { id: pack.id })).packs;
-          render();
-        } catch (err) {
-          toast(err.message, 'error');
-        }
-      } }, tr('iconpacks.deletePack'))),
+      h('button', { class: 'btn small ghost danger', onclick: () => deletePack(pack) }, tr('iconpacks.deletePack'))),
     S.editPack === pack.id && packForm(pack, async (f) => {
       try {
         S.iconPacks = (await api('POST', '/api/iconpacks/update', { id: pack.id, ...f })).packs;

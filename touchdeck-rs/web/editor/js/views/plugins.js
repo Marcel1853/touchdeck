@@ -1,6 +1,6 @@
 // Bereich „Plugins“: installierte Plugins, Marktplatz (öffentliche GitHub-Repos) und Testmodus für Entwickler.
 import { t as tr, getLang } from '/shared/i18n.js';
-import { h, api, toast, ask, prompt } from '../dom.js';
+import { h, api, toast, ask, prompt, contextMenu } from '../dom.js';
 import { S, render, loadState, save } from '../state.js';
 import { importPluginPage } from './pages.js';
 import { renderMarkdown } from '../markdown.js';
@@ -128,23 +128,54 @@ function settingsForm(p) {
     h('button', { class: 'btn small primary', onclick: () => call('/api/plugins/settings', { id: p.id, settings: values }, tr('plugins.settingsSaved')) }, tr('common.save')));
 }
 
+// Aufgeklappte Plugin-Karten (wie bei den Icon-Paketen).
+const openPlugins = new Set();
+
+function removePlugin(p) {
+  ask(tr('plugins.removePlugin'), tr('plugins.willBeRemovedButtons', [p.manifest.name]), [{ value: 'remove', label: tr('common.remove'), kind: 'danger' }])
+    .then((a) => a === 'remove' && call('/api/plugins/remove', { id: p.id }, tr('plugins.pluginRemoved')));
+}
+
+/** Rechtsklick auf ein Plugin. */
+function pluginMenu(p, x, y) {
+  const local = String(p.source ?? '').startsWith('local:');
+  const repo = String(p.source ?? '').replace(/^github:/, '');
+  const open = openPlugins.has(p.id);
+  contextMenu(x, y, [
+    { icon: open ? '▸' : '▾', label: open ? tr('plugins.collapse') : tr('plugins.expand'), onclick: () => { open ? openPlugins.delete(p.id) : openPlugins.add(p.id); render(); } },
+    { icon: p.enabled ? '⏸' : '⏵', label: p.enabled ? tr('plugins.turnOff') : tr('plugins.turnOn'), onclick: () => call('/api/plugins/enable', { id: p.id, enabled: !p.enabled }) },
+    local
+      ? { icon: '↻', label: tr('plugins.reload'), onclick: () => call('/api/plugins/reload', { id: p.id }, tr('plugins.reloaded')) }
+      : { icon: '⬆', label: tr('plugins.checkForUpdates'), onclick: () => installFromGitHub(repo) },
+    ...(p.pages ?? []).map((pg) => ({ icon: '📄', label: `${pg.name} ${tr('plugins.importPage')}`, onclick: () => importPluginPage(p.id, pg.file) })),
+    p.url && { icon: '↗', label: tr('plugins.viewOnGithub'), onclick: () => window.open(p.url, '_blank', 'noopener') },
+    '-',
+    { icon: '🗑', label: tr('plugins.remove'), danger: true, onclick: () => removePlugin(p) },
+  ]);
+}
+
 function pluginCard(p) {
   const m = p.manifest;
   const local = String(p.source ?? '').startsWith('local:');
   const repo = String(p.source ?? '').replace(/^github:/, '');
   const status = { running: [tr('plugins.running'), 'ok'], off: [tr('plugins.off'), ''], blocked: [tr('plugins.blocked'), 'warn'] }[p.status.state] ?? [tr('common.error'), 'error'];
-  return h('div', { class: 'settings-card plugin' },
-    h('div', { class: 'plugin-head' },
-      h('div', {},
-        h('b', {}, m.name), m.version && h('span', { class: 'muted' }, ` ${m.version}`),
-        h('span', { class: `status-badge ${status[1]}` }, status[0]),
-        local && h('span', { class: 'status-badge warn' }, tr('plugins.testMode')),
-        p.native && h('span', { class: 'status-badge error' }, tr('plugins.fullRights')),
-        h('p', { class: 'hint-text' }, m.description || ''),
-        h('p', { class: 'hint-text' }, [m.author && tr('plugins.by', [m.author]), m.license && tr('plugins.license', [m.license]), local ? tr('plugins.folder', [p.source.slice(6)]) : null].filter(Boolean).join(' · '),
-          !local && p.url && h('span', {}, m.author ? ' · ' : '', h('a', { href: p.url, target: '_blank', rel: 'noopener' }, tr('plugins.format', [repo, p.ref]))))),
-      h('label', { class: 'switch-row' }, h('input', { type: 'checkbox', checked: p.enabled,
-        onchange: (e) => call('/api/plugins/enable', { id: p.id, enabled: e.target.checked }) }), tr('plugins.on'))),
+  const open = openPlugins.has(p.id);
+  const toggle = () => { open ? openPlugins.delete(p.id) : openPlugins.add(p.id); render(); };
+  const head = h('div', { class: 'plugin-head', oncontextmenu: (e) => { e.preventDefault(); pluginMenu(p, e.clientX, e.clientY); } },
+    h('div', { class: 'plugin-title', onclick: toggle },
+      h('span', { class: 'chevron' }, open ? '▾' : '▸'),
+      h('b', {}, m.name), m.version && h('span', { class: 'muted' }, ` ${m.version}`),
+      h('span', { class: `status-badge ${status[1]}` }, status[0]),
+      local && h('span', { class: 'status-badge warn' }, tr('plugins.testMode')),
+      p.native && h('span', { class: 'status-badge error' }, tr('plugins.fullRights')),
+      h('p', { class: 'hint-text' }, m.description || '')),
+    h('label', { class: 'switch-row' }, h('input', { type: 'checkbox', checked: p.enabled,
+      onchange: (e) => call('/api/plugins/enable', { id: p.id, enabled: e.target.checked }) }), tr('plugins.on')));
+  if (!open) return h('div', { class: 'settings-card plugin' }, head, p.status.error && h('p', { class: 'hint-text error' }, p.status.error));
+  return h('div', { class: 'settings-card plugin open', oncontextmenu: (e) => { if (e.target.closest('input, textarea, select')) return; e.preventDefault(); pluginMenu(p, e.clientX, e.clientY); } },
+    head,
+    h('p', { class: 'hint-text' }, [m.author && tr('plugins.by', [m.author]), m.license && tr('plugins.license', [m.license]), local ? tr('plugins.folder', [p.source.slice(6)]) : null].filter(Boolean).join(' · '),
+      !local && p.url && h('span', {}, m.author ? ' · ' : '', h('a', { href: p.url, target: '_blank', rel: 'noopener' }, tr('plugins.format', [repo, p.ref])))),
     p.status.error && h('p', { class: 'hint-text error' }, p.status.error),
     h('p', { class: 'hint-text' }, tr('plugins.allowed'), p.permissions.length ? p.permissions.join(' · ') : tr('plugins.nothingSpecial')),
     h('p', { class: 'hint-text' }, tr('plugins.actionSTriggerS', [m.actions.length, m.triggers.length, m.name])),
@@ -157,10 +188,7 @@ function pluginCard(p) {
         ? h('button', { class: 'btn small', onclick: () => call('/api/plugins/reload', { id: p.id }, tr('plugins.reloaded')) }, tr('plugins.reload'))
         : h('button', { class: 'btn small', onclick: () => installFromGitHub(repo) }, tr('plugins.checkForUpdates')),
       h('div', { class: 'spacer' }),
-      h('button', { class: 'btn small ghost danger', onclick: async () => {
-        const a = await ask(tr('plugins.removePlugin'), tr('plugins.willBeRemovedButtons', [m.name]), [{ value: 'remove', label: tr('common.remove'), kind: 'danger' }]);
-        if (a === 'remove') call('/api/plugins/remove', { id: p.id }, tr('plugins.pluginRemoved'));
-      } }, tr('plugins.remove'))));
+      h('button', { class: 'btn small ghost danger', onclick: () => removePlugin(p) }, tr('plugins.remove'))));
 }
 
 function installedTab() {

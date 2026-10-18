@@ -90,6 +90,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     } else if (shape === 'combo') {
       // Fader (erstes Ziel) und Drehknopf (zweites Ziel) in einem Button.
       el.classList.add('shape-fader');
+      if (b.slider2?.shape === 'mixer-last') el.classList.add('knob-last');
       const v2 = Number.isFinite(live?.value2) ? live.value2 : 0;
       el.style.setProperty('--val2', v2);
       if (b.slider2?.color) el.style.setProperty('--sc2', b.slider2.color);

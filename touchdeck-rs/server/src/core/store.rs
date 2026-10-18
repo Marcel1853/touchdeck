@@ -335,6 +335,8 @@ pub struct FlowInput {
 pub struct Event {
     pub id: String,
     pub name: String,
+    /// Ordner in der Liste der Events ("" = keiner).
+    pub folder: String,
     pub enabled: bool,
     pub trigger: Trigger,
     pub cooldown: i64,
@@ -530,7 +532,8 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
                 target: one_of(&s2["target"], &catalog::slider_target_ids(), "mic"),
                 input: text(&s2["input"], "", 200),
                 command: text(&s2["command"], "", 1000),
-                shape: "mixer".into(),
+                // Lage des Drehknopfs: mixer = oben/links, mixer-last = unten/rechts.
+                shape: one_of(&s2["shape"], &["mixer-last"], "mixer"),
                 color: s2["color"].as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).unwrap_or("").to_lowercase(),
                 thickness: 10,
             }
@@ -604,7 +607,7 @@ fn folder_name(v: &Value) -> String {
     v.as_str().unwrap_or("").chars().filter(|c| !c.is_control()).take(60).collect::<String>().trim().to_string()
 }
 
-/** Eigene Ordner (auch leere) für Seiten und Vorlagen: { pages: [...], flows: [...] }. */
+/** Eigene Ordner (auch leere) für Seiten, Vorlagen und Events: { pages: [...], flows: [...], events: [...] }. */
 pub fn sanitize_folders(v: &Value) -> Value {
     let list = |k: &str| {
         let mut out: Vec<String> = Vec::new();
@@ -616,7 +619,7 @@ pub fn sanitize_folders(v: &Value) -> Value {
         }
         out
     };
-    json!({ "pages": list("pages"), "flows": list("flows") })
+    json!({ "pages": list("pages"), "flows": list("flows"), "events": list("events") })
 }
 
 fn sanitize_flow(f: &Value) -> Option<Flow> {
@@ -636,6 +639,7 @@ fn sanitize_event(e: &Value) -> Option<Event> {
     Some(Event {
         id: id_or_new(&e["id"], "ev_"),
         name: text_or(&e["name"], "Event", 100),
+        folder: folder_name(&e["folder"]),
         enabled: not_false(&e["enabled"]),
         trigger: sanitize_trigger(&e["trigger"]),
         cooldown: clamp(&e["cooldown"], 0, 86400, 0),

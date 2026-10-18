@@ -270,3 +270,8 @@
 .td-btn.shape-combo.vertical .td-rail { top: 42%; bottom: 22%; }
 .td-btn.shape-combo.horizontal .td-combo-knob { inset: 8% auto 22% 4%; width: 34%; }
 .td-btn.shape-combo.horizontal .td-rail { left: 42%; right: 6%; }
+/* Drehknopf unten bzw. rechts, Fader oben bzw. links. */
+.td-btn.shape-combo.knob-last.vertical .td-combo-knob { inset: auto 15% 20%; height: 32%; }
+.td-btn.shape-combo.knob-last.vertical .td-rail { top: 8%; bottom: 56%; }
+.td-btn.shape-combo.knob-last.horizontal .td-combo-knob { inset: 8% 4% 22% auto; width: 34%; }
+.td-btn.shape-combo.knob-last.horizontal .td-rail { left: 6%; right: 42%; }

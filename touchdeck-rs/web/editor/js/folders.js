@@ -5,8 +5,8 @@ import { h, prompt, prefs, contextMenu } from './dom.js';
 import { S, mutate, render } from './state.js';
 
 // Ausgewählte Einträge je Liste (Ids).
-const selection = { pages: new Set(), flows: new Set() };
-let anchor = { pages: null, flows: null };
+const selection = { pages: new Set(), flows: new Set(), events: new Set() };
+const anchor = { pages: null, flows: null, events: null };
 
 const collapsedKey = (kind) => `touchdeck.folders.${kind}.collapsed`;
 function collapsed(kind) {
@@ -22,7 +22,8 @@ function setCollapsed(kind, set) {
 
 /** Alle Ordner einer Liste: angelegte (auch leere) und solche, die nur an Einträgen stehen. */
 export function folderNames(kind, items) {
-  S.folders ??= { pages: [], flows: [] };
+  S.folders ??= { pages: [], flows: [], events: [] };
+  S.folders[kind] ??= [];
   const names = [...(S.folders[kind] ?? [])];
   for (const it of items) if (it.folder && !names.includes(it.folder)) names.push(it.folder);
   return names;
@@ -42,7 +43,8 @@ export async function addFolder(kind) {
   const name = (await prompt(tr('folders.newFolder'), tr('folders.folderName')))?.slice(0, 60).trim();
   if (!name) return null;
   mutate(() => {
-    S.folders ??= { pages: [], flows: [] };
+    S.folders ??= { pages: [], flows: [], events: [] };
+  S.folders[kind] ??= [];
     if (!S.folders[kind].includes(name)) S.folders[kind].push(name);
   });
   return name;

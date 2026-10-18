@@ -152,7 +152,7 @@ window.addEventListener('beforeunload', (e) => {
 export async function loadState({ keepUndo = false } = {}) {
   const st = await api('GET', '/api/state');
   Object.assign(S, {
-    pages: st.pages, flows: st.flows, events: st.events, values: st.values, variables: st.variables, folders: st.folders ?? { pages: [], flows: [] },
+    pages: st.pages, flows: st.flows, events: st.events, values: st.values, variables: st.variables, folders: { pages: [], flows: [], events: [], ...st.folders },
     settings: st.settings, revision: st.revision, version: st.version,
     actionTypes: st.actionTypes, typeMap: new Map(st.actionTypes.map((t) => [t.type, t])),
     triggerTypes: st.triggerTypes, triggerMap: new Map(st.triggerTypes.map((t) => [t.type, t])),
