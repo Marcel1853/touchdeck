@@ -1,0 +1,204 @@
+# Baut bei jedem Push auf main TouchDeck für Linux (AppImage und .deb) und die Android-App
+# und legt in diesem Repo ein Release an – aber nur, wenn es die Version aus
+# touchdeck-rs/app/tauri.conf.json noch nicht gibt.
+#
+# Release: Tag vX.Y.Z, Dateien TouchDeck_X.Y.Z_amd64.AppImage, TouchDeck_X.Y.Z_amd64.deb und
+# TouchDeck-Android-A.B.C.apk. Text = Abschnitt „Version: X.Y.Z“ aus CHANGELOG.de.md.
+#
+# Bewusst ohne Caches (kein actions/cache, kein Cache in setup-Aktionen): jeder Lauf baut
+# alles frisch, damit nie ein alter oder kaputter Zwischenstand im Release landet.
+#
+# Voraussetzung – Secrets für den Android-Signierschlüssel (derselbe wie lokal in
+# android/keystore/, sonst lassen sich Updates nicht über die installierte App spielen):
+#   ANDROID_KEYSTORE_BASE64  Inhalt von touchdeck-release.jks als Base64
+#   ANDROID_STORE_PASSWORD   storePassword aus keystore.properties
+#   ANDROID_KEY_ALIAS        keyAlias
+#   ANDROID_KEY_PASSWORD     keyPassword
+#
+# Neue Version: Version in touchdeck-rs/app/tauri.conf.json (und den Cargo.toml) hochzählen,
+# Abschnitt im CHANGELOG schreiben, auf main pushen.
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pruefen:
+    name: Prüfen
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.info.outputs.version }}
+      app: ${{ steps.info.outputs.app }}
+      neu: ${{ steps.gh.outputs.neu }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versionen lesen
+        id: info
+        run: |
+          echo "version=$(jq -r '.version' touchdeck-rs/app/tauri.conf.json)" >> "$GITHUB_OUTPUT"
+          echo "app=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' android/app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
+      - name: Release prüfen
+        id: gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.info.outputs.version }}" >/dev/null 2>&1; then
+            echo "v${{ steps.info.outputs.version }} gibt es schon – nichts zu tun."
+            echo "neu=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "neu=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  android:
+    name: Android-App
+    needs: pruefen
+    if: needs.pruefen.outputs.neu == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Android-SDK (Plattform und Build-Tools)
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;37.0.0"
+
+      - name: Signierschlüssel aus den Secrets
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Android-Secrets fehlen – siehe Kommentar oben in dieser Datei."
+            exit 1
+          fi
+          mkdir -p android/keystore
+          printf '%s' "$KEYSTORE" | tr -d '[:space:]' | base64 -d > android/keystore/touchdeck-release.jks
+          {
+            echo "storeFile=touchdeck-release.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/keystore/keystore.properties
+
+      - name: Bauen
+        working-directory: android
+        run: ./gradlew --no-daemon --no-build-cache assembleRelease
+
+      - name: Schlüssel wieder entfernen
+        if: always()
+        run: rm -rf android/keystore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  linux:
+    name: Linux (AppImage und .deb)
+    needs: [pruefen, android]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Systempakete
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
+            libxdo-dev libssl-dev patchelf file libfuse2
+
+      - name: Rust (stabil)
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup default stable
+
+      - name: Tests
+        working-directory: touchdeck-rs
+        run: cargo test -p touchdeck-server
+
+      # Die Android-App wird mit dem Programm ausgeliefert (Handys laden sie vom PC).
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: touchdeck-rs/downloads
+
+      - name: App an ihren Platz legen
+        run: mv touchdeck-rs/downloads/app-release.apk touchdeck-rs/downloads/TouchDeck.apk
+
+      - name: Tauri-CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Bauen
+        working-directory: touchdeck-rs/app
+        env:
+          # AppImage-Werkzeuge ohne FUSE starten (auf den Runnern nicht verfügbar).
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        run: cargo tauri build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            touchdeck-rs/target/release/bundle/appimage/*.AppImage
+            touchdeck-rs/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+
+  veroeffentlichen:
+    name: Veröffentlichen
+    needs: [pruefen, android, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ausgabe
+          merge-multiple: true
+
+      - name: Dateien benennen
+        run: |
+          mv ausgabe/app-release.apk "ausgabe/TouchDeck-Android-${{ needs.pruefen.outputs.app }}.apk"
+          ls -la ausgabe
+
+      - name: Release-Text aus CHANGELOG.de.md
+        run: |
+          VERSION="${{ needs.pruefen.outputs.version }}"
+          # Abschnitt ab „Version: X.Y.Z“ bis zur nächsten Trennlinie, als Textblock.
+          {
+            echo '```text'
+            awk -v v="$VERSION" '
+              $0 == "Version: " v { found = 1 }
+              found && /^-{20,}/ { exit }
+              found { print }
+            ' CHANGELOG.de.md
+            echo '```'
+            echo
+            echo "Android-App: ${{ needs.pruefen.outputs.app }}"
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ needs.pruefen.outputs.version }}"
+          gh release create "v$VERSION" ausgabe/* \
+            --title "TouchDeck $VERSION" \
+            --notes-file release-notes.md \
+            --target "${{ github.sha }}"

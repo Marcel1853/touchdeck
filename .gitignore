@@ -8,6 +8,7 @@
 !/env.sh
 !/touchdeck-rs/
 !/android/
+!/.github/
 
 # Ideen und Notizen bleiben lokal (zusätzlich zur Liste oben).
 docs/
