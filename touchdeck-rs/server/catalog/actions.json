@@ -2219,6 +2219,45 @@
    {
     "key": "icon",
     "type": "text"
+   },
+   {
+    "key": "image",
+    "type": "image"
+   },
+   {
+    "key": "bgImage",
+    "type": "image"
+   },
+   {
+    "key": "overlay",
+    "type": "select",
+    "default": "keep",
+    "options": [
+     {
+      "value": "keep"
+     },
+     {
+      "value": "none"
+     },
+     {
+      "value": "gloss"
+     },
+     {
+      "value": "frame"
+     },
+     {
+      "value": "stripes"
+     },
+     {
+      "value": "dots"
+     },
+     {
+      "value": "vignette"
+     },
+     {
+      "value": "glow"
+     }
+    ]
    }
   ]
  },

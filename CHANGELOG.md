@@ -27,6 +27,7 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - "Change look" can also set an image as icon, a texture and an overlay, e.g. from an event.
     - New live displays: graphics card temperature and load, disk usage, network speed (↓/↑) and
       how long the PC has been running.
     - New action "Screen (off / brightness)": turns the screen off right away (the mouse wakes it)
@@ -140,6 +141,8 @@ Date: 2026-10-16
     - READMEs and the plugin guide are now in English, with German versions and a language switch
       at the top; their feature lists are up to date.
   Bugfixes:
+    - Notifications, "Type text", "Open website" and other text actions now replace placeholders
+      such as {Event.Loop} or {Input.Name} (shell commands deliberately not, for safety).
     - Programs, commands and advanced plugins (e.g. Python) started from the AppImage no longer
       inherit its library paths (PYTHONHOME, LD_LIBRARY_PATH …) and work as when started normally.
     - Typing in the image search no longer loses focus after each letter (a following Backspace

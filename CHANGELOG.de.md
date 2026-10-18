@@ -28,6 +28,8 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - „Aussehen ändern“ kann auch ein Bild als Symbol, eine Textur und ein Overlay setzen, z. B. aus
+      einem Event.
     - Neue Live-Anzeigen: Temperatur und Auslastung der Grafikkarte, belegte Festplatte,
       Netzwerk-Tempo (↓/↑) und wie lange der PC schon läuft.
     - Neue Aktion „Bildschirm (aus / Helligkeit)“: schaltet den Bildschirm sofort aus (die Maus weckt
@@ -149,6 +151,9 @@ Datum: 2026-10-16
     - READMEs und Plugin-Anleitung sind jetzt auf Englisch, mit deutschen Fassungen und
       Sprachumschalter oben; die Funktionslisten sind auf dem aktuellen Stand.
   Fehlerbehebungen:
+    - Benachrichtigungen, „Text tippen“, „Website öffnen“ und weitere Textaktionen setzen jetzt
+      Platzhalter wie {Event.Durchlauf} oder {Eingabe.Name} ein (Shell-Befehle aus Sicherheitsgründen
+      bewusst nicht).
     - Programme, Befehle und erweiterte Plugins (z. B. Python), die aus der AppImage gestartet
       werden, erben nicht mehr deren Bibliothekspfade (PYTHONHOME, LD_LIBRARY_PATH …) und laufen wie
       normal gestartet.

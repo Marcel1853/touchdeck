@@ -1,6 +1,7 @@
 // Aktionslisten, Eingabefelder, Aktionsauswahl und Auslöser-Editor – genutzt von Buttons, Vorlagen und Events.
 import { t as tr, getLang } from '/shared/i18n.js';
 import { $, h, api, toast, uid } from './dom.js';
+import { iconUrl } from '/shared/render.js';
 import { S, mutate, render, save, onRender } from './state.js';
 
 const refresh = () => render();
@@ -244,6 +245,19 @@ export function fieldInput(f, obj, setParam) {
         obj.params.appName = app?.name ?? '';
         setParam(f.key, e.target.value);
       } }, options));
+    }
+    case 'image': {
+      // Eigene Bilder und Bilder aus Icon-Paketen; Eingabe sucht in der Liste (leer = nicht ändern).
+      const listId = `dl-img-${Math.random().toString(36).slice(2, 8)}`;
+      const options = [...(S.icons ?? []).map((n) => h('option', { value: n })),
+        ...(S.iconPacks ?? []).flatMap((pk) => pk.icons.map((i) => h('option', { value: `packs/${pk.id}/${i}` }, `${pk.name} › ${i}`)))];
+      const preview = h('img', { class: 'field-image-preview', alt: '', src: v ? iconUrl(v) : '', hidden: !v });
+      const input = h('input', { value: v, list: listId, placeholder: tr('actions.imageSearch'), oninput: (e) => {
+        setParam(f.key, e.target.value.trim());
+        preview.hidden = !e.target.value.trim();
+        preview.src = iconUrl(e.target.value.trim());
+      } });
+      return h('label', { class: 'field' }, f.label, h('div', { class: 'field-image' }, preview, input), h('datalist', { id: listId }, options));
     }
     case 'keySequence': {
       const area = h('textarea', { value: v, rows: 6, placeholder: 'ctrl+c\n250ms\nctrl+v', oninput: (e) => setParam(f.key, e.target.value) });

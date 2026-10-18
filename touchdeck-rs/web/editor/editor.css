@@ -498,6 +498,9 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .mini-row:hover { border-color: var(--accent); }
 .mini-row.disabled { opacity: 0.5; }
 .flow-input { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(160px, 2fr) 150px auto; gap: 8px; align-items: center; margin-bottom: 6px; }
+.field-image { display: flex; gap: 8px; align-items: center; }
+.field-image input { flex: 1; }
+.field-image-preview { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; background: var(--panel-2); }
 .flow-input code { font-size: 12px; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-row .ai { font-size: 17px; }
 .mini-row .al { flex: 1; min-width: 0; }

@@ -1002,6 +1002,25 @@
         },
         "icon": {
           "label": "New emoji (empty = unchanged)"
+        },
+        "image": {
+          "label": "Image as icon (instead of emoji)"
+        },
+        "bgImage": {
+          "label": "Texture (background image)"
+        },
+        "overlay": {
+          "label": "Overlay",
+          "options": {
+            "keep": "don't change",
+            "none": "none",
+            "gloss": "Gloss",
+            "frame": "Frame",
+            "stripes": "Stripes",
+            "dots": "Dots",
+            "vignette": "Vignette",
+            "glow": "Glow"
+          }
         }
       }
     },

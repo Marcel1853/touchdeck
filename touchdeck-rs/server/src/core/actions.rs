@@ -549,7 +549,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
     let none = Ok(None);
     match action.kind.as_str() {
         "open_url" => {
-            let url = p.s("url");
+            let url = fill(app, ctx, &p.s("url"));
             let scheme_ok = url.split_once(':').is_some_and(|(s, _)| {
                 let mut c = s.chars();
                 c.next().is_some_and(|f| f.is_ascii_alphabetic()) && c.all(|c| c.is_ascii_alphanumeric() || "+.-".contains(c))
@@ -633,7 +633,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             none
         }
         "type_text" => {
-            let text = p.s("text");
+            let text = fill(app, ctx, &p.s("text"));
             if !text.is_empty() {
                 x11::type_text(&text).await?;
             }
@@ -653,7 +653,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let op = p.or("op", "toggle");
             let running = if op == "alarm" {
                 // Wecker: bis zur nächsten angegebenen Uhrzeit herunterzählen (heute oder morgen).
-                let ms = ms_until(&p.s("time")).ok_or_else(|| anyhow!(t!("actions.timeFormat")))?;
+                let ms = ms_until(&fill(app, ctx, &p.s("time"))).ok_or_else(|| anyhow!(t!("actions.timeFormat")))?;
                 app.timers.control(&name, "reset", ms);
                 app.timers.control(&name, "start", ms)
             } else {
@@ -685,7 +685,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             none
         }
         "notify" => {
-            linux::notify(&p.s("title"), &p.s("body")).await?;
+            linux::notify(&fill(app, ctx, &p.s("title")), &fill(app, ctx, &p.s("body"))).await?;
             none
         }
         "http" => {
@@ -879,7 +879,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 bail!(t!("actions.noBrowserSourceSelected"));
             }
             if p.s("op") == "url" {
-                app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "url": p.s("url") } })).await?;
+                app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "url": fill(app, ctx, &p.s("url")) } })).await?;
             } else {
                 app.obs.call("PressInputPropertiesButton", json!({ "inputName": input, "propertyName": "refreshnocache" })).await?;
             }
@@ -1073,7 +1073,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 body.insert("title".into(), json!(truncate(&fill(app, ctx, &p.s("title")), 140)));
             }
             if p.t("game") {
-                let game = p.s("game");
+                let game = fill(app, ctx, &p.s("game"));
                 let g = app.twitch.api("GET", &format!("/games?name={}", enc(&game)), None).await?;
                 let id = g["data"][0]["id"].as_str().ok_or_else(|| anyhow!(t!("actions.categoryNotFoundUse", game)))?;
                 body.insert("game_id".into(), json!(id));
@@ -1216,7 +1216,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             Ok(Some(if kind == "PUSH_TO_TALK" { "Push-to-Talk" } else { t!("actions.voiceActivity") }.into()))
         }
         "discord_webhook" => {
-            discord::send_webhook(&p.s("url"), &fill(app, ctx, &p.s("message")), &p.s("username")).await?;
+            discord::send_webhook(&p.s("url"), &fill(app, ctx, &p.s("message")), &fill(app, ctx, &p.s("username"))).await?;
             Ok(Some(t!("actions.messageSent").into()))
         }
 
@@ -1272,7 +1272,25 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 }
             }
             if p.t("icon") {
-                patch.insert("icon".into(), json!({ "type": "emoji", "value": p.s("icon") }));
+                patch.insert("icon".into(), json!({ "type": "emoji", "value": fill(app, ctx, &p.s("icon")) }));
+            }
+            // Bilder: eigener Bildname oder „packs/<paket>/<datei>“ – nie mit „..“.
+            let image = |k: &str| Some(p.s(k)).filter(|v| !v.is_empty() && !v.contains("..") && !v.starts_with('/'));
+            if let Some(v) = image("image") {
+                patch.insert("icon".into(), json!({ "type": "image", "value": v }));
+            }
+            if let Some(v) = image("bgImage") {
+                patch.insert("bgImage".into(), json!({ "type": "image", "value": v }));
+            }
+            match p.or("overlay", "keep").as_str() {
+                "keep" => {}
+                "none" => {
+                    patch.insert("overlay".into(), json!(""));
+                }
+                o if crate::core::store::OVERLAYS.contains(&o) => {
+                    patch.insert("overlay".into(), json!(o));
+                }
+                _ => {}
             }
             app.store.lock().unwrap().set_override(false, &id, Some(&patch));
             none
