@@ -131,6 +131,11 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     }
     el.append(icon);
   }
+  // Graph: Verlauf der Live-Anzeige hinter Symbol und Text (Linie, Fläche oder Balken).
+  if (!isSlider && b.live?.graph && Array.isArray(live?.history) && live.history.length > 1) {
+    el.append(graphElement(b.live, live.history));
+    el.classList.add('has-graph');
+  }
   // Fortschrittsbalken: Zahlenwert 0–100 der Live-Anzeige, unten im Button.
   if (!isSlider && b.live?.bar && Number.isFinite(live?.value)) {
     const bar = document.createElement('div');
@@ -161,6 +166,51 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   }
   if (!hasIcon && !cover && !isSlider && !isWeb && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
   return el;
+}
+
+/** SVG mit dem Verlauf; Grenzen fest (graphMin/graphMax) oder aus den Werten, Null bleibt sichtbar. */
+function graphElement(cfg, history) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const W = 100;
+  const H = 100;
+  const points = Math.max(cfg.graphPoints ?? 60, history.length);
+  let min = Number.isFinite(cfg.graphMin) ? cfg.graphMin : Math.min(...history);
+  let max = Number.isFinite(cfg.graphMax) ? cfg.graphMax : Math.max(...history);
+  if (!Number.isFinite(cfg.graphMin) && min > 0 && min < max * 0.5) min = 0;
+  if (max <= min) max = min + 1;
+  const y = (v) => H - ((Math.min(max, Math.max(min, v)) - min) / (max - min)) * H;
+  // Neueste Werte rechts; fehlt noch Verlauf, beginnt die Kurve weiter rechts.
+  const step = W / Math.max(1, points - 1);
+  const x0 = W - (history.length - 1) * step;
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', `td-graph graph-${cfg.graph}`);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  if (cfg.graphColor) svg.style.setProperty('--gc', cfg.graphColor);
+  if (cfg.graph === 'bars') {
+    const bw = Math.max(0.6, step * 0.7);
+    history.forEach((v, i) => {
+      const r = document.createElementNS(ns, 'rect');
+      const top = y(v);
+      r.setAttribute('x', (x0 + i * step - bw / 2).toFixed(2));
+      r.setAttribute('y', top.toFixed(2));
+      r.setAttribute('width', bw.toFixed(2));
+      r.setAttribute('height', (H - top).toFixed(2));
+      svg.append(r);
+    });
+  } else {
+    const pts = history.map((v, i) => `${(x0 + i * step).toFixed(2)},${y(v).toFixed(2)}`);
+    if (cfg.graph === 'area') {
+      const area = document.createElementNS(ns, 'polygon');
+      area.setAttribute('points', `${x0.toFixed(2)},${H} ${pts.join(' ')} ${W},${H}`);
+      svg.append(area);
+    }
+    const line = document.createElementNS(ns, 'polyline');
+    line.setAttribute('points', pts.join(' '));
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.append(line);
+  }
+  return svg;
 }
 
 const sum = (list) => list.reduce((a, n) => a + n, 0);

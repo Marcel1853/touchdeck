@@ -137,6 +137,8 @@ pub struct App {
     live: Mutex<serde_json::Map<String, Value>>,
     /// Live-Anzeigen, die Plugins mit td.live.set(…) füllen ("plugin:<id>:<anzeige>" → Wert).
     pub plugin_lives: Mutex<serde_json::Map<String, Value>>,
+    /// Verläufe für Live-Anzeigen mit Graph.
+    pub graphs: crate::core::live::Graphs,
     live_busy: AtomicBool,
     live_again: AtomicBool,
     on_pair_request: Option<Box<dyn Fn(PairRequest) + Send + Sync>>,
@@ -421,7 +423,13 @@ fn refresh_live(app: &Arc<App>) {
                 let store = a.store.lock().unwrap();
                 (store.config.pages.iter().filter(|p| viewed.contains(&p.id)).cloned().collect::<Vec<_>>(), store.config.variables.clone())
             };
-            let fresh = collect_live(&a, &pages, &variables).await;
+            let mut fresh = collect_live(&a, &pages, &variables).await;
+            // Graph-Buttons bekommen ihren Verlauf mit.
+            for b in pages.iter().flat_map(|p| &p.buttons).filter(|b| !b.live.graph.is_empty()) {
+                if let (Some(entry), Some(history)) = (fresh.get_mut(&b.id), a.graphs.history(&b.id)) {
+                    entry["history"] = json!(history);
+                }
+            }
             let changed = {
                 let mut live = a.live.lock().unwrap();
                 let mut next = live.clone();
@@ -1339,6 +1347,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         sliders: Mutex::new(HashMap::new()),
         live: Mutex::new(serde_json::Map::new()),
         plugin_lives: Mutex::new(serde_json::Map::new()),
+        graphs: Default::default(),
         live_busy: AtomicBool::new(false),
         live_again: AtomicBool::new(false),
         on_pair_request: opts.on_pair_request,
@@ -1399,6 +1408,16 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
                 Err(_) => break,
             }
+        }
+    });
+
+    // Verläufe für Graphen: jede Sekunde prüfen, welche Graph-Buttons fällig sind (ohne Graphen: nichts zu tun).
+    let a = app.clone();
+    tokio::spawn(async move {
+        let mut t = tokio::time::interval(Duration::from_secs(1));
+        loop {
+            t.tick().await;
+            a.graphs.sample(&a).await;
         }
     });
 

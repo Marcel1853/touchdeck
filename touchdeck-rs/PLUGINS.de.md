@@ -134,6 +134,8 @@ td.on('page_view', (data) => {          // data: { pageId, state: 'open'|'close'
 // eigene Live-Anzeige aus "lives": Text, Zahl 0–100 (Balken), Aussehen „an“
 td.live.set('ungelesen', { text: '3 neu', value: 30, on: true });
 td.live.set('ungelesen', 'nur ein Text');
+// echte Zahl für Graphen (nicht auf 0–100 begrenzt), z. B. Strom in MW:
+td.live.set('strom', { text: '35,2 MW', number: 35.2 });
 
 // braucht "deck"
 td.deck.pages();                        // [{ id, name, buttons: [{ id, title }] }]

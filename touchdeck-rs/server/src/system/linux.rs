@@ -535,20 +535,29 @@ pub async fn open_firewall(port: u16) -> Result<()> {
 
 // ---------- Systemwerte ----------
 
-static LAST_CPU: Mutex<Option<(u64, u64)>> = Mutex::new(None);
+/** Letzte Messung (idle, total, Zeitpunkt, Ergebnis): mehrere Abfragen kurz hintereinander (Live-Anzeige und
+ *  Graph) bekommen dasselbe Ergebnis, statt sich gegenseitig die Messspanne wegzunehmen. */
+type CpuSample = (u64, u64, Instant, Option<i64>);
+static LAST_CPU: Mutex<Option<CpuSample>> = Mutex::new(None);
 
 /** CPU-Auslastung seit dem letzten Aufruf (braucht zwei Messpunkte). */
 pub fn cpu_usage() -> Option<i64> {
+    let mut last = LAST_CPU.lock().unwrap();
+    if let Some((_, _, t, r)) = *last
+        && t.elapsed() < Duration::from_millis(900)
+        && r.is_some()
+    {
+        return r;
+    }
     let stat = std::fs::read_to_string("/proc/stat").ok()?;
     let parts: Vec<u64> = stat.lines().next()?.split_whitespace().skip(1).filter_map(|v| v.parse().ok()).collect();
     let idle = parts.get(3)? + parts.get(4).unwrap_or(&0);
     let total: u64 = parts.iter().sum();
-    let prev = LAST_CPU.lock().unwrap().replace((idle, total));
-    let (pidle, ptotal) = prev?;
-    if total == ptotal {
-        return None;
-    }
-    Some((100.0 * (1.0 - (idle - pidle) as f64 / (total - ptotal) as f64)).round() as i64)
+    let result = last.and_then(|(pidle, ptotal, _, _)| {
+        (total != ptotal).then(|| (100.0 * (1.0 - (idle - pidle) as f64 / (total - ptotal) as f64)).round() as i64)
+    });
+    *last = Some((idle, total, Instant::now(), result));
+    result
 }
 
 pub fn ram_percent() -> Option<i64> {
@@ -610,10 +619,18 @@ pub fn disk_percent(path: &str) -> Option<i64> {
     }
 }
 
-static LAST_NET: Mutex<Option<(u64, u64, std::time::Instant)>> = Mutex::new(None);
+/** Bytes empfangen/gesendet, Zeitpunkt und Ergebnis der letzten Messung. */
+type NetSample = (u64, u64, std::time::Instant, Option<(f64, f64)>);
+static LAST_NET: Mutex<Option<NetSample>> = Mutex::new(None);
 
 /** Netzwerk: (Empfang, Senden) in Bytes pro Sekunde seit der letzten Abfrage. */
 pub fn net_rate() -> Option<(f64, f64)> {
+    // Kurz hintereinander (Live-Anzeige und Graph): letztes Ergebnis wiederverwenden.
+    if let Some((_, _, t, Some(r))) = *LAST_NET.lock().unwrap()
+        && t.elapsed() < std::time::Duration::from_millis(900)
+    {
+        return Some(r);
+    }
     let dev = std::fs::read_to_string("/proc/net/dev").ok()?;
     let (mut rx, mut tx) = (0u64, 0u64);
     for line in dev.lines().skip(2) {
@@ -626,13 +643,13 @@ pub fn net_rate() -> Option<(f64, f64)> {
         tx += v.get(8).copied().unwrap_or(0);
     }
     let now = std::time::Instant::now();
-    let prev = LAST_NET.lock().unwrap().replace((rx, tx, now));
-    let (prx, ptx, pt) = prev?;
-    let secs = now.duration_since(pt).as_secs_f64();
-    if secs < 0.2 {
-        return None;
-    }
-    Some((rx.saturating_sub(prx) as f64 / secs, tx.saturating_sub(ptx) as f64 / secs))
+    let mut last = LAST_NET.lock().unwrap();
+    let result = last.and_then(|(prx, ptx, pt, _)| {
+        let secs = now.duration_since(pt).as_secs_f64();
+        (secs >= 0.2).then(|| (rx.saturating_sub(prx) as f64 / secs, tx.saturating_sub(ptx) as f64 / secs))
+    });
+    *last = Some((rx, tx, now, result));
+    result
 }
 
 /** Laufzeit des PCs in Sekunden. */

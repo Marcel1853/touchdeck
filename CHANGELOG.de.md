@@ -28,6 +28,10 @@ Datum: 2026-10-16
     - Statusleiste unten im Editor: verbundene Geräte mit Name, Adresse und angezeigter Seite,
       Zustand von OBS, Twitch und Discord sowie Adresse und Version.
   Neuerungen:
+    - Graphen: jede Live-Anzeige mit einer Zahl kann ihren Verlauf als Linie, Fläche oder Balken
+      zeigen (Anzahl Werte, Abstand, feste oder automatische Grenzen, Farbe). Der Verlauf wird im
+      Hintergrund auch aufgezeichnet, wenn die Seite nicht offen ist; größere Buttons ergeben größere
+      Diagramme. Plugins können mit „number“ echte Zahlen melden (z. B. 35,2 MW).
     - Marktplatz: „📖 Beschreibung“ zeigt die README eines Plugins (auf Deutsch die README.de.md) mit
       Überschriften, Listen, Tabellen und Bildern, mit Installieren-Knopf direkt dabei.
     - Plugins dürfen in einem Unterordner eines Repos liegen (mehrere Plugins in einem Repo):

@@ -27,6 +27,10 @@ Date: 2026-10-16
     - Status bar at the bottom of the editor: connected devices with name, address and the page
       they show, state of OBS, Twitch and Discord, plus address and version.
   Features:
+    - Graphs: every live display with a number can show its history as a line, area or bars
+      (number of values, interval, fixed or automatic range, colour). The history is recorded in
+      the background even when the page is not open; bigger buttons make bigger charts. Plugins can
+      report real numbers (e.g. 35.2 MW) with "number".
     - Marketplace: "📖 Description" shows a plugin's README (README.de.md for German) with headings,
       lists, tables and images, with an install button right there.
     - Plugins can live in a sub-folder of a repo (several plugins in one repo): marketplace entries

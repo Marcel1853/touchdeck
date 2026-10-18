@@ -140,12 +140,23 @@ pub struct Icon {
 }
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Live {
     pub source: String,
     pub command: String,
     pub variable: String,
     /// Zahlenwert (0–100) zusätzlich als Fortschrittsbalken zeigen.
     pub bar: bool,
+    /// Verlauf als Graph: "" (keiner), line, area, bars.
+    pub graph: String,
+    /// Wie viele Werte der Graph zeigt (10–300) und alle wie viele Sekunden einer dazukommt (1–3600).
+    pub graph_points: i64,
+    pub graph_interval: i64,
+    /// Feste Unter-/Obergrenze; None = automatisch aus den Werten.
+    pub graph_min: Option<f64>,
+    pub graph_max: Option<f64>,
+    /// Farbe des Graphen ("" = Textfarbe).
+    pub graph_color: String,
 }
 
 /** Ursprünge (schema://host:port) aller Webseiten-Buttons; das Programmfenster lässt sie in Rahmen laden. */
@@ -462,6 +473,12 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             command: text(&live["command"], "", 1000),
             variable: text(&live["variable"], "", 40),
             bar: live["bar"] == Value::Bool(true),
+            graph: one_of(&live["graph"], &["line", "area", "bars"], ""),
+            graph_points: clamp(&live["graphPoints"], 10, 300, 60),
+            graph_interval: clamp(&live["graphInterval"], 1, 3600, 2),
+            graph_min: live["graphMin"].as_f64().filter(|n| n.is_finite()),
+            graph_max: live["graphMax"].as_f64().filter(|n| n.is_finite()),
+            graph_color: color(&live["graphColor"], ""),
         },
         slider: Slider {
             target: one_of(&slider["target"], &catalog::slider_target_ids(), "volume"),

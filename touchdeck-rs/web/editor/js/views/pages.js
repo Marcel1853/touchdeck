@@ -1153,6 +1153,30 @@ function webCheck(url) {
   return box;
 }
 
+/** Graph: Verlauf der Live-Anzeige als Linie, Fläche oder Balken. */
+function graphSettings(b) {
+  const live = b.live;
+  const set = (k, v, opts) => mutate(() => (live[k] = v), { coalesce: `${b.id}:graph-${k}`, ...opts });
+  const num = (v) => (v === '' || v === null || v === undefined ? null : Number(String(v).replace(',', '.')));
+  return h('div', {},
+    h('label', { class: 'field' }, tr('pages.graph'),
+      h('select', { value: live.graph ?? '', onchange: (e) => set('graph', e.target.value, { detail: true }) },
+        [['', tr('pages.graphNone')], ['line', tr('pages.graphLine')], ['area', tr('pages.graphArea')], ['bars', tr('pages.graphBars')]].map(([v, l]) => h('option', { value: v }, l)))),
+    live.graph && h('div', { class: 'row' },
+      h('label', { class: 'field' }, tr('pages.graphPoints'),
+        h('input', { type: 'number', min: 10, max: 300, value: live.graphPoints ?? 60, onchange: (e) => set('graphPoints', Math.max(10, Math.min(300, Number(e.target.value) || 60))) })),
+      h('label', { class: 'field' }, tr('pages.graphInterval'),
+        h('input', { type: 'number', min: 1, max: 3600, value: live.graphInterval ?? 2, onchange: (e) => set('graphInterval', Math.max(1, Math.min(3600, Number(e.target.value) || 2))) }))),
+    live.graph && h('div', { class: 'row' },
+      h('label', { class: 'field' }, tr('pages.graphMin'),
+        h('input', { value: live.graphMin ?? '', placeholder: tr('pages.graphAuto'), onchange: (e) => set('graphMin', num(e.target.value)) })),
+      h('label', { class: 'field' }, tr('pages.graphMax'),
+        h('input', { value: live.graphMax ?? '', placeholder: tr('pages.graphAuto'), onchange: (e) => set('graphMax', num(e.target.value)) })),
+      h('label', { class: 'field' }, tr('pages.graphColor'),
+        h('input', { type: 'color', value: live.graphColor || '#5aa9e6', onchange: (e) => set('graphColor', e.target.value) }))),
+    live.graph && h('p', { class: 'hint-text' }, tr('pages.graphHint')));
+}
+
 /** Webseite im Button: Adresse, Zoom, bedienbar und automatisch neu laden. */
 function webSection(b) {
   b.web ??= { url: '', zoom: 100, interactive: true, refresh: 0 };
@@ -1240,8 +1264,9 @@ function liveSection(b) {
     h('label', { class: 'field' }, tr('pages.showOnButton'),
       h('select', { value: b.live.source, onchange: (e) => mutate(() => (b.live.source = e.target.value)) },
         S.liveSources.map((o) => h('option', { value: o.value }, o.label)))),
-    ['cpu', 'ram', 'temp', 'volume', 'timer', 'variable'].includes(b.live.source) && h('label', { class: 'switch-row' },
+    (['cpu', 'ram', 'temp', 'volume', 'timer', 'variable', 'gpu_temp', 'gpu_load', 'disk'].includes(b.live.source) || b.live.source.startsWith('plugin:')) && h('label', { class: 'switch-row' },
       h('input', { type: 'checkbox', checked: !!b.live.bar, onchange: (e) => mutate(() => (b.live.bar = e.target.checked)) }), tr('pages.showAsBar')),
+    !['none', 'clock', 'date', 'page_indicator', 'track'].includes(b.live.source) && graphSettings(b),
     b.live.source === 'timer' && h('label', { class: 'field' }, tr('pages.timerName'),
       h('input', { value: b.live.variable || '', placeholder: 'Timer', oninput: (e) => mutate(() => (b.live.variable = e.target.value.trim()), { coalesce: `${b.id}:timer`, detail: false }) })),
     b.live.source === 'command' && h('label', { class: 'field' }, tr('pages.command'),

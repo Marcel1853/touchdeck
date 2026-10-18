@@ -471,8 +471,11 @@ pub fn host_call(app: &Arc<App>, plugin: &str, op: &str, args: &Value) -> Result
         "live.set" => {
             let id = text(&args["id"], 24);
             let v = &args["value"];
-            let value = v["value"].as_f64().filter(|n| n.is_finite()).map(|n| n.clamp(0.0, 100.0));
-            let mut live = json!({ "text": text(&v["text"], 200), "value": value });
+            let raw = v["value"].as_f64().filter(|n| n.is_finite());
+            let value = raw.map(|n| n.clamp(0.0, 100.0));
+            // „number“: echte Zahl für Graphen (z. B. 35.2 für MW), sonst der Wert selbst.
+            let number = v["number"].as_f64().filter(|n| n.is_finite()).or(raw);
+            let mut live = json!({ "text": text(&v["text"], 200), "value": value, "number": number });
             if let Some(on) = v["on"].as_bool() {
                 live["on"] = json!(on);
             }

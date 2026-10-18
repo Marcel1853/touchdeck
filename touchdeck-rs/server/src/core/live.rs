@@ -222,7 +222,10 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         "variable" => match variables.get(&live.variable) {
             None => json!({ "text": "–", "on": false }),
             // Zahlen von 0 bis 100 lassen sich auch als Balken zeigen.
-            Some(v) => json!({ "text": js_string(v), "on": truthy(v), "value": js_string(v).trim().parse::<f64>().ok().filter(|n| (0.0..=100.0).contains(n)) }),
+            Some(v) => {
+                let n = js_string(v).trim().replace(',', ".").parse::<f64>().ok().filter(|n| n.is_finite());
+                json!({ "text": js_string(v), "on": truthy(v), "value": n.filter(|n| (0.0..=100.0).contains(n)), "number": n })
+            }
         },
         _ => return Ok(None),
     }))
@@ -302,5 +305,87 @@ pub async fn apply_slider(app: &Arc<App>, button: &Button, value: f64) -> Result
             linux::shell(&s.command.replace("{value}", &v.to_string()), true, Duration::from_secs(10)).await.map(|_| ())
         }
         _ => bail!(t!("live.unknownTargetForSlider")),
+    }
+}
+
+/**
+ * Zahl für den Graphen aus einem Live-Wert: „number“ (ungedeckelt), sonst „value“ (0–100),
+ * sonst die erste Zahl im Text („42 °C“, „3,5 MW“).
+ */
+pub fn graph_number(v: &Value) -> Option<f64> {
+    if let Some(n) = v["number"].as_f64().or_else(|| v["value"].as_f64()).filter(|n| n.is_finite()) {
+        return Some(n);
+    }
+    let text = v["text"].as_str()?;
+    let start = text.find(|c: char| c.is_ascii_digit() || c == '-')?;
+    let num: String = text[start..].chars().take_while(|c| c.is_ascii_digit() || matches!(c, '.' | ',' | '-')).collect();
+    num.replace(',', ".").trim_end_matches('.').parse::<f64>().ok().filter(|n| n.is_finite())
+}
+
+/** Verläufe für Graphen: je Button die letzten Zahlen und wann zuletzt gemessen wurde. */
+/** Verlauf eines Buttons und Zeitpunkt der letzten Messung. */
+type GraphData = (std::collections::VecDeque<f64>, Option<std::time::Instant>);
+
+#[derive(Default)]
+pub struct Graphs {
+    data: std::sync::Mutex<std::collections::HashMap<String, GraphData>>,
+}
+
+impl Graphs {
+    /** Verlauf eines Buttons (älteste zuerst). */
+    pub fn history(&self, id: &str) -> Option<Vec<f64>> {
+        self.data.lock().unwrap().get(id).map(|(v, _)| v.iter().copied().collect())
+    }
+
+    /** Einmal pro Sekunde: fällige Graph-Buttons messen. Ohne Graph-Buttons passiert nichts. */
+    pub async fn sample(&self, app: &Arc<App>) {
+        let now = std::time::Instant::now();
+        let (pages, variables) = {
+            let store = app.store.lock().unwrap();
+            let mut data = self.data.lock().unwrap();
+            let all: Vec<&Button> = store.config.pages.iter().flat_map(|p| &p.buttons).filter(|b| !b.live.graph.is_empty() && b.live.source != "none").collect();
+            // Verläufe von Buttons ohne Graph vergessen.
+            data.retain(|id, _| all.iter().any(|b| b.id == *id));
+            let due = |b: &Button| data.get(&b.id).and_then(|(_, t)| *t).is_none_or(|t| now.duration_since(t).as_secs() >= b.live.graph_interval.max(1) as u64);
+            let pages: Vec<Page> = store
+                .config
+                .pages
+                .iter()
+                .filter_map(|p| {
+                    let buttons: Vec<Button> = p.buttons.iter().filter(|b| !b.live.graph.is_empty() && b.live.source != "none" && due(b)).cloned().collect();
+                    (!buttons.is_empty()).then(|| Page { buttons, ..p.clone() })
+                })
+                .collect();
+            (pages, store.config.variables.clone())
+        };
+        if pages.is_empty() {
+            return;
+        }
+        let values = collect_live(app, &pages, &variables).await;
+        let mut data = self.data.lock().unwrap();
+        for b in pages.iter().flat_map(|p| &p.buttons) {
+            let entry = data.entry(b.id.clone()).or_default();
+            entry.1 = Some(now);
+            if let Some(n) = values.get(&b.id).and_then(graph_number) {
+                entry.0.push_back(n);
+                while entry.0.len() > b.live.graph_points.max(2) as usize {
+                    entry.0.pop_front();
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn graph_zahlen() {
+        assert_eq!(graph_number(&json!({ "text": "42 °C", "value": 42 })), Some(42.0));
+        assert_eq!(graph_number(&json!({ "text": "x", "value": 100, "number": 351.5 })), Some(351.5));
+        assert_eq!(graph_number(&json!({ "text": "3,5 MW" })), Some(3.5));
+        assert_eq!(graph_number(&json!({ "text": "↓ 12 KB/s" })), Some(12.0));
+        assert_eq!(graph_number(&json!({ "text": "–" })), None);
     }
 }

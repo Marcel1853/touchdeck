@@ -132,6 +132,8 @@ td.on('page_view', (data) => {          // data: { pageId, state: 'open'|'close'
 // own live display from "lives": text, number 0–100 (progress bar), "on" look
 td.live.set('unread', { text: '3 new', value: 30, on: true });
 td.live.set('unread', 'just a text');
+// real number for graphs (not limited to 0–100), e.g. power in MW:
+td.live.set('power', { text: '35.2 MW', number: 35.2 });
 
 // needs "deck"
 td.deck.pages();                        // [{ id, name, buttons: [{ id, title }] }]
