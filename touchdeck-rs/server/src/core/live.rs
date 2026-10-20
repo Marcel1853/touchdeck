@@ -217,18 +217,31 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
                 json!({ "text": if v["deaf"] == true { t!("live.deafened") } else { t!("live.listening") }, "on": v["deaf"] == true })
             }
         }
-        "timer" => app.timers.live(&live.variable),
-        s if s.starts_with("plugin:") => app.plugin_lives.lock().unwrap().get(s).cloned().unwrap_or_else(|| json!({ "text": "–" })),
-        "variable" => match variables.get(&live.variable) {
+        // Zahlen von 0 bis 100 lassen sich auch als Balken zeigen.
+        "timer" | "variable" => return Ok(quick_value(app, button, variables)),
+        s if s.starts_with("plugin:") => return Ok(quick_value(app, button, variables)),
+        _ => return Ok(None),
+    }))
+}
+
+/**
+ * Live-Wert ohne Prozesse und Netz (Timer, Plugin-Werte, TouchDeck-Werte) – für schnelle Teil-Aktualisierungen.
+ * None für alle anderen Quellen.
+ */
+pub fn quick_value(app: &Arc<App>, button: &Button, variables: &Map<String, Value>) -> Option<Value> {
+    let live = &button.live;
+    match live.source.as_str() {
+        "timer" => Some(app.timers.live(&live.variable)),
+        s if s.starts_with("plugin:") => Some(app.plugin_lives.lock().unwrap().get(s).cloned().unwrap_or_else(|| json!({ "text": "–" }))),
+        "variable" => Some(match variables.get(&live.variable) {
             None => json!({ "text": "–", "on": false }),
-            // Zahlen von 0 bis 100 lassen sich auch als Balken zeigen.
             Some(v) => {
                 let n = js_string(v).trim().replace(',', ".").parse::<f64>().ok().filter(|n| n.is_finite());
                 json!({ "text": js_string(v), "on": truthy(v), "value": n.filter(|n| (0.0..=100.0).contains(n)), "number": n })
             }
-        },
-        _ => return Ok(None),
-    }))
+        }),
+        _ => None,
+    }
 }
 
 async fn slider_value(app: &Arc<App>, button: &Button, snap: &Snapshot) -> Result<Option<Value>> {

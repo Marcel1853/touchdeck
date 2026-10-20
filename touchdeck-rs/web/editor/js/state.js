@@ -186,6 +186,12 @@ export function watchServer() {
       S.logs.push(msg.entry);
       if (S.logs.length > 1500) S.logs.shift();
       for (const fn of logListeners) fn(msg.entry);
+    } else if (msg.type === 'vars') {
+      for (const [name, value] of Object.entries(msg.values)) {
+        if (value === null) delete S.variables[name];
+        else S.variables[name] = value;
+      }
+      if (S.view === 'values') render({ detail: !document.activeElement?.closest('.values-table') });
     } else if (msg.type === 'state') {
       const valuesChanged = JSON.stringify(msg.variables) !== JSON.stringify(S.variables);
       S.variables = msg.variables;

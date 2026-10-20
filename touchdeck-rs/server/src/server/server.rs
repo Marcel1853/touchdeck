@@ -34,7 +34,7 @@ use crate::core::plugins::Plugins;
 use crate::core::profiles;
 use crate::core::live::{apply_slider, collect_live};
 use crate::core::log::Log;
-use crate::core::store::{Action, Store, action_list, new_id};
+use crate::core::store::{Action, Button, Page, Store, action_list, new_id};
 use crate::integrations::discord::DiscordClient;
 use crate::integrations::obs::{self, ObsClient};
 use crate::integrations::twitch::TwitchClient;
@@ -90,6 +90,9 @@ struct Client {
     role: Role,
     tx: mpsc::UnboundedSender<Message>,
     viewing: Option<String>,
+    /// Zuletzt an dieses Gerät geschickte Live-Werte (für welche Seite), damit nur Änderungen rausgehen.
+    sent_page: Option<String>,
+    sent: serde_json::Map<String, Value>,
     /// Für die Statusleiste: Adresse und Name, den das Gerät nach dem Verbinden meldet.
     ip: String,
     name: String,
@@ -213,7 +216,9 @@ impl App {
     /** Live-Wert eines Plugins setzen und die Anzeigen gleich aktualisieren. */
     pub fn set_plugin_live(self: &Arc<Self>, key: &str, value: Value) {
         self.plugin_lives.lock().unwrap().insert(key.to_string(), value);
-        refresh_live(self);
+        // Nur Buttons mit diesem Plugin-Wert neu senden (ohne alle anderen Werte neu abzufragen).
+        let key = key.to_string();
+        refresh_quick(self, move |b| b.live.source == key);
     }
 
     /** Verbundene Geräte (Name, Adresse, angezeigte Seite) – für Statusleiste und Plugins. */
@@ -232,8 +237,8 @@ impl App {
 
     /** Ein Timer wurde gesteuert: Anzeige sofort aktualisieren und, solange einer läuft, jede Sekunde. */
     pub fn timers_changed(self: &Arc<Self>) {
-        refresh_live(self);
-        self.timers.ensure_ticker(self.clone(), refresh_live, |a, name| a.events.fire(a, "timer_done", &json!({ "name": name, "Name": name })));
+        refresh_timers(self);
+        self.timers.ensure_ticker(self.clone(), refresh_timers, |a, name| a.events.fire(a, "timer_done", &json!({ "name": name, "Name": name })));
     }
 
     /** Alle Bedienfelder (Handy, Tablet, Vorschau) auf eine Seite wechseln lassen. */
@@ -425,6 +430,104 @@ fn slide(app: &Arc<App>, page_id: &str, button_id: &str, value: &Value, part: u8
 
 /** Live-Werte aktualisieren – nur für Seiten, die ein Bedienfeld gerade anzeigt.
  * Wechselt ein Handy die Seite, während noch eine Abfrage läuft, folgt direkt danach eine weitere. */
+/**
+ * Live-Wert eines Graphen als Unterschied: statt des ganzen Verlaufs nur die neuen Punkte je Reihe
+ * (`seriesAppend: [{ values, len }]`). None, wenn das nicht geht (andere Reihen, Verlauf neu begonnen).
+ */
+fn graph_delta(old: &Value, new: &Value) -> Option<Value> {
+    let (Some(a), Some(b)) = (old["series"].as_array(), new["series"].as_array()) else { return None };
+    if a.len() != b.len() {
+        return None;
+    }
+    let mut append = Vec::new();
+    for (x, y) in a.iter().zip(b) {
+        if x["name"] != y["name"] {
+            return None;
+        }
+        let (Some(old_v), Some(new_v)) = (x["values"].as_array(), y["values"].as_array()) else { return None };
+        // Kleinstes k, bei dem der alte Verlauf ab k der Anfang des neuen ist (vorne fallen alte Punkte weg).
+        let k = (0..=old_v.len()).find(|&k| {
+            let rest = &old_v[k..];
+            rest.len() <= new_v.len() && rest == &new_v[..rest.len()]
+        })?;
+        let kept = old_v.len() - k;
+        append.push(json!({ "values": &new_v[kept..], "len": new_v.len() }));
+    }
+    let mut out = new.clone();
+    let o = out.as_object_mut()?;
+    o.remove("series");
+    o.insert("seriesAppend".into(), Value::Array(append));
+    Some(out)
+}
+
+/** Timer-Anzeigen: jede Sekunde, solange einer läuft – nur die Timer-Buttons. */
+fn refresh_timers(app: &Arc<App>) {
+    refresh_quick(app, |b| b.live.source == "timer");
+}
+
+/** Jedes Gerät bekommt nur Werte seiner Seite: nach einem Seitenwechsel alle, sonst nur geänderte. */
+fn send_live(a: &Arc<App>, pages: &[Page], live: &serde_json::Map<String, Value>) {
+    for c in a.clients.lock().unwrap().values_mut() {
+        let Some(page) = c.viewing.as_ref().and_then(|v| pages.iter().find(|p| &p.id == v)) else { continue };
+        let full = c.sent_page.as_ref() != Some(&page.id);
+        if full {
+            c.sent.clear();
+            c.sent_page = Some(page.id.clone());
+        }
+        let mut values = serde_json::Map::new();
+        for b in &page.buttons {
+            if let Some(v) = live.get(&b.id)
+                && (full || c.sent.get(&b.id) != Some(v))
+            {
+                // Graphen: nur die neuen Punkte, das Gerät hängt sie an.
+                let delta = (!full).then(|| c.sent.get(&b.id).and_then(|old| graph_delta(old, v))).flatten();
+                values.insert(b.id.clone(), delta.unwrap_or_else(|| v.clone()));
+                c.sent.insert(b.id.clone(), v.clone());
+            }
+        }
+        if full || !values.is_empty() {
+            let msg = json!({ "type": "live", "values": values, "full": full });
+            let _ = c.tx.send(Message::Text(msg.to_string().into()));
+        }
+    }
+}
+
+/**
+ * Schnelle Teil-Aktualisierung ohne Prozesse: nur Buttons angezeigter Seiten, für die `only` gilt und deren
+ * Quelle sofort lesbar ist (Timer, Plugin-Werte, Werte). Die übrigen Werte bleiben, wie sie sind.
+ */
+fn refresh_quick(app: &Arc<App>, only: impl Fn(&Button) -> bool) {
+    let viewed: std::collections::HashSet<String> = app.clients.lock().unwrap().values().filter_map(|c| c.viewing.clone()).collect();
+    if viewed.is_empty() {
+        return;
+    }
+    let (pages, variables) = {
+        let store = app.store.lock().unwrap();
+        let pages: Vec<Page> = store.config.pages.iter().filter(|p| viewed.contains(&p.id) && p.buttons.iter().any(&only)).cloned().collect();
+        if pages.is_empty() {
+            return;
+        }
+        (pages, store.config.variables.clone())
+    };
+    let mut fresh = serde_json::Map::new();
+    for b in pages.iter().flat_map(|p| &p.buttons).filter(|b| b.mode != "slider" && only(b)) {
+        if let Some(mut v) = crate::core::live::quick_value(app, b, &variables) {
+            if !b.live.graph.is_empty()
+                && let Some(series) = app.graphs.history(&b.id)
+            {
+                v["series"] = series;
+            }
+            fresh.insert(b.id.clone(), v);
+        }
+    }
+    let live = {
+        let mut live = app.live.lock().unwrap();
+        live.extend(fresh);
+        live.clone()
+    };
+    send_live(app, &pages, &live);
+}
+
 fn refresh_live(app: &Arc<App>) {
     let viewed: std::collections::HashSet<String> = app.clients.lock().unwrap().values().filter_map(|c| c.viewing.clone()).collect();
     if viewed.is_empty() {
@@ -449,20 +552,15 @@ fn refresh_live(app: &Arc<App>) {
                     entry["series"] = series;
                 }
             }
-            let changed = {
+            // Nur Werte von Buttons angezeigter Seiten behalten (gelöschte und nicht mehr angezeigte fallen raus).
+            let shown: std::collections::HashSet<&str> = pages.iter().flat_map(|p| &p.buttons).map(|b| b.id.as_str()).collect();
+            let live = {
                 let mut live = a.live.lock().unwrap();
-                let mut next = live.clone();
-                next.extend(fresh);
-                let changed = next != *live;
-                *live = next;
-                changed.then(|| live.clone())
+                live.extend(fresh);
+                live.retain(|k, _| shown.contains(k.as_str()));
+                live.clone()
             };
-            if let Some(values) = changed {
-                let msg = json!({ "type": "live", "values": values }).to_string();
-                for c in a.clients.lock().unwrap().values().filter(|c| c.viewing.is_some()) {
-                    let _ = c.tx.send(Message::Text(msg.clone().into()));
-                }
-            }
+            send_live(&a, &pages, &live);
             if !a.live_again.swap(false, Ordering::SeqCst) {
                 break;
             }
@@ -1182,7 +1280,7 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
     let (mut sink, mut stream) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
     let id = app.next_client.fetch_add(1, Ordering::Relaxed);
-    app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None, ip: ip.clone(), name: String::new() });
+    app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None, sent_page: None, sent: serde_json::Map::new(), ip: ip.clone(), name: String::new() });
     if role == Role::Device {
         app.log.info(t!("server.device"), t!("server.connected", ip));
         app.events.fire(&app, "device", &json!({ "state": "connected", "Gerät": ip }));
@@ -1444,9 +1542,9 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
     let a = app.clone();
     tokio::spawn(async move {
         loop {
-            let change = match changes.recv().await {
-                Ok(c) => c.what,
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => "pages",
+            let (change, detail) = match changes.recv().await {
+                Ok(c) => (c.what, c.detail),
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => ("pages", Value::Null),
                 Err(_) => break,
             };
             match change {
@@ -1461,8 +1559,29 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
                 }
                 continue;
             }
-            let state = with_type(a.deck_state(&a.store.lock().unwrap()), "state");
-            a.broadcast(None, &state);
+            // Laufzeit-Änderungen klein verschicken; den ganzen Zustand (alle Seiten) nur, wenn sich Seiten oder
+            // Einstellungen ändern – sonst bauen die Geräte bei jedem Zählerstand alles neu.
+            let msg = match change {
+                "variables" => match detail["name"].as_str() {
+                    Some(name) => {
+                        // Live-Anzeigen mit Quelle „Wert“ sofort nachziehen (statt beim nächsten 2-s-Durchlauf).
+                        let n = name.to_string();
+                        refresh_quick(&a, move |b| b.live.source == "variable" && b.live.variable == n);
+                        json!({ "type": "vars", "values": { name: detail["value"] } })
+                    }
+                    None => with_type(a.deck_state(&a.store.lock().unwrap()), "state"),
+                },
+                "toggles" => json!({ "type": "toggles", "toggles": a.store.lock().unwrap().config.toggles }),
+                "overrides" => json!({ "type": "overrides", "overrides": a.store.lock().unwrap().config.overrides }),
+                _ => {
+                    // Das Gerät übernimmt die Live-Werte aus dem ganzen Zustand: danach wieder einmal alles schicken.
+                    for c in a.clients.lock().unwrap().values_mut() {
+                        c.sent_page = None;
+                    }
+                    with_type(a.deck_state(&a.store.lock().unwrap()), "state")
+                }
+            };
+            a.broadcast(None, &msg);
         }
     });
 
@@ -1539,4 +1658,26 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
     }
     discovery::start(app.clone());
     Ok(app)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn graph_nur_neue_punkte() {
+        let old = json!({ "text": "1", "series": [{ "name": "", "values": [1, 2, 3] }] });
+        // Verlauf voll: vorne fällt ein Punkt weg, hinten kommt einer dazu.
+        let new = json!({ "text": "4", "series": [{ "name": "", "values": [2, 3, 4] }] });
+        let d = graph_delta(&old, &new).unwrap();
+        assert_eq!(d["seriesAppend"], json!([{ "values": [4], "len": 3 }]));
+        assert_eq!(d["text"], "4");
+        assert!(d.get("series").is_none());
+        // Verlauf wächst noch.
+        let grow = json!({ "series": [{ "name": "", "values": [1, 2, 3, 5] }] });
+        assert_eq!(graph_delta(&old, &grow).unwrap()["seriesAppend"], json!([{ "values": [5], "len": 4 }]));
+        // Andere Reihen: ganz schicken.
+        let other = json!({ "series": [{ "name": "B", "values": [1] }] });
+        assert!(graph_delta(&old, &other).is_none());
+    }
 }

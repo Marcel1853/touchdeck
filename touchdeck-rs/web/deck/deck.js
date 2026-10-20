@@ -151,16 +151,62 @@ function showRotateHint(pageId) {
   hintTimer = setTimeout(() => el.classList.add('gone'), 4000);
 }
 
-/** Live-Werte einzeln austauschen, damit laufende Berührungen nicht unterbrochen werden. */
-function updateLive(values) {
-  state.live = values;
+/**
+ * Nur die Buttons der angezeigten Seite neu zeichnen, für die changed(b) gilt – einzeln, damit laufende
+ * Berührungen nicht unterbrochen werden und das Tablet nicht bei jedem Wert die ganze Seite neu aufbaut.
+ */
+function refreshButtons(changed) {
   const page = state.pages.find((p) => p.id === currentPage);
   for (const b of page?.buttons ?? []) {
+    if (!changed(b)) continue;
     const el = grid.querySelector(`[data-id="${CSS.escape(b.id)}"]`);
     // Webseiten nicht neu aufbauen, sonst lädt die Seite bei jedem Live-Wert neu.
     if (!el || el.classList.contains('pressed') || el.classList.contains('sliding') || el.classList.contains('is-web')) continue;
     el.replaceWith(element(b, page));
   }
+}
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/** Live-Werte: full = alle Werte der Seite, sonst nur geänderte (werden eingemischt). */
+function updateLive(values, full = true) {
+  const before = state.live ?? {};
+  // Graphen kommen nach dem ersten Mal nur mit neuen Punkten: an den bisherigen Verlauf anhängen.
+  for (const [id, v] of Object.entries(values)) {
+    if (!v?.seriesAppend) continue;
+    const prev = before[id]?.series ?? [];
+    v.series = v.seriesAppend.map((a, i) => ({ name: prev[i]?.name ?? '', values: [...(prev[i]?.values ?? []), ...a.values].slice(-a.len) }));
+    delete v.seriesAppend;
+  }
+  state.live = full ? values : { ...before, ...values };
+  refreshButtons((b) => !same(before[b.id], state.live[b.id]));
+}
+
+/** Geänderte Werte ({Name} in Titeln, Live-Quelle „Wert“): nur Buttons neu zeichnen, die sie benutzen. */
+function updateVariables(values) {
+  for (const [name, value] of Object.entries(values)) {
+    if (value === null) delete state.variables[name];
+    else state.variables[name] = value;
+  }
+  const names = Object.keys(values);
+  refreshButtons((b) => {
+    const text = JSON.stringify(effective(b));
+    return names.some((n) => text.includes(`{${n}}`) || text.includes(`"variable":${JSON.stringify(n)}`));
+  });
+}
+
+function updateToggles(toggles) {
+  const before = state.toggles ?? {};
+  state.toggles = toggles;
+  refreshButtons((b) => !same(before[b.id], toggles[b.id]));
+}
+
+function updateOverrides(overrides) {
+  const before = state.overrides ?? {};
+  state.overrides = overrides;
+  refreshButtons((b) => !same(before.buttons?.[b.id], overrides.buttons?.[b.id]));
+  const page = state.pages.find((p) => p.id === currentPage);
+  if (page) document.body.style.background = overrides.pages?.[page.id]?.background ?? page.background;
 }
 
 /** Webseiten-Buttons mit „Neu laden alle n Sekunden“. */
@@ -450,7 +496,13 @@ async function connect() {
       // „Seite auf allen Geräten anzeigen“ (z. B. aus „Programm im Vordergrund“).
       if (msg.pageId && msg.pageId !== currentPage) goTo(msg.pageId);
     } else if (msg.type === 'live') {
-      if (state) updateLive(msg.values);
+      if (state) updateLive(msg.values, msg.full !== false);
+    } else if (msg.type === 'vars') {
+      if (state) updateVariables(msg.values);
+    } else if (msg.type === 'toggles') {
+      if (state) updateToggles(msg.toggles);
+    } else if (msg.type === 'overrides') {
+      if (state) updateOverrides(msg.overrides);
     } else if (msg.type === 'result') {
       const el = grid.querySelector(`[data-id="${CSS.escape(msg.buttonId)}"]`);
       if (!msg.ok) {
