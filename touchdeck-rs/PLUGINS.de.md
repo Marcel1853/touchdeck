@@ -188,6 +188,35 @@ Abläufen und in Ereignissen.
 Alle Aufrufe sind synchron (kein `await` nötig). Ein Plugin läuft in einem eigenen
 Thread; lange Netzanfragen halten TouchDeck nicht auf.
 
+## Aktionen mit Rückgabe als Daten
+
+Eine Aktion kann statt einer kurzen Meldung **Daten** zurückgeben. TouchDeck baut daraus selbst die
+Anzeige – das Plugin muss keine eigene Oberfläche dafür haben.
+
+```js
+td.action('status', () => ({ players: 7, memory: 4210, uptime: 50432 }));
+```
+
+In `plugin.json` sagt `returns`, wie die Werte heißen und in welcher Einheit sie kommen:
+
+```json
+{ "id": "status", "label": "Server-Status", "fields": [],
+  "returns": [
+    { "key": "players", "label": { "en": "Players", "de": "Spieler" }, "unit": "number" },
+    { "key": "memory",  "label": "RAM", "unit": "mb" },
+    { "key": "uptime",  "label": { "en": "Uptime", "de": "Laufzeit" }, "unit": "seconds" }
+  ] }
+```
+
+Einheiten: `number`, `bytes`, `kb`, `mb`, `gb`, `seconds`, `ms`, `percent`, `text`.
+TouchDeck macht daraus lesbare Werte (4210 MB → „4,1 GB“, 50432 s → „14 h“).
+
+- **Anzeige:** Ein Button mit der Live-Anzeige „Plugin › Aktion (Ergebnis)“ zeigt nach jedem Aufruf
+  eine Liste aus Bezeichnung und Wert (bis 8 Zeilen). Ohne `returns` erscheinen die Schlüssel wie geliefert.
+- **Weiterverwenden:** Folgende Aktionen in derselben Liste bekommen die Werte als
+  `{Ergebnis.players}` (englisch `{Result.players}`), z. B. für „Wert setzen“ oder eine Bedingung.
+- Erweiterte Plugins schicken dazu `"data": { … }` in ihrer `result`-Antwort mit.
+
 ## Erweiterte Plugins (volle Rechte)
 
 Wer mehr braucht, als die Abschottung erlaubt, kann ein **eigenes Programm** als
@@ -234,7 +263,7 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 
 | An TouchDeck | Bedeutung |
 |---|---|
-| `{"type":"result","requestId":"r_1","ok":true,"message":"…"}` | Aktion fertig (oder `"ok":false,"error":"…"`) |
+| `{"type":"result","requestId":"r_1","ok":true,"message":"…"}` | Aktion fertig (oder `"ok":false,"error":"…"`); mit `"data":{…}` Rückgabe als Daten (siehe oben) |
 | `{"type":"setValue","name":"…","value":"…"}` | Wert setzen |
 | `{"type":"getValue","requestId":"…","name":"…"}` | Wert abfragen |
 | `{"type":"fire","trigger":"fertig","data":{…}}` | Auslöser melden |

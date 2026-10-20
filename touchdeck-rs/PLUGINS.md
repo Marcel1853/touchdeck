@@ -185,6 +185,35 @@ press, in page logic (“Page opened / left”), in flows and in events.
 All calls are synchronous (no `await` needed). Each plugin runs in its own thread;
 long network requests do not hold up TouchDeck.
 
+## Actions that return data
+
+Instead of a short message, an action can return **data**. TouchDeck builds the display itself – the
+plugin needs no user interface of its own for it.
+
+```js
+td.action('status', () => ({ players: 7, memory: 4210, uptime: 50432 }));
+```
+
+In `plugin.json`, `returns` says what the values are called and in which unit they come:
+
+```json
+{ "id": "status", "label": "Server status", "fields": [],
+  "returns": [
+    { "key": "players", "label": { "en": "Players", "de": "Spieler" }, "unit": "number" },
+    { "key": "memory",  "label": "RAM", "unit": "mb" },
+    { "key": "uptime",  "label": { "en": "Uptime", "de": "Laufzeit" }, "unit": "seconds" }
+  ] }
+```
+
+Units: `number`, `bytes`, `kb`, `mb`, `gb`, `seconds`, `ms`, `percent`, `text`.
+TouchDeck turns them into readable values (4210 MB → “4.1 GB”, 50432 s → “14 h”).
+
+- **Display:** a button with the live display “Plugin › Action (result)” shows a list of label and value
+  after every call (up to 8 rows). Without `returns`, the keys are shown as delivered.
+- **Reuse:** following actions in the same list get the values as `{Result.players}` (German
+  `{Ergebnis.players}`), e.g. for “Set value” or a condition.
+- Advanced plugins add `"data": { … }` to their `result` reply.
+
 ## Advanced plugins (full rights)
 
 If you need more than the sandbox allows, you can write a **separate program** as a
@@ -231,7 +260,7 @@ TouchDeck restarts it, at most three times per minute.
 
 | To TouchDeck | Meaning |
 |---|---|
-| `{"type":"result","requestId":"r_1","ok":true,"message":"…"}` | Action finished (or `"ok":false,"error":"…"`) |
+| `{"type":"result","requestId":"r_1","ok":true,"message":"…"}` | Action finished (or `"ok":false,"error":"…"`); with `"data":{…}` it returns data (see above) |
 | `{"type":"setValue","name":"…","value":"…"}` | Set a value |
 | `{"type":"getValue","requestId":"…","name":"…"}` | Query a value |
 | `{"type":"fire","trigger":"done","data":{…}}` | Report a trigger |
