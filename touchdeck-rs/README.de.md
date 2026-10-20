@@ -6,7 +6,7 @@ Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy oder
 aus auslösen – mit Editor, Android-App und Bedienfeld im Browser. Geschrieben in Rust,
 das Programmfenster nutzt Tauri mit der Web-Ansicht des Systems.
 
-Aktuelle Version: **0.10.0** (PC-Programm), Android-App **0.6.4**. Änderungen je
+Aktuelle Version: **0.11.0** (PC-Programm), Android-App **0.7.0**. Änderungen je
 Version: [`CHANGELOG.de.md`](../CHANGELOG.de.md)
 
 ## Installieren
@@ -95,8 +95,10 @@ meldet alle Geräte ab.
 ## Buttons
 
 Buttons gibt es als **Drücken**, **Umschalter** (an/aus mit eigenem Aussehen
-„Wenn an“ und eigenen Aktionen) und **Regler** (Lautstärke, Mikrofon, OBS-Audioquelle
-oder eigener Befehl mit `{value}`). Jeder Button kann eine **Live-Anzeige** haben
+„Wenn an“ und eigenen Aktionen), **Schalter** (Kippschalter, waagerecht oder senkrecht),
+**Zustände** (jeder Druck schaltet zum nächsten Zustand mit eigenem Aussehen und eigenen
+Aktionen, oder der Zustand richtet sich nach einem Wert) und **Regler** (Lautstärke,
+Mikrofon, OBS-Audioquelle oder eigener Befehl mit `{value}`). Jeder Button kann eine **Live-Anzeige** haben
 (Uhrzeit, CPU, RAM, Temperatur, Lautstärke, Musiktitel, Steam, OBS, Twitch, Discord,
 Werte, Befehlsausgabe), auf **Events** reagieren und beim **Halten** und beim
 **Doppeldruck** eigene Aktionen ausführen (nur Buttons mit Doppeldruck-Aktionen
@@ -132,6 +134,14 @@ Beispiele für die neueren Aktionen und Auslöser:
   Durchlauf ist `{Event.Durchlauf}`.
 - **Zufällig: eine der nächsten Aktionen** führt genau eine zufällig gewählte der
   folgenden Aktionen aus (Anzahl einstellbar, 0 = alle folgenden).
+- **Sicherheit und Bedingungen:** „Erst beim zweiten Druck auslösen“ fragt „Sicher?“;
+  ein Button kann davon abhängen, dass ein anderer an ist oder ein Wert passt (sonst
+  ausgegraut mit Schloss); Buttons können anfangs versteckt sein und per Aktion
+  erscheinen. Nach jeder geklappten Aktion zeigt der Button kurz ein Häkchen.
+- **Ruhezustand und PC-Sperre:** Das Bedienfeld dunkelt nach einigen Minuten ab oder
+  zeigt eine Uhr; auf Wunsch ist es gesperrt, solange der PC gesperrt ist.
+- **Widget, Schnellzugriff und NFC (Android-App):** Buttons am PC auslösen, ohne das
+  Bedienfeld zu öffnen.
 - **Drehregler und Regler-Formen:** ein Regler kann Fläche, Schiene mit Griff,
   Drehregler (Ring) oder Drehregler mit Zeiger sein, mit eigener Farbe und Dicke.
 - **Timer (Countdown / Stoppuhr)** mit Starten, Anhalten und Zurücksetzen; die

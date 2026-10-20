@@ -6,7 +6,7 @@ Macro remote for Linux: design button pages on your PC and trigger them from you
 phone or tablet – with an editor, an Android app and a deck in the browser. Written
 in Rust; the program window uses Tauri with the system's web view.
 
-Current version: **0.10.0** (desktop program), Android app **0.6.4**. Changes per
+Current version: **0.11.0** (desktop program), Android app **0.7.0**. Changes per
 version: [`CHANGELOG.md`](../CHANGELOG.md)
 
 ## Installing
@@ -91,8 +91,10 @@ devices.
 ## Buttons
 
 Buttons come as **Press**, **Toggle** (on/off with its own look “When on” and its
-own actions) and **Slider** (volume, microphone, OBS audio source or a custom
-command with `{value}`). Every button can have a **live display** (time, CPU, RAM,
+own actions), **Switch** (flip switch, horizontal or vertical), **States** (each press
+moves to the next state with its own look and actions, or the state follows a value)
+and **Slider** (volume, microphone, OBS audio source or a custom command with
+`{value}`). Every button can have a **live display** (time, CPU, RAM,
 temperature, volume, music title, Steam, OBS, Twitch, Discord, values, command
 output), react to **events**, and run its own actions on **hold** and on **double
 press** (only buttons with double-press actions wait briefly, 0.3 s, for a second
@@ -125,6 +127,14 @@ Examples of the newer actions and triggers:
   blocks up to **End**; the editor indents them. The current round is `{Event.Loop}`.
 - **Random: one of the next actions** runs exactly one randomly chosen action of the
   following ones (count adjustable, 0 = all following).
+- **Safety and conditions:** “Only trigger on the second press” asks “Sure?”; a
+  button can depend on another button being on or a value matching (otherwise greyed
+  out with a lock); buttons can be hidden at start and appear by action. After every
+  successful action the button briefly shows a check mark.
+- **Sleep and PC lock:** the deck dims or shows a clock after a few minutes; if you
+  like, it is locked while the PC is locked.
+- **Widget, quick settings and NFC (Android app):** trigger buttons on the PC without
+  opening the deck.
 - **Knobs and slider styles:** a slider can be an area, a rail with handle, a knob
   (ring) or a knob with pointer, with its own colour and thickness.
 - **Timer (countdown / stopwatch)** with start, pause and reset; the live display

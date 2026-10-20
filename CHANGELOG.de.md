@@ -6,15 +6,62 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
-Version: 0.10.0
-Datum: 2026-10-18
+Version: 0.11.0
+Datum: 2026-10-20
+  Große Neuerungen:
+    - Buttons mit mehreren Zuständen: Button-Art „Zustände“ – jeder Druck schaltet zum nächsten
+      Zustand mit eigenem Titel, Emoji, Farben und eigenen Aktionen. Wahlweise „Zustand nach Wert“:
+      Der Zustand richtet sich nach einem Wert (z. B. „10..50“, „>80“, „an“).
+    - Schalter als neue Button-Art: Kippschalter waagerecht oder senkrecht, an/aus mit eigenen
+      Aktionen wie ein Umschalter.
+    - Aktionen mit Rückgabe als Daten (Plugins): Eine Plugin-Aktion kann Daten zurückgeben
+      (z. B. { players: 7, memory: 4210, uptime: 50432 }). TouchDeck zeigt sie automatisch als Liste
+      mit lesbaren Einheiten („RAM 4,1 GB“, „Laufzeit 14 h“) und reicht sie als {Ergebnis.players}
+      an folgende Aktionen weiter. Neu im Manifest: „returns“.
+    - Android-App 0.7.0: Startbildschirm-Widget mit bis zu vier Buttons, Schnellzugriff-Kachel und
+      NFC-Aufkleber lösen Buttons am PC aus, ohne das Bedienfeld zu öffnen.
   Neuerungen:
-    - Marktplatz: Knopf „Marktplatz neu laden“ holt die Liste frisch von GitHub, neue Plugins
-      erscheinen sofort (kein Neustart nötig).
-    - Menü am Symbol in der Systemleiste: „TouchDeck neu starten“.
+    - Sicherheitsabfrage: Buttons mit „Erst beim zweiten Druck auslösen“ zeigen beim ersten Druck
+      „Sicher?“.
+    - Abhängigkeiten: Ein Button löst nur aus, wenn ein anderer Button an ist oder ein Wert passt
+      (z. B. erst „Scharf schalten“, dann „Senden“); sonst ist er ausgegraut mit Schloss.
+    - Versteckte Buttons: „Anfangs versteckt“ und die Aktion „Button zeigen / verstecken“ (auch nur
+      für einige Sekunden).
+    - Aktion „Zustand eines Buttons setzen“ (nächster, vorheriger, Nr.).
+    - Rückmeldung am Button: kurzes Häkchen, wenn die Aktionen geklappt haben (abschaltbar).
+    - Ruhezustand fürs Bedienfeld: nach einigen Minuten abdunkeln, Uhr oder schwarz zeigen; der
+      erste Tipp weckt nur. In der App wird dabei auch die Helligkeit abgesenkt.
+    - PC gesperrt: Bedienfeld sperren, solange der PC gesperrt ist, und Auslöser „PC gesperrt /
+      entsperrt“ (Cinnamon, GNOME, KDE, MATE).
     - USB-Verbindung: Einstellungen › Handy & Sicherheit › „Android-Geräte per USB-Kabel verbinden“
       leitet den Port an angeschlossene Geräte mit USB-Debugging weiter („adb reverse“, braucht adb
       am PC); in der App „Per USB-Kabel verbinden“ wählen. Kein WLAN nötig.
+    - Marktplatz: Knopf „Marktplatz neu laden“ holt die Liste frisch von GitHub, neue Plugins
+      erscheinen sofort (kein Neustart nötig).
+    - Menü am Symbol in der Systemleiste: „TouchDeck neu starten“.
+  Leistung:
+    - Werte, Umschalter und Aussehen werden gesammelt gespeichert statt bei jeder Änderung die ganze
+      Konfiguration zu schreiben; config.json ist kompakt.
+    - Geräte bekommen nur noch, was sich geändert hat: kleine Nachrichten statt des ganzen Zustands,
+      Live-Werte nur für die eigene Seite und nur geänderte, Graphen nur neue Punkte. Das Tablet
+      zeichnet nur geänderte Buttons neu.
+    - Plugin-, Timer- und Wert-Anzeigen werden sofort und ohne Abfrage aller anderen Werte
+      aktualisiert.
+    - „Programm im Vordergrund“ über eine stehende X11-Verbindung, Tastenkürzel und Zwischenablage
+      warten auf Ereignisse statt bis zu 50-mal pro Sekunde nachzusehen.
+    - Ton-Auslöser über „pactl subscribe“ statt alle 2 Sekunden nachzufragen; Steam-Erkennung liest
+      nur neue Prozesse.
+    - Bedienfeld im Hintergrund (App verlassen, Bildschirm aus) bekommt keine Live-Werte mehr; die
+      App pausiert dabei die Seite.
+  Android-App:
+    - App 0.6.4: neuer Knopf „Per USB-Kabel verbinden“.
+    - App 0.7.0: Widget, Schnellzugriff-Kachel, NFC-Aufkleber beschreiben (Verbinden-Bildschirm ›
+      Abkürzungen), Links „touchdeck://press?…“; Ruhezustand senkt die Helligkeit.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.10.0
+Datum: 2026-10-18
+  Neuerungen:
     - Designs aus Plugins und Icon-Paketen: Aussehen › Designs zeigt sie als Vorschau, ein Klick
       übernimmt Farben, Schrift, Textur, Overlay und Regler-Form. Plugins können Icon-Pakete
       voraussetzen, die beim Installieren importiert werden.
@@ -127,7 +174,6 @@ Datum: 2026-10-18
   Android-App:
     - App 0.6.3: eingebettete Seiten von Webseiten-Buttons bleiben im Button, statt den Browser zu
       öffnen; Links ohne passende App bringen die App nicht mehr zum Absturz.
-    - App 0.6.4: neuer Knopf „Per USB-Kabel verbinden“.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.0

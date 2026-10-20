@@ -6,15 +6,59 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
-Version: 0.10.0
-Date: 2026-10-18
+Version: 0.11.0
+Date: 2026-10-20
+  Major Features:
+    - Buttons with several states: button type “States” – each press moves to the next state with
+      its own title, emoji, colours and actions. Optionally “state from value”: the state follows a
+      value (e.g. “10..50”, “>80”, “on”).
+    - Switch as a new button type: flip switch, horizontal or vertical, on/off with own actions like
+      a toggle.
+    - Actions that return data (plugins): a plugin action can return data (e.g. { players: 7,
+      memory: 4210, uptime: 50432 }). TouchDeck shows it automatically as a list with readable units
+      (“RAM 4.1 GB”, “Uptime 14 h”) and passes it on to following actions as {Result.players}. New in
+      the manifest: “returns”.
+    - Android app 0.7.0: home screen widget with up to four buttons, quick settings tile and NFC
+      stickers trigger buttons on the PC without opening the deck.
   Features:
-    - Marketplace: button "Reload marketplace" fetches the list fresh from GitHub, so new plugins
-      show up right away (no restart).
-    - Tray menu: "Restart TouchDeck".
+    - Confirmation: buttons with “Only trigger on the second press” show “Sure?” on the first press.
+    - Dependencies: a button only triggers when another button is on or a value matches (e.g. first
+      “Arm”, then “Send”); otherwise it is greyed out with a lock.
+    - Hidden buttons: “Hidden at start” and the action “Show / hide button” (also for a few seconds).
+    - Action “Set state of a button” (next, previous, number).
+    - Feedback on the button: a short check mark when the actions worked (can be switched off).
+    - Deck sleep: after some minutes dim, show a clock or go black; the first tap only wakes it. The
+      app also lowers the brightness.
+    - PC locked: lock the deck while the PC is locked, and trigger “PC locked / unlocked” (Cinnamon,
+      GNOME, KDE, MATE).
     - USB connection: Settings › Phone & security › "Connect Android devices via USB cable" forwards
       the port to devices plugged in with USB debugging ("adb reverse", needs adb on the PC); in the
       app choose "Connect via USB cable". No Wi-Fi needed.
+    - Marketplace: button "Reload marketplace" fetches the list fresh from GitHub, so new plugins
+      show up right away (no restart).
+    - Tray menu: "Restart TouchDeck".
+  Performance:
+    - Values, toggles and looks are saved in batches instead of writing the whole configuration on
+      every change; config.json is compact.
+    - Devices only get what changed: small messages instead of the whole state, live values only for
+      their own page and only changed ones, graphs only new points. The tablet only redraws changed
+      buttons.
+    - Plugin, timer and value displays update instantly without querying all other values.
+    - “Program in foreground” uses a persistent X11 connection; hotkeys and clipboard wait for events
+      instead of checking up to 50 times per second.
+    - Audio triggers use “pactl subscribe” instead of asking every 2 seconds; Steam detection only
+      reads new processes.
+    - A deck in the background (app left, screen off) no longer receives live values; the app pauses
+      the page.
+  Android app:
+    - App 0.6.4: new button "Connect via USB cable".
+    - App 0.7.0: widget, quick settings tile, write NFC stickers (connect screen › Shortcuts), links
+      “touchdeck://press?…”; sleep lowers the brightness.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.10.0
+Date: 2026-10-18
+  Features:
     - Designs from plugins and icon packs: Look › Designs shows them as previews, a click takes over
       colours, font, texture, overlay and slider shape. Plugins can require icon packs, which are
       imported on installation.
@@ -114,7 +158,6 @@ Date: 2026-10-18
   Android app:
     - App 0.6.3: embedded pages of website buttons stay in the button instead of opening the browser;
       links without a matching app no longer crash the app.
-    - App 0.6.4: new button "Connect via USB cable".
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.0
