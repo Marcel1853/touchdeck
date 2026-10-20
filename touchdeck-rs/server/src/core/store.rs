@@ -1479,6 +1479,13 @@ impl Store {
         self.config.toggles.get(&b.id).and_then(Value::as_u64).map_or(0, |i| i as usize % b.states.len())
     }
 
+    /** Wird ein Auslöser dieser Art irgendwo benutzt (Events, Seiten-Logik, Button-Events)? */
+    pub fn uses_trigger(&self, kind: &str) -> bool {
+        let c = &self.config;
+        c.events.iter().any(|e| e.enabled && e.trigger.kind == kind)
+            || c.pages.iter().any(|p| p.events.iter().chain(p.buttons.iter().flat_map(|b| &b.events)).any(|e| e.enabled && e.trigger.kind == kind))
+    }
+
     /** Ist die Bedingung des Buttons erfüllt (anderer Button an, Wert passt)? */
     pub fn requirement_met(&self, b: &Button) -> bool {
         let r = &b.requires;

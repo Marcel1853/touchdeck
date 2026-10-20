@@ -75,6 +75,7 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
             want.is_empty() || s(&d["app"]).to_lowercase().contains(&want)
         }
         "audio_output" => empty_or_eq(&g("device"), &d["device"]),
+        "pc_lock" => state_matches(&g("state"), &d["state"]),
         "audio_mute" => {
             let target = if s(&g("target")).is_empty() { "output".to_string() } else { s(&g("target")) };
             target == s(&d["target"]) && state_matches(&g("state"), &d["state"])

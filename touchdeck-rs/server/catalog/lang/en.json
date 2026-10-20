@@ -1403,6 +1403,19 @@
         }
       }
     },
+    "pc_lock": {
+      "label": "PC locked / unlocked",
+      "fields": {
+        "state": {
+          "label": "When",
+          "options": {
+            "locked": "locked",
+            "unlocked": "unlocked",
+            "any": "both"
+          }
+        }
+      }
+    },
     "audio_mute": {
       "label": "Sound or microphone muted/unmuted",
       "fields": {

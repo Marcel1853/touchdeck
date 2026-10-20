@@ -124,6 +124,51 @@ impl AudioWatch {
     }
 }
 
+/**
+ * Meldet, wenn der Bildschirm gesperrt oder entsperrt wird (Signal „ActiveChanged“ der Bildschirmsperre von
+ * Cinnamon, GNOME, KDE, MATE …), über ein dauerhaftes `dbus-monitor` – ohne Nachfragen. None ohne dbus-monitor.
+ */
+pub struct LockWatch {
+    lines: tokio::io::Lines<tokio::io::BufReader<tokio::process::ChildStdout>>,
+    _child: tokio::process::Child,
+}
+
+pub fn lock_watch() -> Option<LockWatch> {
+    use tokio::io::AsyncBufReadExt;
+    let mut cmd = tokio::process::Command::from(command("dbus-monitor"));
+    cmd.args(["--session", "type='signal',member='ActiveChanged'"])
+        .env("LC_ALL", "C")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true);
+    // SAFETY: prctl ist zwischen fork und exec erlaubt (async-signal-safe).
+    unsafe {
+        cmd.pre_exec(|| {
+            libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM);
+            Ok(())
+        });
+    }
+    let mut child = cmd.spawn().ok()?;
+    let out = child.stdout.take()?;
+    Some(LockWatch { lines: tokio::io::BufReader::new(out).lines(), _child: child })
+}
+
+impl LockWatch {
+    /** Nächster Wechsel: Some(true) = gesperrt, Some(false) = entsperrt, None = dbus-monitor beendet. */
+    pub async fn next(&mut self) -> Option<bool> {
+        let mut armed = false;
+        loop {
+            let line = self.lines.next_line().await.ok()??;
+            if line.starts_with("signal ") {
+                armed = line.contains("member=ActiveChanged") && line.contains("ScreenSaver");
+            } else if armed && let Some(v) = line.trim().strip_prefix("boolean ") {
+                return Some(v.trim() == "true");
+            }
+        }
+    }
+}
+
 fn not_installed(cmd: &str, err: std::io::Error) -> anyhow::Error {
     if err.kind() == std::io::ErrorKind::NotFound { anyhow!(t!("system.programIsNotInstalled", cmd)) } else { anyhow!("{cmd}: {err}") }
 }

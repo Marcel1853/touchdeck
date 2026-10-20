@@ -1403,6 +1403,19 @@
         }
       }
     },
+    "pc_lock": {
+      "label": "PC gesperrt / entsperrt",
+      "fields": {
+        "state": {
+          "label": "Wann",
+          "options": {
+            "locked": "gesperrt",
+            "unlocked": "entsperrt",
+            "any": "beides"
+          }
+        }
+      }
+    },
     "audio_mute": {
       "label": "Ton oder Mikrofon stumm/laut geschaltet",
       "fields": {

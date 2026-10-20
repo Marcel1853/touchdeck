@@ -315,6 +315,29 @@
   ]
  },
  {
+  "type": "pc_lock",
+  "category": "general",
+  "icon": "🔒",
+  "fields": [
+   {
+    "key": "state",
+    "type": "select",
+    "default": "locked",
+    "options": [
+     {
+      "value": "locked"
+     },
+     {
+      "value": "unlocked"
+     },
+     {
+      "value": "any"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "type": "audio_mute",
   "category": "audio",
   "icon": "🔇",

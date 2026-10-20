@@ -158,7 +158,19 @@ function deck() {
       h('p', { class: 'hint-text' }, tr('settings.androidAppTurnsTo')),
       h('div', { class: 'field' }, tr('settings.cellShape'),
         segmented([['fill', tr('settings.cellShapeFill')], ['square', tr('settings.cellShapeSquare')]], d.cellShape ?? 'fill', (v) => set('cellShape', v))),
-      h('p', { class: 'hint-text' }, tr('settings.cellShapeHint'))),
+      h('p', { class: 'hint-text' }, tr('settings.cellShapeHint')),
+      check(tr('settings.showDone'), d.feedback !== false, (v) => set('feedback', v))),
+    card(
+      h('h3', {}, tr('settings.sleepTitle')),
+      h('div', { class: 'row' },
+        h('label', { class: 'field' }, tr('settings.sleepAfter'),
+          h('input', { type: 'number', min: 0, max: 240, value: d.sleepAfter ?? 0, onchange: (e) => set('sleepAfter', Math.max(0, Math.min(240, Number(e.target.value) || 0))) })),
+        h('label', { class: 'field' }, tr('settings.sleepMode'),
+          h('select', { value: d.sleepMode ?? 'dim', onchange: (e) => set('sleepMode', e.target.value) },
+            [['dim', tr('settings.sleepDim')], ['clock', tr('settings.sleepClock')], ['black', tr('settings.sleepBlack')]].map(([v, l]) => h('option', { value: v }, l))))),
+      h('p', { class: 'hint-text' }, tr('settings.sleepHint')),
+      check(tr('settings.lockWithPc'), !!d.lockWithPc, (v) => set('lockWithPc', v)),
+      h('p', { class: 'hint-text' }, tr('settings.lockWithPcHint'))),
   ];
 }
 

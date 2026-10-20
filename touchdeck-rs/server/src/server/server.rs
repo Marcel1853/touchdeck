@@ -151,6 +151,8 @@ pub struct App {
     /// Zustand der USB-Verbindung: { devices: [...], error }.
     pub usb: Mutex<Value>,
     live_busy: AtomicBool,
+    /// PC gesperrt (Bildschirmsperre)? Nur bekannt, solange jemand es braucht (Auslöser oder „Bedienfeld mitsperren“).
+    pc_locked: AtomicBool,
     live_again: AtomicBool,
     on_pair_request: Option<Box<dyn Fn(PairRequest) + Send + Sync>>,
 }
@@ -175,6 +177,7 @@ impl App {
             "startPage": c.settings.start_page,
             "deck": c.settings.deck,
             "language": c.settings.language,
+            "pcLocked": self.pc_locked.load(Ordering::Relaxed),
         })
     }
 
@@ -1528,6 +1531,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         graphs: Default::default(),
         usb: Mutex::new(json!({ "devices": [] })),
         live_busy: AtomicBool::new(false),
+        pc_locked: AtomicBool::new(false),
         live_again: AtomicBool::new(false),
         on_pair_request: opts.on_pair_request,
     });
@@ -1663,6 +1667,34 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
                 Err(e) => json!({ "devices": [], "error": e.to_string() }),
             };
             *a.usb.lock().unwrap() = status;
+        }
+    });
+
+    // Bildschirmsperre am PC beobachten – nur wenn ein Auslöser „PC gesperrt“ oder „Bedienfeld mitsperren“ es braucht.
+    let a = app.clone();
+    tokio::spawn(async move {
+        let needed = |a: &Arc<App>| {
+            let store = a.store.lock().unwrap();
+            store.settings().deck.lock_with_pc || store.uses_trigger("pc_lock")
+        };
+        loop {
+            if !needed(&a) {
+                tokio::time::sleep(Duration::from_secs(10)).await;
+                continue;
+            }
+            if let Some(mut watch) = linux::lock_watch() {
+                while let Some(locked) = watch.next().await {
+                    if a.pc_locked.swap(locked, Ordering::Relaxed) != locked {
+                        a.broadcast(Some(Role::Device), &json!({ "type": "pclock", "locked": locked }));
+                        a.events.fire(&a, "pc_lock", &json!({ "state": if locked { "locked" } else { "unlocked" } }));
+                    }
+                    if !needed(&a) {
+                        break;
+                    }
+                }
+            }
+            // dbus-monitor fehlt oder ist beendet: später erneut versuchen.
+            tokio::time::sleep(Duration::from_secs(30)).await;
         }
     });
 

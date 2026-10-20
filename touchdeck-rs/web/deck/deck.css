@@ -275,3 +275,33 @@ body.with-footer #foot {
   75% { transform: scale(1); opacity: 1; }
   100% { transform: scale(1); opacity: 0; }
 }
+
+/* ---------- Ruhezustand ---------- */
+#sleep {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.78);
+  transition: opacity 0.6s;
+}
+#sleep[hidden] { display: none; }
+#sleep.mode-black { background: #000; }
+#sleep.mode-clock { background: #000; }
+#sleep-clock { display: none; color: #c9cfdc; font-size: min(26vw, 40vh); font-weight: 200; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+#sleep.mode-clock #sleep-clock { display: block; }
+
+/* ---------- PC gesperrt ---------- */
+#pclock {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgb(10 12 16);
+  color: #c9cfdc;
+  font-size: 1.2rem;
+}
+#pclock[hidden] { display: none; }
+.pclock-icon { font-size: 3.5rem; }

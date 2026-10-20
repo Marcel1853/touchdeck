@@ -394,6 +394,47 @@ function sendSlide(el, value, final = false) {
   else slideTimer = setTimeout(go, 60);
 }
 
+// ---------- Ruhezustand und PC-Sperre ----------
+
+// Nach einigen Minuten ohne Berührung abdunkeln, Uhr oder schwarz zeigen; der erste Tipp weckt nur.
+// Nur Zeitgeber, kein Intervall: die Uhr stellt sich einmal pro Minute.
+let sleepTimer = null;
+let clockTimer = null;
+function resetSleep() {
+  clearTimeout(sleepTimer);
+  const minutes = state?.deck?.sleepAfter ?? 0;
+  if (minutes > 0 && $('sleep').hidden) sleepTimer = setTimeout(goToSleep, minutes * 60_000);
+}
+function goToSleep() {
+  const el = $('sleep');
+  el.className = `mode-${state.deck.sleepMode ?? 'dim'}`;
+  el.hidden = false;
+  app?.setDim?.(true);
+  if (state.deck.sleepMode === 'clock') tickClock();
+}
+function tickClock() {
+  const now = new Date();
+  $('sleep-clock').textContent = now.toLocaleTimeString(getLang(), { hour: '2-digit', minute: '2-digit' });
+  clockTimer = setTimeout(tickClock, (60 - now.getSeconds()) * 1000 + 50);
+}
+function wake() {
+  clearTimeout(clockTimer);
+  $('sleep').hidden = true;
+  app?.setDim?.(false);
+  resetSleep();
+}
+// Der Tipp, der weckt, löst nichts aus (Ereignis endet am Ruhe-Overlay).
+$('sleep').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  wake();
+});
+document.addEventListener('pointerdown', () => resetSleep(), true);
+
+function showPcLock(locked) {
+  $('pclock').hidden = !(locked && state?.deck?.lockWithPc);
+}
+
 // ---------- Drücken und Halten ----------
 
 // Zeiger-Ereignisse statt click: reagiert sofort und funktioniert mit Maus und Touch gleich.
@@ -568,11 +609,16 @@ async function connect() {
       if (msg.language) app?.setLanguage?.(msg.language);
       state = msg;
       render();
+      resetSleep();
+      showPcLock(msg.pcLocked);
     } else if (msg.type === 'goto') {
       // „Seite auf allen Geräten anzeigen“ (z. B. aus „Programm im Vordergrund“).
       if (msg.pageId && msg.pageId !== currentPage) goTo(msg.pageId);
     } else if (msg.type === 'live') {
       if (state) updateLive(msg.values, msg.full !== false);
+    } else if (msg.type === 'pclock') {
+      if (state) state.pcLocked = msg.locked;
+      showPcLock(msg.locked);
     } else if (msg.type === 'vars') {
       if (state) updateVariables(msg.values);
     } else if (msg.type === 'toggles') {
