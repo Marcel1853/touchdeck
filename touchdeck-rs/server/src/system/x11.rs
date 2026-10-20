@@ -71,9 +71,16 @@ pub struct Window {
     pub title: String,
 }
 
+/** X11-Bibliotheken einmal laden (sonst bei jedem Aufruf neu: dlopen und ~1000 Funktionen nachschlagen). */
+static LIBS: std::sync::LazyLock<Result<(Xlib, XTest), String>> = std::sync::LazyLock::new(|| {
+    let x = Xlib::open().map_err(|e| t!("system.libMissing", "libX11", e))?;
+    let t = XTest::open().map_err(|e| t!("system.libMissing", "libXtst", e))?;
+    Ok((x, t))
+});
+
 struct Keyboard {
-    x: Xlib,
-    t: XTest,
+    x: &'static Xlib,
+    t: &'static XTest,
     dpy: *mut Display,
     lo: c_int,
     per: c_int,
@@ -91,10 +98,24 @@ impl Drop for Keyboard {
     }
 }
 
+// SAFETY: Eine Verbindung wird immer nur von einem Thread zur Zeit benutzt (hinter einem Mutex, siehe WATCHER).
+unsafe impl Send for Keyboard {}
+
 impl Keyboard {
+    /**
+     * Wartet höchstens `ms` Millisekunden, bis Ereignisse vom X-Server ankommen (statt in kurzen Abständen
+     * nachzusehen). Vorher müssen alle schon gelesenen Ereignisse abgeholt sein (XPending == 0).
+     */
+    fn wait_events(&self, ms: c_int) {
+        // SAFETY: offene Verbindung; poll auf ihren Socket.
+        unsafe {
+            let mut fd = libc::pollfd { fd: (self.x.XConnectionNumber)(self.dpy), events: libc::POLLIN, revents: 0 };
+            libc::poll(&mut fd, 1, ms);
+        }
+    }
+
     fn open() -> Result<Self> {
-        let x = Xlib::open().map_err(|e| anyhow!(t!("system.libMissing", "libX11", e)))?;
-        let t = XTest::open().map_err(|e| anyhow!(t!("system.libMissing", "libXtst", e)))?;
+        let (x, t) = LIBS.as_ref().map(|(x, t)| (x, t)).map_err(|e| anyhow!("{e}"))?;
         // SAFETY: Aufrufe der Xlib mit gültigen Zeigern; die Tastaturbelegung wird kopiert und danach freigegeben.
         unsafe {
             let dpy = (x.XOpenDisplay)(ptr::null());
@@ -463,8 +484,19 @@ pub async fn activate_window(query: &str) -> Result<String> {
 }
 
 /** Fenster im Vordergrund: (Programm, Titel); None, wenn keins aktiv ist. */
+/** Stehende Verbindung für „Programm im Vordergrund“ (wird jede Sekunde gefragt). */
+static WATCHER: std::sync::Mutex<Option<Keyboard>> = std::sync::Mutex::new(None);
+
 pub async fn active_window() -> Result<Option<(String, String)>> {
-    with_keyboard(|kb| Ok(kb.active().map(|w| (w.class, w.title)))).await
+    tokio::task::spawn_blocking(|| {
+        let mut watcher = WATCHER.lock().unwrap();
+        if watcher.is_none() {
+            *watcher = Some(Keyboard::open()?);
+        }
+        Ok(watcher.as_ref().and_then(Keyboard::active).map(|w| (w.class, w.title)))
+    })
+    .await
+    .map_err(|e| anyhow!("X11: {e}"))?
 }
 
 /** Offene Fenster, je Programm (WM_CLASS) ein Eintrag. */
@@ -579,7 +611,8 @@ impl Keyboard {
                         _ => {}
                     }
                 }
-                sleep(Duration::from_millis(20));
+                // Schlafen, bis jemand den Text haben will (oder spätestens nach 250 ms den Stopp prüfen).
+                self.wait_events(250);
             }
             (self.x.XDestroyWindow)(self.dpy, win);
             (self.x.XSync)(self.dpy, 0);
@@ -701,7 +734,8 @@ pub fn listen_hotkeys(combos: &[String], stop: &std::sync::atomic::AtomicBool, o
                     }
                 }
             }
-            sleep(Duration::from_millis(25));
+            // Schlafen, bis eine Taste kommt; spätestens nach 100 ms den Stopp prüfen (neue Kürzel warten 150 ms).
+            kb.wait_events(100);
         }
         for (code, mask, _) in &grabbed {
             for lock in locks {
@@ -726,6 +760,17 @@ fn keysym_name(x: &Xlib, sym: KeySym) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /** Nur mit X-Server: die stehende Verbindung lässt sich mehrfach nacheinander fragen. */
+    #[tokio::test]
+    async fn vordergrund_mehrfach() {
+        if std::env::var_os("DISPLAY").is_none() {
+            return;
+        }
+        let a = active_window().await.unwrap();
+        let b = active_window().await.unwrap();
+        assert_eq!(a.map(|w| w.0), b.map(|w| w.0));
+    }
 
     #[test]
     fn zeichen_zu_keysym() {

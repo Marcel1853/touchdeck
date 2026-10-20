@@ -362,7 +362,7 @@ impl EventEngine {
             let (a, rt) = (app.clone(), tokio::runtime::Handle::current());
             std::thread::spawn(move || {
                 let _rt = rt.enter();
-                // Der vorige Hörer gibt seine Tasten innerhalb von 25 ms frei; erst danach selbst belegen.
+                // Der vorige Hörer gibt seine Tasten innerhalb von 100 ms frei; erst danach selbst belegen.
                 std::thread::sleep(Duration::from_millis(150));
                 let fire = |combo: &str| a.events.fire(&a, "hotkey", &json!({ "keys": combo, "Tasten": combo }));
                 let busy = |combo: &str| a.log.warn("Events", t!("events.hotkeyBusy", combo));
