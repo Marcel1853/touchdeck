@@ -213,6 +213,23 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     el.classList.add('has-bar');
     if (free) el.style.paddingBottom = `calc(min(${(b.free.w * 0.07).toFixed(2)}cqw, ${(b.free.h * 0.07).toFixed(2)}cqh) + ${(b.free.h * 0.1).toFixed(2)}cqh)`;
   }
+  // Daten aus einer Plugin-Aktion: Liste aus Bezeichnung und Wert, automatisch aufgebaut.
+  if (Array.isArray(live?.items) && live.items.length) {
+    const list = document.createElement('div');
+    list.className = 'td-items';
+    for (const it of live.items) {
+      const row = document.createElement('div');
+      const label = document.createElement('span');
+      const value = document.createElement('b');
+      label.textContent = it.label;
+      value.textContent = it.text;
+      row.append(label, value);
+      list.append(row);
+    }
+    el.append(list);
+    el.classList.add('has-items');
+    live = { ...live, text: '' };
+  }
   if (live?.text) {
     const l = document.createElement('div');
     l.className = 'td-live';

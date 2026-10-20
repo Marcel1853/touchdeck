@@ -219,7 +219,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         }
         // Zahlen von 0 bis 100 lassen sich auch als Balken zeigen.
         "timer" | "variable" => return Ok(quick_value(app, button, variables)),
-        s if s.starts_with("plugin:") => return Ok(quick_value(app, button, variables)),
+        s if s.starts_with("plugin:") || s.starts_with("plugin-result:") => return Ok(quick_value(app, button, variables)),
         _ => return Ok(None),
     }))
 }
@@ -232,7 +232,7 @@ pub fn quick_value(app: &Arc<App>, button: &Button, variables: &Map<String, Valu
     let live = &button.live;
     match live.source.as_str() {
         "timer" => Some(app.timers.live(&live.variable)),
-        s if s.starts_with("plugin:") => Some(app.plugin_lives.lock().unwrap().get(s).cloned().unwrap_or_else(|| json!({ "text": "–" }))),
+        s if s.starts_with("plugin:") || s.starts_with("plugin-result:") => Some(app.plugin_lives.lock().unwrap().get(s).cloned().unwrap_or_else(|| json!({ "text": "–" }))),
         "variable" => Some(match variables.get(&live.variable) {
             None => json!({ "text": "–", "on": false }),
             Some(v) => {

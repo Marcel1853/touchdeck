@@ -543,7 +543,20 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
         let params: Map<String, Value> =
             action.params.iter().map(|(k, v)| (k.clone(), v.as_str().map_or_else(|| v.clone(), |t| json!(fill_variables(t, &vars, &ctx.opts.event_data))))).collect();
         let info = json!({ "buttonId": ctx.opts.button_id, "event": ctx.opts.event_data });
-        return app.plugins.run_action(&action.kind, &params, info, crate::core::events::current_depth()).await;
+        let (message, data) = app.plugins.run_action(&action.kind, &params, info, crate::core::events::current_depth()).await?;
+        if let Some(data) = data {
+            // Folgende Aktionen bekommen die Daten als {Ergebnis.<Schlüssel>} (englisch {Result.<key>}).
+            for (k, v) in &data {
+                let text = if v.is_object() || v.is_array() { v.to_string() } else { js_string(v) };
+                ctx.opts.event_data.insert(format!("Ergebnis.{k}"), json!(text));
+                ctx.opts.event_data.insert(format!("Result.{k}"), json!(text));
+            }
+            // Anzeige „Ergebnis“ für Buttons mit dieser Live-Quelle.
+            let lang = app.store.lock().unwrap().settings().language.clone();
+            let display = app.plugins.result_display(&action.kind, &data, &lang);
+            app.set_plugin_live(&action.kind.replacen("plugin:", "plugin-result:", 1), display);
+        }
+        return Ok(message);
     }
     let p = P(&action.params);
     let none = Ok(None);

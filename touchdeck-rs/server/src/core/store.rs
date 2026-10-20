@@ -549,7 +549,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         live: Live {
             source: live["source"]
                 .as_str()
-                .filter(|s| s.starts_with("plugin:") && s.len() <= 80 && s.chars().all(|c| c.is_ascii_alphanumeric() || ":-_".contains(c)))
+                .filter(|s| (s.starts_with("plugin:") || s.starts_with("plugin-result:")) && s.len() <= 80 && s.chars().all(|c| c.is_ascii_alphanumeric() || ":-_".contains(c)))
                 .map_or_else(|| one_of(&live["source"], &catalog::live_source_ids(), "none"), String::from),
             command: text(&live["command"], "", 1000),
             variable: text(&live["variable"], "", 40),

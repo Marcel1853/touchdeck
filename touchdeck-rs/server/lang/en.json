@@ -213,6 +213,7 @@
     "repoHasNoPlugin": "The repo has no plugin.json in its root folder.",
     "repoIsNotPublic": "The repo is not public. Plugins must be public on GitHub so anyone can check the source code.",
     "repoIsTooLarge": "The repo is too large for a plugin.",
+    "result": "result",
     "showNotifications": "Show notifications",
     "started": "started",
     "talkToDevicesOn": "Talk to devices on the home network",

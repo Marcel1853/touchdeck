@@ -155,7 +155,12 @@ async fn run_once(
                             let _ = reply.send(if msg["ok"] == false {
                                 Err(msg["error"].as_str().unwrap_or(t!("plugins.errorInPlugin")).to_string())
                             } else {
-                                Ok(msg["message"].as_str().filter(|m| !m.is_empty()).map(String::from))
+                                // Mit Daten: wie bei JS-Plugins mit Kennzeichen vorneweg weiterreichen.
+                                if msg["data"].is_object() {
+                                    Ok(Some(format!("\u{1}{}", json!({ "message": msg["message"], "data": msg["data"] }))))
+                                } else {
+                                    Ok(msg["message"].as_str().filter(|m| !m.is_empty()).map(String::from))
+                                }
                             });
                         }
                     }

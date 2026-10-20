@@ -307,3 +307,10 @@
 .td-btn.is-locked { filter: grayscale(0.75) brightness(0.7); }
 .td-lock { position: absolute; top: 6%; right: 7%; font-size: max(11px, 14cqmin); line-height: 1; }
 .td-btn.is-hidden { visibility: hidden; pointer-events: none; }
+
+/* ---------- Daten aus Plugin-Aktionen (Bezeichnung + Wert) ---------- */
+.td-items { display: grid; gap: 2cqh 4cqw; width: 100%; font-size: calc(var(--fs, 14) * 0.9px); line-height: 1.15; }
+.td-items div { display: flex; justify-content: space-between; gap: 6cqw; min-width: 0; }
+.td-items span { opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-items b { font-weight: 700; white-space: nowrap; }
+.td-btn.has-items .td-icon { display: none; }

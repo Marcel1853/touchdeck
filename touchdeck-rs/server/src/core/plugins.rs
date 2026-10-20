@@ -99,6 +99,8 @@ const PRELUDE: &str = r#"
     const fn = actions[id];
     if (!fn) throw new Error(`Aktion „${id}“ ist im Plugin nicht registriert (td.action).`);
     const r = fn(JSON.parse(params), JSON.parse(info));
+    // Objekt = Daten (z. B. { players: 7, memory: 4210 }); TouchDeck zeigt und verteilt sie.
+    if (r && typeof r === 'object') return '\u0001' + JSON.stringify({ data: r });
     return r === undefined || r === null ? null : String(r);
   };
   globalThis.__onEvent = (kind, data) => {
@@ -199,7 +201,23 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
                 bail!(t!("plugins.pluginJsonEveryEntry", key));
             }
             let fields: Vec<Value> = a["fields"].as_array().into_iter().flatten().filter(|f| f["key"].is_string()).take(20).cloned().collect();
-            out.push(json!({ "id": aid, "label": ltext(&a["label"], 80), "icon": text(&a["icon"], 8), "fields": fields }));
+            let mut item = json!({ "id": aid, "label": ltext(&a["label"], 80), "icon": text(&a["icon"], 8), "fields": fields });
+            // Aktionen mit Rückgabe als Daten: welche Schlüssel, wie heißen sie, in welcher Einheit.
+            if key == "actions" {
+                item["returns"] = Value::Array(
+                    a["returns"]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|r| {
+                            let k = text(&r["key"], 40);
+                            (!k.is_empty()).then(|| json!({ "key": k, "label": ltext(&r["label"], 40), "unit": one_unit(&r["unit"]) }))
+                        })
+                        .take(20)
+                        .collect(),
+                );
+            }
+            out.push(item);
         }
         Ok(out)
     };
@@ -224,6 +242,52 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "iconPacks": raw["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str)
             .filter(|p| p.to_lowercase().ends_with(".tdicons") && safe_rel_path(p)).take(10).collect::<Vec<_>>(),
     }))
+}
+
+/** Einheiten für Rückgabe-Daten (Anzeige im Button). */
+const UNITS: [&str; 9] = ["number", "bytes", "kb", "mb", "gb", "seconds", "ms", "percent", "text"];
+
+fn one_unit(v: &Value) -> String {
+    v.as_str().filter(|u| UNITS.contains(u)).unwrap_or("").to_string()
+}
+
+/** Wert lesbar machen: 4210 MB → „4,1 GB“, 50432 s → „14 h“, 0.42 % bleibt. */
+pub fn format_unit(v: &Value, unit: &str) -> String {
+    let Some(n) = v.as_f64().or_else(|| v.as_str().and_then(|s| s.trim().replace(',', ".").parse().ok())) else { return js_string(v) };
+    let dec = |x: f64, d: usize| {
+        let s = format!("{x:.d$}");
+        if crate::core::i18n::is_english() { s } else { s.replace('.', ",") }
+    };
+    let size = |bytes: f64| {
+        let units = ["B", "KB", "MB", "GB", "TB"];
+        let mut x = bytes;
+        let mut i = 0;
+        while x >= 1024.0 && i < units.len() - 1 {
+            x /= 1024.0;
+            i += 1;
+        }
+        format!("{} {}", dec(x, if x < 10.0 && i > 0 { 1 } else { 0 }), units[i])
+    };
+    let time = |secs: f64| {
+        let s = secs.round() as i64;
+        match s {
+            s if s < 60 => format!("{s} s"),
+            s if s < 3600 => format!("{} min", s / 60),
+            s if s < 86_400 => format!("{} h", s / 3600),
+            s => format!("{} d {} h", s / 86_400, (s % 86_400) / 3600),
+        }
+    };
+    match unit {
+        "bytes" => size(n),
+        "kb" => size(n * 1024.0),
+        "mb" => size(n * 1024.0 * 1024.0),
+        "gb" => size(n * 1024.0 * 1024.0 * 1024.0),
+        "seconds" => time(n),
+        "ms" => time(n / 1000.0),
+        "percent" => format!("{} %", dec(n, if n.fract() == 0.0 { 0 } else { 1 })),
+        _ if n.fract() == 0.0 && n.abs() < 1e15 => format!("{}", n as i64),
+        _ => dec(n, 2),
+    }
 }
 
 /** Relativer Pfad im Plugin: keine „..“, keine versteckten Teile, höchstens 4 Ebenen. */
@@ -1086,6 +1150,35 @@ impl Plugins {
         }
     }
 
+    /**
+     * Daten einer Aktion als Anzeige: Liste aus Bezeichnung und lesbarem Wert, Reihenfolge und Namen aus
+     * „returns“ im Manifest (sonst wie geliefert).
+     */
+    pub fn result_display(&self, kind: &str, data: &Map<String, Value>, lang: &str) -> Value {
+        let (plugin, action) = kind.strip_prefix("plugin:").and_then(|k| k.split_once(':')).unwrap_or(("", ""));
+        let returns: Vec<Value> = self
+            .manifests
+            .lock()
+            .unwrap()
+            .get(plugin)
+            .map(|m| localize(m, lang))
+            .and_then(|m| m["actions"].as_array().and_then(|l| l.iter().find(|a| a["id"] == action)).and_then(|a| a["returns"].as_array().cloned()))
+            .unwrap_or_default();
+        let mut items = Vec::new();
+        for r in &returns {
+            let k = r["key"].as_str().unwrap_or("");
+            if let Some(v) = data.get(k) {
+                let label = r["label"].as_str().filter(|l| !l.is_empty()).unwrap_or(k);
+                items.push(json!({ "label": label, "text": format_unit(v, r["unit"].as_str().unwrap_or("")) }));
+            }
+        }
+        if returns.is_empty() {
+            items = data.iter().filter(|(_, v)| !v.is_object() && !v.is_array()).map(|(k, v)| json!({ "label": k, "text": format_unit(v, "") })).collect();
+        }
+        let first = items.first().map(|i| i["text"].clone()).unwrap_or(json!(""));
+        json!({ "text": first, "items": items.into_iter().take(8).collect::<Vec<_>>() })
+    }
+
     /** Live-Anzeigen der Plugins für den Editor: { value: "plugin:<id>:<anzeige>", label }. */
     pub fn live_sources(&self, lang: &str) -> Vec<Value> {
         let advanced = self.advanced();
@@ -1099,6 +1192,12 @@ impl Plugins {
                 let lid = l["id"].as_str().unwrap_or("");
                 let label = l["label"].as_str().filter(|x| !x.is_empty()).unwrap_or(lid);
                 out.push(json!({ "value": format!("plugin:{id}:{lid}"), "label": format!("{name} › {label}") }));
+            }
+            // Aktionen, die Daten zurückgeben: ihr letztes Ergebnis als Anzeige.
+            for a in m["actions"].as_array().into_iter().flatten().filter(|a| a["returns"].as_array().is_some_and(|r| !r.is_empty())) {
+                let aid = a["id"].as_str().unwrap_or("");
+                let label = a["label"].as_str().filter(|x| !x.is_empty()).unwrap_or(aid);
+                out.push(json!({ "value": format!("plugin-result:{id}:{aid}"), "label": format!("{name} › {} ({})", label, t!("plugins.result")) }));
             }
         }
         out
@@ -1141,7 +1240,20 @@ impl Plugins {
     }
 
     /** Eine Plugin-Aktion ausführen (Typ plugin:<id>:<aktion>). */
-    pub async fn run_action(&self, kind: &str, params: &Map<String, Value>, info: Value, depth: u32) -> Result<Option<String>> {
+    /** Plugin-Aktion ausführen: Meldung und (falls das Plugin welche liefert) Daten. */
+    pub async fn run_action(&self, kind: &str, params: &Map<String, Value>, info: Value, depth: u32) -> Result<(Option<String>, Option<Map<String, Value>>)> {
+        let raw = self.run_action_raw(kind, params, info, depth).await?;
+        // Daten kommen mit einem Kennzeichen vorneweg: "\u{1}{"message":…,"data":{…}}".
+        if let Some(json) = raw.as_deref().and_then(|r| r.strip_prefix('\u{1}')) {
+            let v: Value = serde_json::from_str(json).unwrap_or_default();
+            let message = v["message"].as_str().filter(|m| !m.is_empty()).map(String::from);
+            let data = v["data"].as_object().map(|d| d.iter().take(30).map(|(k, x)| (k.chars().take(40).collect(), x.clone())).collect());
+            return Ok((message, data));
+        }
+        Ok((raw, None))
+    }
+
+    async fn run_action_raw(&self, kind: &str, params: &Map<String, Value>, info: Value, depth: u32) -> Result<Option<String>> {
         let (plugin, action) = kind.strip_prefix("plugin:").and_then(|k| k.split_once(':')).ok_or_else(|| anyhow!(t!("plugins.unknownPluginAction")))?;
         let (reply, wait) = oneshot::channel();
         {
@@ -1449,6 +1561,17 @@ fn pack_name(bytes: &[u8]) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn einheiten_lesbar() {
+        assert_eq!(format_unit(&json!(4210), "mb"), "4,1 GB");
+        assert_eq!(format_unit(&json!(50432), "seconds"), "14 h");
+        assert_eq!(format_unit(&json!(7), ""), "7");
+        assert_eq!(format_unit(&json!(42.5), "percent"), "42,5 %");
+        assert_eq!(format_unit(&json!(900), "bytes"), "900 B");
+        assert_eq!(format_unit(&json!("läuft"), "text"), "läuft");
+    }
+
     use super::*;
 
     #[test]

@@ -213,6 +213,7 @@
     "repoHasNoPlugin": "Im Repo fehlt die Datei plugin.json im Hauptordner.",
     "repoIsNotPublic": "Das Repo ist nicht öffentlich. Plugins müssen öffentlich auf GitHub liegen, damit jeder den Quelltext prüfen kann.",
     "repoIsTooLarge": "Das Repo ist zu groß für ein Plugin.",
+    "result": "Ergebnis",
     "showNotifications": "Benachrichtigungen anzeigen",
     "started": "gestartet",
     "talkToDevicesOn": "Geräte im Heimnetz ansprechen",
