@@ -275,9 +275,68 @@ pub struct Button {
     pub hold_repeat: i64,
     /// Bei Event: der Button reagiert selbst auf Ereignisse.
     pub events: Vec<ButtonEvent>,
+    /// Modus „states“: Zustände mit eigenem Aussehen und eigenen Aktionen (jeder Druck schaltet weiter).
+    pub states: Vec<ButtonState>,
+    /// Zustand nach einem Wert statt per Druck: Name des Werts (leer = per Druck weiterschalten).
+    pub state_by: String,
+    /// Modus „switch“: Kippschalter waagerecht oder senkrecht.
+    pub switch_style: String,
+    /// Sicherheitsabfrage: erst der zweite Druck (innerhalb von 3 s) löst aus.
+    pub confirm: bool,
+    /// Löst nur aus, wenn ein anderer Button an ist bzw. ein Wert passt.
+    pub requires: Requires,
+    /// Anfangs versteckt (einblenden mit der Aktion „Button zeigen / verstecken“).
+    pub hidden: bool,
     /// Position und Größe auf einer freien Seite (Prozent der Fläche); im Raster ungenutzt.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub free: Option<FreeRect>,
+}
+
+/** Ein Zustand eines Buttons mit mehreren Zuständen; leere Felder übernehmen das Aussehen des Buttons. */
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ButtonState {
+    pub title: String,
+    pub icon: Icon,
+    pub color: String,
+    pub text_color: String,
+    /// Bei „Zustand nach Wert“: wann dieser Zustand gilt – Text, Zahl, Bereich „10..50“, „>80“ oder „<5“.
+    pub when: String,
+    pub actions: Vec<Action>,
+}
+
+/** Bedingung, ohne die ein Button nicht auslöst (z. B. erst „Scharf schalten“). */
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Requires {
+    /// Dieser Button muss an sein (Umschalter, Schalter) – leer = keine Bedingung an einen Button.
+    pub button: String,
+    /// Dieser Wert muss `equals` haben – leer = keine Bedingung an einen Wert.
+    pub variable: String,
+    pub equals: String,
+    /// Nach dem Auslösen den anderen Button wieder ausschalten.
+    pub reset: bool,
+}
+
+/** Passt ein Wert zu einer Bedingung wie „ja“, „3“, „10..50“, „>80“, „<=5“? */
+pub fn value_matches(value: &str, when: &str) -> bool {
+    let when = when.trim();
+    let num = |t: &str| t.trim().replace(',', ".").parse::<f64>().ok().filter(|n| n.is_finite());
+    let v = num(value);
+    if let (Some((a, b)), Some(v)) = (when.split_once(".."), v)
+        && let (Some(a), Some(b)) = (num(a), num(b))
+    {
+        return (a..=b).contains(&v);
+    }
+    for (op, f) in [(">=", (|v: f64, x: f64| v >= x) as fn(f64, f64) -> bool), ("<=", |v, x| v <= x), (">", |v, x| v > x), ("<", |v, x| v < x)] {
+        if let Some(rest) = when.strip_prefix(op) {
+            return matches!((v, num(rest)), (Some(v), Some(x)) if f(v, x));
+        }
+    }
+    match (v, num(when)) {
+        (Some(v), Some(x)) => v == x,
+        _ => value.trim().eq_ignore_ascii_case(when),
+    }
 }
 
 /** Lage eines Buttons auf einer freien Seite, alles in Prozent der Seitenfläche. */
@@ -486,7 +545,7 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
         tex_veil: clamp(&b["texVeil"], 0, 100, 35),
         bg_image: sanitize_icon(&b["bgImage"]),
         overlay: one_of(&b["overlay"], &OVERLAYS, ""),
-        mode: one_of(&b["mode"], &["toggle", "slider", "web", "display"], "press"),
+        mode: one_of(&b["mode"], &["toggle", "slider", "web", "display", "states", "switch"], "press"),
         live: Live {
             source: live["source"]
                 .as_str()
@@ -555,6 +614,31 @@ fn sanitize_button(b: &Value, rows: i64, cols: i64, free_layout: bool) -> Option
             .as_array()
             .map_or_else(Vec::new, |l| l.iter().take(20).filter_map(sanitize_button_event).collect()),
         free: sanitize_free(&b["free"]),
+        states: b["states"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .take(16)
+            .filter(|x| x.is_object())
+            .map(|x| ButtonState {
+                title: text(&x["title"], "", 200),
+                icon: sanitize_icon(&x["icon"]),
+                color: color(&x["color"], ""),
+                text_color: color(&x["textColor"], ""),
+                when: text(&x["when"], "", 60),
+                actions: action_list(&x["actions"]),
+            })
+            .collect(),
+        state_by: text(&b["stateBy"], "", 40),
+        switch_style: one_of(&b["switchStyle"], &["vertical"], "horizontal"),
+        confirm: b["confirm"] == Value::Bool(true),
+        requires: Requires {
+            button: text(&b["requires"]["button"], "", 40),
+            variable: text(&b["requires"]["variable"], "", 40),
+            equals: text(&b["requires"]["equals"], "", 200),
+            reset: b["requires"]["reset"] == Value::Bool(true),
+        },
+        hidden: b["hidden"] == Value::Bool(true),
     })
 }
 
@@ -688,6 +772,26 @@ pub struct DeckSettings {
     /// Fußleiste im Bedienfeld: Verbindung und (in der App) PC wechseln.
     #[serde(default)]
     pub footer: bool,
+    /// Kurzes Häkchen am Button, wenn die Aktionen geklappt haben.
+    #[serde(default = "yes")]
+    pub feedback: bool,
+    /// Ruhezustand nach so vielen Minuten ohne Berührung (0 = nie).
+    #[serde(default)]
+    pub sleep_after: i64,
+    /// Ruhezustand: dim (abdunkeln), clock (Uhr) oder black (schwarz).
+    #[serde(default = "default_sleep_mode")]
+    pub sleep_mode: String,
+    /// PC gesperrt → Bedienfeld gesperrt, bis der PC entsperrt ist.
+    #[serde(default)]
+    pub lock_with_pc: bool,
+}
+
+fn default_sleep_mode() -> String {
+    "dim".into()
+}
+
+fn yes() -> bool {
+    true
 }
 
 fn default_orientation() -> String {
@@ -807,7 +911,7 @@ fn default_settings(start_page: &str) -> Settings {
         public_host: String::new(),
         usb: false,
         pin: String::new(),
-        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false },
+        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
         twitch: TwitchSettings {
             client_id: String::new(),
@@ -1220,6 +1324,18 @@ impl Store {
             if let Some(f) = d["footer"].as_bool() {
                 s.deck.footer = f;
             }
+            if let Some(f) = d["feedback"].as_bool() {
+                s.deck.feedback = f;
+            }
+            if let Some(m) = d["sleepAfter"].as_i64() {
+                s.deck.sleep_after = m.clamp(0, 240);
+            }
+            if let Some(m) = d["sleepMode"].as_str().filter(|m| ["dim", "clock", "black"].contains(m)) {
+                s.deck.sleep_mode = m.into();
+            }
+            if let Some(b) = d["lockWithPc"].as_bool() {
+                s.deck.lock_with_pc = b;
+            }
         }
         let o = &patch["obs"];
         if o.is_object() {
@@ -1345,6 +1461,32 @@ impl Store {
         self.changed("toggles", Value::Null);
     }
 
+    /** Zustand eines Buttons mit mehreren Zuständen (0 = erster). */
+    pub fn set_state(&mut self, button_id: &str, index: usize) {
+        self.config.toggles.insert(button_id.into(), json!(index));
+        self.changed("toggles", Value::Null);
+    }
+
+    /** Aktueller Zustand: per Wert (stateBy) oder gespeichert; immer gültig für die Zahl der Zustände. */
+    pub fn state_index(&self, b: &Button) -> usize {
+        if b.states.is_empty() {
+            return 0;
+        }
+        if !b.state_by.is_empty() {
+            let v = self.config.variables.get(&b.state_by).map(js_string).unwrap_or_default();
+            return b.states.iter().position(|s| value_matches(&v, &s.when)).unwrap_or(0);
+        }
+        self.config.toggles.get(&b.id).and_then(Value::as_u64).map_or(0, |i| i as usize % b.states.len())
+    }
+
+    /** Ist die Bedingung des Buttons erfüllt (anderer Button an, Wert passt)? */
+    pub fn requirement_met(&self, b: &Button) -> bool {
+        let r = &b.requires;
+        let button_ok = r.button.is_empty() || self.config.toggles.get(&r.button) == Some(&Value::Bool(true));
+        let value_ok = r.variable.is_empty() || value_matches(&self.config.variables.get(&r.variable).map(js_string).unwrap_or_default(), &r.equals);
+        button_ok && value_ok
+    }
+
     /** Optische Änderung zur Laufzeit (Aktion „Visuelles“); None stellt das Original wieder her. */
     pub fn set_override(&mut self, page: bool, id: &str, patch: Option<&Map<String, Value>>) {
         let map = if page { &mut self.config.overrides.pages } else { &mut self.config.overrides.buttons };
@@ -1441,6 +1583,43 @@ mod tests {
         assert_eq!(s.obs.port, 4456);
         assert_eq!(s.obs.host, "127.0.0.1");
         assert_eq!(s.extra["eigenes"], json!(1));
+    }
+
+    #[test]
+    fn wert_bedingungen() {
+        assert!(value_matches("42", "10..50"));
+        assert!(!value_matches("60", "10..50"));
+        assert!(value_matches("85,5", ">80"));
+        assert!(value_matches("5", "<=5"));
+        assert!(value_matches("3", "3.0"));
+        assert!(value_matches("An", "an"));
+        assert!(!value_matches("aus", ">1"));
+    }
+
+    #[test]
+    fn zustaende_und_abhaengigkeit() {
+        let dir = std::env::temp_dir().join(format!("touchdeck-test-{}", new_id("")));
+        let mut store = Store::open(&dir).unwrap();
+        let b = sanitize_button(
+            &json!({ "id": "b_x", "row": 0, "col": 0, "mode": "states", "states": [{ "title": "A" }, { "title": "B" }, { "title": "C", "when": ">50" }],
+                     "requires": { "button": "b_arm", "reset": true } }),
+            3, 5, false,
+        )
+        .unwrap();
+        assert_eq!(b.states.len(), 3);
+        assert_eq!(store.state_index(&b), 0);
+        store.set_state("b_x", 4);
+        assert_eq!(store.state_index(&b), 1, "Index läuft um");
+        // Nach Wert: erster passender Zustand.
+        let mut by = b.clone();
+        by.state_by = "Last".into();
+        store.set_variable("Last", &json!(70)).unwrap();
+        assert_eq!(store.state_index(&by), 2);
+        // Abhängigkeit: erst wenn b_arm an ist.
+        assert!(!store.requirement_met(&b));
+        store.set_toggle("b_arm", true);
+        assert!(store.requirement_met(&b));
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

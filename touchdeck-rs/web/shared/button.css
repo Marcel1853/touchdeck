@@ -275,3 +275,35 @@
 .td-btn.shape-combo.knob-last.vertical .td-rail { top: 8%; bottom: 56%; }
 .td-btn.shape-combo.knob-last.horizontal .td-combo-knob { inset: 8% 4% 22% auto; width: 34%; }
 .td-btn.shape-combo.knob-last.horizontal .td-rail { left: 6%; right: 42%; }
+
+/* ---------- Schalter (Kippschalter) ---------- */
+.td-switch {
+  position: relative;
+  flex: none;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.35);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.15), inset 0 2px 6px rgb(0 0 0 / 0.35);
+  transition: background 0.2s;
+}
+.switch-horizontal .td-switch { width: min(66cqw, 90cqh); aspect-ratio: 2 / 1; }
+.switch-vertical .td-switch { height: min(66cqh, 90cqw); aspect-ratio: 1 / 2; }
+.td-switch-knob {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #d9dde6 60%, #b9bfcc);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+  transition: left 0.2s ease, top 0.2s ease;
+}
+/* Knopf = 84 % der kurzen Seite = 42 % der langen Seite. Aus: links bzw. unten, an: rechts bzw. oben. */
+.switch-horizontal .td-switch-knob { top: 8%; height: 84%; left: 4%; }
+.switch-horizontal.is-on .td-switch-knob { left: 54%; }
+.switch-vertical .td-switch-knob { left: 8%; width: 84%; top: 54%; }
+.switch-vertical.is-on .td-switch-knob { top: 4%; }
+.td-btn.is-switch.is-on .td-switch { background: var(--son, #2f9e6b); }
+.td-btn.is-switch.is-toggle::after { display: none; }
+
+/* ---------- Abhängigkeit nicht erfüllt / versteckt ---------- */
+.td-btn.is-locked { filter: grayscale(0.75) brightness(0.7); }
+.td-lock { position: absolute; top: 6%; right: 7%; font-size: max(11px, 14cqmin); line-height: 1; }
+.td-btn.is-hidden { visibility: hidden; pointer-events: none; }

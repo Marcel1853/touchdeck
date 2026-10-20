@@ -681,3 +681,6 @@ button.status-chip:hover { color: var(--text); }
 
 /* Marktplatz: Leiste mit „Neu laden“ über der Liste */
 .market-bar { display: flex; justify-content: flex-end; margin: 4px 0 8px; }
+
+/* Im Editor bleiben versteckte Buttons sichtbar, nur blass und gestrichelt umrandet. */
+.canvas .td-btn.is-hidden { visibility: visible; pointer-events: auto; opacity: 0.4; outline: 2px dashed var(--muted, #8a8f9c); outline-offset: -2px; }

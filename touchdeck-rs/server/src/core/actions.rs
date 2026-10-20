@@ -1300,6 +1300,58 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             app.store.lock().unwrap().set_override(false, &id, None);
             none
         }
+        "button_state" => {
+            let id = resolve_button(app, &p.s("target"), ctx)?;
+            let mut store = app.store.lock().unwrap();
+            let b = store.find_button(&id).map(|(_, b)| b.clone()).ok_or_else(|| anyhow!(t!("actions.buttonNoLongerExists")))?;
+            let op = p.or("op", "next");
+            if b.mode == "states" && !b.states.is_empty() {
+                let n = b.states.len();
+                let i = store.state_index(&b);
+                let next = match op.as_str() {
+                    "prev" => (i + n - 1) % n,
+                    "set" => (p.n("index").max(1.0) as usize - 1).min(n - 1),
+                    _ => (i + 1) % n,
+                };
+                store.set_state(&id, next);
+            } else {
+                // Umschalter und Schalter: nächster/vorheriger = umschalten, Nr. 1 = aus, Nr. 2 = an.
+                let on = store.config.toggles.get(&id) == Some(&Value::Bool(true));
+                store.set_toggle(&id, if op == "set" { p.n("index") >= 2.0 } else { !on });
+            }
+            none
+        }
+        "button_visible" => {
+            let id = resolve_button(app, &p.s("target"), ctx)?;
+            let hidden_now = {
+                let store = app.store.lock().unwrap();
+                let base = store.find_button(&id).is_some_and(|(_, b)| b.hidden);
+                store.config.overrides.buttons.get(&id).and_then(|o| o["hidden"].as_bool()).unwrap_or(base)
+            };
+            let hide = match p.or("op", "show").as_str() {
+                "hide" => true,
+                "toggle" => !hidden_now,
+                _ => false,
+            };
+            let set = |store: &mut crate::core::store::Store, hide: bool| {
+                let mut m = Map::new();
+                m.insert("hidden".into(), json!(hide));
+                store.set_override(false, &id, Some(&m));
+            };
+            set(&mut app.store.lock().unwrap(), hide);
+            // „Nur für … Sekunden“: danach wieder wie vorher.
+            let secs = p.n("seconds");
+            if secs > 0.0 {
+                let (a, id) = (app.clone(), id.clone());
+                tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs_f64(secs.min(86_400.0))).await;
+                    let mut m = Map::new();
+                    m.insert("hidden".into(), json!(!hide));
+                    a.store.lock().unwrap().set_override(false, &id, Some(&m));
+                });
+            }
+            none
+        }
         "page_background" => {
             let page = p.s("page");
             let mut store = app.store.lock().unwrap();
@@ -1387,7 +1439,7 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
             Ok(opts(store.config.pages.iter().flat_map(|pg| {
                 pg.buttons
                     .iter()
-                    .filter(|b| b.mode == "toggle")
+                    .filter(|b| ["toggle", "switch", "states"].contains(&b.mode.as_str()))
                     .map(|b| (b.id.clone(), format!("{} › {}", pg.name, if b.title.is_empty() { &b.id } else { &b.title })))
                     .collect::<Vec<_>>()
             })))

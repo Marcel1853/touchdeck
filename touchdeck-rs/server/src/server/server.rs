@@ -320,27 +320,52 @@ async fn press(app: &Arc<App>, page_id: &str, button_id: &str, double: bool) -> 
     let found = {
         let mut store = app.store.lock().unwrap();
         let found = store.page(page_id).and_then(|p| p.buttons.iter().find(|b| b.id == button_id).map(|b| (p.name.clone(), b.clone())));
-        found.map(|(page_name, b)| {
-            // Anzeigen sind nicht zum Drücken da.
-            let mut actions = if b.mode == "display" { Vec::new() } else { b.actions.clone() };
-            let mut toggled = None;
-            if b.mode == "display" {
-            } else if double && !b.double_actions.is_empty() {
-                actions = b.double_actions.clone();
-            } else if b.mode == "toggle" {
-                let on = store.config.toggles.get(button_id) != Some(&Value::Bool(true));
-                if !on {
-                    actions = b.actions_off.clone();
-                }
-                store.set_toggle(button_id, on);
-                toggled = Some(on);
+        match found {
+            None => None,
+            // Abhängigkeit nicht erfüllt (z. B. erst „Scharf schalten“): nichts tun.
+            Some((_, b)) if !store.requirement_met(&b) => {
+                let need = store.config.pages.iter().flat_map(|p| &p.buttons).find(|x| x.id == b.requires.button).map(button_title);
+                return json!({ "ok": false, "locked": true, "error": match need {
+                    Some(name) => t!("server.firstSwitchOn", name),
+                    None => t!("server.conditionNotMet").to_string(),
+                } });
             }
-            (format!("{page_name} › {}", button_title(&b)), actions, toggled)
-        })
+            Some((page_name, b)) => {
+                // Anzeigen sind nicht zum Drücken da.
+                let mut actions = if b.mode == "display" { Vec::new() } else { b.actions.clone() };
+                let mut toggled = None;
+                if b.mode == "display" {
+                } else if double && !b.double_actions.is_empty() {
+                    actions = b.double_actions.clone();
+                } else if b.mode == "toggle" || b.mode == "switch" {
+                    let on = store.config.toggles.get(button_id) != Some(&Value::Bool(true));
+                    if !on {
+                        actions = b.actions_off.clone();
+                    }
+                    store.set_toggle(button_id, on);
+                    toggled = Some(json!({ "buttonId": button_id, "state": if on { "on" } else { "off" } }));
+                } else if b.mode == "states" && !b.states.is_empty() {
+                    // Per Druck: zum nächsten Zustand und dessen Aktionen. Nach Wert: Aktionen des aktuellen Zustands.
+                    let mut i = store.state_index(&b);
+                    if b.state_by.is_empty() {
+                        i = (i + 1) % b.states.len();
+                        store.set_state(button_id, i);
+                    }
+                    actions = b.states[i].actions.clone();
+                    let title = if b.states[i].title.is_empty() { (i + 1).to_string() } else { b.states[i].title.clone() };
+                    toggled = Some(json!({ "buttonId": button_id, "state": (i + 1).to_string(), "Zustand": title }));
+                }
+                // „Danach wieder ausschalten“: der Button, von dem dieser abhing.
+                if b.requires.reset && !b.requires.button.is_empty() {
+                    store.set_toggle(&b.requires.button, false);
+                }
+                Some((format!("{page_name} › {}", button_title(&b)), actions, toggled))
+            }
+        }
     };
     let Some((label, actions, toggled)) = found else { return json!({ "ok": false, "error": t!("server.buttonNotFound") }) };
-    if let Some(on) = toggled {
-        app.events.fire(app, "button_toggle", &json!({ "buttonId": button_id, "state": if on { "on" } else { "off" } }));
+    if let Some(data) = toggled {
+        app.events.fire(app, "button_toggle", &data);
     }
     let result = run(app, &actions, Some(button_id.into()), &label).await;
     if result["ok"] == true {

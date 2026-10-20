@@ -1032,6 +1032,44 @@
         }
       }
     },
+    "button_state": {
+      "label": "Zustand eines Buttons setzen (nur Anzeige)",
+      "fields": {
+        "target": {
+          "label": "Button"
+        },
+        "op": {
+          "label": "Was",
+          "options": {
+            "next": "nächster Zustand",
+            "prev": "vorheriger Zustand",
+            "set": "Zustand Nr."
+          }
+        },
+        "index": {
+          "label": "Nummer (bei „Zustand Nr.“)"
+        }
+      }
+    },
+    "button_visible": {
+      "label": "Button zeigen / verstecken",
+      "fields": {
+        "target": {
+          "label": "Button"
+        },
+        "op": {
+          "label": "Was",
+          "options": {
+            "show": "zeigen",
+            "hide": "verstecken",
+            "toggle": "umschalten"
+          }
+        },
+        "seconds": {
+          "label": "Nur für … Sekunden (0 = dauerhaft)"
+        }
+      }
+    },
     "page_background": {
       "label": "Seitenhintergrund ändern",
       "fields": {

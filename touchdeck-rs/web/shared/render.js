@@ -13,18 +13,57 @@ export function fillTitle(title, variables) {
 /** Freie Seite? Dann stehen Buttons nicht im Raster, sondern mit Lage in Prozent auf der Fläche. */
 export const isFree = (page) => page?.layout === 'free';
 
+/** Passt ein Wert zu einer Bedingung wie „ja“, „3“, „10..50“, „>80“, „<=5“? (wie value_matches im Server) */
+export function valueMatches(value, when) {
+  const w = String(when ?? '').trim();
+  const num = (t) => {
+    const n = Number(String(t).trim().replace(',', '.'));
+    return String(t).trim() !== '' && Number.isFinite(n) ? n : null;
+  };
+  const v = num(value ?? '');
+  const range = w.split('..');
+  if (range.length === 2 && v !== null && num(range[0]) !== null && num(range[1]) !== null) return v >= num(range[0]) && v <= num(range[1]);
+  for (const [op, f] of [['>=', (a, b) => a >= b], ['<=', (a, b) => a <= b], ['>', (a, b) => a > b], ['<', (a, b) => a < b]]) {
+    if (w.startsWith(op)) return v !== null && num(w.slice(op.length)) !== null && f(v, num(w.slice(op.length)));
+  }
+  if (v !== null && num(w) !== null) return v === num(w);
+  return String(value ?? '').trim().toLowerCase() === w.toLowerCase();
+}
+
+/** Aktueller Zustand eines Buttons mit mehreren Zuständen (0 = erster): nach Wert oder gespeichert. */
+export function stateIndex(b, toggles = {}, variables = {}) {
+  const n = b.states?.length ?? 0;
+  if (!n) return 0;
+  if (b.stateBy) return Math.max(0, b.states.findIndex((st) => valueMatches(variables?.[b.stateBy] ?? '', st.when)));
+  const i = Number(toggles?.[b.id]);
+  return Number.isInteger(i) && i >= 0 ? i % n : 0;
+}
+
+/** Ist die Bedingung erfüllt (anderer Button an, Wert passt)? */
+export function requirementMet(b, toggles = {}, variables = {}) {
+  const r = b.requires ?? {};
+  return (!r.button || toggles?.[r.button] === true) && (!r.variable || valueMatches(variables?.[r.variable] ?? '', r.equals));
+}
+
 /**
  * Erzeugt das DOM-Element für einen Button. live = { text, on, value } vom Server, variables für {Name}-Platzhalter,
  * page = die Seite (für freie Lage und Seitenverhältnis).
  */
-export function buttonElement(b, { on = false, live = null, variables = null, page = null } = {}) {
+export function buttonElement(b, { on = false, live = null, variables = null, page = null, state = 0, locked = false } = {}) {
   if (typeof live?.on === 'boolean') on = live.on;
+  // Mehrere Zustände: Aussehen des aktuellen Zustands über das des Buttons legen (leere Felder = vom Button).
+  if (b.mode === 'states' && b.states?.length) {
+    const st = b.states[Math.min(state, b.states.length - 1)];
+    b = { ...b, title: st.title || b.title, icon: st.icon?.value ? st.icon : b.icon, color: st.color || b.color, textColor: st.textColor || b.textColor };
+    on = false;
+  }
+  const isSwitch = b.mode === 'switch';
   // Eigenes Aussehen für „an“ (z. B. 🔇 „Stumm“ statt 🔊 „Ton an“).
   if (on) b = { ...b, icon: b.iconOn?.value ? b.iconOn : b.icon, title: b.titleOn || b.title };
   const el = document.createElement('div');
   const isSlider = b.mode === 'slider';
   const cover = b.iconFit === 'cover' && b.icon?.type === 'image' && b.icon.value;
-  el.className = `td-btn pos-${b.titlePos}${on ? ' is-on' : ''}${b.mode === 'toggle' ? ' is-toggle' : ''}${b.mode === 'display' ? ' is-display' : ''}${cover ? ' is-cover' : ''}`;
+  el.className = `td-btn pos-${b.titlePos}${on ? ' is-on' : ''}${b.mode === 'toggle' ? ' is-toggle' : ''}${b.mode === 'display' ? ' is-display' : ''}${cover ? ' is-cover' : ''}${b.hidden ? ' is-hidden' : ''}${locked ? ' is-locked' : ''}`;
   el.dataset.id = b.id;
   const free = isFree(page) && b.free;
   if (free) {
@@ -41,7 +80,8 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   }
   // Deckkraft des Hintergrunds: unter 100 % scheint die Seite durch, bei 0 % nur Symbol und Text.
   const opacity = b.bgOpacity ?? 100;
-  const bg = on ? b.colorOn : b.color;
+  // Schalter: der Button behält seine Farbe, „an“ färbt nur die Schiene.
+  const bg = on && !isSwitch ? b.colorOn : b.color;
   el.style.setProperty('--bg', opacity < 100 ? `color-mix(in srgb, ${bg} ${opacity}%, transparent)` : bg);
   if (opacity === 0) el.classList.add('is-transparent');
   el.style.setProperty('--fg', b.textColor);
@@ -63,6 +103,16 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
   // Symbolgröße in Prozent der normalen Größe.
   if ((b.iconSize ?? 100) !== 100) el.style.setProperty('--is', (b.iconSize ?? 100) / 100);
 
+
+  if (isSwitch) {
+    // Kippschalter: Schiene mit Knopf, quer oder hoch; Tippen oder Wischen schaltet.
+    el.classList.add('is-switch', `switch-${b.switchStyle === 'vertical' ? 'vertical' : 'horizontal'}`);
+    el.style.setProperty('--son', b.colorOn);
+    const sw = document.createElement('div');
+    sw.className = 'td-switch';
+    sw.innerHTML = '<i class="td-switch-knob"></i>';
+    el.append(sw);
+  }
 
   const shape = isSlider ? b.slider?.shape ?? 'fill' : null;
   const isKnob = shape === 'knob' || shape === 'dial' || shape === 'mixer';
@@ -131,7 +181,7 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     el.classList.add('is-web');
     el.append(frame);
   }
-  const hasIcon = b.icon?.value && !cover && !isKnob && !isWeb;
+  const hasIcon = b.icon?.value && !cover && !isKnob && !isWeb && !isSwitch;
   if (hasIcon) {
     const icon = document.createElement('div');
     icon.className = 'td-icon';
@@ -176,12 +226,19 @@ export function buttonElement(b, { on = false, live = null, variables = null, pa
     t.textContent = fillTitle(b.title, variables);
     el.append(t);
   }
+  if (locked) {
+    // Abhängigkeit nicht erfüllt: Schloss oben rechts, Button wirkt ausgegraut.
+    const lock = document.createElement('div');
+    lock.className = 'td-lock';
+    lock.textContent = '🔒';
+    el.append(lock);
+  }
   if (b.overlay) {
     const ov = document.createElement('div');
     ov.className = `td-overlay ov-${b.overlay}`;
     el.append(ov);
   }
-  if (!hasIcon && !cover && !isSlider && !isWeb && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
+  if (!hasIcon && !cover && !isSlider && !isWeb && !isSwitch && !live?.text && !(b.title && b.titlePos !== 'hidden') && !b.overlay && !el.classList.contains('has-texture')) el.classList.add('is-blank');
   return el;
 }
 

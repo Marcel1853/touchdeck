@@ -2276,6 +2276,76 @@
   ]
  },
  {
+  "type": "button_state",
+  "category": "visuals",
+  "group": "general",
+  "icon": "🔢",
+  "fields": [
+   {
+    "key": "target",
+    "type": "dynamic",
+    "source": "buttons",
+    "default": "self"
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "next",
+    "options": [
+     {
+      "value": "next"
+     },
+     {
+      "value": "prev"
+     },
+     {
+      "value": "set"
+     }
+    ]
+   },
+   {
+    "key": "index",
+    "type": "number",
+    "default": 1
+   }
+  ]
+ },
+ {
+  "type": "button_visible",
+  "category": "visuals",
+  "group": "general",
+  "icon": "👁️",
+  "fields": [
+   {
+    "key": "target",
+    "type": "dynamic",
+    "source": "buttons",
+    "default": "self"
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "show",
+    "options": [
+     {
+      "value": "show"
+     },
+     {
+      "value": "hide"
+     },
+     {
+      "value": "toggle"
+     }
+    ]
+   },
+   {
+    "key": "seconds",
+    "type": "number",
+    "default": 0
+   }
+  ]
+ },
+ {
   "type": "page_background",
   "category": "visuals",
   "group": "general",

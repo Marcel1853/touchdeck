@@ -1,6 +1,6 @@
 // Bedienfeld: zeigt die Seiten an und schickt Drücken, Halten und Regler über WebSocket an den PC.
 import { t as tr, getLang } from '/shared/i18n.js';
-import { buttonElement, setupGrid } from '/shared/render.js';
+import { buttonElement, setupGrid, stateIndex, requirementMet } from '/shared/render.js';
 
 const $ = (id) => document.getElementById(id);
 const grid = $('grid');
@@ -94,12 +94,63 @@ const effective = (b) => ({ ...b, ...state.overrides?.buttons?.[b.id] });
 /** Live-Wert eines Buttons; solange er noch nicht da ist, ein Platzhalter, damit nichts springt. */
 const liveFor = (b) => state.live?.[b.id] ?? (b.mode !== 'slider' && b.live && b.live.source !== 'none' ? { text: '…' } : null);
 
+/** Sicherheitsabfrage: Buttons, die gerade „Sicher?“ zeigen (ID → Zeitgeber). */
+const confirming = new Map();
+
 const element = (b, page) => {
-  const el = buttonElement(effective(b), { on: !!state.toggles[b.id], live: liveFor(b), variables: state.variables, page });
+  const e = effective(b);
+  const el = buttonElement(e, {
+    on: state.toggles[b.id] === true,
+    live: liveFor(b),
+    variables: state.variables,
+    page,
+    state: stateIndex(e, state.toggles, state.variables),
+    locked: !requirementMet(e, state.toggles, state.variables),
+  });
   if (b.holdActions?.length) el.dataset.hold = '1';
   if (b.doubleActions?.length) el.dataset.double = '1';
+  if (confirming.has(b.id)) markConfirming(el);
   return el;
 };
+
+function markConfirming(el) {
+  el.classList.add('confirming');
+  const c = document.createElement('div');
+  c.className = 'td-confirm';
+  c.textContent = tr('deck.sure');
+  el.append(c);
+}
+
+/** Erster Druck auf einen Button mit Sicherheitsabfrage: 3 s lang „Sicher?“ zeigen. true = noch nicht auslösen. */
+function needsConfirm(el, id) {
+  const b = state.pages.find((p) => p.id === currentPage)?.buttons.find((x) => x.id === id);
+  if (!b?.confirm) return false;
+  if (confirming.has(id)) {
+    clearTimeout(confirming.get(id));
+    confirming.delete(id);
+    el.classList.remove('confirming');
+    el.querySelector('.td-confirm')?.remove();
+    return false;
+  }
+  confirming.set(id, setTimeout(() => {
+    confirming.delete(id);
+    refreshButtons((x) => x.id === id);
+  }, 3000));
+  markConfirming(el);
+  vibrate(30);
+  return true;
+}
+
+/** Kurzes Häkchen am Button, wenn die Aktionen geklappt haben (abschaltbar in den Einstellungen). */
+function showDone(el) {
+  if (!el || state.deck.feedback === false || el.classList.contains('is-slider')) return;
+  el.querySelector('.td-done')?.remove();
+  const d = document.createElement('div');
+  d.className = 'td-done';
+  d.textContent = '✓';
+  el.append(d);
+  setTimeout(() => d.remove(), 700);
+}
 
 /** Ausrichtung aus den Einstellungen: in der App sofort, im Browser nur im Vollbild möglich. */
 let appliedOrientation = null;
@@ -202,14 +253,17 @@ function updateVariables(values) {
   const names = Object.keys(values);
   refreshButtons((b) => {
     const text = JSON.stringify(effective(b));
-    return names.some((n) => text.includes(`{${n}}`) || text.includes(`"variable":${JSON.stringify(n)}`));
+    // {Name} im Titel, Live-Quelle oder Abhängigkeit „Wert“, Zustand nach Wert.
+    return names.some((n) => text.includes(`{${n}}`) || text.includes(`"variable":${JSON.stringify(n)}`) || text.includes(`"stateBy":${JSON.stringify(n)}`));
   });
 }
 
 function updateToggles(toggles) {
   const before = state.toggles ?? {};
   state.toggles = toggles;
-  refreshButtons((b) => !same(before[b.id], toggles[b.id]));
+  // Auch Buttons, die von einem geänderten Button abhängen (Schloss auf/zu).
+  const changed = (id) => id && !same(before[id], toggles[id]);
+  refreshButtons((b) => changed(b.id) || changed(b.requires?.button));
 }
 
 function updateOverrides(overrides) {
@@ -390,6 +444,7 @@ const release = (e, fire) => {
   if (fire && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
     feedback();
     const id = el.dataset.id;
+    if (needsConfirm(el, id)) return;
     if (!el.dataset.double) return send({ type: 'press', reqId: ++reqId, buttonId: id });
     // Zweites Tippen innerhalb der Wartezeit: Doppelt-Aktionen, sonst nach der Wartezeit die normalen.
     if (pendingTaps.has(id)) {
@@ -530,8 +585,9 @@ async function connect() {
         el?.classList.add('failed');
         setTimeout(() => el?.classList.remove('failed'), 500);
         toast(msg.error, true);
-      } else if (msg.messages?.length) {
-        toast(msg.messages.join(' · '));
+      } else {
+        showDone(el);
+        if (msg.messages?.length) toast(msg.messages.join(' · '));
       }
       if (msg.navigate) goTo(msg.navigate);
     }

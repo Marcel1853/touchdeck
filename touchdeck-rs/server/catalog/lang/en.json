@@ -1032,6 +1032,44 @@
         }
       }
     },
+    "button_state": {
+      "label": "Set state of a button (display only)",
+      "fields": {
+        "target": {
+          "label": "Button"
+        },
+        "op": {
+          "label": "What",
+          "options": {
+            "next": "next state",
+            "prev": "previous state",
+            "set": "state no."
+          }
+        },
+        "index": {
+          "label": "Number (for “state no.”)"
+        }
+      }
+    },
+    "button_visible": {
+      "label": "Show / hide button",
+      "fields": {
+        "target": {
+          "label": "Button"
+        },
+        "op": {
+          "label": "What",
+          "options": {
+            "show": "show",
+            "hide": "hide",
+            "toggle": "toggle"
+          }
+        },
+        "seconds": {
+          "label": "Only for … seconds (0 = permanently)"
+        }
+      }
+    },
     "page_background": {
       "label": "Change page background",
       "fields": {

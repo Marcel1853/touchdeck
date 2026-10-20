@@ -1051,7 +1051,8 @@ function renderInspector() {
     return;
   }
   const counts = {
-    actions: b.mode === 'slider' ? null : b.actions.length + (b.mode === 'toggle' ? b.actionsOff.length : 0) + (b.doubleActions?.length ?? 0),
+    actions: b.mode === 'slider' ? null : b.mode === 'states' ? (b.states ?? []).reduce((n, st) => n + st.actions.length, 0) + (b.doubleActions?.length ?? 0)
+      : b.actions.length + (b.mode === 'toggle' || b.mode === 'switch' ? b.actionsOff.length : 0) + (b.doubleActions?.length ?? 0),
     events: b.events.length,
     hold: b.holdActions.length + b.releaseActions.length,
   };
@@ -1124,7 +1125,7 @@ function lookTab(b) {
   const edit = (key, fn, opts) => mutate(fn, { coalesce: `${b.id}:${key}`, ...opts });
   const p = page();
   // Ein Button ist „an“, wenn er ein eingeschalteter Umschalter ist oder seine Live-Anzeige „an“ meldet.
-  const canBeOn = b.mode === 'toggle' || (b.mode !== 'slider' && b.live.source !== 'none');
+  const canBeOn = b.mode === 'toggle' || b.mode === 'switch' || (b.mode !== 'slider' && b.mode !== 'states' && b.live.source !== 'none');
   const onLook = canBeOn && S.lookTarget === 'on';
   const key = onLook ? 'iconOn' : 'icon';
   b.iconOn ??= { type: 'emoji', value: '' };
@@ -1231,7 +1232,18 @@ function lookTab(b) {
       h('label', { class: 'field' }, tr('pages.heightFields'),
         h('input', { type: 'number', min: 1, max: p.rows - b.row, value: b.rowSpan, onchange: (e) => resizeButton(b, Number(e.target.value), b.colSpan) }))),
     h('div', { class: 'field' }, tr('pages.type'),
-      segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['slider', tr('pages.slider')], ['display', tr('pages.display')], ['web', tr('pages.web')]], b.mode, (v) => mutate(() => (b.mode = v)))),
+      segmented([['press', tr('pages.press')], ['toggle', tr('pages.toggle')], ['switch', tr('pages.modeSwitch')], ['states', tr('pages.modeStates')], ['slider', tr('pages.slider')], ['display', tr('pages.display')], ['web', tr('pages.web')]], b.mode, (v) => mutate(() => {
+        b.mode = v;
+        // Neue Zustands-Buttons beginnen mit zwei Zuständen.
+        if (v === 'states' && !b.states?.length) b.states = [newState(), newState()];
+      }))),
+    b.mode === 'switch' && h('label', { class: 'field' }, tr('pages.switchStyle'),
+      h('select', { value: b.switchStyle ?? 'horizontal', onchange: (e) => mutate(() => (b.switchStyle = e.target.value)) },
+        h('option', { value: 'horizontal' }, tr('pages.switchHorizontal')), h('option', { value: 'vertical' }, tr('pages.switchVertical')))),
+    b.mode === 'switch' && h('p', { class: 'hint-text' }, tr('pages.switchHint')),
+    h('label', { class: 'switch-row' },
+      h('input', { type: 'checkbox', checked: !!b.hidden, onchange: (e) => mutate(() => (b.hidden = e.target.checked)) }), tr('pages.hiddenAtStart')),
+    b.hidden && h('p', { class: 'hint-text' }, tr('pages.hiddenHint')),
     b.mode === 'web' && webSection(b),
     b.mode === 'display' && h('p', { class: 'hint-text' }, tr('pages.displayHint')),
     b.mode !== 'slider' && b.mode !== 'web' && liveSection(b),
@@ -1410,6 +1422,8 @@ function liveSection(b) {
     hints[b.live.source] && h('p', { class: 'hint-text' }, hints[b.live.source]));
 }
 
+const newState = () => ({ title: '', icon: { type: 'emoji', value: '' }, color: '', textColor: '', when: '', actions: [] });
+
 function pressTab(b) {
   b.doubleActions ??= [];
   const context = b.title || tr('pages.button');
@@ -1417,14 +1431,75 @@ function pressTab(b) {
     actionList(b, 'doubleActions', tr('pages.whenDoublePressed'), { buttonId: b.id, compact: true, context }),
     h('p', { class: 'hint-text' }, tr('pages.doublePressHint')),
   ];
-  if (b.mode === 'toggle') {
+  const safety = safetySection(b);
+  if (b.mode === 'states') return [...statesEditor(b, context), ...double, ...safety];
+  if (b.mode === 'toggle' || b.mode === 'switch') {
     return [
       actionList(b, 'actions', tr('pages.whenSwitchedOn'), { buttonId: b.id, compact: true, context }),
       actionList(b, 'actionsOff', tr('pages.whenSwitchedOff'), { buttonId: b.id, compact: true, context }),
       ...double,
+      ...safety,
     ];
   }
-  return [actionList(b, 'actions', tr('pages.whenPressed'), { buttonId: b.id, compact: true, context, hint: b.holdActions.length ? tr('pages.shortTapRunsThese') : '' }), ...double];
+  return [actionList(b, 'actions', tr('pages.whenPressed'), { buttonId: b.id, compact: true, context, hint: b.holdActions.length ? tr('pages.shortTapRunsThese') : '' }), ...double, ...safety];
+}
+
+/** Datalist mit allen Werten (für Felder, in die ein Wertname kommt). */
+function variablesDatalist(id) {
+  return h('datalist', { id }, Object.keys(S.variables ?? {}).map((n) => h('option', { value: n })));
+}
+
+/** Buttons mit mehreren Zuständen: je Zustand Aussehen und Aktionen; wahlweise Zustand nach einem Wert. */
+function statesEditor(b, context) {
+  b.states ??= [];
+  const edit = (fn, key) => mutate(fn, { coalesce: key && `${b.id}:${key}`, detail: !key });
+  const color = (st, key, label, fallback) => h('label', { class: 'switch-row compact' },
+    h('input', { type: 'checkbox', checked: !!st[key], onchange: (e) => edit(() => (st[key] = e.target.checked ? fallback : '')) }), label,
+    st[key] && h('input', { type: 'color', value: st[key], oninput: (e) => edit(() => (st[key] = e.target.value), `${key}${b.states.indexOf(st)}`) }));
+  return [
+    h('p', { class: 'hint-text' }, b.stateBy ? tr('pages.statesByValueHint') : tr('pages.statesHint')),
+    h('label', { class: 'field' }, tr('pages.stateBy'),
+      h('input', { value: b.stateBy ?? '', list: 'td-state-vars', maxlength: 40, placeholder: tr('pages.stateByPlaceholder'), oninput: (e) => edit(() => (b.stateBy = e.target.value.trim()), 'stateBy') }),
+      variablesDatalist('td-state-vars')),
+    ...b.states.map((st, i) => h('div', { class: 'settings-card state-card' },
+      h('div', { class: 'list-title' },
+        h('h3', {}, tr('pages.stateN', [i + 1])),
+        i > 0 && h('button', { class: 'btn small ghost', title: tr('pages.moveUp'), onclick: () => mutate(() => b.states.splice(i - 1, 0, ...b.states.splice(i, 1))) }, '↑'),
+        b.states.length > 1 && h('button', { class: 'btn small ghost danger', title: tr('common.delete'), onclick: () => mutate(() => b.states.splice(i, 1)) }, '✕')),
+      h('div', { class: 'row' },
+        h('label', { class: 'field' }, tr('pages.stateTitle'),
+          h('input', { value: st.title, maxlength: 200, placeholder: b.title, oninput: (e) => edit(() => (st.title = e.target.value), `stt${i}`) })),
+        h('label', { class: 'field' }, tr('pages.stateIcon'),
+          h('input', { value: st.icon?.type === 'emoji' ? st.icon.value : '', placeholder: st.icon?.type === 'image' ? '🖼' : '🙂', maxlength: 16,
+            oninput: (e) => edit(() => (st.icon = { type: 'emoji', value: e.target.value.trim() }), `sti${i}`) }))),
+      h('div', { class: 'colors' }, color(st, 'color', tr('pages.background'), '#2b2f3a'), color(st, 'textColor', tr('pages.text'), '#ffffff')),
+      b.stateBy && h('label', { class: 'field' }, tr('pages.stateWhen'),
+        h('input', { value: st.when ?? '', maxlength: 60, placeholder: tr('pages.stateWhenPlaceholder'), oninput: (e) => edit(() => (st.when = e.target.value), `stw${i}`) })),
+      actionList(st, 'actions', b.stateBy ? tr('pages.stateActionsByValue') : tr('pages.stateActions'), { buttonId: b.id, compact: true, context: `${context} · ${tr('pages.stateN', [i + 1])}` }))),
+    b.states.length < 16 && h('button', { class: 'btn small', onclick: () => mutate(() => b.states.push(newState())) }, tr('pages.addState')),
+  ];
+}
+
+/** Sicherheitsabfrage und Bedingungen (erst anderen Button einschalten, Wert muss passen). */
+function safetySection(b) {
+  b.requires ??= { button: '', variable: '', equals: '', reset: false };
+  const r = b.requires;
+  const edit = (fn, key) => mutate(fn, { coalesce: key && `${b.id}:${key}`, detail: !key });
+  return [
+    h('h3', {}, tr('pages.safetyTitle')),
+    h('label', { class: 'switch-row' },
+      h('input', { type: 'checkbox', checked: !!b.confirm, onchange: (e) => mutate(() => (b.confirm = e.target.checked)) }), tr('pages.confirmPress')),
+    dynamicSelect({ key: 'requiresButton', label: tr('pages.requiresButton'), source: 'toggle-buttons' }, r.button, (v) => edit(() => (r.button = v === b.id ? '' : v))),
+    r.button && h('label', { class: 'switch-row' },
+      h('input', { type: 'checkbox', checked: !!r.reset, onchange: (e) => mutate(() => (r.reset = e.target.checked)) }), tr('pages.requiresReset')),
+    h('div', { class: 'row' },
+      h('label', { class: 'field' }, tr('pages.requiresValue'),
+        h('input', { value: r.variable, list: 'td-req-vars', maxlength: 40, placeholder: tr('pages.optional'), oninput: (e) => edit(() => (r.variable = e.target.value.trim()), 'reqVar') }),
+        variablesDatalist('td-req-vars')),
+      r.variable && h('label', { class: 'field' }, tr('pages.requiresEquals'),
+        h('input', { value: r.equals, maxlength: 200, placeholder: tr('pages.stateWhenPlaceholder'), oninput: (e) => edit(() => (r.equals = e.target.value), 'reqEq') }))),
+    h('p', { class: 'hint-text' }, tr('pages.requiresHint')),
+  ];
 }
 
 function sliderTab(b) {
