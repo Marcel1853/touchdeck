@@ -26,6 +26,8 @@ Date: 2026-10-20
       “Arm”, then “Send”); otherwise it is greyed out with a lock.
     - Hidden buttons: “Hidden at start” and the action “Show / hide button” (also for a few seconds).
     - Action “Set state of a button” (next, previous, number).
+    - “Show notification”: on the PC, on the deck or both. On the deck it appears on the device that
+      pressed (for events on all of them).
     - Feedback on the button: a short check mark when the actions worked (can be switched off).
     - Deck sleep: after some minutes dim, show a clock or go black; the first tap only wakes it. The
       app also lowers the brightness.

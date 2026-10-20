@@ -698,7 +698,20 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             none
         }
         "notify" => {
-            linux::notify(&fill(app, ctx, &p.s("title")), &fill(app, ctx, &p.s("body"))).await?;
+            let (title, body) = (fill(app, ctx, &p.s("title")), fill(app, ctx, &p.s("body")));
+            let target = p.or("target", "pc");
+            if target != "deck" {
+                linux::notify(&title, &body).await?;
+            }
+            if target == "pc" {
+                return none;
+            }
+            // Im Bedienfeld: beim Drücken auf dem Gerät, das gedrückt hat; sonst (Events) auf allen.
+            let text = [title.as_str(), body.as_str()].into_iter().filter(|t| !t.is_empty()).collect::<Vec<_>>().join(": ");
+            if ctx.opts.button_id.is_some() {
+                return Ok(Some(text));
+            }
+            app.toast_on_devices(&text);
             none
         }
         "http" => {

@@ -616,6 +616,8 @@ async function connect() {
       if (msg.pageId && msg.pageId !== currentPage) goTo(msg.pageId);
     } else if (msg.type === 'live') {
       if (state) updateLive(msg.values, msg.full !== false);
+    } else if (msg.type === 'toast') {
+      toast(msg.text);
     } else if (msg.type === 'pclock') {
       if (state) state.pcLocked = msg.locked;
       showPcLock(msg.locked);

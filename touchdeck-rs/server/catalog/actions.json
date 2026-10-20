@@ -284,6 +284,22 @@
    {
     "key": "body",
     "type": "textarea"
+   },
+   {
+    "key": "target",
+    "type": "select",
+    "default": "pc",
+    "options": [
+     {
+      "value": "pc"
+     },
+     {
+      "value": "deck"
+     },
+     {
+      "value": "both"
+     }
+    ]
    }
   ]
  },

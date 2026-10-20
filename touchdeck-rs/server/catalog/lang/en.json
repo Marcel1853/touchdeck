@@ -163,6 +163,14 @@
         },
         "body": {
           "label": "Text"
+        },
+        "target": {
+          "label": "Where to show",
+          "options": {
+            "pc": "on the PC",
+            "deck": "on the deck (phone, tablet)",
+            "both": "both"
+          }
         }
       }
     },

@@ -246,6 +246,11 @@ impl App {
         self.timers.ensure_ticker(self.clone(), refresh_timers, |a, name| a.events.fire(a, "timer_done", &json!({ "name": name, "Name": name })));
     }
 
+    /** Kurze Meldung in allen Bedienfeldern (z. B. aus Events, die kein Button ausgelöst hat). */
+    pub fn toast_on_devices(&self, text: &str) {
+        self.broadcast(Some(Role::Device), &json!({ "type": "toast", "text": text }));
+    }
+
     /** Alle Bedienfelder (Handy, Tablet, Vorschau) auf eine Seite wechseln lassen. */
     pub fn show_page_on_devices(&self, page_id: &str) {
         self.broadcast(Some(Role::Device), &json!({ "type": "goto", "pageId": page_id }));

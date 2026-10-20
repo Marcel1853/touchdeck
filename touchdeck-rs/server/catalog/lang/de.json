@@ -163,6 +163,14 @@
         },
         "body": {
           "label": "Text"
+        },
+        "target": {
+          "label": "Wo zeigen",
+          "options": {
+            "pc": "am PC",
+            "deck": "im Bedienfeld (Handy, Tablet)",
+            "both": "beides"
+          }
         }
       }
     },

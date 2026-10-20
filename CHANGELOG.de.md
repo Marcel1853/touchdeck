@@ -28,6 +28,8 @@ Datum: 2026-10-20
     - Versteckte Buttons: „Anfangs versteckt“ und die Aktion „Button zeigen / verstecken“ (auch nur
       für einige Sekunden).
     - Aktion „Zustand eines Buttons setzen“ (nächster, vorheriger, Nr.).
+    - „Benachrichtigung zeigen“: wahlweise am PC, im Bedienfeld oder beides. Im Bedienfeld erscheint
+      sie auf dem Gerät, auf dem gedrückt wurde (bei Events auf allen).
     - Rückmeldung am Button: kurzes Häkchen, wenn die Aktionen geklappt haben (abschaltbar).
     - Ruhezustand fürs Bedienfeld: nach einigen Minuten abdunkeln, Uhr oder schwarz zeigen; der
       erste Tipp weckt nur. In der App wird dabei auch die Helligkeit abgesenkt.
