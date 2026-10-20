@@ -1604,6 +1604,10 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         let mut t = tokio::time::interval(Duration::from_secs(1));
         loop {
             t.tick().await;
+            // Ohne verbundenes Gerät (oder Editor) misst niemand mit; die Lücke zeigt der Graph später als Pause.
+            if a.clients.lock().unwrap().is_empty() {
+                continue;
+            }
             a.graphs.sample(&a).await;
         }
     });

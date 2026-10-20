@@ -226,13 +226,23 @@ pub async fn usb_reverse(port: u16) -> Result<Vec<String>> {
     let list = run("adb", &["devices"]).await?;
     let devices: Vec<String> = list.lines().skip(1).filter_map(|l| l.split_once('\t')).filter(|(_, st)| st.trim() == "device").map(|(id, _)| id.trim().to_string()).collect();
     let spec = format!("tcp:{port}");
+    // Schon eingerichtete Geräte (mit Port) nicht jedes Mal neu prüfen: Steckt man ein Gerät ab und wieder an,
+    // fehlt es zwischendurch in der Liste und wird danach wie ein neues eingerichtet.
+    static DONE: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+    let mut done: Vec<String> = DONE.lock().unwrap().iter().filter(|k| devices.iter().any(|d| **k == format!("{d} {port}"))).cloned().collect();
     for d in &devices {
+        let key = format!("{d} {port}");
+        if done.contains(&key) {
+            continue;
+        }
         // Nur einrichten, wenn die Umleitung noch fehlt (adb reverse --list zeigt bestehende).
         let current = run("adb", &["-s", d, "reverse", "--list"]).await.unwrap_or_default();
         if !current.lines().any(|l| l.contains(&format!("{spec} {spec}"))) {
             run("adb", &["-s", d, "reverse", &spec, &spec]).await?;
         }
+        done.push(key);
     }
+    *DONE.lock().unwrap() = done;
     Ok(devices)
 }
 

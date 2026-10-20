@@ -93,10 +93,20 @@ pub fn games_as_options() -> Value {
 }
 
 /** (Spiele mit ausstehendem Update, Spiele, die gerade aktualisiert werden). */
+/** Liefert (Updates ausstehend, Updates laufen). 30 s zwischengespeichert: liest sonst alle Manifeste. */
 pub fn update_status() -> (Vec<String>, Vec<String>) {
+    type Cached = Option<(std::time::Instant, (Vec<String>, Vec<String>))>;
+    static CACHE: std::sync::Mutex<Cached> = std::sync::Mutex::new(None);
+    if let Some((at, v)) = CACHE.lock().unwrap().as_ref()
+        && at.elapsed() < std::time::Duration::from_secs(30)
+    {
+        return v.clone();
+    }
     let apps = all_apps();
     let names = |flag| apps.iter().filter(|a| a.flags & flag != 0).map(|a| a.name.clone()).collect();
-    (names(FLAG_UPDATE_REQUIRED), names(FLAG_UPDATE_RUNNING))
+    let v = (names(FLAG_UPDATE_REQUIRED), names(FLAG_UPDATE_RUNNING));
+    *CACHE.lock().unwrap() = Some((std::time::Instant::now(), v.clone()));
+    v
 }
 
 /** Coverbild aus dem Steam-Cache (neues Layout: Unterordner je Spiel, altes: appid_library_600x900.jpg). */
@@ -127,24 +137,33 @@ pub fn cover_image(appid: &str) -> Option<PathBuf> {
 }
 
 /** App-IDs der gerade laufenden Spiele (Steam startet sie über „reaper SteamLaunch AppId=…“). */
+/** Schon angesehene Prozesse: PID → Steam-Spiel (oder keins). Die Kommandozeile ändert sich nicht. */
+static SEEN: std::sync::Mutex<Option<HashMap<u32, Option<String>>>> = std::sync::Mutex::new(None);
+
 pub fn running_games() -> BTreeSet<String> {
     let mut ids = BTreeSet::new();
     let Ok(entries) = fs::read_dir("/proc") else { return ids };
+    let mut guard = SEEN.lock().unwrap();
+    let old = guard.take().unwrap_or_default();
+    let mut seen = HashMap::with_capacity(old.len());
     for e in entries.flatten() {
-        let pid = e.file_name();
-        if !pid.to_string_lossy().chars().all(|c| c.is_ascii_digit()) {
-            continue;
-        }
-        // Prozess bereits beendet oder fremder Benutzer: überspringen.
-        let Ok(cmd) = fs::read(e.path().join("cmdline")) else { continue };
-        let cmd = String::from_utf8_lossy(&cmd);
-        if let Some(rest) = cmd.split("SteamLaunch\0AppId=").nth(1) {
-            let id: String = rest.chars().take_while(char::is_ascii_digit).collect();
-            if !id.is_empty() {
-                ids.insert(id);
+        let Some(pid) = e.file_name().to_str().and_then(|p| p.parse::<u32>().ok()) else { continue };
+        // Nur neue Prozesse lesen; bekannte aus dem letzten Durchlauf übernehmen.
+        let game = match old.get(&pid) {
+            Some(g) => g.clone(),
+            None => {
+                // Prozess bereits beendet oder fremder Benutzer: überspringen.
+                let Ok(cmd) = fs::read(e.path().join("cmdline")) else { continue };
+                let cmd = String::from_utf8_lossy(&cmd);
+                cmd.split("SteamLaunch\0AppId=").nth(1).map(|rest| rest.chars().take_while(char::is_ascii_digit).collect::<String>()).filter(|id| !id.is_empty())
             }
+        };
+        if let Some(id) = &game {
+            ids.insert(id.clone());
         }
+        seen.insert(pid, game);
     }
+    *guard = Some(seen);
     ids
 }
 

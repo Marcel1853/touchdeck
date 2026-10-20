@@ -481,6 +481,9 @@ impl EventEngine {
         let now = steam::running_games();
         let before = self.state.lock().unwrap().running.replace(now.clone());
         let Some(before) = before else { return };
+        if before == now {
+            return;
+        }
         let games = steam::list_games();
         let name = |id: &str| games.iter().find(|(v, _)| v == id).map_or_else(|| id.to_string(), |(_, l)| l.clone());
         for id in now.difference(&before) {
