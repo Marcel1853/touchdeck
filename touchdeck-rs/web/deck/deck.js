@@ -137,7 +137,18 @@ function render() {
   setupGrid(grid, page);
   document.body.style.background = state.overrides?.pages?.[page.id]?.background ?? page.background;
   grid.replaceChildren(...page.buttons.map((b) => element(b, page)));
+  updateWebTimer();
 }
+
+// Im Hintergrund (App verlassen, Tab gewechselt, Bildschirm aus): beim PC abmelden, damit er keine
+// Live-Werte mehr abfragt und schickt. Beim Zurückkommen meldet render() die Seite wieder an.
+document.addEventListener('visibilitychange', () => {
+  if (ws?.readyState !== WebSocket.OPEN) return;
+  if (document.hidden) {
+    ws.send(JSON.stringify({ type: 'hidden' }));
+    announcedPage = null;
+  } else render();
+});
 
 /** Hinweis „Gerät quer halten“ beim Öffnen einer breiten Seite kurz zeigen, dann ausblenden. */
 let hintShownFor = null;
@@ -209,8 +220,18 @@ function updateOverrides(overrides) {
   if (page) document.body.style.background = overrides.pages?.[page.id]?.background ?? page.background;
 }
 
-/** Webseiten-Buttons mit „Neu laden alle n Sekunden“. */
-setInterval(() => {
+/** Webseiten-Buttons mit „Neu laden alle n Sekunden“: der Takt läuft nur, wenn die Seite welche hat. */
+let webTimer = null;
+function updateWebTimer() {
+  const needed = !!grid.querySelector('iframe.td-web[data-refresh]');
+  if (needed && !webTimer) webTimer = setInterval(refreshWebButtons, 1000);
+  else if (!needed && webTimer) {
+    clearInterval(webTimer);
+    webTimer = null;
+  }
+}
+
+function refreshWebButtons() {
   const now = Date.now();
   for (const f of grid.querySelectorAll('iframe.td-web[data-refresh]')) {
     const due = Number(f.dataset.loaded ?? now) + Number(f.dataset.refresh) * 1000;
@@ -220,7 +241,7 @@ setInterval(() => {
       f.src = f.src;
     }
   }
-}, 1000);
+}
 
 /** Für die Zurück-Taste der Android-App: eine Seite zurück, falls möglich. */
 window.deckBack = () => {

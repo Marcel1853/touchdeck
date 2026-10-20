@@ -162,6 +162,19 @@ class DeckActivity : Activity() {
         finish()
     }
 
+    // Im Hintergrund: Seite gilt als versteckt (Animationen aus); das Bedienfeld meldet sich dann
+    // beim PC ab, damit er keine Live-Werte mehr schickt. Kein pauseTimers(), sonst käme die Abmeldung
+    // erst beim Zurückkommen an.
+    override fun onPause() {
+        if (::web.isInitialized) web.onPause()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::web.isInitialized) web.onResume()
+    }
+
     override fun onDestroy() {
         main.removeCallbacks(retry)
         if (::web.isInitialized) web.destroy()

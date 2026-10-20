@@ -93,6 +93,8 @@ struct Client {
     /// Zuletzt an dieses Gerät geschickte Live-Werte (für welche Seite), damit nur Änderungen rausgehen.
     sent_page: Option<String>,
     sent: serde_json::Map<String, Value>,
+    /// Seite, die vor dem Wechsel in den Hintergrund angezeigt wurde (kein neues „Seite geöffnet“ beim Zurückkommen).
+    paused: Option<String>,
     /// Für die Statusleiste: Adresse und Name, den das Gerät nach dem Verbinden meldet.
     ip: String,
     name: String,
@@ -1280,7 +1282,7 @@ async fn ws_connection(app: Arc<App>, socket: WebSocket, role: Role, ip: String)
     let (mut sink, mut stream) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
     let id = app.next_client.fetch_add(1, Ordering::Relaxed);
-    app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None, sent_page: None, sent: serde_json::Map::new(), ip: ip.clone(), name: String::new() });
+    app.clients.lock().unwrap().insert(id, Client { role, tx: tx.clone(), viewing: None, paused: None, sent_page: None, sent: serde_json::Map::new(), ip: ip.clone(), name: String::new() });
     if role == Role::Device {
         app.log.info(t!("server.device"), t!("server.connected", ip));
         app.events.fire(&app, "device", &json!({ "state": "connected", "Gerät": ip }));
@@ -1373,9 +1375,19 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
                 c.name = name.trim().to_string();
             }
         }
+        Some("hidden") => {
+            // Bedienfeld im Hintergrund: keine Live-Werte mehr abfragen und schicken.
+            if let Some(c) = app.clients.lock().unwrap().get_mut(&id) {
+                c.paused = c.viewing.take();
+                c.sent_page = None;
+            }
+        }
         Some("view") if msg["pageId"].is_string() => {
             let steam = app.store.lock().unwrap().page(&page).is_some_and(|p| p.template == "steam");
-            let previous = app.clients.lock().unwrap().get_mut(&id).and_then(|c| c.viewing.replace(page.clone()));
+            let previous = app.clients.lock().unwrap().get_mut(&id).and_then(|c| {
+                let paused = c.paused.take();
+                c.viewing.replace(page.clone()).or(paused)
+            });
             if previous.as_deref() != Some(page.as_str()) {
                 if let Some(old) = previous {
                     fire_page_view(app, &old, "leave");

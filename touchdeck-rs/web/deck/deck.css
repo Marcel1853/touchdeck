@@ -134,7 +134,9 @@ body.hide-labels .td-title { display: none; }
   backdrop-filter: blur(4px);
   transition: opacity 0.25s;
 }
-#overlay.hidden { opacity: 0; pointer-events: none; }
+/* Ganz ausblenden (nicht nur durchsichtig), damit Weichzeichner und Spinner nicht dauernd mitlaufen. */
+#overlay.hidden { opacity: 0; pointer-events: none; visibility: hidden; transition: opacity 0.25s, visibility 0s 0.25s; }
+#overlay.hidden .spinner { animation: none; }
 
 .overlay-box {
   display: grid;
