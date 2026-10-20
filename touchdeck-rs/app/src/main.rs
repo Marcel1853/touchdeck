@@ -171,6 +171,15 @@ fn launch_command() -> String {
     format!("\"{exe}\" --hidden")
 }
 
+/** Laufender Server, damit beim Beenden gesammelte Änderungen noch gespeichert werden. */
+static SERVER: std::sync::OnceLock<std::sync::Arc<server::App>> = std::sync::OnceLock::new();
+
+fn save_before_exit() {
+    if let Some(app) = SERVER.get() {
+        app.store.lock().unwrap().flush();
+    }
+}
+
 /** Neu starten: dieselbe Datei noch einmal starten (beim AppImage die AppImage-Datei) und dieses Programm beenden. */
 fn restart(app: &AppHandle) {
     let program = std::env::var_os("APPIMAGE").map(PathBuf::from).or_else(|| std::env::current_exe().ok());
@@ -185,6 +194,7 @@ fn restart(app: &AppHandle) {
     if let Err(err) = cmd.spawn() {
         return eprintln!("Neustart: {err}");
     }
+    save_before_exit();
     QUITTING.store(true, Ordering::Relaxed);
     app.exit(0);
 }
@@ -290,6 +300,7 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
             }
             "restart" => restart(app),
             "quit" => {
+                save_before_exit();
                 QUITTING.store(true, Ordering::Relaxed);
                 app.exit(0);
             }
@@ -333,7 +344,11 @@ fn main() {
                     });
                 })),
             };
-            if let Err(err) = tauri::async_runtime::block_on(server::start(store, opts)) {
+            let started = tauri::async_runtime::block_on(server::start(store, opts));
+            if let Ok(app) = &started {
+                let _ = SERVER.set(app.clone());
+            }
+            if let Err(err) = started {
                 let in_use = err.downcast_ref::<std::io::Error>().is_some_and(|e| e.kind() == std::io::ErrorKind::AddrInUse);
                 let msg = if in_use {
                     t!("desktop.portInUse", port())

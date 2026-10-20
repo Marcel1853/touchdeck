@@ -1415,6 +1415,30 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         }
     }));
 
+    // Gesammelte Änderungen (Werte, Umschalter, Aussehen) 1,5 s nach der ersten Änderung schreiben.
+    let save = app.store.lock().unwrap().save_signal();
+    let a = app.clone();
+    tokio::spawn(async move {
+        loop {
+            save.notified().await;
+            tokio::time::sleep(Duration::from_millis(1500)).await;
+            a.store.lock().unwrap().flush();
+        }
+    });
+    // Beim Abmelden/Herunterfahren (SIGTERM, SIGHUP) und Strg+C: Ungeschriebenes noch speichern.
+    let a = app.clone();
+    tokio::spawn(async move {
+        use tokio::signal::unix::{SignalKind, signal};
+        let (Ok(mut term), Ok(mut hup), Ok(mut int)) = (signal(SignalKind::terminate()), signal(SignalKind::hangup()), signal(SignalKind::interrupt())) else { return };
+        tokio::select! {
+            _ = term.recv() => {}
+            _ = hup.recv() => {}
+            _ = int.recv() => {}
+        }
+        a.store.lock().unwrap().flush();
+        std::process::exit(0);
+    });
+
     // Änderungen an alle Verbindungen weitergeben.
     let mut changes = app.store.lock().unwrap().subscribe();
     let a = app.clone();

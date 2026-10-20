@@ -5,6 +5,7 @@ use std::fs;
 use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use indexmap::IndexMap;
@@ -1004,12 +1005,16 @@ pub struct Store {
     changes: broadcast::Sender<Change>,
     /// Wird bei jeder Änderung sofort aufgerufen (z. B. für Events „Wert ändert sich“). Darf den Speicher nicht sperren.
     hook: std::sync::OnceLock<ChangeHook>,
+    /// Werte, Umschalter und optische Änderungen werden gesammelt gespeichert (siehe `flush`).
+    dirty: bool,
+    save_soon: Arc<tokio::sync::Notify>,
 }
 
 fn write_json(file: &Path, value: &impl Serialize) -> Result<()> {
     let tmp = file.with_extension("json.tmp");
     let mut f = fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(&tmp)?;
-    f.write_all(serde_json::to_string_pretty(value)?.as_bytes())?;
+    // Kompakt: halb so groß wie formatiert, schneller geschrieben (Export und Sicherungen bleiben lesbar).
+    f.write_all(&serde_json::to_vec(value)?)?;
     f.sync_all()?;
     fs::rename(&tmp, file)?;
     Ok(())
@@ -1031,6 +1036,8 @@ impl Store {
             revision: 1,
             changes: broadcast::channel(256).0,
             hook: std::sync::OnceLock::new(),
+            dirty: false,
+            save_soon: Arc::new(tokio::sync::Notify::new()),
         })
     }
 
@@ -1054,9 +1061,32 @@ impl Store {
         let _ = self.hook.set(f);
     }
 
-    fn changed(&self, what: &'static str, detail: Value) {
+    /** Signal für den Speicher-Task: es gibt gesammelte Änderungen (Werte, Umschalter, Aussehen). */
+    pub fn save_signal(&self) -> Arc<tokio::sync::Notify> {
+        self.save_soon.clone()
+    }
+
+    /** Gesammelte Änderungen jetzt schreiben (Speicher-Task, Beenden, Neustart). */
+    pub fn flush(&mut self) {
+        if self.dirty {
+            self.save_now();
+        }
+    }
+
+    fn save_now(&mut self) {
+        self.dirty = false;
         if let Err(err) = write_json(&self.file, &self.config) {
             eprintln!("{}", t!("store.saveFailed", format!("{err:#}")));
+        }
+    }
+
+    fn changed(&mut self, what: &'static str, detail: Value) {
+        // Laufzeit-Zustand ändert sich oft (Plugins, Zähler): nicht jedes Mal die ganze Datei schreiben.
+        if matches!(what, "variables" | "toggles" | "overrides") {
+            self.dirty = true;
+            self.save_soon.notify_one();
+        } else {
+            self.save_now();
         }
         remember_web_origins(&self.config);
         let change = Change { what, detail };
@@ -1419,6 +1449,10 @@ mod tests {
         let mut store = Store::open(&dir).unwrap();
         store.set_variable("Zähler", &json!(5)).unwrap();
         store.set_settings(&json!({ "pin": "1234" }));
+        // Werte allein werden gesammelt geschrieben.
+        store.set_variable("Später", &json!(1)).unwrap();
+        assert!(Store::open(&dir).unwrap().config.variables.get("Später").is_none());
+        store.flush();
         let again = Store::open(&dir).unwrap();
         assert_eq!(again.config.variables["Zähler"], json!("5"));
         assert_eq!(again.settings().pin, "1234");

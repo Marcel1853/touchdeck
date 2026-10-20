@@ -121,5 +121,6 @@ async fn main() {
     if args.open {
         let _ = linux::open_with_default(&editor_url);
     }
-    let _ = tokio::signal::ctrl_c().await;
+    // Strg+C und SIGTERM fängt der Server selbst ab (speichert noch und beendet).
+    std::future::pending::<()>().await;
 }
