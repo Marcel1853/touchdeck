@@ -6,7 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.NFC" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
 
     <!-- TouchDeck spricht im eigenen WLAN unverschlüsselt per http mit dem PC. -->
     <application
@@ -35,6 +37,65 @@
             android:screenOrientation="fullUser"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:theme="@style/Theme.TouchDeck.Fullscreen" />
+
+        <!-- Abkürzungen: Buttons am PC auslösen, ohne das Bedienfeld zu öffnen. -->
+        <receiver android:name=".ButtonsWidget" android:exported="false" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />
+        </receiver>
+        <receiver android:name=".PressReceiver" android:exported="false" />
+
+        <activity
+            android:name=".WidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.TouchDeck.Dialog"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".ButtonTileService"
+            android:exported="true"
+            android:label="@string/tile_label"
+            android:icon="@drawable/ic_tile"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <activity
+            android:name=".TileConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TouchDeck.Dialog"
+            android:excludeFromRecents="true" />
+
+        <!-- Links und NFC-Aufkleber: touchdeck://press?server=…&page=…&button=… -->
+        <activity
+            android:name=".PressActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="touchdeck" android:host="press" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="touchdeck" android:host="press" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".NfcWriteActivity"
+            android:exported="false"
+            android:screenOrientation="fullUser" />
 
         <!-- QR-Scanner darf sich mitdrehen. -->
         <activity

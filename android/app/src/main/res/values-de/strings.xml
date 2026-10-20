@@ -43,4 +43,26 @@
     <string name="pairing_invalid">Die Kopplung mit „%1$s“ gilt nicht mehr (z. B. neuer Schlüssel am PC). Bitte neu verbinden.</string>
     <string name="offline">„%1$s“ ist gerade nicht erreichbar.\nLäuft TouchDeck am PC, und ist das Handy im selben WLAN?\n\nNeuer Versuch in wenigen Sekunden …</string>
     <string name="connect_usb">🔌  Per USB-Kabel verbinden</string>
+    <string name="widget_empty">Tippen, um Buttons zu wählen</string>
+    <string name="widget_description">Buttons auf dem Startbildschirm, die direkt am PC auslösen</string>
+    <string name="remote_not_paired">Verbinde die App zuerst mit einem PC.</string>
+    <string name="remote_unreachable">%1$s ist nicht erreichbar.</string>
+    <string name="remote_button">Button</string>
+    <string name="remote_choose_pc">Welcher PC?</string>
+    <string name="remote_choose_page">Welche Seite?</string>
+    <string name="remote_choose_button">Welcher Button?</string>
+    <string name="remote_choose_buttons">Bis zu %1$d Buttons</string>
+    <string name="tile_label">TouchDeck-Button</string>
+    <string name="tile_choose">Button wählen</string>
+    <string name="tile_set">Schnellzugriff: %1$s</string>
+    <string name="nfc_missing">Dieses Gerät hat kein NFC.</string>
+    <string name="nfc_choose">Button wählen …</string>
+    <string name="nfc_hold">Halte den NFC-Aufkleber an die Rückseite des Handys.\n\nEr löst dann „%1$s“ aus.</string>
+    <string name="nfc_off">NFC ist aus. Schalte es in den Android-Einstellungen ein.</string>
+    <string name="nfc_written">NFC-Aufkleber beschrieben: %1$s</string>
+    <string name="nfc_failed">Schreiben hat nicht geklappt. Aufkleber ruhig halten und noch einmal versuchen.</string>
+    <string name="shortcut_nfc">📇  NFC-Aufkleber beschreiben</string>
+    <string name="shortcut_tile">⚡  Schnellzugriff einrichten</string>
+    <string name="shortcuts_title">Abkürzungen</string>
+    <string name="shortcuts_hint">Buttons auslösen, ohne das Bedienfeld zu öffnen: Widget auf dem Startbildschirm (Startbildschirm lange drücken › Widgets › TouchDeck), Schnellzugriff-Kachel oder NFC-Aufkleber.</string>
 </resources>

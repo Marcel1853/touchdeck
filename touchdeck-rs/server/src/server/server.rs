@@ -666,11 +666,12 @@ fn qr_svg(text: &str) -> Option<String> {
 const ICON_TYPES: [(&str, &str); 5] = [("image/png", "png"), ("image/jpeg", "jpg"), ("image/gif", "gif"), ("image/webp", "webp"), ("image/svg+xml", "svg")];
 
 // Diese Routen darf auch ein gekoppeltes Handy aufrufen, alles andere nur der lokale Editor.
-const DEVICE_ROUTES: [&str; 2] = ["GET /api/state", "POST /api/press"];
+const DEVICE_ROUTES: [&str; 3] = ["GET /api/state", "POST /api/press", "GET /api/buttons"];
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 61] = [
+const ROUTES: [&str; 62] = [
+    "GET /api/buttons",
     "GET /api/plugins",
     "GET /api/plugins/config",
     "POST /api/plugins/advanced",
@@ -778,6 +779,19 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
                 app.obs.reset().await;
             }
             Ok(r)
+        }
+        // Leichte Liste für Widget, Schnellzugriff und NFC der App: Seiten mit Buttons (ID, Titel, Emoji).
+        "GET /api/buttons" => {
+            let store = app.store.lock().unwrap();
+            Ok(json!(store.config.pages.iter().map(|p| json!({
+                "id": p.id,
+                "name": p.name,
+                "buttons": p.buttons.iter().filter(|b| !["display", "web", "slider"].contains(&b.mode.as_str())).map(|b| json!({
+                    "id": b.id,
+                    "title": b.title,
+                    "emoji": if b.icon.kind == "emoji" { b.icon.value.clone() } else { String::new() },
+                })).collect::<Vec<_>>(),
+            })).filter(|p| p["buttons"].as_array().is_some_and(|b| !b.is_empty())).collect::<Vec<_>>()))
         }
         "POST /api/press" => Ok(press(app, str_of(&body, "pageId"), str_of(&body, "buttonId"), body["double"] == true).await),
         "POST /api/test-actions" => {

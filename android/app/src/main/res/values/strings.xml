@@ -43,4 +43,26 @@
     <string name="pairing_invalid">The pairing with “%1$s” is no longer valid (e.g. new key on the PC). Please connect again.</string>
     <string name="offline">“%1$s” cannot be reached right now.\nIs TouchDeck running on the PC, and is the phone on the same Wi-Fi?\n\nTrying again in a few seconds …</string>
     <string name="connect_usb">🔌  Connect via USB cable</string>
+    <string name="widget_empty">Tap to choose buttons</string>
+    <string name="widget_description">Buttons on your home screen that trigger directly on the PC</string>
+    <string name="remote_not_paired">Connect the app with a PC first.</string>
+    <string name="remote_unreachable">%1$s is not reachable.</string>
+    <string name="remote_button">Button</string>
+    <string name="remote_choose_pc">Which PC?</string>
+    <string name="remote_choose_page">Which page?</string>
+    <string name="remote_choose_button">Which button?</string>
+    <string name="remote_choose_buttons">Up to %1$d buttons</string>
+    <string name="tile_label">TouchDeck button</string>
+    <string name="tile_choose">Choose button</string>
+    <string name="tile_set">Quick settings tile: %1$s</string>
+    <string name="nfc_missing">This device has no NFC.</string>
+    <string name="nfc_choose">Choose a button …</string>
+    <string name="nfc_hold">Hold the NFC sticker to the back of the phone.\n\nIt will trigger “%1$s”.</string>
+    <string name="nfc_off">NFC is switched off. Switch it on in the Android settings.</string>
+    <string name="nfc_written">NFC sticker written: %1$s</string>
+    <string name="nfc_failed">Could not write. Hold the sticker still and try again.</string>
+    <string name="shortcut_nfc">📇  Write NFC sticker</string>
+    <string name="shortcut_tile">⚡  Quick settings tile</string>
+    <string name="shortcuts_title">Shortcuts</string>
+    <string name="shortcuts_hint">Trigger buttons without opening the deck: widget on the home screen (long-press the home screen › Widgets › TouchDeck), quick settings tile or NFC sticker.</string>
 </resources>

@@ -12,4 +12,25 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
+    <!-- Ein Button im Startbildschirm-Widget. -->
+    <style name="WidgetSlot">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/widget_slot</item>
+        <item name="android:textColor">#E8EAF0</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:padding">4dp</item>
+    </style>
+    <!-- Unsichtbare Aktivitäten (Link/NFC auslösen, Auswahl-Dialoge). -->
+    <style name="Theme.TouchDeck.Dialog" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

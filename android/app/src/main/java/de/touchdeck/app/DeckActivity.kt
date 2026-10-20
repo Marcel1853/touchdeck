@@ -234,6 +234,16 @@ class DeckActivity : Activity() {
             }
         }
 
+        /** Ruhezustand des Bedienfelds: Bildschirm fast dunkel bzw. wieder normale Helligkeit. */
+        @JavascriptInterface
+        fun setDim(dim: Boolean) {
+            runOnUiThread {
+                window.attributes = window.attributes.apply {
+                    screenBrightness = if (dim) 0.02f else android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                }
+            }
+        }
+
         /** Gerätename (wie in den Android-Einstellungen) für die Statusleiste am PC. */
         @JavascriptInterface
         fun deviceName(): String =

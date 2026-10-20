@@ -121,6 +121,15 @@ class ConnectActivity : Activity() {
             val usb = prefs.servers.find { it.host == "127.0.0.1" } ?: Server("127.0.0.1", Prefs.DEFAULT_PORT, name = "USB")
             if (usb.token.isNotEmpty()) connectSaved(usb) else pair(usb)
         }, fullWidth(top = 10))
+        // Abkürzungen: Buttons ohne Bedienfeld auslösen (nur sinnvoll mit gekoppeltem PC).
+        if (prefs.servers.any { it.isPaired }) {
+            column.addView(text(getString(R.string.shortcuts_title), 13f, Ui.MUTED, bold = true).apply { setPadding(0, dp(22), 0, dp(6)) })
+            column.addView(text(getString(R.string.shortcuts_hint), 13f, Ui.MUTED).apply { setPadding(0, 0, 0, dp(10)) })
+            column.addView(button(getString(R.string.shortcut_tile)) { startActivity(Intent(this, TileConfigActivity::class.java)) }, fullWidth())
+            if (android.nfc.NfcAdapter.getDefaultAdapter(this) != null) {
+                column.addView(button(getString(R.string.shortcut_nfc)) { startActivity(Intent(this, NfcWriteActivity::class.java)) }, fullWidth(top = 10))
+            }
+        }
         column.addView(text(getString(R.string.where_on_pc), 13f, Ui.MUTED).apply {
             setPadding(0, dp(18), 0, 0)
         })
