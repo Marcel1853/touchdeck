@@ -78,6 +78,52 @@ pub fn command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
     c
 }
 
+/**
+ * Meldet Änderungen am Ton (Lautstärke, stumm, Standardgerät) über ein dauerhaftes `pactl subscribe`, statt
+ * alle paar Sekunden nachzufragen. None, wenn pactl fehlt.
+ */
+pub struct AudioWatch {
+    lines: tokio::io::Lines<tokio::io::BufReader<tokio::process::ChildStdout>>,
+    _child: tokio::process::Child,
+}
+
+pub fn audio_watch() -> Option<AudioWatch> {
+    use tokio::io::AsyncBufReadExt;
+    let mut cmd = tokio::process::Command::from(command("pactl"));
+    // Englische Ausgabe erzwingen, sonst heißt es „Ereignis »ändern« auf Quelle“.
+    cmd.arg("subscribe").env("LC_ALL", "C").stdin(std::process::Stdio::null()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::null()).kill_on_drop(true);
+    // Endet TouchDeck (auch hart, z. B. beim Neustart), soll pactl nicht verwaist weiterlaufen.
+    // SAFETY: prctl ist zwischen fork und exec erlaubt (async-signal-safe).
+    unsafe {
+        cmd.pre_exec(|| {
+            libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM);
+            Ok(())
+        });
+    }
+    let mut child = cmd.spawn().ok()?;
+    let out = child.stdout.take()?;
+    Some(AudioWatch { lines: tokio::io::BufReader::new(out).lines(), _child: child })
+}
+
+impl AudioWatch {
+    /**
+     * Wartet auf das nächste Ereignis an Sink, Source oder Server (Standardgerät) und sammelt kurz alle
+     * folgenden ein (ein Lautstärke-Wechsel kommt oft als mehrere Zeilen). false, wenn pactl beendet ist.
+     */
+    pub async fn changed(&mut self) -> bool {
+        loop {
+            match self.lines.next_line().await {
+                Ok(Some(line)) if [" on sink #", " on source #", " on server"].iter().any(|k| line.contains(k)) => break,
+                Ok(Some(_)) => continue,
+                _ => return false,
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+        while let Ok(Ok(Some(_))) = tokio::time::timeout(std::time::Duration::ZERO, self.lines.next_line()).await {}
+        true
+    }
+}
+
 fn not_installed(cmd: &str, err: std::io::Error) -> anyhow::Error {
     if err.kind() == std::io::ErrorKind::NotFound { anyhow!(t!("system.programIsNotInstalled", cmd)) } else { anyhow!("{cmd}: {err}") }
 }

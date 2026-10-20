@@ -297,11 +297,8 @@ impl EventEngine {
         if has("audio_output") {
             let a = app.clone();
             tasks.push(tokio::spawn(async move {
-                let mut t = tokio::time::interval(Duration::from_secs(4));
-                t.tick().await;
-                loop {
-                    t.tick().await;
-                    let Ok(devices) = linux::audio_devices(true).await else { continue };
+                let check = |a: Arc<App>| async move {
+                    let Ok(devices) = linux::audio_devices(true).await else { return };
                     let sink = devices.into_iter().find(|d| d.is_default).map(|d| d.value);
                     let before = std::mem::replace(&mut a.events.state.lock().unwrap().sink, sink.clone());
                     if let (Some(b), Some(s)) = (before, sink)
@@ -309,15 +306,15 @@ impl EventEngine {
                     {
                         a.events.fire(&a, "audio_output", &json!({ "device": s, "Gerät": s }));
                     }
-                }
+                };
+                check(a.clone()).await;
+                wait_audio(Duration::from_secs(4), || check(a.clone())).await;
             }));
         }
         if has("audio_mute") {
             let a = app.clone();
             tasks.push(tokio::spawn(async move {
-                let mut t = tokio::time::interval(Duration::from_secs(2));
-                loop {
-                    t.tick().await;
+                let check = |a: Arc<App>| async move {
                     for (target, dev) in [("output", linux::SINK), ("input", linux::SOURCE)] {
                         let Ok(v) = linux::get_volume(dev).await else { continue };
                         let before = {
@@ -331,7 +328,9 @@ impl EventEngine {
                             a.events.fire(&a, "audio_mute", &json!({ "target": target, "state": state, "Status": label }));
                         }
                     }
-                }
+                };
+                check(a.clone()).await;
+                wait_audio(Duration::from_secs(2), || check(a.clone())).await;
             }));
         }
         if has("app_focus") {
@@ -559,6 +558,25 @@ async fn on_obs(app: &Arc<App>, kind: &str, d: &Value) -> anyhow::Result<()> {
         _ => {}
     }
     Ok(())
+}
+
+/**
+ * Ruft `check` bei jeder Änderung am Ton auf (pactl subscribe). Ohne pactl – oder wenn es endet – wie
+ * früher in festen Abständen (`every`); pactl wird jede Minute erneut versucht.
+ */
+async fn wait_audio<F: std::future::Future<Output = ()>>(every: Duration, check: impl Fn() -> F) {
+    loop {
+        if let Some(mut watch) = linux::audio_watch() {
+            while watch.changed().await {
+                check().await;
+            }
+        }
+        let until = tokio::time::Instant::now() + Duration::from_secs(60);
+        while tokio::time::Instant::now() < until {
+            tokio::time::sleep(every).await;
+            check().await;
+        }
+    }
 }
 
 #[cfg(test)]
