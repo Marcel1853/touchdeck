@@ -43,7 +43,10 @@
   <div id="page-menu" hidden><div class="menu-box" id="page-menu-list"></div></div>
   <div id="toast"></div>
   <!-- Ruhezustand: abdunkeln, Uhr oder schwarz; der erste Tipp weckt nur. -->
-  <div id="sleep" hidden><div id="sleep-clock"></div></div>
+  <div id="sleep" hidden>
+    <div id="saver-box"><div id="sleep-clock"></div><div id="sleep-date"></div></div>
+    <div id="saver-buttons" hidden></div>
+  </div>
   <!-- PC gesperrt: Bedienfeld gesperrt, bis der PC entsperrt ist. -->
   <div id="pclock" hidden><div class="overlay-box"><div class="pclock-icon">🔒</div><div data-i18n="deck.pcLocked">PC gesperrt</div></div></div>
   <script type="module" src="/shared/boot.js" data-main="/deck/deck.js"></script>

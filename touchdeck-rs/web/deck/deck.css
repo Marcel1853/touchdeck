@@ -276,7 +276,7 @@ body.with-footer #foot {
   100% { transform: scale(1); opacity: 0; }
 }
 
-/* ---------- Ruhezustand ---------- */
+/* ---------- Ruhezustand und Bildschirmschoner ---------- */
 #sleep {
   position: fixed;
   inset: 0;
@@ -284,13 +284,39 @@ body.with-footer #foot {
   display: grid;
   place-items: center;
   background: rgb(0 0 0 / 0.78);
-  transition: opacity 0.6s;
+  --clock: #c9cfdc;
 }
 #sleep[hidden] { display: none; }
-#sleep.mode-black { background: #000; }
-#sleep.mode-clock { background: #000; }
-#sleep-clock { display: none; color: #c9cfdc; font-size: min(26vw, 40vh); font-weight: 200; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
-#sleep.mode-clock #sleep-clock { display: block; }
+#sleep.mode-black, #sleep.mode-clock { background: #000; }
+#saver-box { display: none; text-align: center; transition: transform 2s ease; }
+#sleep.mode-clock #saver-box { display: block; }
+#sleep-clock { color: var(--clock); font-size: min(24vw, 36vh); line-height: 1; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+#sleep.style-digital #sleep-clock { font-weight: 200; }
+#sleep.style-bold #sleep-clock { font-weight: 800; }
+#sleep-date { margin-top: 2vh; color: var(--clock); opacity: 0.6; font-size: min(4.5vw, 5vh); font-weight: 300; }
+/* Analoge Uhr: Zifferblatt nur aus Strichen, Zeiger in der Uhrfarbe. */
+#sleep-clock svg.analog { width: min(60vw, 60vh); height: auto; display: block; margin: 0 auto; }
+#sleep-clock svg.analog circle:first-child { fill: none; stroke: var(--clock); stroke-opacity: 0.25; stroke-width: 1; }
+#sleep-clock svg.analog .ticks line { stroke: var(--clock); stroke-width: 1.6; stroke-linecap: round; opacity: 0.7; }
+#sleep-clock svg.analog .hour { stroke: var(--clock); stroke-width: 4; stroke-linecap: round; }
+#sleep-clock svg.analog .minute { stroke: var(--clock); stroke-width: 2.4; stroke-linecap: round; }
+#sleep-clock svg.analog .pin { fill: var(--clock); }
+
+/* Abkürzungen: erscheinen nach dem ersten Tipp unten, gedämpft, damit der Schoner ruhig bleibt. */
+#saver-buttons {
+  position: absolute;
+  left: 50%;
+  bottom: 5vh;
+  transform: translateX(-50%);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(16vw, 18vh);
+  gap: 2vw;
+  opacity: 0.9;
+}
+#saver-buttons[hidden] { display: none; }
+#saver-buttons .td-btn { position: relative; aspect-ratio: 1; }
+#sleep.reveal #saver-box { opacity: 0.45; }
 
 /* ---------- PC gesperrt ---------- */
 #pclock {

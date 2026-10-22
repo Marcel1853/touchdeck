@@ -784,6 +784,26 @@ pub struct DeckSettings {
     /// PC gesperrt → Bedienfeld gesperrt, bis der PC entsperrt ist.
     #[serde(default)]
     pub lock_with_pc: bool,
+    /// Bildschirmschoner-Uhr: digital (dünn), bold (kräftig) oder analog.
+    #[serde(default = "default_clock_style")]
+    pub clock_style: String,
+    /// Farbe der Uhr (#rrggbb) oder „system“ (Akzentfarbe von Android in der App).
+    #[serde(default = "default_clock_color")]
+    pub clock_color: String,
+    /// Datum unter der Uhr zeigen.
+    #[serde(default = "yes")]
+    pub clock_date: bool,
+    /// Bis zu vier Buttons, die auf dem Bildschirmschoner erscheinen (erster Tipp oder Bewegung).
+    #[serde(default)]
+    pub saver_buttons: Vec<String>,
+}
+
+fn default_clock_style() -> String {
+    "digital".into()
+}
+
+fn default_clock_color() -> String {
+    "#c9cfdc".into()
 }
 
 fn default_sleep_mode() -> String {
@@ -911,7 +931,7 @@ fn default_settings(start_page: &str) -> Settings {
         public_host: String::new(),
         usb: false,
         pin: String::new(),
-        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false },
+        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false, clock_style: default_clock_style(), clock_color: default_clock_color(), clock_date: true, saver_buttons: Vec::new() },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
         twitch: TwitchSettings {
             client_id: String::new(),
@@ -1335,6 +1355,18 @@ impl Store {
             }
             if let Some(b) = d["lockWithPc"].as_bool() {
                 s.deck.lock_with_pc = b;
+            }
+            if let Some(c) = d["clockStyle"].as_str().filter(|c| ["digital", "bold", "analog"].contains(c)) {
+                s.deck.clock_style = c.into();
+            }
+            if let Some(c) = d["clockColor"].as_str().filter(|c| *c == "system" || (c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit()))) {
+                s.deck.clock_color = c.into();
+            }
+            if let Some(b) = d["clockDate"].as_bool() {
+                s.deck.clock_date = b;
+            }
+            if let Some(l) = d["saverButtons"].as_array() {
+                s.deck.saver_buttons = l.iter().filter_map(Value::as_str).filter(|id| !id.is_empty() && id.len() <= 40).take(4).map(String::from).collect();
             }
         }
         let o = &patch["obs"];

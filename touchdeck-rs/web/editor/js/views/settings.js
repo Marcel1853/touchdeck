@@ -2,6 +2,7 @@
 import { t as tr } from '/shared/i18n.js';
 import { h, api, toast, ask, segmented, saveFile } from '../dom.js';
 import { S, render, loadState } from '../state.js';
+import { dynamicSelect } from '../actions-ui.js';
 import { openPairing } from '../main.js';
 
 const SECTIONS = [
@@ -171,6 +172,26 @@ function deck() {
       h('p', { class: 'hint-text' }, tr('settings.sleepHint')),
       check(tr('settings.lockWithPc'), !!d.lockWithPc, (v) => set('lockWithPc', v)),
       h('p', { class: 'hint-text' }, tr('settings.lockWithPcHint'))),
+    card(
+      h('h3', {}, tr('settings.saverTitle')),
+      h('p', { class: 'hint-text' }, tr('settings.saverHint')),
+      h('div', { class: 'row' },
+        h('label', { class: 'field' }, tr('settings.clockStyle'),
+          h('select', { value: d.clockStyle ?? 'digital', onchange: (e) => set('clockStyle', e.target.value) },
+            [['digital', tr('settings.clockDigital')], ['bold', tr('settings.clockBold')], ['analog', tr('settings.clockAnalog')]].map(([v, l]) => h('option', { value: v }, l)))),
+        h('div', { class: 'field' }, tr('settings.clockColor'),
+          h('div', { class: 'colors' },
+            d.clockColor !== 'system' && h('input', { type: 'color', value: d.clockColor || '#c9cfdc', onchange: (e) => set('clockColor', e.target.value) }),
+            h('label', { class: 'switch-row compact' },
+              h('input', { type: 'checkbox', checked: d.clockColor === 'system', onchange: (e) => set('clockColor', e.target.checked ? 'system' : '#c9cfdc') }), tr('settings.clockSystemColor'))))),
+      check(tr('settings.clockDate'), d.clockDate !== false, (v) => set('clockDate', v)),
+      h('h3', {}, tr('settings.saverButtons')),
+      h('p', { class: 'hint-text' }, tr('settings.saverButtonsHint')),
+      ...[0, 1, 2, 3].map((i) => dynamicSelect({ key: `saver${i}`, label: tr('settings.saverButtonN', [i + 1]), source: 'buttons' }, (d.saverButtons ?? [])[i] ?? '', (v) => {
+        const list = [...(d.saverButtons ?? [])];
+        list[i] = v === 'self' ? '' : v;
+        set('saverButtons', list.filter(Boolean));
+      }))),
   ];
 }
 

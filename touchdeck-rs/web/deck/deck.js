@@ -82,8 +82,8 @@ function click() {
 const vibrate = (ms) => (app ? app.vibrate(ms) : navigator.vibrate?.(ms));
 
 const feedback = (ms = 15) => {
-  if (state.deck.vibrate) vibrate(ms);
-  if (state.deck.sound) click();
+  if (setting('vibrate')) vibrate(ms);
+  if (setting('sound')) click();
 };
 
 // ---------- Darstellen ----------
@@ -178,7 +178,7 @@ function render() {
   currentPage = page.id;
   $('page-name').textContent = page.name;
   $('back').hidden = history_.length === 0;
-  applyOrientation(state.deck.orientation);
+  applyOrientation(setting('orientation'));
   document.body.className = `anim-${state.deck.pressAnimation}${state.deck.showLabels ? '' : ' hide-labels'}${page.cols > page.rows + 1 ? ' wide-page' : ''}${state.deck.footer ? ' with-footer' : ''}`;
   // „Fläche füllen“: Felder dürfen bis 1,4-mal so breit und 1,25-mal so hoch wie quadratisch werden.
   // Freie Seiten immer im gewählten Format zeigen, sonst verschiebt sich die Gestaltung.
@@ -394,39 +394,141 @@ function sendSlide(el, value, final = false) {
   else slideTimer = setTimeout(go, 60);
 }
 
-// ---------- Ruhezustand und PC-Sperre ----------
+// ---------- Ruhezustand, Bildschirmschoner und PC-Sperre ----------
+
+/**
+ * Einstellung des Bedienfelds: was in der App für dieses Gerät eingestellt ist, sonst die vom PC.
+ * Die App liefert nur Werte, die vom PC abweichen sollen (z. B. { sleepAfter: 5, sleepMode: "clock" }).
+ */
+let deviceSettings = {};
+function loadDeviceSettings() {
+  try {
+    deviceSettings = JSON.parse(app?.deviceSettings?.() ?? '{}') ?? {};
+  } catch {
+    deviceSettings = {};
+  }
+}
+loadDeviceSettings();
+const setting = (key) => (key in deviceSettings ? deviceSettings[key] : state?.deck?.[key]);
+// Die App ruft das nach dem Ändern ihrer Einstellungen auf.
+window.tdDeviceSettingsChanged = () => {
+  loadDeviceSettings();
+  appliedOrientation = null;
+  if (state) render();
+  resetSleep();
+};
 
 // Nach einigen Minuten ohne Berührung abdunkeln, Uhr oder schwarz zeigen; der erste Tipp weckt nur.
-// Nur Zeitgeber, kein Intervall: die Uhr stellt sich einmal pro Minute.
+// Nur Zeitgeber, kein Intervall: die Uhr stellt sich einmal pro Minute und wandert dabei ein Stück,
+// damit nichts einbrennt.
 let sleepTimer = null;
 let clockTimer = null;
+let revealTimer = null;
 function resetSleep() {
   clearTimeout(sleepTimer);
-  const minutes = state?.deck?.sleepAfter ?? 0;
+  const minutes = Number(setting('sleepAfter')) || 0;
   if (minutes > 0 && $('sleep').hidden) sleepTimer = setTimeout(goToSleep, minutes * 60_000);
 }
 function goToSleep() {
   const el = $('sleep');
-  el.className = `mode-${state.deck.sleepMode ?? 'dim'}`;
+  const mode = setting('sleepMode') ?? 'dim';
+  el.className = `mode-${mode} style-${state.deck.clockStyle ?? 'digital'}`;
+  // Uhrfarbe: eigene oder die Akzentfarbe von Android (nur in der App).
+  const color = state.deck.clockColor === 'system' ? app?.systemAccent?.() || '#c9cfdc' : state.deck.clockColor || '#c9cfdc';
+  el.style.setProperty('--clock', color);
+  $('sleep-date').hidden = state.deck.clockDate === false;
+  hideSaverButtons();
   el.hidden = false;
   app?.setDim?.(true);
-  if (state.deck.sleepMode === 'clock') tickClock();
+  if (mode === 'clock') tickClock();
 }
 function tickClock() {
   const now = new Date();
-  $('sleep-clock').textContent = now.toLocaleTimeString(getLang(), { hour: '2-digit', minute: '2-digit' });
+  const lang = getLang();
+  if (state.deck.clockStyle === 'analog') $('sleep-clock').replaceChildren(analogClock(now));
+  else $('sleep-clock').textContent = now.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
+  $('sleep-date').textContent = now.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' });
+  // Gegen Einbrennen: jede Minute ein Stück woanders.
+  const dx = Math.round((Math.random() - 0.5) * 16);
+  const dy = Math.round((Math.random() - 0.5) * 16);
+  $('saver-box').style.transform = `translate(${dx}vw, ${dy}vh)`;
   clockTimer = setTimeout(tickClock, (60 - now.getSeconds()) * 1000 + 50);
 }
+
+/** Analoge Uhr ohne Sekundenzeiger (spart Strom, die Uhr stellt sich nur jede Minute). */
+function analogClock(now) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('class', 'analog');
+  const ticks = Array.from({ length: 12 }, (_, i) => {
+    const a = (i * Math.PI) / 6;
+    const r1 = i % 3 === 0 ? 38 : 41;
+    return `<line x1="${50 + r1 * Math.sin(a)}" y1="${50 - r1 * Math.cos(a)}" x2="${50 + 45 * Math.sin(a)}" y2="${50 - 45 * Math.cos(a)}"/>`;
+  }).join('');
+  const m = now.getMinutes();
+  const hAngle = ((now.getHours() % 12) + m / 60) * 30;
+  svg.innerHTML = `<circle cx="50" cy="50" r="47"/><g class="ticks">${ticks}</g>`
+    + `<line class="hour" x1="50" y1="50" x2="50" y2="27" transform="rotate(${hAngle} 50 50)"/>`
+    + `<line class="minute" x1="50" y1="50" x2="50" y2="14" transform="rotate(${m * 6} 50 50)"/><circle class="pin" cx="50" cy="50" r="2.5"/>`;
+  return svg;
+}
+
+/** Abkürzungen auf dem Bildschirmschoner: nach dem ersten Tipp (oder Bewegen des Geräts) 10 s lang. */
+function saverButtons() {
+  const ids = state?.deck?.saverButtons ?? [];
+  return ids.map((id) => {
+    const page = state.pages.find((p) => p.buttons.some((b) => b.id === id));
+    return page && { page, b: page.buttons.find((b) => b.id === id) };
+  }).filter(Boolean);
+}
+function revealSaverButtons() {
+  const list = saverButtons();
+  if (!list.length || $('sleep').hidden) return false;
+  const row = $('saver-buttons');
+  row.replaceChildren(...list.map(({ page, b }) => {
+    const el = buttonElement({ ...effective(b), row: 0, col: 0, rowSpan: 1, colSpan: 1, free: null }, {
+      on: state.toggles[b.id] === true,
+      variables: state.variables,
+      state: stateIndex(b, state.toggles, state.variables),
+    });
+    // Die Lage im Raster der Seite gilt hier nicht: nebeneinander in der Leiste.
+    el.style.gridRow = '';
+    el.style.gridColumn = '';
+    el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      feedback();
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'press', reqId: ++reqId, buttonId: b.id, pageId: page.id }));
+      revealSaverButtons();
+    });
+    return el;
+  }));
+  row.hidden = false;
+  $('sleep').classList.add('reveal');
+  clearTimeout(revealTimer);
+  revealTimer = setTimeout(hideSaverButtons, 10_000);
+  return true;
+}
+function hideSaverButtons() {
+  clearTimeout(revealTimer);
+  $('saver-buttons').hidden = true;
+  $('sleep').classList.remove('reveal');
+}
+// Die App meldet, wenn das Gerät bewegt wird (nur im Ruhezustand).
+window.tdMotion = () => revealSaverButtons();
+
 function wake() {
   clearTimeout(clockTimer);
+  hideSaverButtons();
   $('sleep').hidden = true;
   app?.setDim?.(false);
   resetSleep();
 }
-// Der Tipp, der weckt, löst nichts aus (Ereignis endet am Ruhe-Overlay).
+// Der Tipp auf den Bildschirmschoner löst nichts aus: erst Abkürzungen zeigen (falls eingestellt), dann wecken.
 $('sleep').addEventListener('pointerdown', (e) => {
   e.preventDefault();
   e.stopPropagation();
+  if ($('saver-buttons').hidden && revealSaverButtons()) return;
   wake();
 });
 document.addEventListener('pointerdown', () => resetSleep(), true);
@@ -447,7 +549,7 @@ grid.addEventListener('pointerdown', (e) => {
     const knob = el.querySelector('.td-combo-knob')?.getBoundingClientRect();
     el.dataset.part = knob && e.clientX >= knob.left && e.clientX <= knob.right && e.clientY >= knob.top && e.clientY <= knob.bottom ? '2' : '1';
     el.classList.add('sliding');
-    if (state.deck.vibrate) vibrate(8);
+    if (setting('vibrate')) vibrate(8);
     sendSlide(el, sliderValue(el, e));
     return;
   }
@@ -628,7 +730,7 @@ async function connect() {
     } else if (msg.type === 'overrides') {
       if (state) updateOverrides(msg.overrides);
     } else if (msg.type === 'result') {
-      const el = grid.querySelector(`[data-id="${CSS.escape(msg.buttonId)}"]`);
+      const el = (!$('sleep').hidden && $('saver-buttons').querySelector(`[data-id="${CSS.escape(msg.buttonId)}"]`)) || grid.querySelector(`[data-id="${CSS.escape(msg.buttonId)}"]`);
       if (!msg.ok) {
         el?.classList.add('failed');
         setTimeout(() => el?.classList.remove('failed'), 500);
