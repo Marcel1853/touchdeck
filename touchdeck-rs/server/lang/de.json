@@ -286,6 +286,7 @@
     "noOpenWindowFound": "Kein offenes Fenster gefunden für „{0}“",
     "noRunningProgramFound": "Kein laufendes Programm „{0}“ gefunden.",
     "programIsNotInstalled": "Programm „{0}“ ist nicht installiert.",
+    "programNotRunningKeysNotSent": "„{0}“ läuft nicht – Tastenkürzel nicht gesendet",
     "selectedAudioDeviceIs": "Das gewählte Audiogerät ist gerade nicht vorhanden.",
     "timedOut": "{0}: Zeitüberschreitung",
     "unknownPowerAction": "Unbekannte Energie-Aktion: {0}",
@@ -294,7 +295,8 @@
     "unknownKey": "Unbekannte Taste: {0}",
     "clipboardNoAnswer": "Das Programm mit der Zwischenablage antwortet nicht.",
     "clipboardNotTaken": "Die Zwischenablage konnte nicht übernommen werden.",
-    "noMonitorFound": "Kein Bildschirm gefunden."
+    "noMonitorFound": "Kein Bildschirm gefunden.",
+    "windowNotInFrontKeysNotSent": "„{0}“ ließ sich nicht nach vorn holen – Tastenkürzel nicht gesendet"
   },
   "obs": {
     "disconnectedFromObs": "OBS-Verbindung getrennt.",

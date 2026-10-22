@@ -39,6 +39,10 @@ Date: 2026-10-20
     - Marketplace: button "Reload marketplace" fetches the list fresh from GitHub, so new plugins
       show up right away (no restart).
     - Tray menu: "Restart TouchDeck".
+  Bugfixes:
+    - “Press shortcut” to a specific program: only looks for the program, no longer the window title,
+      and only presses when exactly that window is in front. If the program is not running, you get a
+      message instead of keys in the wrong window (e.g. an editor with “Factorio” in its title).
   Performance:
     - Values, toggles and looks are saved in batches instead of writing the whole configuration on
       every change; config.json is compact.

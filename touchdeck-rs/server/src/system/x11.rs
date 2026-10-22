@@ -422,13 +422,29 @@ impl Keyboard {
      */
     fn hotkey_to(&self, query: &str, keys: &str, back: bool) -> Result<()> {
         let before = self.active();
-        self.activate(query)?;
+        // Nur nach dem Programm (Fensterklasse) suchen, nie nach dem Titel: sonst bekäme z. B. ein Editor
+        // mit „factorio“ im Titel die Tasten, wenn das Spiel gar nicht läuft.
         let q = query.to_lowercase();
+        let wins = self.windows();
+        let target = wins
+            .iter()
+            .find(|w| w.class.to_lowercase() == q)
+            .or_else(|| wins.iter().find(|w| w.class.to_lowercase().contains(&q)))
+            .ok_or_else(|| anyhow!(t!("system.programNotRunningKeysNotSent", query)))?;
+        if before.as_ref().is_none_or(|w| w.id != target.id) {
+            self.raise(target.id);
+        }
+        let mut focused = false;
         for _ in 0..40 {
-            if self.active().is_some_and(|w| w.class.to_lowercase().contains(&q) || w.title.to_lowercase().contains(&q)) {
+            if self.active().is_some_and(|w| w.id == target.id) {
+                focused = true;
                 break;
             }
             sleep(Duration::from_millis(25));
+        }
+        // Kam das Fenster nicht nach vorn, nichts drücken – die Tasten landeten sonst im falschen Programm.
+        if !focused {
+            bail!(t!("system.windowNotInFrontKeysNotSent", query));
         }
         sleep(Duration::from_millis(60));
         let result = self.hotkey(keys);

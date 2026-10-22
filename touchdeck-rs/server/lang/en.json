@@ -286,6 +286,7 @@
     "noOpenWindowFound": "No open window found for “{0}”",
     "noRunningProgramFound": "No running program “{0}” found.",
     "programIsNotInstalled": "The program “{0}” is not installed.",
+    "programNotRunningKeysNotSent": "“{0}” is not running – shortcut not sent",
     "selectedAudioDeviceIs": "The selected audio device is not available right now.",
     "timedOut": "{0}: timed out",
     "unknownPowerAction": "Unknown power action: {0}",
@@ -294,7 +295,8 @@
     "unknownKey": "Unknown key: {0}",
     "clipboardNoAnswer": "The program holding the clipboard does not answer.",
     "clipboardNotTaken": "Could not take over the clipboard.",
-    "noMonitorFound": "No screen found."
+    "noMonitorFound": "No screen found.",
+    "windowNotInFrontKeysNotSent": "“{0}” could not be brought to the front – shortcut not sent"
   },
   "obs": {
     "disconnectedFromObs": "Disconnected from OBS.",

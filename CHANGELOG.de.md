@@ -41,6 +41,10 @@ Datum: 2026-10-20
     - Marktplatz: Knopf „Marktplatz neu laden“ holt die Liste frisch von GitHub, neue Plugins
       erscheinen sofort (kein Neustart nötig).
     - Menü am Symbol in der Systemleiste: „TouchDeck neu starten“.
+  Fehlerbehebungen:
+    - „Tastenkürzel drücken“ an ein bestimmtes Programm: sucht nur noch nach dem Programm, nicht nach
+      dem Fenstertitel, und drückt nur, wenn genau dieses Fenster vorne ist. Läuft das Programm nicht,
+      kommt eine Meldung statt Tasten im falschen Fenster (z. B. in einem Editor mit „Factorio“ im Titel).
   Leistung:
     - Werte, Umschalter und Aussehen werden gesammelt gespeichert statt bei jeder Änderung die ganze
       Konfiguration zu schreiben; config.json ist kompakt.
