@@ -130,6 +130,7 @@ class ConnectActivity : Activity() {
                 column.addView(button(getString(R.string.shortcut_nfc)) { startActivity(Intent(this, NfcWriteActivity::class.java)) }, fullWidth(top = 10))
             }
         }
+        column.addView(button(getString(R.string.ds_open)) { startActivity(Intent(this, DeviceSettingsActivity::class.java)) }, fullWidth(top = 18))
         column.addView(text(getString(R.string.where_on_pc), 13f, Ui.MUTED).apply {
             setPadding(0, dp(18), 0, 0)
         })

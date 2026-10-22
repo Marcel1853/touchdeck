@@ -18,7 +18,7 @@ Datum: 2026-10-20
       (z. B. { players: 7, memory: 4210, uptime: 50432 }). TouchDeck zeigt sie automatisch als Liste
       mit lesbaren Einheiten („RAM 4,1 GB“, „Laufzeit 14 h“) und reicht sie als {Ergebnis.players}
       an folgende Aktionen weiter. Neu im Manifest: „returns“.
-    - Android-App 0.7.0: Startbildschirm-Widget mit bis zu vier Buttons, Schnellzugriff-Kachel und
+    - Android-App 0.7.0/0.8.0: Startbildschirm-Widget mit bis zu vier Buttons, Schnellzugriff-Kachel und
       NFC-Aufkleber lösen Buttons am PC aus, ohne das Bedienfeld zu öffnen.
   Neuerungen:
     - Sicherheitsabfrage: Buttons mit „Erst beim zweiten Druck auslösen“ zeigen beim ersten Druck
@@ -33,6 +33,9 @@ Datum: 2026-10-20
     - Rückmeldung am Button: kurzes Häkchen, wenn die Aktionen geklappt haben (abschaltbar).
     - Ruhezustand fürs Bedienfeld: nach einigen Minuten abdunkeln, Uhr oder schwarz zeigen; der
       erste Tipp weckt nur. In der App wird dabei auch die Helligkeit abgesenkt.
+    - Bildschirmschoner: große Uhr auf Schwarz (digital dünn, kräftig oder analog) mit Datum, eigene
+      Farbe oder Systemfarbe von Android; sie wandert jede Minute ein Stück gegen Einbrennen. Bis zu vier
+      Abkürzungen erscheinen beim ersten Tipp (in der App auch beim Bewegen des Geräts).
     - PC gesperrt: Bedienfeld sperren, solange der PC gesperrt ist, und Auslöser „PC gesperrt /
       entsperrt“ (Cinnamon, GNOME, KDE, MATE).
     - USB-Verbindung: Einstellungen › Handy & Sicherheit › „Android-Geräte per USB-Kabel verbinden“
@@ -61,6 +64,9 @@ Datum: 2026-10-20
       App pausiert dabei die Seite.
   Android-App:
     - App 0.6.4: neuer Knopf „Per USB-Kabel verbinden“.
+    - App 0.8.0: „Einstellungen dieses Geräts“ (Verbinden-Bildschirm und Seitenmenü im Bedienfeld):
+      Ruhezustand und Art je Gerät, Helligkeit im Ruhezustand und im Betrieb, Bildschirm anlassen,
+      Ausrichtung, Vibration und Klick-Ton; Bewegen zeigt die Abkürzungen des Bildschirmschoners.
     - App 0.7.0: Widget, Schnellzugriff-Kachel, NFC-Aufkleber beschreiben (Verbinden-Bildschirm ›
       Abkürzungen), Links „touchdeck://press?…“; Ruhezustand senkt die Helligkeit.
 

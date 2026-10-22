@@ -81,6 +81,7 @@
     "connectingToPc": "Verbinde mit dem PC …",
     "connection": "Verbindung",
     "connectionLostReconnecting": "Verbindung verloren – verbinde neu …",
+    "deviceSettings": "⚙ Einstellungen dieses Geräts",
     "disconnectedShort": "Verbindung getrennt – verbinde neu …",
     "fullscreen": "Vollbild",
     "fullscreenIsNotSupported": "Vollbild wird hier nicht unterstützt",

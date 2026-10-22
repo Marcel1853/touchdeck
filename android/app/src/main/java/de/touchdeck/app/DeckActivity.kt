@@ -54,7 +54,8 @@ class DeckActivity : Activity() {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
         server = prefs.current ?: return backToConnect(null)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        device = DeviceSettings(this)
+        applyScreen()
 
         web = WebView(this).apply {
             setBackgroundColor(Ui.BG)
@@ -166,13 +167,65 @@ class DeckActivity : Activity() {
     // beim PC ab, damit er keine Live-Werte mehr schickt. Kein pauseTimers(), sonst käme die Abmeldung
     // erst beim Zurückkommen an.
     override fun onPause() {
+        watchMotion(false)
         if (::web.isInitialized) web.onPause()
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-        if (::web.isInitialized) web.onResume()
+        applyScreen()
+        if (::web.isInitialized) {
+            web.onResume()
+            // Geräte-Einstellungen könnten sich geändert haben (Einstellungen-Bildschirm).
+            web.evaluateJavascript("window.tdDeviceSettingsChanged && window.tdDeviceSettingsChanged()", null)
+        }
+    }
+
+    // ---------- Geräte-Einstellungen: Bildschirm anlassen, Helligkeit, Bewegung im Ruhezustand ----------
+
+    private lateinit var device: DeviceSettings
+    private var dimmed = false
+
+    /** Bildschirm anlassen und Helligkeit (Betrieb bzw. Ruhezustand) nach den Geräte-Einstellungen. */
+    private fun applyScreen() {
+        if (!::device.isInitialized) return
+        if (device.keepOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.attributes = window.attributes.apply {
+            screenBrightness = when {
+                dimmed -> device.sleepBrightness / 100f
+                device.brightness >= 0 -> device.brightness / 100f
+                else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            }
+        }
+    }
+
+    private val motion = object : android.hardware.SensorEventListener {
+        private var last: FloatArray? = null
+        private var lastFired = 0L
+        override fun onSensorChanged(e: android.hardware.SensorEvent) {
+            val prev = last
+            last = e.values.clone()
+            if (prev == null) return
+            val delta = Math.abs(e.values[0] - prev[0]) + Math.abs(e.values[1] - prev[1]) + Math.abs(e.values[2] - prev[2])
+            val now = System.currentTimeMillis()
+            // Spürbar bewegt (nicht nur Rauschen), höchstens alle 2 Sekunden melden.
+            if (delta > 1.5f && now - lastFired > 2000) {
+                lastFired = now
+                web.evaluateJavascript("window.tdMotion && window.tdMotion()", null)
+            }
+        }
+        override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+    }
+
+    /** Beschleunigungssensor nur im Ruhezustand und nur, wenn eingeschaltet (spart Akku). */
+    private fun watchMotion(on: Boolean) {
+        val sm = getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        sm.unregisterListener(motion)
+        if (on && ::device.isInitialized && device.motion) {
+            sm.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(motion, it, android.hardware.SensorManager.SENSOR_DELAY_NORMAL) }
+        }
     }
 
     override fun onDestroy() {
@@ -238,10 +291,24 @@ class DeckActivity : Activity() {
         @JavascriptInterface
         fun setDim(dim: Boolean) {
             runOnUiThread {
-                window.attributes = window.attributes.apply {
-                    screenBrightness = if (dim) 0.02f else android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-                }
+                dimmed = dim
+                applyScreen()
+                watchMotion(dim)
             }
+        }
+
+        /** Nur die Einstellungen, die auf diesem Gerät anders sein sollen als am PC (JSON). */
+        @JavascriptInterface
+        fun deviceSettings(): String = device.toJson()
+
+        /** Akzentfarbe von Android (Material You) als #rrggbb, leer ohne. */
+        @JavascriptInterface
+        fun systemAccent(): String = DeviceSettings.systemAccent(this@DeckActivity)
+
+        /** Einstellungen dieses Geräts öffnen (Fußleiste im Bedienfeld). */
+        @JavascriptInterface
+        fun openSettings() {
+            runOnUiThread { startActivity(Intent(this@DeckActivity, DeviceSettingsActivity::class.java)) }
         }
 
         /** Gerätename (wie in den Android-Einstellungen) für die Statusleiste am PC. */

@@ -93,6 +93,10 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".DeviceSettingsActivity"
+            android:exported="false"
+            android:screenOrientation="fullUser" />
+        <activity
             android:name=".NfcWriteActivity"
             android:exported="false"
             android:screenOrientation="fullUser" />

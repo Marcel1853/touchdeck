@@ -18,7 +18,7 @@ Date: 2026-10-20
       memory: 4210, uptime: 50432 }). TouchDeck shows it automatically as a list with readable units
       (“RAM 4.1 GB”, “Uptime 14 h”) and passes it on to following actions as {Result.players}. New in
       the manifest: “returns”.
-    - Android app 0.7.0: home screen widget with up to four buttons, quick settings tile and NFC
+    - Android app 0.7.0/0.8.0: home screen widget with up to four buttons, quick settings tile and NFC
       stickers trigger buttons on the PC without opening the deck.
   Features:
     - Confirmation: buttons with “Only trigger on the second press” show “Sure?” on the first press.
@@ -31,6 +31,9 @@ Date: 2026-10-20
     - Feedback on the button: a short check mark when the actions worked (can be switched off).
     - Deck sleep: after some minutes dim, show a clock or go black; the first tap only wakes it. The
       app also lowers the brightness.
+    - Screensaver: large clock on black (digital thin, bold or analogue) with date, own colour or the
+      Android system colour; it moves a little every minute against burn-in. Up to four shortcuts
+      appear on the first tap (in the app also when the device is moved).
     - PC locked: lock the deck while the PC is locked, and trigger “PC locked / unlocked” (Cinnamon,
       GNOME, KDE, MATE).
     - USB connection: Settings › Phone & security › "Connect Android devices via USB cable" forwards
@@ -58,6 +61,9 @@ Date: 2026-10-20
       the page.
   Android app:
     - App 0.6.4: new button "Connect via USB cable".
+    - App 0.8.0: “Settings of this device” (connect screen and page menu on the deck): sleep and its
+      kind per device, brightness while sleeping and in use, keep screen on, orientation, vibration and
+      click sound; moving the device shows the screensaver shortcuts.
     - App 0.7.0: widget, quick settings tile, write NFC stickers (connect screen › Shortcuts), links
       “touchdeck://press?…”; sleep lowers the brightness.
 

@@ -81,6 +81,7 @@
     "connectingToPc": "Connecting to the PC …",
     "connection": "Connection",
     "connectionLostReconnecting": "Connection lost – reconnecting …",
+    "deviceSettings": "⚙ Settings of this device",
     "disconnectedShort": "Disconnected – reconnecting …",
     "fullscreen": "Fullscreen",
     "fullscreenIsNotSupported": "Fullscreen is not supported here",

@@ -640,6 +640,17 @@ $('page-name').addEventListener('click', () => {
     c.onclick = () => app.openConnection();
     $('page-menu-list').append(c);
   }
+  // Einstellungen nur für dieses Gerät (Ruhezustand, Helligkeit, Bildschirm anlassen …).
+  if (app?.openSettings) {
+    const d = document.createElement('button');
+    d.textContent = tr('deck.deviceSettings');
+    d.className = 'menu-extra';
+    d.onclick = () => {
+      $('page-menu').hidden = true;
+      app.openSettings();
+    };
+    $('page-menu-list').append(d);
+  }
   $('page-menu').hidden = false;
 });
 $('page-menu').addEventListener('click', (e) => {
