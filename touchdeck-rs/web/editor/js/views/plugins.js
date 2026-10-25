@@ -206,6 +206,18 @@ function repoInput() {
       h('button', { class: 'btn primary small', onclick: () => installFromGitHub(repo) }, tr('plugins.check'))));
 }
 
+/**
+ * Installiertes Plugin zu einem Marktplatz-Eintrag: vom Marktplatz (github:…), aus einem Ordner mit
+ * demselben Pfad (Testmodus, z. B. …/plugins/factorio) oder mit demselben Namen.
+ */
+function installedFor(p) {
+  const sub = p.repo.split('/').slice(2).join('/');
+  const name = (p.name ?? '').toLowerCase();
+  return plugins.find((x) => x.source === `github:${p.repo}`)
+    ?? plugins.find((x) => sub && x.source?.startsWith('local:') && x.source.replace(/\/+$/, '').endsWith(`/${sub}`))
+    ?? plugins.find((x) => name && String(x.manifest?.name ?? '').toLowerCase() === name);
+}
+
 function marketTab() {
   if (market === null || market === 'fresh') {
     const fresh = market === 'fresh';
@@ -223,14 +235,20 @@ function marketTab() {
     !market.note && !market.plugins.length && h('p', { class: 'hint-text' }, tr('plugins.thereAreNoPlugins'),
       h('a', { href: wikiPage('Veröffentlichen', 'Publishing'), target: '_blank', rel: 'noopener' }, tr('plugins.pluginWiki')), '.'),
     ...market.plugins.map((p) => {
-      const installed = plugins.some((x) => x.source === `github:${p.repo}`);
-      return h('div', { class: 'settings-card plugin' },
+      const mine = installedFor(p);
+      const installed = mine?.source === `github:${p.repo}`;
+      return h('div', { class: `settings-card plugin${mine ? ' is-installed' : ''}` },
         h('div', { class: 'plugin-head' },
-          h('div', {}, h('b', {}, p.name || p.repo), h('p', { class: 'hint-text' }, p.description),
+          h('div', {}, h('b', {}, p.name || p.repo),
+            mine && h('span', { class: 'installed-badge', title: mine.source ?? '' },
+              `✓ ${tr('plugins.installedBadge')}${mine.manifest?.version ? ` · ${mine.manifest.version}` : ''}${installed ? '' : ` · ${tr('plugins.installedLocal')}`}`),
+            h('p', { class: 'hint-text' }, p.description),
             h('p', { class: 'hint-text' }, p.author && tr('plugins.by2', [p.author]), p.license && tr('plugins.license2', [p.license]), h('a', { href: githubUrl(p.repo), target: '_blank', rel: 'noopener' }, p.repo))),
           h('div', { class: 'plugin-buttons' },
             h('button', { class: 'btn small', onclick: () => showReadme(p, installed) }, tr('plugins.readMore')),
-            h('button', { class: `btn small ${installed ? '' : 'primary'}`, onclick: () => installFromGitHub(p.repo) }, installed ? tr('common.update') : tr('plugins.install')))));
+            // Aus einem Ordner (Testmodus) installiert: die Marktplatz-Fassung kann sie ersetzen.
+            h('button', { class: `btn small ${mine ? '' : 'primary'}`, title: mine && !installed ? tr('plugins.takeFromMarketHint') : '', onclick: () => installFromGitHub(p.repo) },
+              installed ? tr('common.update') : mine ? tr('plugins.takeFromMarket') : tr('plugins.install')))));
     }),
   ];
 }

@@ -688,3 +688,7 @@ button.status-chip:hover { color: var(--text); }
 /* Befehl oder Konfiguration zum Kopieren (z. B. KI-Assistenten). */
 .code-copy { display: flex; gap: 8px; align-items: flex-start; }
 .code-copy pre { flex: 1; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--bg-2, #12151c); border: 1px solid var(--line, #262c3a); font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+
+/* Marktplatz: schon installierte Plugins deutlich markieren. */
+.settings-card.plugin.is-installed { border-color: color-mix(in srgb, #3ccf91 45%, transparent); }
+.installed-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, #3ccf91 18%, transparent); color: #3ccf91; font-size: 12px; font-weight: 600; vertical-align: 1px; }

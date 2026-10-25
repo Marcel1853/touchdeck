@@ -20,6 +20,8 @@ Date: 2026-10-25
       custom size, rotate, scale; your own devices appear with their real screen size.
     - Orientation “Automatic” only rotates the app with the sensor; the phone’s rotation lock stays
       untouched (app 0.8.2).
+    - Marketplace shows what is already installed (with version), also plugins from a folder (test
+      mode); those can be “taken from the marketplace”.
     - Deck: page selection at the top left as a clear dropdown button; in the app “Change connection”
       (⇄) and “Settings of this device” (⚙) at the top right.
 

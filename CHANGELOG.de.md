@@ -20,6 +20,8 @@ Datum: 2026-10-25
       eigene Größe, Drehen, Maßstab; deine eigenen Geräte erscheinen mit ihrer echten Bildschirmgröße.
     - Ausrichtung „Automatisch“ dreht nur die App mit dem Lagesensor, die Drehsperre des Handys bleibt
       unberührt (App 0.8.2).
+    - Marktplatz zeigt, was schon installiert ist (mit Version), auch Plugins aus einem Ordner
+      (Testmodus); diese lassen sich „vom Marktplatz übernehmen“.
     - Bedienfeld: Seitenauswahl oben links als deutlicher Auswahlknopf; in der App oben rechts
       „Verbindung ändern“ (⇄) und „Einstellungen dieses Geräts“ (⚙).
 
