@@ -656,6 +656,11 @@ $('page-name').addEventListener('click', () => {
 $('page-menu').addEventListener('click', (e) => {
   if (e.target.id === 'page-menu') $('page-menu').hidden = true;
 });
+// Verbindung ändern (anderen PC wählen) direkt oben rechts (nur in der App).
+if (app?.openConnection) {
+  $('change-connection').hidden = false;
+  $('change-connection').addEventListener('click', () => app.openConnection());
+}
 // Einstellungen dieses Geräts direkt oben rechts (nur in der App).
 if (app?.openSettings) {
   $('device-settings').hidden = false;

@@ -75,6 +75,7 @@
   "deck": {
     "back": "Zurück",
     "changeConnection": "⚙ Verbindung ändern",
+    "changeConnectionShort": "Verbindung ändern",
     "choosePage": "Seite wählen",
     "connect": "Verbinden",
     "connectedTo": "Verbunden mit {0}",

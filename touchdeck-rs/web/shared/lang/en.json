@@ -75,6 +75,7 @@
   "deck": {
     "back": "Back",
     "changeConnection": "⚙ Change connection",
+    "changeConnectionShort": "Change connection",
     "choosePage": "Choose page",
     "connect": "Connect",
     "connectedTo": "Connected to {0}",

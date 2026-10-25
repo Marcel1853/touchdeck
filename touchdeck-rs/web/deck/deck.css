@@ -26,20 +26,26 @@ html, body {
   border-bottom: 1px solid #1d212b;
 }
 
+/* Seitenauswahl: deutlich als Auswahlknopf erkennbar (Rahmen, Pfeil), nicht nur als Überschrift. */
 #page-name {
-  flex: 1;
-  border: 0;
-  background: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 60%;
+  margin-right: auto;
+  border: 1px solid #2a2f3b;
+  border-radius: 10px;
+  background: #1a1e27;
   color: inherit;
   text-align: left;
   font-family: inherit;
-  padding: 0;
+  padding: 6px 14px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 17px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#page-name:active { background: #232836; }
 
 .bar-btn {
   width: 34px;
@@ -176,7 +182,7 @@ body.hide-labels .td-title { display: none; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 #toast.error { background: #3b1a1d; color: #ffb4b6; }
 
-#page-name::after { content: " ▾"; opacity: 0.5; }
+#page-name::after { content: "  ▾"; opacity: 0.8; font-size: 0.95em; }
 
 #page-menu {
   position: fixed;
