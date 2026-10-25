@@ -264,10 +264,12 @@ class DeckActivity : Activity() {
         @JavascriptInterface
         fun setOrientation(mode: String) {
             runOnUiThread {
+                // Gilt nur für TouchDeck, die Drehsperre des Handys bleibt unberührt: „auto“ dreht die App
+                // mit dem Lagesensor auch bei gesperrter Drehung (andere Apps drehen sich weiter nicht).
                 requestedOrientation = when (mode) {
                     "portrait" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
                     "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                    else -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+                    else -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
                 }
             }
         }

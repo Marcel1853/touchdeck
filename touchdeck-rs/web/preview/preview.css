@@ -16,3 +16,6 @@ body { display: flex; flex-direction: column; background: #07080b; color: #e8eaf
 #deck { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #0d0f14; }
 body.free #frame { border-radius: 0; box-shadow: none; width: 100%; height: 100%; }
 body.free #deck { width: 100%; height: 100%; transform: none; }
+#custom-size { display: inline-flex; align-items: center; gap: 4px; color: #8b93a7; }
+#custom-size[hidden] { display: none; }
+#custom-size input { width: 72px; background: #1a1e27; color: #e8eaf0; border: 1px solid #2a2f3b; border-radius: 8px; padding: 5px 6px; font: inherit; }

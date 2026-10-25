@@ -948,17 +948,14 @@
     "selectAll": "Alles im Ordner auswählen"
   },
   "preview": {
-    "desktop": "Breiter Bildschirm",
+    "custom": "Eigene Größe",
     "device": "Gerät",
     "fit": "einpassen",
     "free": "Fenstergröße",
-    "phoneLarge": "Handy groß",
-    "phoneSmall": "Handy klein",
+    "other": "Sonstiges",
     "rotate": "Drehen (Hoch-/Querformat)",
-    "tablet11": "Tablet 11 Zoll",
-    "tablet13": "Tablet 13 Zoll",
-    "tablet8": "Tablet 8–10 Zoll",
     "title": "TouchDeck – Vorschau",
+    "yourDevices": "Deine Geräte",
     "zoom": "Maßstab"
   }
 }

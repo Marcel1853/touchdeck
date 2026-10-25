@@ -64,7 +64,7 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
         .icon(window_icon())?
         // Vorschau im eigenen kleinen Fenster, alle anderen Links im normalen Browser.
         .on_new_window(move |url, _| {
-            if url.as_str().starts_with(&format!("{}/deck/", base())) {
+            if url.as_str().starts_with(&format!("{}/deck/", base())) || url.as_str().starts_with(&format!("{}/preview/", base())) {
                 let h = handle.clone();
                 tauri::async_runtime::spawn(async move { open_preview_window(&h) });
             } else {

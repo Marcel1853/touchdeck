@@ -96,7 +96,7 @@
             android:name=".DeviceSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.TouchDeck.Fullscreen"
-            android:screenOrientation="fullUser" />
+            android:screenOrientation="behind" />
         <activity
             android:name=".NfcWriteActivity"
             android:exported="false"

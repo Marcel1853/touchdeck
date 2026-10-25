@@ -948,17 +948,14 @@
     "selectAll": "Select everything in the folder"
   },
   "preview": {
-    "desktop": "Wide screen",
+    "custom": "Custom size",
     "device": "Device",
     "fit": "fit",
     "free": "Window size",
-    "phoneLarge": "Large phone",
-    "phoneSmall": "Small phone",
+    "other": "Other",
     "rotate": "Rotate (portrait/landscape)",
-    "tablet11": "Tablet 11 inch",
-    "tablet13": "Tablet 13 inch",
-    "tablet8": "Tablet 8–10 inch",
     "title": "TouchDeck – Preview",
+    "yourDevices": "Your devices",
     "zoom": "Scale"
   }
 }
