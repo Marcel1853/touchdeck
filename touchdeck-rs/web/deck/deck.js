@@ -656,6 +656,11 @@ $('page-name').addEventListener('click', () => {
 $('page-menu').addEventListener('click', (e) => {
   if (e.target.id === 'page-menu') $('page-menu').hidden = true;
 });
+// Einstellungen dieses Geräts direkt oben rechts (nur in der App).
+if (app?.openSettings) {
+  $('device-settings').hidden = false;
+  $('device-settings').addEventListener('click', () => app.openSettings());
+}
 $('fullscreen').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen?.().then(() => applyOrientation(state?.deck.orientation)).catch(() => toast(tr('deck.fullscreenIsNotSupported'), true));
