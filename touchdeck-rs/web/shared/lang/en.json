@@ -868,6 +868,7 @@
     "saverButtons": "Shortcuts",
     "saverButtonsHint": "Up to four buttons that appear for 10 seconds on the first tap on the screensaver (in the app also when the device is moved). Another tap next to them wakes the deck.",
     "saverHint": "Large clock on black; it moves a little every minute so nothing burns in. In the app, sleep can be set per device.",
+    "saverPlugins": "Show plugin cards below the clock (e.g. research and power from Factorio)",
     "saverTitle": "Screensaver (sleep “show clock”)",
     "set": "•••• (set)",
     "setPin": "Set PIN",

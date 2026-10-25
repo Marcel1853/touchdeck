@@ -38,6 +38,8 @@ Datum: 2026-10-20
     - Bildschirmschoner: große Uhr auf Schwarz (digital dünn, kräftig oder analog) mit Datum, eigene
       Farbe oder Systemfarbe von Android; sie wandert jede Minute ein Stück gegen Einbrennen. Bis zu vier
       Abkürzungen erscheinen beim ersten Tipp (in der App auch beim Bewegen des Geräts).
+    - Plugins dürfen den Bildschirmschoner füllen: td.saver.set({ title, items, color }) zeigt eine Karte
+      unter der Uhr (z. B. Forschung und Strom aus Factorio); abschaltbar in den Einstellungen.
     - PC gesperrt: Bedienfeld sperren, solange der PC gesperrt ist, und Auslöser „PC gesperrt /
       entsperrt“ (Cinnamon, GNOME, KDE, MATE).
     - USB-Verbindung: Einstellungen › Handy & Sicherheit › „Android-Geräte per USB-Kabel verbinden“

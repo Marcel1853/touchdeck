@@ -171,6 +171,9 @@ td.deck.showPage('OBS');                // ID oder Name, auf allen Geräten
 td.deck.setLook(buttonId, { title: 'Live', color: '#c0392b', textColor: '#fff', icon: '🔴' });
 td.deck.resetLook(buttonId);            // ursprüngliches Aussehen
 td.deck.timer('Pause', 'start', 300);   // start | stop | reset | toggle, Sekunden
+// Karte auf dem Bildschirmschoner (unter der Uhr), auch mit „deck“; clear() entfernt sie
+td.saver.set({ title: 'Factorio', color: '#e6b45a', items: [{ label: 'Forschung', text: 'Logistik 2 · 42 %' }, { label: 'Strom', text: '35,2 MW' }] });
+td.saver.clear();
 
 // braucht "status"
 td.status();  // { version, devices: [{ name, ip, page }], obs, twitch, discord }
@@ -269,7 +272,7 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 | `{"type":"fire","trigger":"fertig","data":{…}}` | Auslöser melden |
 | `{"type":"notify","title":"…","body":"…"}` | Benachrichtigung |
 | `{"type":"log","level":"info","message":"…"}` | Protokoll |
-| `{"type":"call","requestId":"…","op":"deck.showPage","args":{"page":"OBS"}}` | Erweiterte Plugins brauchen dafür keine Berechtigung, `live.set` nur die ID in `lives`. Dieselben Funktionen wie `td.live` / `td.deck` / `td.status` in JavaScript: `live.set` (`id`, `value`), `deck.pages`, `deck.showPage` (`page`), `deck.setLook` (`button`, `look`), `deck.resetLook` (`button`), `deck.timer` (`name`, `op`, `seconds`), `status` |
+| `{"type":"call","requestId":"…","op":"deck.showPage","args":{"page":"OBS"}}` | Erweiterte Plugins brauchen dafür keine Berechtigung, `live.set` nur die ID in `lives`. Dieselben Funktionen wie `td.live` / `td.deck` / `td.status` in JavaScript: `live.set` (`id`, `value`), `deck.pages`, `deck.showPage` (`page`), `deck.setLook` (`button`, `look`), `deck.resetLook` (`button`), `deck.timer` (`name`, `op`, `seconds`), `saver.set` (`card`), `saver.clear`, `status` |
 
 Vollständige Beispiele in Python (nur Standardbibliothek) und Node.js:
 [`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) und [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).

@@ -153,6 +153,8 @@ pub struct App {
     live_busy: AtomicBool,
     /// PC gesperrt (Bildschirmsperre)? Nur bekannt, solange jemand es braucht (Auslöser oder „Bedienfeld mitsperren“).
     pc_locked: AtomicBool,
+    /// Karten der Plugins für den Bildschirmschoner (Plugin-ID → Karte).
+    plugin_savers: Mutex<serde_json::Map<String, Value>>,
     live_again: AtomicBool,
     on_pair_request: Option<Box<dyn Fn(PairRequest) + Send + Sync>>,
 }
@@ -178,6 +180,7 @@ impl App {
             "deck": c.settings.deck,
             "language": c.settings.language,
             "pcLocked": self.pc_locked.load(Ordering::Relaxed),
+            "savers": self.plugin_savers.lock().unwrap().values().cloned().collect::<Vec<_>>(),
         })
     }
 
@@ -244,6 +247,22 @@ impl App {
     pub fn timers_changed(self: &Arc<Self>) {
         refresh_timers(self);
         self.timers.ensure_ticker(self.clone(), refresh_timers, |a, name| a.events.fire(a, "timer_done", &json!({ "name": name, "Name": name })));
+    }
+
+    /** Karte eines Plugins auf dem Bildschirmschoner setzen (None = entfernen); nur Änderungen gehen an die Geräte. */
+    pub fn set_plugin_saver(&self, plugin: &str, card: Option<Value>) {
+        let savers = {
+            let mut map = self.plugin_savers.lock().unwrap();
+            let changed = match &card {
+                Some(c) => map.insert(plugin.to_string(), c.clone()).as_ref() != Some(c),
+                None => map.shift_remove(plugin).is_some(),
+            };
+            if !changed {
+                return;
+            }
+            map.values().cloned().collect::<Vec<_>>()
+        };
+        self.broadcast(Some(Role::Device), &json!({ "type": "savers", "savers": savers }));
     }
 
     /** Kurze Meldung in allen Bedienfeldern (z. B. aus Events, die kein Button ausgelöst hat). */
@@ -1551,6 +1570,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         usb: Mutex::new(json!({ "devices": [] })),
         live_busy: AtomicBool::new(false),
         pc_locked: AtomicBool::new(false),
+        plugin_savers: Mutex::new(serde_json::Map::new()),
         live_again: AtomicBool::new(false),
         on_pair_request: opts.on_pair_request,
     });

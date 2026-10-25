@@ -86,6 +86,11 @@ const PRELUDE: &str = r#"
       resetLook: (button) => call('deck.resetLook', { button: String(button) }),
       timer: (name, op = 'toggle', seconds = 0) => call('deck.timer', { name: String(name), op: String(op), seconds: Number(seconds) || 0 }),
     }),
+    // Karte auf dem Bildschirmschoner: { title, text, items: [{ label, text }], color }; clear() entfernt sie.
+    saver: Object.freeze({
+      set: (card) => call('saver.set', { card: card !== null && typeof card === 'object' ? card : { text: String(card ?? '') } }),
+      clear: () => call('saver.clear', {}),
+    }),
     status: () => call('status'),
     http(req) {
       const r = typeof req === 'string' ? { url: req } : req;
@@ -534,6 +539,8 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
             // Berechtigung je Bereich prüfen; Live-Anzeigen nur, wenn sie in plugin.json stehen.
             let allowed = match op.split('.').next().unwrap_or("") {
                 "live" => h.perms["lives"].as_array().is_some_and(|l| l.iter().any(|x| x.as_str() == args["id"].as_str())),
+                // Bildschirmschoner gehört zum Bedienfeld: Berechtigung „deck“.
+                "saver" => h.perms["deck"] == true,
                 area => h.perms[area] == true,
             };
             if !allowed {
@@ -635,6 +642,24 @@ pub fn host_call(app: &Arc<App>, plugin: &str, op: &str, args: &Value) -> Result
             let running = app.timers.control(if name.is_empty() { "Timer" } else { &name }, args["op"].as_str().unwrap_or("toggle"), ms);
             app.timers_changed();
             Ok(json!({ "running": running }))
+        }
+        "saver.set" => {
+            let c = &args["card"];
+            let hex = |v: &Value| v.as_str().filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|x| x.is_ascii_hexdigit())).unwrap_or("").to_string();
+            let items: Vec<Value> = c["items"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .take(6)
+                .map(|i| json!({ "label": text(&i["label"], 40), "text": text(&i["text"], 60) }))
+                .collect();
+            let card = json!({ "plugin": plugin, "title": text(&c["title"], 60), "text": text(&c["text"], 200), "items": items, "color": hex(&c["color"]) });
+            app.set_plugin_saver(plugin, Some(card));
+            Ok(json!(true))
+        }
+        "saver.clear" => {
+            app.set_plugin_saver(plugin, None);
+            Ok(json!(true))
         }
         "status" => Ok(json!({
             "version": env!("CARGO_PKG_VERSION"),
@@ -922,7 +947,7 @@ impl Plugins {
             if on && installed.get(&id).is_some_and(|e| e["enabled"] != false) {
                 self.start(app, &id);
             } else if !on {
-                self.stop(&id);
+                self.stop(app, &id);
             }
         }
         if on {
@@ -976,7 +1001,7 @@ impl Plugins {
     }
 
     fn start(&self, app: &Arc<App>, id: &str) {
-        self.stop(id);
+        self.stop(app, id);
         let entry = self.read_installed().get(id).cloned().unwrap_or_default();
         let Some(manifest) = self.manifests.lock().unwrap().get(id).cloned() else { return };
         if is_native(&manifest) {
@@ -996,10 +1021,12 @@ impl Plugins {
         }
     }
 
-    fn stop(&self, id: &str) {
+    fn stop(&self, app: &Arc<App>, id: &str) {
         if let Some(r) = self.running.lock().unwrap().remove(id) {
             r.stop();
         }
+        // Karte auf dem Bildschirmschoner gehört zum laufenden Plugin.
+        app.set_plugin_saver(id, None);
     }
 
     pub fn stop_all(&self) {
@@ -1359,7 +1386,7 @@ impl Plugins {
         {
             bail!(t!("plugins.anotherPluginWithId", id, other));
         }
-        self.stop(&id);
+        self.stop(app, &id);
         let dir = self.dir.join(&id);
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir)?;
@@ -1412,7 +1439,7 @@ impl Plugins {
         let raw = files.iter().find(|(n, _, _)| n == "plugin.json").ok_or_else(|| anyhow!(t!("plugins.zipHasNoPlugin")))?;
         let m = check_manifest(&serde_json::from_slice(&raw.1).map_err(|e| anyhow!(t!("plugins.pluginJsonIsNot", e)))?)?;
         let id = m["id"].as_str().unwrap_or("").to_string();
-        self.stop(&id);
+        self.stop(app, &id);
         let dir = self.dir.join("_zip").join(&id);
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir)?;
@@ -1444,7 +1471,7 @@ impl Plugins {
         let e = installed.get_mut(id).ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
         e["enabled"] = json!(on);
         self.write_installed(&installed)?;
-        if on { self.start(app, id) } else { self.stop(id) }
+        if on { self.start(app, id) } else { self.stop(app, id) }
         Ok(())
     }
 
@@ -1465,7 +1492,7 @@ impl Plugins {
     pub fn remove(&self, app: &Arc<App>, id: &str) -> Result<()> {
         let mut installed = self.read_installed();
         let e = installed.remove(id).ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
-        self.stop(id);
+        self.stop(app, id);
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().remove(id);
         if !e["source"].as_str().is_some_and(|s| s.starts_with("local:")) {

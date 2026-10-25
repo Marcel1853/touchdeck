@@ -337,3 +337,21 @@ body.with-footer #foot {
 }
 #pclock[hidden] { display: none; }
 .pclock-icon { font-size: 3.5rem; }
+
+/* Karten von Plugins unter der Uhr: ruhig, gedämpft, in der Uhrfarbe. */
+#saver-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 2vw; margin-top: 4vh; }
+#saver-cards:empty { display: none; }
+.saver-card {
+  min-width: min(28vw, 34vh);
+  max-width: min(40vw, 50vh);
+  padding: 1.6vh 2vw;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--card, var(--clock)) 40%, transparent);
+  color: var(--clock);
+  text-align: left;
+  font-size: min(2.6vw, 3vh);
+}
+.saver-card-title { color: var(--card, var(--clock)); font-weight: 700; margin-bottom: 0.6vh; }
+.saver-card-text { opacity: 0.85; }
+.saver-card-row { display: flex; justify-content: space-between; gap: 2vw; opacity: 0.85; }
+.saver-card-row b { font-weight: 600; }

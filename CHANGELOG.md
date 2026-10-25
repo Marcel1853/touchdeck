@@ -36,6 +36,8 @@ Date: 2026-10-20
     - Screensaver: large clock on black (digital thin, bold or analogue) with date, own colour or the
       Android system colour; it moves a little every minute against burn-in. Up to four shortcuts
       appear on the first tap (in the app also when the device is moved).
+    - Plugins can fill the screensaver: td.saver.set({ title, items, color }) shows a card below the
+      clock (e.g. research and power from Factorio); can be switched off in the settings.
     - PC locked: lock the deck while the PC is locked, and trigger “PC locked / unlocked” (Cinnamon,
       GNOME, KDE, MATE).
     - USB connection: Settings › Phone & security › "Connect Android devices via USB cable" forwards

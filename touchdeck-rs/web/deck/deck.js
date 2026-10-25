@@ -438,6 +438,7 @@ function goToSleep() {
   el.style.setProperty('--clock', color);
   $('sleep-date').hidden = state.deck.clockDate === false;
   hideSaverButtons();
+  renderSaverCards();
   el.hidden = false;
   app?.setDim?.(true);
   if (mode === 'clock') tickClock();
@@ -453,6 +454,36 @@ function tickClock() {
   const dy = Math.round((Math.random() - 0.5) * 16);
   $('saver-box').style.transform = `translate(${dx}vw, ${dy}vh)`;
   clockTimer = setTimeout(tickClock, (60 - now.getSeconds()) * 1000 + 50);
+}
+
+/** Karten von Plugins unter der Uhr (z. B. Forschung, Strom); abschaltbar in den Einstellungen. */
+function renderSaverCards() {
+  const cards = state?.deck?.saverPlugins === false ? [] : state?.savers ?? [];
+  $('saver-cards').replaceChildren(...cards.map((c) => {
+    const card = document.createElement('div');
+    card.className = 'saver-card';
+    if (c.color) card.style.setProperty('--card', c.color);
+    const add = (cls, text) => {
+      if (!text) return;
+      const d = document.createElement('div');
+      d.className = cls;
+      d.textContent = text;
+      card.append(d);
+    };
+    add('saver-card-title', c.title);
+    add('saver-card-text', c.text);
+    for (const it of c.items ?? []) {
+      const row = document.createElement('div');
+      row.className = 'saver-card-row';
+      const l = document.createElement('span');
+      const v = document.createElement('b');
+      l.textContent = it.label;
+      v.textContent = it.text;
+      row.append(l, v);
+      card.append(row);
+    }
+    return card;
+  }));
 }
 
 /** Analoge Uhr ohne Sekundenzeiger (spart Strom, die Uhr stellt sich nur jede Minute). */
@@ -739,6 +770,9 @@ async function connect() {
       if (msg.pageId && msg.pageId !== currentPage) goTo(msg.pageId);
     } else if (msg.type === 'live') {
       if (state) updateLive(msg.values, msg.full !== false);
+    } else if (msg.type === 'savers') {
+      if (state) state.savers = msg.savers;
+      if (!$('sleep').hidden) renderSaverCards();
     } else if (msg.type === 'toast') {
       toast(msg.text);
     } else if (msg.type === 'pclock') {

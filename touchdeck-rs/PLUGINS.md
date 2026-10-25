@@ -169,6 +169,9 @@ td.deck.showPage('OBS');                // id or name, shown on all devices
 td.deck.setLook(buttonId, { title: 'Live', color: '#c0392b', textColor: '#fff', icon: '🔴' });
 td.deck.resetLook(buttonId);            // back to the original look
 td.deck.timer('Break', 'start', 300);   // start | stop | reset | toggle, seconds
+// card on the screensaver (below the clock), also needs "deck"; clear() removes it
+td.saver.set({ title: 'Factorio', color: '#e6b45a', items: [{ label: 'Research', text: 'Logistics 2 · 42 %' }, { label: 'Power', text: '35.2 MW' }] });
+td.saver.clear();
 
 // needs "status"
 td.status();  // { version, devices: [{ name, ip, page }], obs, twitch, discord }
@@ -266,7 +269,7 @@ TouchDeck restarts it, at most three times per minute.
 | `{"type":"fire","trigger":"done","data":{…}}` | Report a trigger |
 | `{"type":"notify","title":"…","body":"…"}` | Notification |
 | `{"type":"log","level":"info","message":"…"}` | Log |
-| `{"type":"call","requestId":"…","op":"deck.showPage","args":{"page":"OBS"}}` | Advanced plugins need no permissions for it, `live.set` only needs the id in `lives`. Same functions as `td.live` / `td.deck` / `td.status` in JavaScript: `live.set` (`id`, `value`), `deck.pages`, `deck.showPage` (`page`), `deck.setLook` (`button`, `look`), `deck.resetLook` (`button`), `deck.timer` (`name`, `op`, `seconds`), `status` |
+| `{"type":"call","requestId":"…","op":"deck.showPage","args":{"page":"OBS"}}` | Advanced plugins need no permissions for it, `live.set` only needs the id in `lives`. Same functions as `td.live` / `td.deck` / `td.status` in JavaScript: `live.set` (`id`, `value`), `deck.pages`, `deck.showPage` (`page`), `deck.setLook` (`button`, `look`), `deck.resetLook` (`button`), `deck.timer` (`name`, `op`, `seconds`), `saver.set` (`card`), `saver.clear`, `status` |
 
 Complete examples in Python (standard library only) and Node.js:
 [`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) and [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).

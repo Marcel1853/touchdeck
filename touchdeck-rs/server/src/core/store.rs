@@ -796,6 +796,9 @@ pub struct DeckSettings {
     /// Bis zu vier Buttons, die auf dem Bildschirmschoner erscheinen (erster Tipp oder Bewegung).
     #[serde(default)]
     pub saver_buttons: Vec<String>,
+    /// Karten von Plugins unter der Uhr zeigen (z. B. Forschung und Strom aus Factorio).
+    #[serde(default = "yes")]
+    pub saver_plugins: bool,
 }
 
 fn default_clock_style() -> String {
@@ -931,7 +934,7 @@ fn default_settings(start_page: &str) -> Settings {
         public_host: String::new(),
         usb: false,
         pin: String::new(),
-        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false, clock_style: default_clock_style(), clock_color: default_clock_color(), clock_date: true, saver_buttons: Vec::new() },
+        deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false, clock_style: default_clock_style(), clock_color: default_clock_color(), clock_date: true, saver_buttons: Vec::new(), saver_plugins: true },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
         twitch: TwitchSettings {
             client_id: String::new(),
@@ -1364,6 +1367,9 @@ impl Store {
             }
             if let Some(b) = d["clockDate"].as_bool() {
                 s.deck.clock_date = b;
+            }
+            if let Some(b) = d["saverPlugins"].as_bool() {
+                s.deck.saver_plugins = b;
             }
             if let Some(l) = d["saverButtons"].as_array() {
                 s.deck.saver_buttons = l.iter().filter_map(Value::as_str).filter(|id| !id.is_empty() && id.len() <= 40).take(4).map(String::from).collect();

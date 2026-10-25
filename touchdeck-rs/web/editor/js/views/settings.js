@@ -185,6 +185,7 @@ function deck() {
             h('label', { class: 'switch-row compact' },
               h('input', { type: 'checkbox', checked: d.clockColor === 'system', onchange: (e) => set('clockColor', e.target.checked ? 'system' : '#c9cfdc') }), tr('settings.clockSystemColor'))))),
       check(tr('settings.clockDate'), d.clockDate !== false, (v) => set('clockDate', v)),
+      check(tr('settings.saverPlugins'), d.saverPlugins !== false, (v) => set('saverPlugins', v)),
       h('h3', {}, tr('settings.saverButtons')),
       h('p', { class: 'hint-text' }, tr('settings.saverButtonsHint')),
       ...[0, 1, 2, 3].map((i) => dynamicSelect({ key: `saver${i}`, label: tr('settings.saverButtonN', [i + 1]), source: 'buttons' }, (d.saverButtons ?? [])[i] ?? '', (v) => {

@@ -868,6 +868,7 @@
     "saverButtons": "Abkürzungen",
     "saverButtonsHint": "Bis zu vier Buttons, die beim ersten Tippen auf den Bildschirmschoner (in der App auch beim Bewegen des Geräts) für 10 Sekunden erscheinen. Ein weiterer Tipp daneben weckt das Bedienfeld.",
     "saverHint": "Große Uhr auf schwarzem Grund; sie wandert jede Minute ein Stück, damit nichts einbrennt. In der App lässt sich der Ruhezustand pro Gerät einstellen.",
+    "saverPlugins": "Karten von Plugins unter der Uhr zeigen (z. B. Forschung und Strom aus Factorio)",
     "saverTitle": "Bildschirmschoner (Ruhezustand „Uhr zeigen“)",
     "set": "•••• (gesetzt)",
     "setPin": "PIN setzen",
