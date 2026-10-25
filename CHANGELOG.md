@@ -6,6 +6,20 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.0
+Date: 2026-10-25
+  Features:
+    - AI assistants (MCP): Settings › AI assistants switches on an MCP server. Assistants like Claude
+      see pages, buttons and live values, press buttons, read and set values and switch the page on the
+      devices. With a second option they may also create, change and delete pages and buttons and run
+      any action. Only from the PC itself, with its own key, every use logged; ready-made commands for
+      Claude Code and other programs to copy.
+    - Plugins can fill the screensaver: td.saver.set({ title, items, color }) shows a card below the
+      clock (e.g. research and power from Factorio); can be switched off in the settings.
+    - Deck: page selection at the top left as a clear dropdown button; in the app “Change connection”
+      (⇄) and “Settings of this device” (⚙) at the top right.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.11.0
 Date: 2026-10-20
   Major Features:
@@ -36,8 +50,6 @@ Date: 2026-10-20
     - Screensaver: large clock on black (digital thin, bold or analogue) with date, own colour or the
       Android system colour; it moves a little every minute against burn-in. Up to four shortcuts
       appear on the first tap (in the app also when the device is moved).
-    - Plugins can fill the screensaver: td.saver.set({ title, items, color }) shows a card below the
-      clock (e.g. research and power from Factorio); can be switched off in the settings.
     - PC locked: lock the deck while the PC is locked, and trigger “PC locked / unlocked” (Cinnamon,
       GNOME, KDE, MATE).
     - USB connection: Settings › Phone & security › "Connect Android devices via USB cable" forwards

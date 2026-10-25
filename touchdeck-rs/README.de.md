@@ -6,7 +6,7 @@ Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy oder
 aus auslösen – mit Editor, Android-App und Bedienfeld im Browser. Geschrieben in Rust,
 das Programmfenster nutzt Tauri mit der Web-Ansicht des Systems.
 
-Aktuelle Version: **0.11.0** (PC-Programm), Android-App **0.8.1**. Änderungen je
+Aktuelle Version: **0.12.0** (PC-Programm), Android-App **0.8.1**. Änderungen je
 Version: [`CHANGELOG.de.md`](../CHANGELOG.de.md)
 
 ## Installieren
@@ -222,6 +222,18 @@ Abgelegt im Datenordner unter `icons/packs/`.
   Bildern (auch in Unterordnern) und übliche Beschreibungsdateien wie eine `info.txt`
   mit „schlüssel=wert“ oder eine `manifest.json` mit `icons.json` (Namen und
   Schlagwörter) und Lizenzdatei. Bitte nur Bilder importieren, die man nutzen darf.
+
+## KI-Assistenten (MCP)
+
+Unter **Einstellungen › KI-Assistenten** lässt sich ein MCP-Server einschalten. Darüber können
+KI-Assistenten wie Claude TouchDeck bedienen: Seiten, Buttons und Live-Werte ansehen, Buttons
+drücken, Werte lesen und setzen und die Seite auf den Geräten wechseln. Mit dem zweiten Haken dürfen
+sie auch Seiten und Buttons anlegen, ändern und löschen und beliebige Aktionen ausführen.
+
+- Erreichbar nur vom PC selbst unter `http://localhost:8770/mcp`, mit eigenem Schlüssel.
+- Die Einstellungen zeigen den fertigen Befehl für Claude Code
+  (`claude mcp add --transport http touchdeck …`) und die Konfiguration für andere Programme.
+- Jede Nutzung steht im Protokoll unter „MCP“.
 
 ## Plugins
 

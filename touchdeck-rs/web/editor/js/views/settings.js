@@ -11,6 +11,7 @@ const SECTIONS = [
   ['deck', '📱', tr('settings.deck')],
   ['look', '🎨', tr('common.look')],
   ['integrations', '🔌', tr('settings.integrations')],
+  ['ai', '🤖', tr('settings.ai')],
   ['backups', '💾', tr('settings.backups')],
   ['logs', '📜', tr('settings.log')],
   ['info', 'ℹ️', tr('settings.information')],
@@ -54,7 +55,7 @@ export function renderSettings({ detail = true } = {}) {
   document.getElementById('settings-nav').replaceChildren(...SECTIONS.map(([id, icon, label]) => h('li', { class: id === section ? 'active' : '', onclick: () => { section = id; render(); } },
     h('span', {}, icon), h('span', { class: 'name' }, label))));
   if (!detail) return;
-  const build = { general, security, deck, look, integrations, backups: backupsSection, logs: logsSection, info: infoSection }[section];
+  const build = { general, security, deck, look, integrations, ai, backups: backupsSection, logs: logsSection, info: infoSection }[section];
   document.getElementById('settings-detail').replaceChildren(...build().filter(Boolean));
 }
 
@@ -93,6 +94,35 @@ function usbStatus() {
     } else box.textContent = u.devices.length ? tr('settings.usbDevices', [u.devices.join(', ')]) : tr('settings.usbNone');
   }).catch(() => {});
   return box;
+}
+
+/** KI-Assistenten (MCP): an/aus, ändern erlauben, Adresse und Schlüssel zum Kopieren. */
+function ai() {
+  const m = S.settings.mcp ?? {};
+  const url = `http://localhost:${S.port ?? location.port}/mcp`;
+  const copy = (text) => navigator.clipboard?.writeText(text).then(() => toast(tr('settings.copied'), 'ok')).catch(() => {});
+  const claude = `claude mcp add --transport http touchdeck ${url} --header "Authorization: Bearer ${m.token}"`;
+  const json = JSON.stringify({ mcpServers: { touchdeck: { type: 'http', url, headers: { Authorization: `Bearer ${m.token}` } } } }, null, 2);
+  const codeBox = (text) => h('div', { class: 'code-copy' }, h('pre', {}, text), h('button', { class: 'btn small', onclick: () => copy(text) }, tr('settings.copy')));
+  return [
+    ...title(tr('settings.ai'), tr('settings.aiIntro')),
+    card(
+      check(tr('settings.aiEnabled'), !!m.enabled, (v) => updateSettings({ mcp: { enabled: v } })),
+      check(tr('settings.aiAllowEdit'), !!m.allowEdit, (v) => updateSettings({ mcp: { allowEdit: v } })),
+      h('p', { class: 'hint-text' }, tr('settings.aiAllowEditHint'))),
+    m.enabled && m.token && card(
+      h('label', { class: 'field' }, tr('settings.aiAddress'), h('input', { value: url, readonly: true, onclick: (e) => e.target.select() })),
+      h('label', { class: 'field' }, tr('settings.aiKey'),
+        h('div', { class: 'row' },
+          h('input', { type: 'password', value: m.token, readonly: true, onfocus: (e) => (e.target.type = 'text'), onblur: (e) => (e.target.type = 'password') }),
+          h('button', { class: 'btn small', onclick: () => copy(m.token) }, tr('settings.copy')),
+          h('button', { class: 'btn small ghost danger', onclick: () => updateSettings({ mcp: { newToken: true } }) }, tr('settings.aiNewKey')))),
+      h('h3', {}, tr('settings.aiClaudeCode')),
+      codeBox(claude),
+      h('h3', {}, tr('settings.aiOtherClients')),
+      codeBox(json),
+      h('p', { class: 'hint-text' }, tr('settings.aiSecurityHint'))),
+  ];
 }
 
 function security() {

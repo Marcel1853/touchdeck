@@ -390,5 +390,19 @@
     "oneNumber": "{0}() braucht genau eine Zahl",
     "unknownFunction": "unbekannte Funktion „{0}“",
     "notFinite": "Ergebnis ist keine Zahl (z. B. durch 0 geteilt)"
+  },
+  "mcp": {
+    "buttonNotFound": "Button „{0}“ nicht gefunden.",
+    "cellTaken": "An dieser Stelle liegt schon ein Button.",
+    "disabled": "Der MCP-Server ist aus (TouchDeck › Einstellungen › KI-Assistenten).",
+    "editNotAllowed": "Ändern ist nicht erlaubt. In TouchDeck › Einstellungen › KI-Assistenten „Darf Seiten und Buttons ändern“ einschalten.",
+    "nameMissing": "Name fehlt.",
+    "noActions": "Keine gültigen Aktionen.",
+    "onlyLocal": "MCP ist nur vom PC selbst erreichbar.",
+    "outsidePage": "Zeile/Spalte liegt außerhalb der Seite ({0} Zeilen × {1} Spalten, ab 0 gezählt).",
+    "pageNotFound": "Seite „{0}“ nicht gefunden.",
+    "toolCalled": "KI-Assistent: {0}",
+    "unknownTool": "Unbekanntes Werkzeug: {0}",
+    "wrongKey": "Falscher oder fehlender Schlüssel (Authorization: Bearer …)."
   }
 }

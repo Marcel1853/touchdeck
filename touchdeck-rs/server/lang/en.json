@@ -390,5 +390,19 @@
     "oneNumber": "{0}() needs exactly one number",
     "unknownFunction": "unknown function “{0}”",
     "notFinite": "result is not a number (e.g. divided by 0)"
+  },
+  "mcp": {
+    "buttonNotFound": "Button “{0}” not found.",
+    "cellTaken": "There is already a button at this position.",
+    "disabled": "The MCP server is off (TouchDeck › Settings › AI assistants).",
+    "editNotAllowed": "Editing is not allowed. Switch on “May change pages and buttons” in TouchDeck › Settings › AI assistants.",
+    "nameMissing": "Name is missing.",
+    "noActions": "No valid actions.",
+    "onlyLocal": "MCP is only reachable from the PC itself.",
+    "outsidePage": "Row/column is outside the page ({0} rows × {1} columns, counted from 0).",
+    "pageNotFound": "Page “{0}” not found.",
+    "toolCalled": "AI assistant: {0}",
+    "unknownTool": "Unknown tool: {0}",
+    "wrongKey": "Wrong or missing key (Authorization: Bearer …)."
   }
 }

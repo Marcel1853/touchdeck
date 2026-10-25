@@ -684,3 +684,7 @@ button.status-chip:hover { color: var(--text); }
 
 /* Im Editor bleiben versteckte Buttons sichtbar, nur blass und gestrichelt umrandet. */
 .canvas .td-btn.is-hidden { visibility: visible; pointer-events: auto; opacity: 0.4; outline: 2px dashed var(--muted, #8a8f9c); outline-offset: -2px; }
+
+/* Befehl oder Konfiguration zum Kopieren (z. B. KI-Assistenten). */
+.code-copy { display: flex; gap: 8px; align-items: flex-start; }
+.code-copy pre { flex: 1; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--bg-2, #12151c); border: 1px solid var(--line, #262c3a); font-size: 12px; white-space: pre-wrap; word-break: break-all; }

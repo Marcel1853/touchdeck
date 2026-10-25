@@ -6,7 +6,7 @@ Macro remote for Linux: design button pages on your PC and trigger them from you
 phone or tablet – with an editor, an Android app and a deck in the browser. Written
 in Rust; the program window uses Tauri with the system's web view.
 
-Current version: **0.11.0** (desktop program), Android app **0.8.1**. Changes per
+Current version: **0.12.0** (desktop program), Android app **0.8.1**. Changes per
 version: [`CHANGELOG.md`](../CHANGELOG.md)
 
 ## Installing
@@ -215,6 +215,18 @@ data folder under `icons/packs/`.
   with images (also in sub-folders) and common description files such as a key/value
   `info.txt` or a `manifest.json` with `icons.json` (names and tags) and a license
   file. Only import images you are allowed to use.
+
+## AI assistants (MCP)
+
+Under **Settings › AI assistants** you can switch on an MCP server. AI assistants like Claude can
+then operate TouchDeck: look at pages, buttons and live values, press buttons, read and set values
+and switch the page on the devices. With the second option they may also create, change and delete
+pages and buttons and run any action.
+
+- Only reachable from the PC itself at `http://localhost:8770/mcp`, with its own key.
+- The settings show the ready-made command for Claude Code
+  (`claude mcp add --transport http touchdeck …`) and the configuration for other programs.
+- Every use is logged under “MCP”.
 
 ## Plugins
 

@@ -6,6 +6,20 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.0
+Datum: 2026-10-25
+  Neuerungen:
+    - KI-Assistenten (MCP): Einstellungen › KI-Assistenten schaltet einen MCP-Server ein. Assistenten
+      wie Claude sehen Seiten, Buttons und Live-Werte, drücken Buttons, lesen und setzen Werte und
+      wechseln die Seite auf den Geräten. Mit zweitem Haken dürfen sie auch Seiten und Buttons anlegen,
+      ändern und löschen und beliebige Aktionen ausführen. Nur vom PC aus, mit eigenem Schlüssel,
+      jede Nutzung im Protokoll; fertige Befehle für Claude Code und andere Programme zum Kopieren.
+    - Plugins dürfen den Bildschirmschoner füllen: td.saver.set({ title, items, color }) zeigt eine Karte
+      unter der Uhr (z. B. Forschung und Strom aus Factorio); abschaltbar in den Einstellungen.
+    - Bedienfeld: Seitenauswahl oben links als deutlicher Auswahlknopf; in der App oben rechts
+      „Verbindung ändern“ (⇄) und „Einstellungen dieses Geräts“ (⚙).
+
+---------------------------------------------------------------------------------------------------
 Version: 0.11.0
 Datum: 2026-10-20
   Große Neuerungen:
@@ -38,8 +52,6 @@ Datum: 2026-10-20
     - Bildschirmschoner: große Uhr auf Schwarz (digital dünn, kräftig oder analog) mit Datum, eigene
       Farbe oder Systemfarbe von Android; sie wandert jede Minute ein Stück gegen Einbrennen. Bis zu vier
       Abkürzungen erscheinen beim ersten Tipp (in der App auch beim Bewegen des Geräts).
-    - Plugins dürfen den Bildschirmschoner füllen: td.saver.set({ title, items, color }) zeigt eine Karte
-      unter der Uhr (z. B. Forschung und Strom aus Factorio); abschaltbar in den Einstellungen.
     - PC gesperrt: Bedienfeld sperren, solange der PC gesperrt ist, und Auslöser „PC gesperrt /
       entsperrt“ (Cinnamon, GNOME, KDE, MATE).
     - USB-Verbindung: Einstellungen › Handy & Sicherheit › „Android-Geräte per USB-Kabel verbinden“

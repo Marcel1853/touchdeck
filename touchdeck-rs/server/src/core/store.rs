@@ -902,9 +902,21 @@ pub struct Settings {
     /// USB-Verbindung über „adb reverse“ für angeschlossene Android-Geräte.
     #[serde(default)]
     pub usb: bool,
+    /// MCP-Server für KI-Assistenten (nur vom PC aus, mit eigenem Schlüssel).
+    #[serde(default)]
+    pub mcp: McpSettings,
     /// Unbekannte Einträge bleiben erhalten.
     #[serde(flatten)]
     pub extra: Map<String, Value>,
+}
+
+/** MCP-Server: aus, bis man ihn einschaltet; Ändern und beliebige Aktionen nur mit zweitem Haken. */
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct McpSettings {
+    pub enabled: bool,
+    pub allow_edit: bool,
+    pub token: String,
 }
 
 /** Sprache des Systems (LANGUAGE, LC_ALL, LC_MESSAGES, LANG): Deutsch bei de_…, sonst Englisch. */
@@ -933,6 +945,7 @@ fn default_settings(start_page: &str) -> Settings {
         port: default_port(),
         public_host: String::new(),
         usb: false,
+        mcp: McpSettings::default(),
         pin: String::new(),
         deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false, clock_style: default_clock_style(), clock_color: default_clock_color(), clock_date: true, saver_buttons: Vec::new(), saver_plugins: true },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
@@ -1317,6 +1330,19 @@ impl Store {
         }
         if let Some(b) = patch["usb"].as_bool() {
             s.usb = b;
+        }
+        let m = &patch["mcp"];
+        if m.is_object() {
+            if let Some(b) = m["enabled"].as_bool() {
+                s.mcp.enabled = b;
+            }
+            if let Some(b) = m["allowEdit"].as_bool() {
+                s.mcp.allow_edit = b;
+            }
+            // Beim ersten Einschalten (oder auf Wunsch) einen eigenen Schlüssel erzeugen.
+            if m["newToken"] == Value::Bool(true) || (s.mcp.enabled && s.mcp.token.is_empty()) {
+                s.mcp.token = random_token();
+            }
         }
         if let Some(h) = patch["publicHost"].as_str() {
             let h = h.trim();

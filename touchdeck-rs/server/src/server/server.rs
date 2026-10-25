@@ -324,7 +324,7 @@ impl App {
 }
 
 /** Aktionen ausführen und Fehler protokollieren. */
-async fn run(app: &Arc<App>, actions: &[Action], button_id: Option<String>, source: &str) -> Value {
+pub(super) async fn run(app: &Arc<App>, actions: &[Action], button_id: Option<String>, source: &str) -> Value {
     run_with(app, actions, RunOpts { button_id, ..Default::default() }, source).await
 }
 
@@ -343,7 +343,7 @@ fn button_title(b: &crate::core::store::Button) -> String {
 
 // ---------- Buttons ----------
 
-async fn press(app: &Arc<App>, page_id: &str, button_id: &str, double: bool) -> Value {
+pub(super) async fn press(app: &Arc<App>, page_id: &str, button_id: &str, double: bool) -> Value {
     let found = {
         let mut store = app.store.lock().unwrap();
         let found = store.page(page_id).and_then(|p| p.buttons.iter().find(|b| b.id == button_id).map(|b| (p.name.clone(), b.clone())));
@@ -657,7 +657,7 @@ fn pair_status(app: &App, id: &str) -> Value {
     json!({ "state": p.state })
 }
 
-fn is_loopback(addr: &SocketAddr) -> bool {
+pub(super) fn is_loopback(addr: &SocketAddr) -> bool {
     match addr.ip() {
         IpAddr::V4(ip) => ip.is_loopback(),
         IpAddr::V6(ip) => ip.is_loopback() || ip.to_ipv4_mapped().is_some_and(|v4| v4.is_loopback()),
@@ -1210,6 +1210,15 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
     let query: HashMap<String, String> = Query::try_from_uri(&uri).map(|Query(q)| q).unwrap_or_default();
     let who = app.auth(&addr, &query, &headers);
     let path = percent_encoding::percent_decode_str(uri.path()).decode_utf8_lossy().into_owned();
+
+    // MCP für KI-Assistenten: eigene Prüfung (nur vom PC, eigener Schlüssel), unabhängig von der Kopplung.
+    if path == "/mcp" {
+        let body = match axum::body::to_bytes(req.into_body(), MAX_BODY).await {
+            Ok(b) => b,
+            Err(_) => return error_response(413, t!("server.requestTooLarge")),
+        };
+        return super::mcp::handle(&app, &addr, &headers, &method, &body).await;
+    }
 
     if path.starts_with("/api/") {
         let key = format!("{method} {path}");
