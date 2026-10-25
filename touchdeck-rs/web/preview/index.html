@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TouchDeck – Vorschau</title>
+  <link rel="icon" href="/shared/icon.svg">
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <!-- Vorschau des Bedienfelds in der Größe eines Handys oder Tablets (nur am PC). -->
+  <header id="tools">
+    <label><span data-i18n="preview.device">Gerät</span>
+      <select id="device"></select>
+    </label>
+    <button id="rotate" data-i18n-title="preview.rotate" title="Drehen">⟳</button>
+    <span id="size"></span>
+    <span class="spacer"></span>
+    <label><span data-i18n="preview.zoom">Maßstab</span>
+      <select id="zoom">
+        <option value="fit" data-i18n="preview.fit">einpassen</option>
+        <option value="1">100 %</option>
+        <option value="0.75">75 %</option>
+        <option value="0.5">50 %</option>
+      </select>
+    </label>
+  </header>
+  <main id="stage">
+    <div id="frame"><iframe id="deck" src="/deck/" title="TouchDeck"></iframe></div>
+  </main>
+  <script type="module" src="preview.js"></script>
+</body>
+</html>

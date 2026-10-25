@@ -16,6 +16,8 @@ Datum: 2026-10-25
       jede Nutzung im Protokoll; fertige Befehle für Claude Code und andere Programme zum Kopieren.
     - Plugins dürfen den Bildschirmschoner füllen: td.saver.set({ title, items, color }) zeigt eine Karte
       unter der Uhr (z. B. Forschung und Strom aus Factorio); abschaltbar in den Einstellungen.
+    - Vorschau mit Geräteauswahl: Handy- und Tabletgrößen, Drehen, Maßstab; deine eigenen Geräte
+      erscheinen mit ihrer echten Bildschirmgröße (wird beim Verbinden gemerkt).
     - Bedienfeld: Seitenauswahl oben links als deutlicher Auswahlknopf; in der App oben rechts
       „Verbindung ändern“ (⇄) und „Einstellungen dieses Geräts“ (⚙).
 

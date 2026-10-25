@@ -16,6 +16,8 @@ Date: 2026-10-25
       Claude Code and other programs to copy.
     - Plugins can fill the screensaver: td.saver.set({ title, items, color }) shows a card below the
       clock (e.g. research and power from Factorio); can be switched off in the settings.
+    - Preview with device choice: phone and tablet sizes, rotate, scale; your own devices appear with
+      their real screen size (remembered when they connect).
     - Deck: page selection at the top left as a clear dropdown button; in the app “Change connection”
       (⇄) and “Settings of this device” (⚙) at the top right.
 

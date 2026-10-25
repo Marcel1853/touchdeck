@@ -98,7 +98,7 @@ async function refreshPairing() {
 function bind() {
   $('#undo').onclick = undo;
   $('#redo').onclick = redo;
-  $('#open-preview').onclick = () => window.open('/deck/', 'touchdeck-vorschau', 'width=480,height=820');
+  $('#open-preview').onclick = () => window.open('/preview/', 'touchdeck-vorschau', 'width=1000,height=900');
   $('#open-pair').onclick = openPairing;
   $('#pair-lan').onchange = async (e) => {
     await updateSettings({ lanEnabled: e.target.checked });

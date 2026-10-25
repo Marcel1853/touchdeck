@@ -946,5 +946,19 @@
     "noFolder": "Ohne Ordner",
     "rename": "Ordner umbenennen",
     "selectAll": "Alles im Ordner auswählen"
+  },
+  "preview": {
+    "desktop": "Breiter Bildschirm",
+    "device": "Gerät",
+    "fit": "einpassen",
+    "free": "Fenstergröße",
+    "phoneLarge": "Handy groß",
+    "phoneSmall": "Handy klein",
+    "rotate": "Drehen (Hoch-/Querformat)",
+    "tablet11": "Tablet 11 Zoll",
+    "tablet13": "Tablet 13 Zoll",
+    "tablet8": "Tablet 8–10 Zoll",
+    "title": "TouchDeck – Vorschau",
+    "zoom": "Maßstab"
   }
 }

@@ -694,7 +694,8 @@ const DEVICE_ROUTES: [&str; 3] = ["GET /api/state", "POST /api/press", "GET /api
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 62] = [
+const ROUTES: [&str; 63] = [
+    "GET /api/device-sizes",
     "GET /api/buttons",
     "GET /api/plugins",
     "GET /api/plugins/config",
@@ -804,6 +805,8 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             }
             Ok(r)
         }
+        // Für die Vorschau: zuletzt gemeldete Bildschirmgrößen der Geräte { Name: [Breite, Höhe] }.
+        "GET /api/device-sizes" => Ok(app.store.lock().unwrap().config.extra.get("deviceSizes").cloned().unwrap_or_else(|| json!({}))),
         // Leichte Liste für Widget, Schnellzugriff und NFC der App: Seiten mit Buttons (ID, Titel, Emoji).
         "GET /api/buttons" => {
             let store = app.store.lock().unwrap();
@@ -1267,7 +1270,8 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         return Response::builder().status(302).header(header::LOCATION, target).body(Body::empty()).expect("gültige Antwort");
     }
     let index = |p: &str| if p.ends_with('/') { format!("{p}index.html") } else { p.to_string() };
-    if path.starts_with("/editor/") {
+    // Editor und Vorschau (Geräte-Größen) nur am PC selbst.
+    if path.starts_with("/editor/") || path.starts_with("/preview/") {
         if who != Some(Who::Local) {
             return text_response(403, t!("server.editorIsOnlyReachable"));
         }
@@ -1446,8 +1450,14 @@ fn on_message(app: &Arc<App>, id: u64, tx: &mpsc::UnboundedSender<Message>, msg:
         Some("hello") => {
             // Name des Geräts (Android-App: Gerätename, Browser: aus der Kennung abgeleitet).
             let name: String = msg["name"].as_str().unwrap_or("").chars().filter(|c| !c.is_control()).take(60).collect();
+            let name = name.trim().to_string();
             if let Some(c) = app.clients.lock().unwrap().get_mut(&id) {
-                c.name = name.trim().to_string();
+                c.name = name.clone();
+            }
+            // Bildschirmgröße (CSS-Pixel) merken – nicht für die Vorschau im Editor selbst.
+            let size = |i: usize| msg["screen"][i].as_u64().filter(|n| (100..=10_000).contains(n)).unwrap_or(0) as u32;
+            if msg["preview"] != true {
+                app.store.lock().unwrap().remember_device_size(&name, size(0), size(1));
             }
         }
         Some("hidden") => {

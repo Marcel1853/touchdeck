@@ -1,0 +1,18 @@
+/* Vorschau: oben Werkzeuge, darunter das Bedienfeld in Gerätegröße, auf die Fläche verkleinert. */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; background: #07080b; color: #e8eaf0; font: 14px system-ui, sans-serif; }
+
+#tools { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #0d0f14; border-bottom: 1px solid #1d212b; flex-wrap: wrap; }
+#tools label { display: flex; align-items: center; gap: 6px; color: #8b93a7; }
+#tools select, #tools button { background: #1a1e27; color: #e8eaf0; border: 1px solid #2a2f3b; border-radius: 8px; padding: 5px 8px; font: inherit; }
+#tools button { cursor: pointer; min-width: 34px; }
+#size { color: #8b93a7; font-variant-numeric: tabular-nums; }
+.spacer { flex: 1; }
+
+#stage { flex: 1; min-height: 0; display: grid; place-items: center; overflow: auto; padding: 16px; }
+/* Gerätegröße in CSS-Pixeln; verkleinert über transform, die Hülle bekommt die sichtbare Größe. */
+#frame { position: relative; border-radius: 22px; box-shadow: 0 0 0 10px #1a1d24, 0 0 0 11px #2a2f3b, 0 20px 50px rgb(0 0 0 / 0.6); overflow: hidden; background: #0d0f14; }
+#deck { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #0d0f14; }
+body.free #frame { border-radius: 0; box-shadow: none; width: 100%; height: 100%; }
+body.free #deck { width: 100%; height: 100%; transform: none; }

@@ -743,7 +743,8 @@ async function connect() {
     retryDelay = 500;
     announcedPage = null;
     setConnected(true);
-    ws.send(JSON.stringify({ type: 'hello', name: deviceName() }));
+    // Bildschirmgröße mitschicken: die Vorschau im Editor kann so genau dieses Gerät nachbilden.
+    ws.send(JSON.stringify({ type: 'hello', name: deviceName(), screen: [innerWidth, innerHeight], preview: window.top !== window }));
     // Name des PCs für die Fußleiste.
     fetch('/api/hello').then((r) => r.json()).then((h) => {
       pcName = h.name ?? '';

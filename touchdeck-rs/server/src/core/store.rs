@@ -1525,6 +1525,36 @@ impl Store {
         self.changed("toggles", Value::Null);
     }
 
+    /**
+     * Bildschirmgröße eines Geräts merken (für die Vorschau im Editor: „so sieht es auf deinem Tablet aus“).
+     * Gesammelt gespeichert, ohne die Geräte zu benachrichtigen.
+     */
+    pub fn remember_device_size(&mut self, name: &str, w: u32, h: u32) {
+        if name.is_empty() || w == 0 || h == 0 {
+            return;
+        }
+        let sizes = self.config.extra.entry("deviceSizes").or_insert_with(|| json!({}));
+        if !sizes.is_object() {
+            *sizes = json!({});
+        }
+        let entry = json!([w, h]);
+        if sizes.get(name) == Some(&entry) {
+            return;
+        }
+        if let Some(map) = sizes.as_object_mut() {
+            // Höchstens 20 Geräte; das älteste fliegt raus.
+            if map.len() >= 20 && !map.contains_key(name) {
+                let first = map.keys().next().cloned();
+                if let Some(k) = first {
+                    map.shift_remove(&k);
+                }
+            }
+            map.insert(name.to_string(), entry);
+        }
+        self.dirty = true;
+        self.save_soon.notify_one();
+    }
+
     /** Zustand eines Buttons mit mehreren Zuständen (0 = erster). */
     pub fn set_state(&mut self, button_id: &str, index: usize) {
         self.config.toggles.insert(button_id.into(), json!(index));

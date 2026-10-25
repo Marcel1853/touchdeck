@@ -145,10 +145,11 @@ fn open_preview_window(app: &AppHandle) {
         let _ = w.set_focus();
         return;
     }
-    let url = format!("{}/deck/", base()).parse().expect("gültige Adresse");
+    // Vorschau mit Geräteauswahl (Handy, Tablet, eigene Geräte); darin läuft das Bedienfeld.
+    let url = format!("{}/preview/", base()).parse().expect("gültige Adresse");
     let built = WebviewWindowBuilder::new(app, "preview", WebviewUrl::External(url))
         .title(t!("desktop.previewTitle"))
-        .inner_size(480.0, 820.0)
+        .inner_size(1000.0, 900.0)
         .icon(window_icon())
         .and_then(|b| b.build());
     if let Err(err) = built {
