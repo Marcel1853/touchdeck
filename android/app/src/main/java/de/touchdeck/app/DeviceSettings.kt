@@ -13,6 +13,7 @@ import android.widget.SeekBar
 import android.widget.Switch
 import de.touchdeck.app.Ui.button
 import de.touchdeck.app.Ui.dp
+import de.touchdeck.app.Ui.immersive
 import de.touchdeck.app.Ui.pressable
 import de.touchdeck.app.Ui.text
 import org.json.JSONObject
@@ -138,7 +139,22 @@ class DeviceSettingsActivity : Activity() {
         setContentView(ScrollView(this).apply {
             setBackgroundColor(Ui.BG)
             addView(column)
+            // Abstand zu Kamera-Aussparung und (kurz eingeblendeten) Leisten.
+            setOnApplyWindowInsetsListener { v, insets ->
+                val bars = if (Build.VERSION.SDK_INT >= 30) {
+                    insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.displayCutout())
+                } else null
+                if (bars != null) v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                insets
+            }
         })
+        immersive()
+    }
+
+    // Wie das Bedienfeld im Vollbild bleiben (auch nach Dialogen und dem Zurückkehren).
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) immersive()
     }
 
     private fun minutesLabel(m: Int) = when (m) {

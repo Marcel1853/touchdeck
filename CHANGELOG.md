@@ -66,6 +66,7 @@ Date: 2026-10-20
     - App 0.8.0: “Settings of this device” (connect screen and page menu on the deck): sleep and its
       kind per device, brightness while sleeping and in use, keep screen on, orientation, vibration and
       click sound; moving the device shows the screensaver shortcuts.
+    - App 0.8.1: settings in full screen like the deck; gear at the top right of the deck.
     - App 0.7.0: widget, quick settings tile, write NFC stickers (connect screen › Shortcuts), links
       “touchdeck://press?…”; sleep lowers the brightness.
 

@@ -69,6 +69,7 @@ Datum: 2026-10-20
     - App 0.8.0: „Einstellungen dieses Geräts“ (Verbinden-Bildschirm und Seitenmenü im Bedienfeld):
       Ruhezustand und Art je Gerät, Helligkeit im Ruhezustand und im Betrieb, Bildschirm anlassen,
       Ausrichtung, Vibration und Klick-Ton; Bewegen zeigt die Abkürzungen des Bildschirmschoners.
+    - App 0.8.1: Einstellungen im Vollbild wie das Bedienfeld; Zahnrad oben rechts im Bedienfeld.
     - App 0.7.0: Widget, Schnellzugriff-Kachel, NFC-Aufkleber beschreiben (Verbinden-Bildschirm ›
       Abkürzungen), Links „touchdeck://press?…“; Ruhezustand senkt die Helligkeit.
 
