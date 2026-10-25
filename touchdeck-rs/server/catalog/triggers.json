@@ -260,6 +260,11 @@
     "type": "dynamic",
     "source": "windows",
     "allowNew": true
+   },
+   {
+    "key": "once",
+    "type": "checkbox",
+    "default": false
    }
   ]
  },

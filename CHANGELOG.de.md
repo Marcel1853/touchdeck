@@ -27,6 +27,8 @@ Datum: 2026-10-20
       (z. B. erst „Scharf schalten“, dann „Senden“); sonst ist er ausgegraut mit Schloss.
     - Versteckte Buttons: „Anfangs versteckt“ und die Aktion „Button zeigen / verstecken“ (auch nur
       für einige Sekunden).
+    - Auslöser „Programm im Vordergrund“: Haken „Nur beim ersten Mal“ – löst erst wieder aus, wenn das
+      Programm beendet und neu gestartet wurde (z. B. Seite fürs Spiel nur beim Start zeigen).
     - Aktion „Zustand eines Buttons setzen“ (nächster, vorheriger, Nr.).
     - „Benachrichtigung zeigen“: wahlweise am PC, im Bedienfeld oder beides. Im Bedienfeld erscheint
       sie auf dem Gerät, auf dem gedrückt wurde (bei Events auf allen).

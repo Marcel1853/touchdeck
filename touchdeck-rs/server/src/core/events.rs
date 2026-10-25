@@ -72,7 +72,9 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "hotkey" => x11::normalize_combo(&s(&g("keys"))) == s(&d["keys"]),
         "app_focus" => {
             let want = s(&g("app")).to_lowercase();
-            want.is_empty() || s(&d["app"]).to_lowercase().contains(&want)
+            // „Nur beim ersten Mal“: erst wieder, nachdem das Programm beendet und neu gestartet wurde.
+            let once = g("once") == json!(true) || s(&g("once")) == "true";
+            (want.is_empty() || s(&d["app"]).to_lowercase().contains(&want)) && (!once || d["first"] == json!(true))
         }
         "audio_output" => empty_or_eq(&g("device"), &d["device"]),
         "pc_lock" => state_matches(&g("state"), &d["state"]),
@@ -137,6 +139,8 @@ struct State {
     muted: (Option<bool>, Option<bool>),
     /// Programm im Vordergrund (zuletzt gesehen), für „Programm im Vordergrund“.
     focused: Option<String>,
+    /// Programme (klein geschrieben), die seit ihrem Start schon im Vordergrund waren – für „nur beim ersten Mal“.
+    seen_apps: std::collections::HashSet<String>,
 }
 
 #[derive(Default)]
@@ -339,12 +343,24 @@ impl EventEngine {
             let a = app.clone();
             tasks.push(tokio::spawn(async move {
                 let mut t = tokio::time::interval(Duration::from_secs(1));
+                let mut tick = 0u32;
                 loop {
                     t.tick().await;
+                    tick += 1;
+                    // Alle 10 s: beendete Programme vergessen, damit ihr nächster Start wieder „das erste Mal“ ist.
+                    if tick.is_multiple_of(10)
+                        && let Ok(open) = x11::open_windows().await
+                    {
+                        let open: std::collections::HashSet<String> = open.into_iter().map(|(c, _)| c.to_lowercase()).collect();
+                        a.events.state.lock().unwrap().seen_apps.retain(|c| open.contains(c));
+                    }
                     let Ok(Some((class, title))) = x11::active_window().await else { continue };
-                    let before = a.events.state.lock().unwrap().focused.replace(class.clone());
+                    let (before, first) = {
+                        let mut st = a.events.state.lock().unwrap();
+                        (st.focused.replace(class.clone()), st.seen_apps.insert(class.to_lowercase()))
+                    };
                     if before.is_some_and(|b| b != class) {
-                        a.events.fire(&a, "app_focus", &json!({ "app": class, "Programm": class, "Titel": title }));
+                        a.events.fire(&a, "app_focus", &json!({ "app": class, "Programm": class, "Titel": title, "first": first }));
                     }
                 }
             }));
@@ -609,6 +625,9 @@ mod tests {
         assert!(!trigger_matches("twitch_chat", &p(json!({ "mode": "command", "text": "!szene", "who": "sub" })), &chat));
         assert!(trigger_matches("twitch_sub", &p(json!({ "kind": "gift" })), &json!({ "kind": "gift_received" })));
         assert!(trigger_matches("twitch_cheer", &p(json!({ "min": 100 })), &json!({ "bits": 100 })));
+        assert!(trigger_matches("app_focus", &p(json!({ "app": "factorio", "once": true })), &json!({ "app": "factorio", "first": true })));
+        assert!(!trigger_matches("app_focus", &p(json!({ "app": "factorio", "once": true })), &json!({ "app": "factorio", "first": false })));
+        assert!(trigger_matches("app_focus", &p(json!({ "app": "factorio" })), &json!({ "app": "factorio", "first": false })));
         assert!(trigger_matches("audio_mute", &p(json!({ "target": "output", "state": "muted" })), &json!({ "target": "output", "state": "muted" })));
         assert!(!trigger_matches("audio_mute", &p(json!({ "target": "input", "state": "muted" })), &json!({ "target": "output", "state": "muted" })));
         assert!(trigger_matches("audio_mute", &p(json!({ "state": "any" })), &json!({ "target": "output", "state": "unmuted" })));

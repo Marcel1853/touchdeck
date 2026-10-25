@@ -1724,6 +1724,9 @@
       "fields": {
         "app": {
           "label": "Program (empty = any; part of the name is enough, e.g. obs)"
+        },
+        "once": {
+          "label": "Only the first time (again only after the program was closed and restarted)"
         }
       }
     },

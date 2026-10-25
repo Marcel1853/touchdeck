@@ -25,6 +25,8 @@ Date: 2026-10-20
     - Dependencies: a button only triggers when another button is on or a value matches (e.g. first
       “Arm”, then “Send”); otherwise it is greyed out with a lock.
     - Hidden buttons: “Hidden at start” and the action “Show / hide button” (also for a few seconds).
+    - Trigger “Program in foreground”: option “Only the first time” – fires again only after the
+      program was closed and restarted (e.g. show the game page only on start).
     - Action “Set state of a button” (next, previous, number).
     - “Show notification”: on the PC, on the deck or both. On the deck it appears on the device that
       pressed (for events on all of them).
