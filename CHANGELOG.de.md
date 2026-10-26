@@ -24,6 +24,7 @@ Datum: 2026-10-25
       GitHub/Marktplatz; Hinweis am Plugins-Knopf und am PC, Aktualisieren mit einem Klick (Einstellungen
       bleiben), wahlweise normale Plugins automatisch. Geänderte fertige Seiten: fragen, ersetzen oder
       behalten. Mitgelieferte Icon-Pakete werden an Ort und Stelle aktualisiert.
+    - Plugins: rechts eine Spalte „Updates“ mit letzter Suche, verfügbaren Updates und Einstellungen.
     - Neue TouchDeck-Version auf GitHub: Hinweis in der Statusleiste und unter Einstellungen ›
       Information (nie automatisch); die App zeigt „App-Update verfügbar“, wenn der PC eine neuere
       App-Fassung mitbringt (App 0.8.3).

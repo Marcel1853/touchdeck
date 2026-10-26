@@ -24,6 +24,7 @@ Date: 2026-10-25
       GitHub/marketplace; hint on the plugins button and on the PC, update with one click (settings are
       kept), optionally regular plugins automatically. Changed ready-made pages: ask, replace or keep.
       Bundled icon packs are updated in place.
+    - Plugins: an “Updates” column on the right with last check, available updates and settings.
     - New TouchDeck version on GitHub: notice in the status bar and under Settings › Information (never
       automatic); the app shows “App update available” when the PC brings a newer app (app 0.8.3).
     - Marketplace shows what is already installed (with version), also plugins from a folder (test

@@ -541,7 +541,10 @@ impl App {
     fn updates_info(&self) -> Value {
         let lang = self.store.lock().unwrap().settings().language.clone();
         let plugins: Vec<Value> = self.plugins.list(&lang).into_iter().filter(|p| !p["update"].is_null()).map(|p| p["update"].clone()).collect();
-        json!({ "plugins": plugins, "release": *self.release.lock().unwrap(), "version": VERSION })
+        // Zahl der Plugins, die überhaupt aktualisiert werden können (über GitHub/Marktplatz installiert).
+        let updatable = self.plugins.list(&lang).iter().filter(|p| p["source"].as_str().is_some_and(|s| s.starts_with("github:"))).count();
+        json!({ "plugins": plugins, "release": *self.release.lock().unwrap(), "version": VERSION, "updatable": updatable,
+                "checked": self.plugins.last_check.load(Ordering::Relaxed) })
     }
 }
 

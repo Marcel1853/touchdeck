@@ -15,6 +15,7 @@ let market = null;
 let config = { advanced: false, confirm: 'AUF EIGENE GEFAHR' };
 
 async function refresh() {
+  updatesInfo = null;
   try {
     plugins = await api('GET', '/api/plugins');
     config = await api('GET', '/api/plugins/config');
@@ -210,7 +211,7 @@ function pluginCard(p) {
 function installedTab() {
   if (!plugins.length) return [h('div', { class: 'settings-card' }, h('p', {}, tr('plugins.noPluginsInstalledYet')))];
   return [
-    h('div', { class: 'market-bar' },
+    h('div', { class: 'market-bar updates-bar' },
       h('button', { class: 'btn small', title: tr('plugins.checkUpdatesHint'), onclick: checkUpdates }, `⟳ ${tr('plugins.checkUpdates')}`)),
     ...plugins.map(pluginCard),
   ];
@@ -373,8 +374,58 @@ td.values.get('Name'); td.notify('Title', 'Text'); td.log('…'); td.settings.ap
 
 export function mountPlugins(root) {
   root.className = 'view view-plugins';
-  root.replaceChildren(h('section', { id: 'plugins-detail', class: 'detail settings' }));
+  root.replaceChildren(h('section', { id: 'plugins-detail', class: 'detail settings' }), h('aside', { id: 'plugins-aside', class: 'plugins-aside' }));
   if (plugins === null) refresh();
+}
+
+// Stand der Updates für die rechte Spalte (neu geladen mit der Plugin-Liste).
+let updatesInfo = null;
+
+/** Rechte Spalte: Updates auf einen Blick, Suche, Einstellungen, neue TouchDeck-Version. */
+function updatesPanel() {
+  if (updatesInfo === null) {
+    updatesInfo = 'loading';
+    api('GET', '/api/updates').then((u) => { updatesInfo = u; render(); }).catch(() => (updatesInfo = { plugins: [] }));
+    return [];
+  }
+  if (updatesInfo === 'loading') return [];
+  const u = updatesInfo;
+  const st = S.settings ?? {};
+  const when = u.checked ? new Date(u.checked * 1000).toLocaleString(getLang(), { dateStyle: 'short', timeStyle: 'short' }) : tr('plugins.neverChecked');
+  const setSetting = async (patch) => {
+    try {
+      const r = await api('PUT', '/api/settings', patch);
+      S.settings = r.settings;
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+  return [
+    h('h2', {}, tr('plugins.updatesPanel')),
+    h('p', { class: 'hint-text' }, tr('plugins.lastChecked', [when])),
+    h('button', { class: 'btn small', onclick: checkUpdates }, `⟳ ${tr('plugins.checkUpdates')}`),
+    u.plugins.length
+      ? h('div', { class: 'aside-list' }, u.plugins.map((x) => {
+        const p = (plugins ?? []).find((y) => y.id === x.id);
+        return h('div', { class: 'aside-item' },
+          h('div', {}, h('b', {}, x.name), h('span', { class: 'hint-text' }, ` ${x.current} → ${x.latest}`)),
+          p && h('button', { class: 'btn small primary', onclick: () => updatePlugin(p) }, tr('plugins.updateShort')));
+      }))
+      : h('p', { class: 'aside-ok' }, `✓ ${tr('plugins.noUpdates')}`),
+    h('p', { class: 'hint-text' }, tr('plugins.updatableCount', [u.updatable ?? 0])),
+    u.release?.version && h('div', { class: 'aside-release' },
+      h('b', {}, tr('settings.newReleaseAvailable', [u.release.version])), ' ',
+      h('a', { href: u.release.url, target: '_blank', rel: 'noopener' }, tr('settings.download'))),
+    h('h3', {}, tr('plugins.updateSettings')),
+    h('label', { class: 'field' }, tr('settings.pluginUpdates'),
+      h('select', { value: st.pluginUpdates ?? 'notify', onchange: (e) => setSetting({ pluginUpdates: e.target.value }) },
+        [['notify', tr('settings.pluginUpdatesNotify')], ['auto', tr('settings.pluginUpdatesAuto')], ['off', tr('settings.pluginUpdatesOff')]].map(([v, l]) => h('option', { value: v }, l)))),
+    h('label', { class: 'field' }, tr('settings.pluginPages'),
+      h('select', { value: st.pluginPages ?? 'ask', onchange: (e) => setSetting({ pluginPages: e.target.value }) },
+        [['ask', tr('settings.pluginPagesAsk')], ['replace', tr('settings.pluginPagesReplace')], ['keep', tr('settings.pluginPagesKeep')]].map(([v, l]) => h('option', { value: v }, l)))),
+    h('p', { class: 'hint-text' }, tr('plugins.updatesPanelHint')),
+  ];
 }
 
 export function renderPlugins() {
@@ -385,4 +436,5 @@ export function renderPlugins() {
   if (plugins === null) return el.replaceChildren(...head, h('p', { class: 'hint-text' }, tr('common.loading')));
   const body = { installed: installedTab, market: marketTab, dev: devTab, advanced: advancedTab }[tab]();
   el.replaceChildren(...head, ...body.filter(Boolean));
+  document.getElementById('plugins-aside')?.replaceChildren(...updatesPanel().filter(Boolean));
 }

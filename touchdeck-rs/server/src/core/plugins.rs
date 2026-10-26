@@ -803,6 +803,8 @@ pub struct Plugins {
     updates: Mutex<Map<String, Value>>,
     /// Schon gemeldete Updates („id@version“), damit jedes nur einmal benachrichtigt.
     notified: Mutex<std::collections::HashSet<String>>,
+    /// Zeitpunkt der letzten Update-Suche (Sekunden seit 1970), 0 = noch nie.
+    pub last_check: std::sync::atomic::AtomicU64,
 }
 
 /** Versionen wie „1.2.10“ vergleichen (Zahlen je Teil, Fehlendes = 0). */
@@ -951,6 +953,7 @@ impl Plugins {
             http: reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(20)).build().expect("HTTP-Client"),
             updates: Mutex::new(Map::new()),
             notified: Mutex::new(std::collections::HashSet::new()),
+            last_check: std::sync::atomic::AtomicU64::new(0),
         }
     }
 
@@ -1274,6 +1277,8 @@ impl Plugins {
      * Liefert die Updates, die bisher noch nicht gemeldet wurden (für Benachrichtigungen).
      */
     pub async fn check_updates(&self) -> Vec<Value> {
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+        self.last_check.store(now, std::sync::atomic::Ordering::Relaxed);
         let installed = self.read_installed();
         let mut fresh = Vec::new();
         for (id, e) in installed {
