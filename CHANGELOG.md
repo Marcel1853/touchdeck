@@ -6,6 +6,13 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.1
+Date: 2026-10-26
+  Bugfixes:
+    - Automatically rebuilt pages (e.g. Steam games when a new game was installed) stay in their folder
+      instead of dropping out; new pages land in the same folder.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.0
 Date: 2026-10-26
   Features:

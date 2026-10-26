@@ -1309,7 +1309,15 @@ impl Store {
     }
 
     /** Ersetzt alle Seiten einer Vorlage an der Stelle der ersten; gibt es noch keine, kommen sie ans Ende. */
-    pub fn replace_template_pages(&mut self, template: &str, pages: Vec<Page>) -> Result<()> {
+    pub fn replace_template_pages(&mut self, template: &str, mut pages: Vec<Page>) -> Result<()> {
+        // Ordner der bisherigen Seiten übernehmen (z. B. „Steam“), sonst rutschen neu aufgebaute Seiten heraus.
+        let old_folders: Vec<String> = self.config.pages.iter().filter(|p| p.template == template).map(|p| p.folder.clone()).collect();
+        let fallback = old_folders.iter().find(|f| !f.is_empty()).cloned().unwrap_or_default();
+        for (i, p) in pages.iter_mut().enumerate() {
+            if p.folder.is_empty() {
+                p.folder = old_folders.get(i).filter(|f| !f.is_empty()).cloned().unwrap_or_else(|| fallback.clone());
+            }
+        }
         let mut result = Vec::new();
         let mut new_pages = Some(pages);
         for p in &self.config.pages {
@@ -1706,6 +1714,28 @@ mod tests {
         assert_eq!(s.obs.port, 4456);
         assert_eq!(s.obs.host, "127.0.0.1");
         assert_eq!(s.extra["eigenes"], json!(1));
+    }
+
+    #[test]
+    fn vorlagen_seiten_behalten_ordner() {
+        let dir = std::env::temp_dir().join(format!("touchdeck-test-{}", new_id("")));
+        let mut store = Store::open(&dir).unwrap();
+        let mut a = sanitize_page(&json!({ "name": "Steam-Spiele 1", "rows": 2, "cols": 2, "buttons": [] })).unwrap();
+        a.template = "steam".into();
+        a.folder = "Steam".into();
+        let mut pages = store.config.pages.clone();
+        pages.push(a.clone());
+        store.set_pages(pages).unwrap();
+        // Neu aufgebaut: zwei Seiten ohne Ordner – beide landen wieder in „Steam“.
+        let mut b = a.clone();
+        b.folder = String::new();
+        let mut c = b.clone();
+        c.id = new_id("p_");
+        store.replace_template_pages("steam", vec![b, c]).unwrap();
+        let steam: Vec<&Page> = store.config.pages.iter().filter(|p| p.template == "steam").collect();
+        assert_eq!(steam.len(), 2);
+        assert!(steam.iter().all(|p| p.folder == "Steam"));
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

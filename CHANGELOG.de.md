@@ -6,6 +6,13 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.1
+Datum: 2026-10-26
+  Fehlerbehebungen:
+    - Automatisch neu aufgebaute Seiten (z. B. Steam-Spiele, wenn ein neues Spiel installiert wurde)
+      bleiben in ihrem Ordner, statt herauszufallen; neue Seiten landen im selben Ordner.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.0
 Datum: 2026-10-26
   Neuerungen:
