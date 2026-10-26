@@ -7,7 +7,7 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0
-Date: 2026-10-25
+Date: 2026-10-26
   Features:
     - AI assistants (MCP): Settings › AI assistants switches on an MCP server. Assistants like Claude
       see pages, buttons and live values, press buttons, read and set values and switch the page on the

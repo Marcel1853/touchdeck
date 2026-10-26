@@ -7,7 +7,7 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0
-Datum: 2026-10-25
+Datum: 2026-10-26
   Neuerungen:
     - KI-Assistenten (MCP): Einstellungen › KI-Assistenten schaltet einen MCP-Server ein. Assistenten
       wie Claude sehen Seiten, Buttons und Live-Werte, drücken Buttons, lesen und setzen Werte und
