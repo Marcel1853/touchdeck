@@ -328,6 +328,21 @@ impl IconPacks {
      * eine manifest.json (Name, Autor, Beschreibung, Version, Titelbild, Lizenzdatei) mit icons.json
      * (Name und Schlagwörter je Bild) und eine Lizenzdatei. Liefert die neue ID und die Anzahl der Bilder.
      */
+    /**
+     * Paket durch eine neuere Fassung ersetzen (z. B. aus einem Plugin-Update). Die ID bleibt gleich,
+     * damit Buttons, die Bilder daraus nutzen („packs/<id>/…“), sie weiter finden.
+     */
+    pub fn replace(&self, id: &str, bytes: &[u8]) -> Result<()> {
+        let target = self.pack_dir(id)?;
+        let created = self.import(bytes, id)?;
+        let Some((new_id, _)) = created.into_iter().next() else { bail!(t!("iconpacks.fileIsNotValid")) };
+        let source = self.pack_dir(&new_id)?;
+        // Alte Dateien weg, neue an ihren Platz, das vorläufige Paket entfernen.
+        fs::remove_dir_all(&target)?;
+        fs::rename(&source, &target)?;
+        Ok(())
+    }
+
     pub fn import(&self, bytes: &[u8], fallback_name: &str) -> Result<Vec<(String, usize)>> {
         let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| anyhow!(t!("iconpacks.fileIsNotValid")))?;
         let mut texts: Vec<(String, String)> = Vec::new();

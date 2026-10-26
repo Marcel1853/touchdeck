@@ -31,8 +31,18 @@ function render(info, openSettings) {
       discord.state === 'connected' ? (discord.running ? tr('settings.connected') : tr('editor.discordNotRunning')) : discord.error || tr('settings.notConnected'), openSettings),
     h('span', { class: 'status-sep' }),
     h('span', { class: 'status-address', title: (info.lan ?? []).map((ip) => `http://${ip}:${info.port}`).join('\n') }, address),
+    // Neue TouchDeck-Version: nur ein Hinweis mit Link zum Herunterladen, nie automatisch.
+    info.newRelease?.version && h('a', { class: 'status-update', href: info.newRelease.url, target: '_blank', rel: 'noopener', title: tr('editor.newReleaseHint') },
+      `⬆ ${tr('editor.newRelease', [info.newRelease.version])}`),
     h('span', { class: 'status-version' }, `v${info.version}`),
   ].filter(Boolean));
+  // Updates für Plugins: Punkt mit Zahl am Plugins-Knopf links.
+  const rail = document.querySelector('.rail button[data-view="plugins"]');
+  if (rail) {
+    rail.classList.toggle('has-updates', info.pluginUpdates > 0);
+    rail.dataset.updates = info.pluginUpdates > 0 ? String(info.pluginUpdates) : '';
+    rail.title = info.pluginUpdates > 0 ? tr('editor.pluginUpdates', [info.pluginUpdates]) : rail.title.replace(/ \(.*\)$/, '');
+  }
 }
 
 async function refresh(openSettings) {

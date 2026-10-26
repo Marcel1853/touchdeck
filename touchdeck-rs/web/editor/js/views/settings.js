@@ -81,6 +81,15 @@ function general() {
       h('h3', {}, tr('settings.resetVisualChanges')),
       h('p', { class: 'hint-text' }, tr('settings.actionsFromVisualsChange')),
       h('button', { class: 'btn', onclick: async () => { await api('POST', '/api/overrides/reset', {}); toast(tr('settings.allButtonsLookAs'), 'ok'); } }, tr('settings.resetEverything'))),
+    card(
+      h('h3', {}, tr('settings.updatesTitle')),
+      h('label', { class: 'field' }, tr('settings.pluginUpdates'),
+        h('select', { value: st.pluginUpdates ?? 'notify', onchange: (e) => updateSettings({ pluginUpdates: e.target.value }) },
+          [['notify', tr('settings.pluginUpdatesNotify')], ['auto', tr('settings.pluginUpdatesAuto')], ['off', tr('settings.pluginUpdatesOff')]].map(([v, l]) => h('option', { value: v }, l)))),
+      h('label', { class: 'field' }, tr('settings.pluginPages'),
+        h('select', { value: st.pluginPages ?? 'ask', onchange: (e) => updateSettings({ pluginPages: e.target.value }) },
+          [['ask', tr('settings.pluginPagesAsk')], ['replace', tr('settings.pluginPagesReplace')], ['keep', tr('settings.pluginPagesKeep')]].map(([v, l]) => h('option', { value: v }, l)))),
+      h('p', { class: 'hint-text' }, tr('settings.updatesHint'))),
   ];
 }
 
@@ -499,9 +508,26 @@ function infoSection() {
     [tr('settings.content'), tr('settings.pagesButtonsFlowsEvents', [info.counts.pages, info.counts.buttons, info.counts.flows, info.counts.events, info.counts.values])],
     [tr('settings.dataFolder'), info.dataDir],
   ];
+  const rel = info.newRelease;
   return [
     ...title(tr('settings.information')),
     card(h('table', { class: 'info-table' }, h('tbody', {}, rows.map(([k, v]) => h('tr', {}, h('th', {}, k), h('td', {}, v)))))),
+    // Neue TouchDeck-Version: nur Hinweis und Link, nie automatisch. Die Daten liegen unabhängig vom Programm.
+    card(
+      h('h3', {}, tr('settings.touchdeckUpdates')),
+      rel?.version
+        ? h('p', {}, tr('settings.newReleaseAvailable', [rel.version]), ' ', h('a', { href: rel.url, target: '_blank', rel: 'noopener' }, tr('settings.download')))
+        : h('p', { class: 'hint-text' }, tr('settings.upToDate')),
+      rel?.version && h('p', { class: 'hint-text' }, tr('settings.updateHowTo', [info.dataDir])),
+      h('button', { class: 'btn small', onclick: async () => {
+        try {
+          await api('POST', '/api/updates/check', {});
+          info = null;
+          render();
+        } catch (err) {
+          toast(err.message, 'error');
+        }
+      } }, `⟳ ${tr('settings.checkNow')}`)),
   ];
 }
 

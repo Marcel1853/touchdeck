@@ -905,9 +905,23 @@ pub struct Settings {
     /// MCP-Server für KI-Assistenten (nur vom PC aus, mit eigenem Schlüssel).
     #[serde(default)]
     pub mcp: McpSettings,
+    /// Plugin-Updates: notify (anzeigen und benachrichtigen), auto (normale Plugins selbst aktualisieren), off.
+    #[serde(default = "default_plugin_updates")]
+    pub plugin_updates: String,
+    /// Fertige Seiten bei Plugin-Updates: ask (fragen), replace (immer ersetzen), keep (nie).
+    #[serde(default = "default_plugin_pages")]
+    pub plugin_pages: String,
     /// Unbekannte Einträge bleiben erhalten.
     #[serde(flatten)]
     pub extra: Map<String, Value>,
+}
+
+fn default_plugin_updates() -> String {
+    "notify".into()
+}
+
+fn default_plugin_pages() -> String {
+    "ask".into()
 }
 
 /** MCP-Server: aus, bis man ihn einschaltet; Ändern und beliebige Aktionen nur mit zweitem Haken. */
@@ -946,6 +960,8 @@ fn default_settings(start_page: &str) -> Settings {
         public_host: String::new(),
         usb: false,
         mcp: McpSettings::default(),
+        plugin_updates: default_plugin_updates(),
+        plugin_pages: default_plugin_pages(),
         pin: String::new(),
         deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false, clock_style: default_clock_style(), clock_color: default_clock_color(), clock_date: true, saver_buttons: Vec::new(), saver_plugins: true },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
@@ -1330,6 +1346,12 @@ impl Store {
         }
         if let Some(b) = patch["usb"].as_bool() {
             s.usb = b;
+        }
+        if let Some(v) = patch["pluginUpdates"].as_str().filter(|v| ["notify", "auto", "off"].contains(v)) {
+            s.plugin_updates = v.into();
+        }
+        if let Some(v) = patch["pluginPages"].as_str().filter(|v| ["ask", "replace", "keep"].contains(v)) {
+            s.plugin_pages = v.into();
         }
         let m = &patch["mcp"];
         if m.is_object() {

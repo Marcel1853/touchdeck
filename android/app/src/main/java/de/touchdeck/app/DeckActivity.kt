@@ -292,6 +292,26 @@ class DeckActivity : Activity() {
         @JavascriptInterface
         fun systemAccent(): String = DeviceSettings.systemAccent(this@DeckActivity)
 
+        /** Installierte App-Version (das Bedienfeld vergleicht sie mit der vom PC und bietet ein Update an). */
+        @JavascriptInterface
+        fun appVersion(): String = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+        } catch (_: Exception) {
+            ""
+        }
+
+        /** App-Update vom PC laden: die APK im Browser öffnen (Android fragt dann, ob installiert werden soll). */
+        @JavascriptInterface
+        fun installUpdate() {
+            runOnUiThread {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://${server.host}:${server.port}/app/TouchDeck.apk")))
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(this@DeckActivity, "http://${server.host}:${server.port}/app/TouchDeck.apk", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         /** Einstellungen dieses Geräts öffnen (Fußleiste im Bedienfeld). */
         @JavascriptInterface
         fun openSettings() {

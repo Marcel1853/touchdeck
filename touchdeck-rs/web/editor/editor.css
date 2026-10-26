@@ -692,3 +692,17 @@ button.status-chip:hover { color: var(--text); }
 /* Marktplatz: schon installierte Plugins deutlich markieren. */
 .settings-card.plugin.is-installed { border-color: color-mix(in srgb, #3ccf91 45%, transparent); }
 .installed-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, #3ccf91 18%, transparent); color: #3ccf91; font-size: 12px; font-weight: 600; vertical-align: 1px; }
+
+/* Updates: Zahl am Plugins-Knopf, Hinweis auf neue TouchDeck-Version in der Statusleiste. */
+.rail button.has-updates { position: relative; }
+.rail button.has-updates::after {
+  content: attr(data-updates);
+  position: absolute; top: 4px; right: 10px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: #3ccf91; color: #08130d; font-size: 10px; font-weight: 800; line-height: 16px; text-align: center;
+}
+.status-update { color: #3ccf91; font-weight: 600; text-decoration: none; margin-right: 10px; }
+.status-update:hover { text-decoration: underline; }
+.update-badge { background: color-mix(in srgb, #3ccf91 18%, transparent); color: #3ccf91; }
+.plugin-update-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.plugin-pages-changed { margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, #e6b45a 45%, transparent); background: color-mix(in srgb, #e6b45a 8%, transparent); }

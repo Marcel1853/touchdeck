@@ -799,6 +799,28 @@ pub struct Plugins {
     /// Beschreibungen aller installierten Plugins (für Katalog und Ausführung).
     manifests: Mutex<HashMap<String, Value>>,
     http: reqwest::Client,
+    /// Gefundene Updates: Plugin-ID → { current, latest, ref }.
+    updates: Mutex<Map<String, Value>>,
+    /// Schon gemeldete Updates („id@version“), damit jedes nur einmal benachrichtigt.
+    notified: Mutex<std::collections::HashSet<String>>,
+}
+
+/** Versionen wie „1.2.10“ vergleichen (Zahlen je Teil, Fehlendes = 0). */
+pub fn version_newer(latest: &str, current: &str) -> bool {
+    let parts = |v: &str| v.trim_start_matches('v').split(['.', '-']).map(|p| p.parse::<u64>().unwrap_or(0)).collect::<Vec<_>>();
+    let (a, b) = (parts(latest), parts(current));
+    for i in 0..a.len().max(b.len()) {
+        let (x, y) = (a.get(i).copied().unwrap_or(0), b.get(i).copied().unwrap_or(0));
+        if x != y {
+            return x > y;
+        }
+    }
+    false
+}
+
+/** Prüfsumme einer Datei (für „hat sich die fertige Seite geändert?“). */
+fn file_hash(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
 }
 
 /** Ein Plugin auf GitHub: Repo und optional ein Unterordner darin (mehrere Plugins in einem Repo). */
@@ -927,6 +949,8 @@ impl Plugins {
             running: Mutex::new(HashMap::new()),
             manifests: Mutex::new(HashMap::new()),
             http: reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(20)).build().expect("HTTP-Client"),
+            updates: Mutex::new(Map::new()),
+            notified: Mutex::new(std::collections::HashSet::new()),
         }
     }
 
@@ -1056,6 +1080,9 @@ impl Plugins {
                     "id": id, "manifest": m, "permissions": describe_permissions(&m), "enabled": e["enabled"] != false, "native": is_native(&m),
                     "source": e["source"], "ref": e["ref"], "url": e["url"], "settings": e["settings"], "status": state,
                     "pages": Self::page_files(&self.plugin_dir(id, e)),
+                    "update": self.updates.lock().unwrap().get(id).cloned().unwrap_or(Value::Null),
+                    // Fertige Seiten, die sich mit dem letzten Update geändert haben (Frage „ersetzen?“).
+                    "pagesChanged": e["pagesChanged"].clone(),
                 })
             })
             .collect();
@@ -1075,8 +1102,16 @@ impl Plugins {
         for rel in manifest["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str) {
             let Ok(bytes) = std::fs::read(dir.join(rel)) else { continue };
             let name = pack_name(&bytes).unwrap_or_default();
-            let exists = app.iconpacks.list().iter().any(|p| !name.is_empty() && p["name"] == name.as_str());
-            if exists {
+            let existing = app.iconpacks.list().into_iter().find(|p| !name.is_empty() && p["name"] == name.as_str());
+            if let Some(pack) = existing {
+                // Neuere Fassung im Plugin (version in pack.json): an Ort und Stelle ersetzen, die ID bleibt.
+                let (old, new) = (pack["version"].as_str().unwrap_or("").to_string(), pack_version(&bytes).unwrap_or_default());
+                if !new.is_empty() && version_newer(&new, &old) {
+                    match app.iconpacks.replace(pack["id"].as_str().unwrap_or(""), &bytes) {
+                        Ok(()) => app.log.info("Plugins", t!("plugins.iconPackUpdated", id, &name, &new)),
+                        Err(e) => app.log.warn("Plugins", t!("plugins.iconPackFailed", id, rel, e)),
+                    }
+                }
                 continue;
             }
             let stem = rel.rsplit('/').next().unwrap_or(rel).trim_end_matches(".tdicons");
@@ -1161,6 +1196,127 @@ impl Plugins {
             bail!(t!("plugins.pageNotFound"));
         }
         Ok(std::fs::read(dir.join(file))?)
+    }
+
+    /** Zahl der Plugins mit Update oder mit geänderten fertigen Seiten (Hinweis am Plugins-Knopf). */
+    pub fn update_count(&self) -> usize {
+        let changed = self.read_installed().values().filter(|e| e["pagesChanged"].as_array().is_some_and(|l| !l.is_empty())).count();
+        self.updates.lock().unwrap().len() + changed
+    }
+
+    /** Merken, welche Seiten aus welcher fertigen Seite eines Plugins importiert wurden (für Updates). */
+    pub fn record_page_import(&self, id: &str, file: &str, bytes: &[u8], page_ids: &[String]) {
+        let mut installed = self.read_installed();
+        let Some(e) = installed.get_mut(id) else { return };
+        if !e["pages"].is_object() {
+            e["pages"] = json!({});
+        }
+        e["pages"][file] = json!({ "hash": file_hash(bytes), "pageIds": page_ids });
+        if let Some(list) = e["pagesChanged"].as_array_mut() {
+            list.retain(|f| f != file);
+        }
+        let _ = self.write_installed(&installed);
+    }
+
+    /** Nach einem Update: welche importierten fertigen Seiten haben sich geändert? Wird beim Plugin vermerkt. */
+    fn mark_changed_pages(&self, id: &str) -> Vec<String> {
+        let mut installed = self.read_installed();
+        let Some(e) = installed.get(id).cloned() else { return Vec::new() };
+        let dir = self.plugin_dir(id, &e);
+        let changed: Vec<String> = e["pages"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .filter(|(file, rec)| std::fs::read(dir.join(file.as_str())).is_ok_and(|b| rec["hash"].as_str() != Some(file_hash(&b).as_str())))
+            .map(|(file, _)| file.clone())
+            .collect();
+        if let Some(entry) = installed.get_mut(id) {
+            entry["pagesChanged"] = json!(changed);
+        }
+        let _ = self.write_installed(&installed);
+        changed
+    }
+
+    /** Seiten, die zuletzt aus einer fertigen Seite eines Plugins importiert wurden. */
+    pub fn imported_pages(&self, id: &str, file: &str) -> Vec<String> {
+        self.read_installed().get(id).and_then(|e| e["pages"][file]["pageIds"].as_array().cloned()).unwrap_or_default().iter().filter_map(|v| v.as_str().map(String::from)).collect()
+    }
+
+    /** Frage „Seiten ersetzen?“ ist beantwortet (oder wird nicht gestellt). */
+    pub fn clear_changed_pages(&self, id: &str) {
+        let mut installed = self.read_installed();
+        if let Some(e) = installed.get_mut(id) {
+            e["pagesChanged"] = json!([]);
+        }
+        let _ = self.write_installed(&installed);
+    }
+
+    // ---------- Updates ----------
+
+    /** plugin.json des neuesten Stands (Release, sonst Hauptzweig) – nur diese eine Datei, ohne alles zu laden. */
+    async fn latest_manifest(&self, r: &Repo) -> Result<(Value, String)> {
+        let api = format!("https://api.github.com/repos/{}/{}", r.owner, r.repo);
+        let release = self.http.get(format!("{api}/releases/latest")).header("Accept", "application/vnd.github+json").send().await?;
+        let git_ref = if release.status().is_success() {
+            release.json::<Value>().await?["tag_name"].as_str().unwrap_or("").to_string()
+        } else {
+            let info: Value = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?.error_for_status()?.json().await?;
+            info["default_branch"].as_str().unwrap_or("main").to_string()
+        };
+        let path = if r.path.is_empty() { "plugin.json".to_string() } else { format!("{}/plugin.json", r.path) };
+        let raw = self.http.get(format!("https://raw.githubusercontent.com/{}/{}/{git_ref}/{path}", r.owner, r.repo)).send().await?.error_for_status()?.bytes().await?;
+        let v: Value = serde_json::from_slice(&raw)?;
+        Ok((check_manifest(&v)?, git_ref))
+    }
+
+    /**
+     * Alle über GitHub/Marktplatz installierten Plugins auf neuere Versionen prüfen.
+     * Liefert die Updates, die bisher noch nicht gemeldet wurden (für Benachrichtigungen).
+     */
+    pub async fn check_updates(&self) -> Vec<Value> {
+        let installed = self.read_installed();
+        let mut fresh = Vec::new();
+        for (id, e) in installed {
+            let Some(repo) = e["source"].as_str().and_then(|s| s.strip_prefix("github:")) else { continue };
+            let Ok(r) = parse_repo(repo) else { continue };
+            let current = self.manifests.lock().unwrap().get(&id).and_then(|m| m["version"].as_str().map(String::from)).unwrap_or_default();
+            match self.latest_manifest(&r).await {
+                Ok((m, git_ref)) => {
+                    let latest = m["version"].as_str().unwrap_or("").to_string();
+                    if !latest.is_empty() && version_newer(&latest, &current) {
+                        let info = json!({ "id": id, "name": m["name"], "current": current, "latest": latest, "ref": git_ref, "native": is_native(&m) });
+                        self.updates.lock().unwrap().insert(id.clone(), info.clone());
+                        if self.notified.lock().unwrap().insert(format!("{id}@{latest}")) {
+                            fresh.push(info);
+                        }
+                    } else {
+                        self.updates.lock().unwrap().shift_remove(&id);
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+        fresh
+    }
+
+    /** Plugin auf den neuesten Stand bringen (Einstellungen bleiben). Liefert geänderte fertige Seiten. */
+    pub async fn update(&self, app: &Arc<App>, id: &str) -> Result<Vec<String>> {
+        let entry = self.read_installed().get(id).cloned().ok_or_else(|| anyhow!(t!("plugins.unknownPlugin")))?;
+        let repo = entry["source"].as_str().and_then(|s| s.strip_prefix("github:")).ok_or_else(|| anyhow!(t!("plugins.updateOnlyGithub")))?;
+        let r = parse_repo(repo)?;
+        let (files, git_ref, url) = self.download(&r).await?;
+        let (m, _, files) = manifest_of(files)?;
+        if m["id"] != id {
+            bail!(t!("plugins.updateOtherId", id));
+        }
+        if is_native(&m) && !self.advanced() {
+            bail!(t!("plugins.thisPluginHasFull"));
+        }
+        // Wer ein erweitertes Plugin installiert hat, hat den vollen Rechten schon zugestimmt.
+        self.write_plugin(app, &r, &m, files, &git_ref, &url)?;
+        self.updates.lock().unwrap().shift_remove(id);
+        app.log.info("Plugins", t!("plugins.updated", id, m["version"].as_str().unwrap_or("?")));
+        Ok(self.mark_changed_pages(id))
     }
 
     /** Ein TouchDeck-Ereignis an alle Plugins weitergeben, die darauf hören dürfen. */
@@ -1381,11 +1537,20 @@ impl Plugins {
             bail!(t!("plugins.pleaseConfirmThatYou"));
         }
         let id = m["id"].as_str().unwrap_or("").to_string();
-        let mut installed = self.read_installed();
-        if let Some(other) = installed.get(&id).and_then(|e| e["source"].as_str()).filter(|s| *s != format!("github:{r}"))
+        // Ein anderes Plugin mit derselben ID nicht überschreiben – die eigene Ordner-Fassung (Testmodus) schon.
+        if let Some(other) = self.read_installed().get(&id).and_then(|e| e["source"].as_str()).filter(|s| *s != format!("github:{r}") && !s.starts_with("local:"))
         {
             bail!(t!("plugins.anotherPluginWithId", id, other));
         }
+        self.write_plugin(app, &r, &m, files, &git_ref, &url)?;
+        app.log.info("Plugins", t!("plugins.installedFrom", id, format!("{r} @ {git_ref}")));
+        Ok(id)
+    }
+
+    /** Dateien eines Plugins aus GitHub schreiben, eintragen, starten (Installation und Update). */
+    fn write_plugin(&self, app: &Arc<App>, r: &Repo, m: &Value, files: Vec<PluginFile>, git_ref: &str, url: &str) -> Result<()> {
+        let id = m["id"].as_str().unwrap_or("").to_string();
+        let mut installed = self.read_installed();
         self.stop(app, &id);
         let dir = self.dir.join(&id);
         let _ = std::fs::remove_dir_all(&dir);
@@ -1399,14 +1564,19 @@ impl Plugins {
             std::fs::write(&target, data)?;
             std::fs::set_permissions(&target, std::fs::Permissions::from_mode(if *exec { 0o755 } else { 0o644 }))?;
         }
-        let settings = installed.get(&id).map(|e| e["settings"].clone()).filter(Value::is_object).unwrap_or_else(|| json!({}));
-        installed.insert(id.clone(), json!({ "source": format!("github:{r}"), "ref": git_ref, "url": url, "enabled": true, "settings": settings }));
+        let old = installed.get(&id).cloned().unwrap_or_default();
+        let settings = Some(old["settings"].clone()).filter(Value::is_object).unwrap_or_else(|| json!({}));
+        // Einstellungen und das Wissen über importierte Seiten bleiben bei Updates erhalten.
+        let enabled = old["enabled"] != false;
+        installed.insert(id.clone(), json!({ "source": format!("github:{r}"), "ref": git_ref, "url": url, "enabled": enabled, "settings": settings,
+                                             "pages": old["pages"].clone(), "pagesChanged": [] }));
         self.write_installed(&installed)?;
-        self.manifests.lock().unwrap().insert(id.clone(), m);
-        self.start(app, &id);
+        self.manifests.lock().unwrap().insert(id.clone(), m.clone());
+        if enabled {
+            self.start(app, &id);
+        }
         self.ensure_icon_packs(app, &id);
-        app.log.info("Plugins", t!("plugins.installedFrom", id, format!("{r} @ {git_ref}")));
-        Ok(id)
+        Ok(())
     }
 
     /** Testmodus: Plugin direkt aus einem lokalen Ordner laden (zum Entwickeln, bevor es veröffentlicht ist). */
@@ -1573,14 +1743,23 @@ impl Plugins {
 }
 
 /** Name eines Icon-Pakets aus seiner .tdicons-Datei (pack.json), ohne es zu importieren. */
+/** Version aus der pack.json eines Icon-Pakets. */
+fn pack_version(bytes: &[u8]) -> Option<String> {
+    pack_field(bytes, "version")
+}
+
 fn pack_name(bytes: &[u8]) -> Option<String> {
+    pack_field(bytes, "name")
+}
+
+fn pack_field(bytes: &[u8], key: &str) -> Option<String> {
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
     for i in 0..zip.len() {
         let mut f = zip.by_index(i).ok()?;
         if f.name().ok()?.rsplit('/').next()? == "pack.json" {
             let mut t = String::new();
             f.read_to_string(&mut t).ok()?;
-            return serde_json::from_str::<Value>(&t).ok()?["name"].as_str().map(String::from);
+            return serde_json::from_str::<Value>(&t).ok()?[key].as_str().map(String::from);
         }
     }
     None
@@ -1588,6 +1767,17 @@ fn pack_name(bytes: &[u8]) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn versionen_vergleichen() {
+        assert!(version_newer("0.7.1", "0.7.0"));
+        assert!(version_newer("1.10.0", "1.9.9"));
+        assert!(version_newer("v2.0", "1.99.99"));
+        assert!(!version_newer("0.7.0", "0.7.0"));
+        assert!(!version_newer("0.7", "0.7.0"));
+        assert!(!version_newer("0.6.9", "0.7.0"));
+    }
+
 
     #[test]
     fn einheiten_lesbar() {

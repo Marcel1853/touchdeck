@@ -277,6 +277,20 @@ Programm ab, startet TouchDeck es neu, höchstens dreimal pro Minute.
 Vollständige Beispiele in Python (nur Standardbibliothek) und Node.js:
 [`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) und [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).
 
+## Updates
+
+TouchDeck sucht eine Minute nach dem Start und danach alle 6 Stunden nach neuen Versionen der Plugins,
+die über GitHub oder den Marktplatz installiert wurden (Einstellung unter Einstellungen › Allgemein ›
+Updates). Damit dein Plugin ein Update bekommt:
+
+- **`version` in `plugin.json` hochzählen** (z. B. `1.2.0` → `1.3.0`) und einen Release anlegen bzw. auf
+  den Hauptzweig hochladen. Verglichen wird nur die Version.
+- **Fertige Seiten** (`.tdprofile`) dürfen sich ändern: TouchDeck merkt sich, welche Seiten ein Nutzer
+  daraus importiert hat, und fragt nach dem Update „Ersetzen / Zusätzlich importieren / Behalten“.
+- **Mitgelieferte Icon-Pakete** werden ersetzt, wenn ihre `version` in `pack.json` höher ist; die
+  Paket-ID bleibt, Buttons behalten ihre Bilder.
+- Plugins mit vollen Rechten werden nie automatisch aktualisiert, immer nur nach Klick.
+
 ## Marktplatz
 
 Der Tab **Marktplatz** liest eine Liste aus einem öffentlichen Repo

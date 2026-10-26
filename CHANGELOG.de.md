@@ -20,6 +20,13 @@ Datum: 2026-10-25
       eigene Größe, Drehen, Maßstab; deine eigenen Geräte erscheinen mit ihrer echten Bildschirmgröße.
     - Ausrichtung „Automatisch“ dreht nur die App mit dem Lagesensor, die Drehsperre des Handys bleibt
       unberührt (App 0.8.2).
+    - Updates für Plugins: Suche nach dem Start und alle 6 Stunden (und auf Knopfdruck) für Plugins aus
+      GitHub/Marktplatz; Hinweis am Plugins-Knopf und am PC, Aktualisieren mit einem Klick (Einstellungen
+      bleiben), wahlweise normale Plugins automatisch. Geänderte fertige Seiten: fragen, ersetzen oder
+      behalten. Mitgelieferte Icon-Pakete werden an Ort und Stelle aktualisiert.
+    - Neue TouchDeck-Version auf GitHub: Hinweis in der Statusleiste und unter Einstellungen ›
+      Information (nie automatisch); die App zeigt „App-Update verfügbar“, wenn der PC eine neuere
+      App-Fassung mitbringt (App 0.8.3).
     - Marktplatz zeigt, was schon installiert ist (mit Version), auch Plugins aus einem Ordner
       (Testmodus); diese lassen sich „vom Marktplatz übernehmen“.
     - Bedienfeld: Seitenauswahl oben links als deutlicher Auswahlknopf; in der App oben rechts

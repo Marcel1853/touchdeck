@@ -168,12 +168,28 @@ function pluginCard(p) {
       h('span', { class: `status-badge ${status[1]}` }, status[0]),
       local && h('span', { class: 'status-badge warn' }, tr('plugins.testMode')),
       p.native && h('span', { class: 'status-badge error' }, tr('plugins.fullRights')),
+      p.update && h('span', { class: 'status-badge update-badge' }, tr('plugins.updateTo', [p.update.latest])),
       h('p', { class: 'hint-text' }, m.description || '')),
     h('label', { class: 'switch-row' }, h('input', { type: 'checkbox', checked: p.enabled,
       onchange: (e) => call('/api/plugins/enable', { id: p.id, enabled: e.target.checked }) }), tr('plugins.on')));
-  if (!open) return h('div', { class: 'settings-card plugin' }, head, p.status.error && h('p', { class: 'hint-text error' }, p.status.error));
+  // Update und geänderte fertige Seiten auch im zugeklappten Zustand zeigen.
+  const extras = [
+    p.update && h('div', { class: 'plugin-update-row' },
+      h('button', { class: 'btn small primary', onclick: () => updatePlugin(p) }, `⬆ ${tr('plugins.updateNow', [p.update.latest])}`),
+      h('span', { class: 'hint-text' }, tr('plugins.updateKeepsSettings'))),
+    p.pagesChanged?.length > 0 && h('div', { class: 'plugin-pages-changed' },
+      h('p', {}, tr('plugins.pagesChangedQuestion', [m.name])),
+      h('p', { class: 'hint-text' }, p.pagesChanged.join(', ')),
+      h('div', { class: 'plugin-update-row' },
+        h('button', { class: 'btn small primary', onclick: () => updatePages(p, 'replace') }, tr('plugins.pagesReplace')),
+        h('button', { class: 'btn small', onclick: () => updatePages(p, 'add') }, tr('plugins.pagesAdd')),
+        h('button', { class: 'btn small ghost', onclick: () => updatePages(p, 'keep') }, tr('plugins.pagesKeep'))),
+      h('p', { class: 'hint-text' }, tr('plugins.pagesReplaceHint'))),
+  ];
+  if (!open) return h('div', { class: 'settings-card plugin' }, head, ...extras, p.status.error && h('p', { class: 'hint-text error' }, p.status.error));
   return h('div', { class: 'settings-card plugin open', oncontextmenu: (e) => { if (e.target.closest('input, textarea, select')) return; e.preventDefault(); pluginMenu(p, e.clientX, e.clientY); } },
     head,
+    ...extras,
     h('p', { class: 'hint-text' }, [m.author && tr('plugins.by', [m.author]), m.license && tr('plugins.license', [m.license]), local ? tr('plugins.folder', [p.source.slice(6)]) : null].filter(Boolean).join(' · '),
       !local && p.url && h('span', {}, m.author ? ' · ' : '', h('a', { href: p.url, target: '_blank', rel: 'noopener' }, tr('plugins.format', [repo, p.ref])))),
     p.status.error && h('p', { class: 'hint-text error' }, p.status.error),
@@ -193,7 +209,44 @@ function pluginCard(p) {
 
 function installedTab() {
   if (!plugins.length) return [h('div', { class: 'settings-card' }, h('p', {}, tr('plugins.noPluginsInstalledYet')))];
-  return plugins.map(pluginCard);
+  return [
+    h('div', { class: 'market-bar' },
+      h('button', { class: 'btn small', title: tr('plugins.checkUpdatesHint'), onclick: checkUpdates }, `⟳ ${tr('plugins.checkUpdates')}`)),
+    ...plugins.map(pluginCard),
+  ];
+}
+
+/** Jetzt nach Updates suchen (Plugins über GitHub/Marktplatz und TouchDeck selbst). */
+async function checkUpdates() {
+  try {
+    const r = await api('POST', '/api/updates/check', {});
+    toast(r.plugins.length ? tr('plugins.updatesFound', [r.plugins.length]) : tr('plugins.noUpdates'), 'ok');
+    await refresh();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function updatePlugin(p) {
+  try {
+    toast(tr('plugins.updating', [p.manifest.name]));
+    const r = await api('POST', '/api/plugins/update', { id: p.id });
+    toast(tr('plugins.updatedTo', [p.manifest.name, p.update.latest]), 'ok');
+    await applyChange(r);
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+/** Geänderte fertige Seiten: ersetzen, zusätzlich importieren oder behalten. */
+async function updatePages(p, mode) {
+  try {
+    const r = await api('POST', '/api/plugins/update-pages', { id: p.id, mode });
+    if (mode !== 'keep') toast(tr('plugins.pagesUpdatedToast'), 'ok');
+    await applyChange(r);
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 
 function repoInput() {
@@ -242,6 +295,7 @@ function marketTab() {
           h('div', {}, h('b', {}, p.name || p.repo),
             mine && h('span', { class: 'installed-badge', title: mine.source ?? '' },
               `✓ ${tr('plugins.installedBadge')}${mine.manifest?.version ? ` · ${mine.manifest.version}` : ''}${installed ? '' : ` · ${tr('plugins.installedLocal')}`}`),
+            mine?.update && h('span', { class: 'installed-badge update-badge' }, tr('plugins.updateTo', [mine.update.latest])),
             h('p', { class: 'hint-text' }, p.description),
             h('p', { class: 'hint-text' }, p.author && tr('plugins.by2', [p.author]), p.license && tr('plugins.license2', [p.license]), h('a', { href: githubUrl(p.repo), target: '_blank', rel: 'noopener' }, p.repo))),
           h('div', { class: 'plugin-buttons' },

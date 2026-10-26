@@ -43,6 +43,19 @@ use crate::system::linux;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/** Version der Android-App, die dieses Programm mitbringt (aus demselben Stand gebaut). */
+pub(super) fn bundled_app_version() -> &'static str {
+    static V: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+        include_str!("../../../../android/app/build.gradle.kts")
+            .lines()
+            .find_map(|l| l.trim().strip_prefix("versionName = \"").and_then(|r| r.strip_suffix('"')).map(String::from))
+            .unwrap_or_default()
+    });
+    &V
+}
+
+const RELEASES: &str = "https://api.github.com/repos/Marcel1853/touchdeck/releases/latest";
+
 /** Kennung dieses Programmstarts: ändert sie sich, laden offene Bedienfelder neu (neuer Build, gleiche Version). */
 static BUILD: std::sync::LazyLock<String> =
     std::sync::LazyLock::new(|| std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis()).to_string());
@@ -155,6 +168,8 @@ pub struct App {
     pc_locked: AtomicBool,
     /// Karten der Plugins für den Bildschirmschoner (Plugin-ID → Karte).
     plugin_savers: Mutex<serde_json::Map<String, Value>>,
+    /// Neuere TouchDeck-Version auf GitHub: { version, url, appVersion } oder Null.
+    release: Mutex<Value>,
     live_again: AtomicBool,
     on_pair_request: Option<Box<dyn Fn(PairRequest) + Send + Sync>>,
 }
@@ -181,6 +196,8 @@ impl App {
             "language": c.settings.language,
             "pcLocked": self.pc_locked.load(Ordering::Relaxed),
             "savers": self.plugin_savers.lock().unwrap().values().cloned().collect::<Vec<_>>(),
+            // Die App vergleicht das mit sich selbst und bietet ein Update an.
+            "appVersion": bundled_app_version(),
         })
     }
 
@@ -519,6 +536,135 @@ fn refresh_timers(app: &Arc<App>) {
     refresh_quick(app, |b| b.live.source == "timer");
 }
 
+impl App {
+    /** Für den Editor: verfügbare Plugin-Updates und neue TouchDeck-Version. */
+    fn updates_info(&self) -> Value {
+        let lang = self.store.lock().unwrap().settings().language.clone();
+        let plugins: Vec<Value> = self.plugins.list(&lang).into_iter().filter(|p| !p["update"].is_null()).map(|p| p["update"].clone()).collect();
+        json!({ "plugins": plugins, "release": *self.release.lock().unwrap(), "version": VERSION })
+    }
+}
+
+/**
+ * Nach Updates suchen: Plugins (über GitHub installiert) und TouchDeck selbst. background = aus dem
+ * Hintergrund (dann je nach Einstellung benachrichtigen bzw. normale Plugins selbst aktualisieren).
+ */
+async fn check_updates(app: &Arc<App>, background: bool) {
+    let mode = app.store.lock().unwrap().settings().plugin_updates.clone();
+    if background && mode == "off" {
+        return;
+    }
+    let fresh = app.plugins.check_updates().await;
+    for u in &fresh {
+        let id = u["id"].as_str().unwrap_or("");
+        let name = u["name"].as_str().unwrap_or(id).to_string();
+        let latest = u["latest"].as_str().unwrap_or("");
+        if background && mode == "auto" && u["native"] != true {
+            match app.plugins.update(app, id).await {
+                Ok(changed) => {
+                    apply_page_updates(app, id, changed);
+                }
+                Err(e) => app.log.warn("Plugins", e.to_string()),
+            }
+            continue;
+        }
+        let text = t!("plugins.updateAvailable", &name, latest);
+        app.log.info("Plugins", &text);
+        if background {
+            let _ = linux::notify("TouchDeck", &text).await;
+        }
+    }
+    // TouchDeck selbst: nur Hinweis, nie automatisch.
+    if let Ok(res) = reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(15)).build().expect("HTTP-Client").get(RELEASES).send().await
+        && let Ok(rel) = res.json::<Value>().await
+    {
+        let version = rel["tag_name"].as_str().unwrap_or("").trim_start_matches('v').to_string();
+        if !version.is_empty() && crate::core::plugins::version_newer(&version, VERSION) {
+            let app_version = rel["assets"].as_array().into_iter().flatten().find_map(|a| {
+                a["name"].as_str().and_then(|n| n.strip_prefix("TouchDeck-Android-")).and_then(|n| n.strip_suffix(".apk")).map(String::from)
+            });
+            let info = json!({ "version": version, "url": rel["html_url"], "appVersion": app_version });
+            let was = std::mem::replace(&mut *app.release.lock().unwrap(), info);
+            if background && was["version"] != version.as_str() {
+                let text = t!("server.newVersion", &version);
+                let _ = linux::notify("TouchDeck", &text).await;
+            }
+        } else {
+            *app.release.lock().unwrap() = Value::Null;
+        }
+    }
+    app.broadcast(Some(Role::Editor), &json!({ "type": "updates" }));
+}
+
+/** Nach einem Plugin-Update: fertige Seiten je nach Einstellung ersetzen, behalten oder (Standard) nachfragen. */
+fn apply_page_updates(app: &Arc<App>, id: &str, changed: Vec<String>) -> Vec<String> {
+    if changed.is_empty() {
+        return changed;
+    }
+    let mode = app.store.lock().unwrap().settings().plugin_pages.clone();
+    match mode.as_str() {
+        "replace" | "keep" => {
+            if let Err(e) = update_plugin_pages(app, id, &mode) {
+                app.log.warn("Plugins", e.to_string());
+            }
+            Vec::new()
+        }
+        _ => changed,
+    }
+}
+
+/**
+ * Geänderte fertige Seiten eines Plugins übernehmen: replace = alte importierte Seiten durch die neuen
+ * ersetzen, add = neue zusätzlich importieren, keep = alles lassen (nicht mehr fragen).
+ */
+fn update_plugin_pages(app: &Arc<App>, id: &str, mode: &str) -> anyhow::Result<()> {
+    let changed: Vec<String> = app.plugins.list("de").iter().find(|p| p["id"] == id).and_then(|p| p["pagesChanged"].as_array().cloned()).unwrap_or_default()
+        .iter().filter_map(|f| f.as_str().map(String::from)).collect();
+    for file in changed {
+        let bytes = app.plugins.page_bytes(id, &file)?;
+        if mode == "keep" {
+            // Nur den neuen Stand merken, damit nicht wieder gefragt wird.
+            let old = app.plugins.imported_pages(id, &file);
+            app.plugins.record_page_import(id, &file, &bytes, &old);
+            continue;
+        }
+        let mut store = app.store.lock().unwrap();
+        if mode == "replace" {
+            let old = app.plugins.imported_pages(id, &file);
+            // Ordner und Startseite der alten Seiten übernehmen.
+            let folder = store.config.pages.iter().find(|p| old.contains(&p.id)).map(|p| p.folder.clone()).unwrap_or_default();
+            let was_start = old.contains(&store.settings().start_page);
+            let mut pages: Vec<Value> = serde_json::to_value(&store.config.pages)?.as_array().cloned().unwrap_or_default();
+            pages.retain(|p| !old.iter().any(|o| p["id"] == o.as_str()));
+            if !pages.is_empty() {
+                store.set_project(&json!({ "pages": pages }))?;
+            }
+            let r = profiles::import(&mut store, &bytes)?;
+            let ids: Vec<String> = r.pages.clone();
+            if !folder.is_empty() || was_start {
+                let mut pages: Vec<Value> = serde_json::to_value(&store.config.pages)?.as_array().cloned().unwrap_or_default();
+                for p in pages.iter_mut().filter(|p| ids.iter().any(|i| p["id"] == i.as_str())) {
+                    p["folder"] = json!(folder);
+                }
+                store.set_project(&json!({ "pages": pages }))?;
+                if was_start && let Some(first) = ids.first() {
+                    store.set_settings(&json!({ "startPage": first }));
+                }
+            }
+            drop(store);
+            app.plugins.record_page_import(id, &file, &bytes, &ids);
+        } else {
+            let r = profiles::import(&mut store, &bytes)?;
+            let ids: Vec<String> = r.pages.clone();
+            drop(store);
+            app.plugins.record_page_import(id, &file, &bytes, &ids);
+        }
+        app.log.info("Plugins", t!("plugins.pagesUpdated", id, &file));
+    }
+    app.plugins.clear_changed_pages(id);
+    Ok(())
+}
+
 /** Jedes Gerät bekommt nur Werte seiner Seite: nach einem Seitenwechsel alle, sonst nur geänderte. */
 fn send_live(a: &Arc<App>, pages: &[Page], live: &serde_json::Map<String, Value>) {
     for c in a.clients.lock().unwrap().values_mut() {
@@ -694,7 +840,11 @@ const DEVICE_ROUTES: [&str; 3] = ["GET /api/state", "POST /api/press", "GET /api
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 63] = [
+const ROUTES: [&str; 67] = [
+    "GET /api/updates",
+    "POST /api/updates/check",
+    "POST /api/plugins/update",
+    "POST /api/plugins/update-pages",
     "GET /api/device-sizes",
     "GET /api/buttons",
     "GET /api/plugins",
@@ -904,6 +1054,9 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let release = std::fs::read_to_string("/proc/sys/kernel/osrelease").unwrap_or_default();
             Ok(json!({
                 "version": VERSION,
+                // Neue TouchDeck-Version auf GitHub (oder Null) und Zahl der Plugin-Updates.
+                "newRelease": *app.release.lock().unwrap(),
+                "pluginUpdates": app.plugins.update_count(),
                 "platform": format!("Linux {}", release.trim()),
                 "host": linux::hostname(),
                 "dataDir": store.data_dir,
@@ -1092,6 +1245,22 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             };
             Ok(json!({ "ok": true, "id": id, "plugins": app.plugins.list(&lang(app)) }))
         }
+        "GET /api/updates" => Ok(app.updates_info()),
+        "POST /api/updates/check" => {
+            check_updates(app, false).await;
+            Ok(app.updates_info())
+        }
+        "POST /api/plugins/update" => {
+            let id = str_of(&body, "id");
+            let changed = app.plugins.update(app, id).await.map_err(user_error)?;
+            let changed = apply_page_updates(app, id, changed);
+            Ok(json!({ "ok": true, "pagesChanged": changed, "plugins": app.plugins.list(&lang(app)) }))
+        }
+        "POST /api/plugins/update-pages" => {
+            update_plugin_pages(app, str_of(&body, "id"), str_of(&body, "mode")).map_err(bad)?;
+            let store = app.store.lock().unwrap();
+            Ok(json!({ "ok": true, "plugins": app.plugins.list(&store.settings().language), "pages": store.config.pages, "revision": store.revision }))
+        }
         "POST /api/plugins/reload" => {
             app.plugins.reload(app, str_of(&body, "id")).map_err(bad)?;
             Ok(json!({ "ok": true, "plugins": app.plugins.list(&lang(app)) }))
@@ -1190,6 +1359,11 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             let mut store = app.store.lock().unwrap();
             let r = profiles::import(&mut store, &bytes).map_err(bad)?;
             app.log.info("Profile", t!("profiles.imported", r.pages.len(), r.flows, r.values, r.images));
+            if key == "POST /api/plugins/import-page" {
+                // Merken, welche Seiten aus dieser fertigen Seite stammen (für die Frage bei Plugin-Updates).
+                let ids: Vec<String> = r.pages.clone();
+                app.plugins.record_page_import(str_of(&body, "id"), str_of(&body, "file"), &bytes, &ids);
+            }
             Ok(json!({ "ok": true, "pages": store.config.pages, "flows": store.config.flows, "events": store.config.events, "values": store.config.values,
                        "revision": store.revision, "created": r.pages, "counts": { "pages": r.pages.len(), "flows": r.flows, "events": r.events, "values": r.values, "images": r.images } }))
         }
@@ -1590,6 +1764,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         live_busy: AtomicBool::new(false),
         pc_locked: AtomicBool::new(false),
         plugin_savers: Mutex::new(serde_json::Map::new()),
+        release: Mutex::new(Value::Null),
         live_again: AtomicBool::new(false),
         on_pair_request: opts.on_pair_request,
     });
@@ -1756,6 +1931,16 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
         }
     });
 
+    // Updates von Plugins und TouchDeck: eine Minute nach dem Start, danach alle 6 Stunden.
+    let a = app.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(60)).await;
+        loop {
+            check_updates(&a, true).await;
+            tokio::time::sleep(Duration::from_secs(6 * 60 * 60)).await;
+        }
+    });
+
     // Live-Werte alle 2 Sekunden aktualisieren.
     let a = app.clone();
     tokio::spawn(async move {
@@ -1812,3 +1997,4 @@ mod tests {
         assert!(graph_delta(&old, &other).is_none());
     }
 }
+

@@ -394,6 +394,36 @@ function sendSlide(el, value, final = false) {
   else slideTimer = setTimeout(go, 60);
 }
 
+// ---------- App-Update ----------
+
+/** Ist Version a neuer als b? („0.8.10“ > „0.8.9“) */
+function newerVersion(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+  }
+  return false;
+}
+
+/** In der App: Bringt der PC eine neuere App-Fassung mit, oben einen Hinweis zum Installieren zeigen. */
+let appUpdateDismissed = null;
+function showAppUpdate() {
+  const installed = app?.appVersion?.();
+  const offered = state?.appVersion;
+  const show = !!(installed && offered && app.installUpdate && newerVersion(offered, installed) && appUpdateDismissed !== offered);
+  $('app-update').hidden = !show;
+  if (show) {
+    $('app-update-text').textContent = tr('deck.appUpdateAvailable', [offered, installed]);
+    $('app-update-install').textContent = tr('deck.appUpdateInstall');
+  }
+}
+$('app-update-install').addEventListener('click', () => app?.installUpdate?.());
+$('app-update-close').addEventListener('click', () => {
+  appUpdateDismissed = state?.appVersion;
+  $('app-update').hidden = true;
+});
+
 // ---------- Ruhezustand, Bildschirmschoner und PC-Sperre ----------
 
 /**
@@ -765,6 +795,7 @@ async function connect() {
       state = msg;
       render();
       resetSleep();
+      showAppUpdate();
       showPcLock(msg.pcLocked);
     } else if (msg.type === 'goto') {
       // „Seite auf allen Geräten anzeigen“ (z. B. aus „Programm im Vordergrund“).
