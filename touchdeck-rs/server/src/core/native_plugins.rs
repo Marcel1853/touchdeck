@@ -115,7 +115,7 @@ async fn run_once(
     // „./programm“ liegt im Plugin-Ordner, alles andere (python3, node …) wird im Suchpfad gesucht.
     let program = match program.strip_prefix("./") {
         Some(rel) => dir.join(rel).to_string_lossy().into_owned(),
-        None => program.clone(),
+        None => crate::system::os::plugin_program(program),
     };
     let mut child = Command::from(crate::system::os::command(&program))
         .args(args)

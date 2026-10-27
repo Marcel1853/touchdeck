@@ -82,6 +82,27 @@ pub fn command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
     c
 }
 
+/** Programm eines nativen Plugins: „python3“ gibt es unter Windows meist nicht, dort heißt es „python“.
+ *  Die Platzhalter aus dem Microsoft Store (WindowsApps) öffnen nur den Store und werden übersprungen. */
+pub fn plugin_program(program: &str) -> String {
+    if program != "python3" {
+        return program.to_string();
+    }
+    let path = std::env::var_os("PATH").unwrap_or_default();
+    for name in ["python3.exe", "python.exe"] {
+        for dir in std::env::split_paths(&path) {
+            if dir.to_string_lossy().contains("WindowsApps") {
+                continue;
+            }
+            let exe = dir.join(name);
+            if exe.is_file() {
+                return exe.to_string_lossy().into_owned();
+            }
+        }
+    }
+    "python".into()
+}
+
 /** Ton-Ereignisse gibt es hier nicht als Strom; die Auslöser fragen dann in Abständen nach. */
 pub struct AudioWatch {
     _none: (),

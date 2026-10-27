@@ -11,6 +11,11 @@ Date: 2026-10-26
   Bugfixes:
     - Automatically rebuilt pages (e.g. Steam games when a new game was installed) stay in their folder
       instead of dropping out; new pages land in the same folder.
+  Windows (very early alpha, untested on real hardware):
+    - TouchDeck now also builds for Windows 10/11: keyboard, mouse, windows, clipboard, global
+      shortcuts, volume, system values, lock screen, power actions and Discord work through Windows
+      interfaces. A GitHub Action builds an installer. Not yet available on Windows: switching audio
+      devices, night light, media title, network rate, PC-lock and audio triggers; sounds WAV only.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0

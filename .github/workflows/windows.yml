@@ -1,4 +1,4 @@
-# Windows-Versuch: baut TouchDeck auf einem Windows-Rechner von GitHub, nur auf dem Zweig „windows“.
+# Windows (ganz frühe Alpha): baut TouchDeck auf einem Windows-Rechner von GitHub, wenn sich am Programm etwas ändert.
 # Kein Release – der Installer (.exe, NSIS) liegt danach unter „Artifacts“ der Aktion zum Herunterladen.
 # Die Android-App kommt aus dem letzten Release (TouchDeck bietet sie den Handys zum Installieren an).
 name: Windows
@@ -6,7 +6,11 @@ name: Windows
 on:
   push:
     branches:
+      - main
       - windows
+    paths:
+      - 'touchdeck-rs/**'
+      - '.github/workflows/windows.yml'
   workflow_dispatch:
 
 permissions:

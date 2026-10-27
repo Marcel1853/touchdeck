@@ -11,6 +11,12 @@ Datum: 2026-10-26
   Fehlerbehebungen:
     - Automatisch neu aufgebaute Seiten (z. B. Steam-Spiele, wenn ein neues Spiel installiert wurde)
       bleiben in ihrem Ordner, statt herauszufallen; neue Seiten landen im selben Ordner.
+  Windows (ganz frühe Alpha, nicht auf echter Hardware getestet):
+    - TouchDeck lässt sich jetzt auch für Windows 10/11 bauen: Tastatur, Maus, Fenster,
+      Zwischenablage, globale Tastenkürzel, Lautstärke, Systemwerte, Sperren, Ein/Aus-Aktionen und
+      Discord laufen über Windows-Schnittstellen. Eine GitHub-Aktion baut einen Installer. Unter
+      Windows fehlen noch: Audiogeräte wechseln, Nachtlicht, Medientitel, Netzwerkrate, Auslöser
+      „PC gesperrt“ und Ton-Auslöser; Töne nur als WAV.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0

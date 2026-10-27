@@ -82,6 +82,11 @@ static HOST_ENV: LazyLock<Vec<(String, Option<String>)>> = LazyLock::new(|| {
     out
 });
 
+/** Programm eines nativen Plugins (python3, node …) – unter Linux unverändert. */
+pub fn plugin_program(program: &str) -> String {
+    program.to_string()
+}
+
 /** Neuer Prozess mit bereinigter Umgebung (siehe HOST_ENV); für tokio: `Command::from(command(..))`. */
 pub fn command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
     let mut c = std::process::Command::new(program);

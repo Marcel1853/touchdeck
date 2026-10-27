@@ -8,8 +8,8 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 
 | Ordner | Inhalt |
 |---|---|
-| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri), Version 0.9.0: Server, Aktionen und Integrationen, Editor und Bedienfeld, Fenster mit Symbol in der Systemleiste |
-| [`android/`](android/) | Android-App (Kotlin), Version 0.6.2, auf Deutsch und Englisch: findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
+| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri), Version 0.12.1: Server, Aktionen und Integrationen, Editor und Bedienfeld, Fenster mit Symbol in der Systemleiste |
+| [`android/`](android/) | Android-App (Kotlin), Version 0.8.3, auf Deutsch und Englisch: findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
 
 Änderungen je Version: [`CHANGELOG.de.md`](CHANGELOG.de.md)
 
@@ -87,3 +87,12 @@ im Repository: `android/keystore/keystore.properties` mit `storeFile`,
 
 Linux mit X11 (Tastenkürzel und Mausaktionen nutzen XTest), PipeWire,
 D-Bus/MPRIS. Getestet unter Linux Mint 22 (Cinnamon) und Android 16.
+
+**Windows: ganz frühe Alpha.** TouchDeck lässt sich für Windows 10/11 bauen,
+und eine GitHub-Aktion erstellt einen Installer (unter „Artifacts“ der Aktion
+„Windows“), aber er ist **noch nie auf einem echten Windows-PC getestet**
+worden. Mit Fehlern ist zu rechnen. Unter Windows fehlen bisher: Audiogeräte
+wechseln, Nachtlicht, aktueller Medientitel, Netzwerkrate, Auslöser „PC
+gesperrt“ und Ton-Auslöser; Töne spielen nur WAV-Dateien. Plugins, die
+Linux-Programme brauchen (z. B. xclip), laufen dort nicht. Rückmeldungen gern
+als GitHub-Issue.
