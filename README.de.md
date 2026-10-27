@@ -89,9 +89,8 @@ Linux mit X11 (Tastenkürzel und Mausaktionen nutzen XTest), PipeWire,
 D-Bus/MPRIS. Getestet unter Linux Mint 22 (Cinnamon) und Android 16.
 
 **Windows: ganz frühe Alpha.** TouchDeck lässt sich für Windows 10/11 bauen,
-und eine GitHub-Aktion erstellt einen Installer (unter „Artifacts“ der Aktion
-„Windows“), aber er ist **noch nie auf einem echten Windows-PC getestet**
-worden. Mit Fehlern ist zu rechnen. Unter Windows fehlen bisher: Audiogeräte
+jedes Release enthält einen Installer (`TouchDeck_…_x64-setup-ALPHA.exe`),
+aber er ist **noch nie auf einem echten Windows-PC getestet** worden. Mit Fehlern ist zu rechnen. Unter Windows fehlen bisher: Audiogeräte
 wechseln, Nachtlicht, aktueller Medientitel, Netzwerkrate, Auslöser „PC
 gesperrt“ und Ton-Auslöser; Töne spielen nur WAV-Dateien. Plugins, die
 Linux-Programme brauchen (z. B. xclip), laufen dort nicht. Rückmeldungen gern

@@ -86,9 +86,9 @@ it, `assembleDebug` still builds.
 Linux with X11 (keyboard shortcuts and mouse actions use XTest), PipeWire,
 D-Bus/MPRIS. Tested on Linux Mint 22 (Cinnamon) and Android 16.
 
-**Windows: very early alpha.** TouchDeck compiles for Windows 10/11 and a
-GitHub Action builds an installer (under “Artifacts” of the
-“Windows” workflow), but it has **not been tested on a real Windows PC yet**.
+**Windows: very early alpha.** TouchDeck compiles for Windows 10/11; every
+release contains an installer (`TouchDeck_…_x64-setup-ALPHA.exe`), but it has
+**not been tested on a real Windows PC yet**.
 Expect bugs. Not available on Windows so far: switching audio devices, night
 light, current media title, network rate, PC-lock trigger and audio triggers;
 sounds play WAV files only. Plugins that need Linux tools (e.g. xclip) don't

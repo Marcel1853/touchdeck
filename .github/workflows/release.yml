@@ -1,9 +1,9 @@
-# Baut bei jedem Push auf main TouchDeck für Linux (AppImage und .deb) und die Android-App
-# und legt in diesem Repo ein Release an – aber nur, wenn es die Version aus
+# Baut bei jedem Push auf main TouchDeck für Linux (AppImage und .deb), Windows (Installer, ganz
+# frühe Alpha) und die Android-App und legt in diesem Repo ein Release an – aber nur, wenn es die Version aus
 # touchdeck-rs/app/tauri.conf.json noch nicht gibt.
 #
-# Release: Tag vX.Y.Z, Dateien TouchDeck_X.Y.Z_amd64.AppImage, TouchDeck_X.Y.Z_amd64.deb und
-# TouchDeck-Android-A.B.C.apk. Text = Abschnitt „Version: X.Y.Z“ aus CHANGELOG.de.md.
+# Release: Tag vX.Y.Z, Dateien TouchDeck_X.Y.Z_amd64.AppImage, TouchDeck_X.Y.Z_amd64.deb,
+# TouchDeck_X.Y.Z_x64-setup-ALPHA.exe und TouchDeck-Android-A.B.C.apk. Text = Abschnitt „Version: X.Y.Z“ aus CHANGELOG.de.md.
 #
 # Bewusst ohne Caches (kein actions/cache, kein Cache in setup-Aktionen): jeder Lauf baut
 # alles frisch, damit nie ein alter oder kaputter Zwischenstand im Release landet.
@@ -159,9 +159,54 @@ jobs:
             touchdeck-rs/target/release/bundle/deb/*.deb
           if-no-files-found: error
 
+  windows:
+    name: Windows (Installer, ganz frühe Alpha)
+    needs: [pruefen, android]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust (stabil)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Tests
+        working-directory: touchdeck-rs
+        run: cargo test -p touchdeck-server
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: touchdeck-rs/downloads
+
+      - name: App an ihren Platz legen
+        shell: bash
+        run: mv touchdeck-rs/downloads/app-release.apk touchdeck-rs/downloads/TouchDeck.apk
+
+      - name: Tauri-CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Symbole für Windows (.ico)
+        working-directory: touchdeck-rs/app
+        run: cargo tauri icon icons/icon.png
+
+      - name: Bauen (NSIS-Installer)
+        working-directory: touchdeck-rs/app
+        shell: bash
+        run: |
+          echo '{"bundle":{"icon":["icons/32x32.png","icons/128x128.png","icons/icon.ico","icons/icon.png"]}}' > windows-icons.json
+          cargo tauri build --bundles nsis --config windows-icons.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: touchdeck-rs/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
   veroeffentlichen:
     name: Veröffentlichen
-    needs: [pruefen, android, linux]
+    needs: [pruefen, android, linux, windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -177,6 +222,8 @@ jobs:
           find ausgabe -mindepth 2 -type f -exec mv -t ausgabe {} +
           find ausgabe -mindepth 1 -type d -empty -delete
           mv ausgabe/app-release.apk "ausgabe/TouchDeck-Android-${{ needs.pruefen.outputs.app }}.apk"
+          # Windows ist eine ganz frühe Alpha – das steht schon im Dateinamen.
+          for f in ausgabe/*-setup.exe; do mv "$f" "${f%.exe}-ALPHA.exe"; done
           ls -la ausgabe
 
       - name: Release-Text aus CHANGELOG.de.md
@@ -184,6 +231,8 @@ jobs:
           VERSION="${{ needs.pruefen.outputs.version }}"
           # Abschnitt ab „Version: X.Y.Z“ bis zur nächsten Trennlinie, als Textblock.
           {
+            echo '> **Windows: ganz frühe Alpha.** `TouchDeck_…_x64-setup-ALPHA.exe` ist noch nie auf einem echten Windows-PC getestet worden – mit Fehlern ist zu rechnen. Rückmeldungen gern als Issue.'
+            echo
             echo '```text'
             awk -v v="$VERSION" '
               $0 == "Version: " v { found = 1 }
