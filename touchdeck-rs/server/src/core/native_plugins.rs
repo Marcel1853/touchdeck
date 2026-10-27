@@ -64,6 +64,12 @@ pub fn spawn_native(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Val
     let command: Vec<String> = manifest["native"]["command"].as_array().into_iter().flatten().filter_map(|c| c.as_str().map(String::from)).collect();
     let version = app.version;
     tokio::spawn(async move {
+        if !crate::core::plugins::runs_here(&manifest["platforms"]) {
+            let msg = t!("plugins.pluginNotForThisSystem").to_string();
+            log(&weak, &id, "error", &msg);
+            *error.lock().unwrap() = Some(msg);
+            return refuse(&mut rx).await;
+        }
         let mut restarts: Vec<Instant> = Vec::new();
         loop {
             match run_once(&weak, &id, &dir, &command, &manifest, &settings, version, &mut rx).await {
@@ -76,23 +82,26 @@ pub fn spawn_native(app: &Arc<App>, dir: PathBuf, manifest: Value, settings: Val
                 let msg = t!("plugins.pluginProgramCrashedSeveral").to_string();
                 log(&weak, &id, "error", &msg);
                 *error.lock().unwrap() = Some(msg);
-                // Anfragen weiterhin beantworten, damit niemand hängen bleibt.
-                while let Some(cmd) = rx.recv().await {
-                    match cmd {
-                        NativeCmd::Action { reply, .. } => {
-                            let _ = reply.send(Err(t!("plugins.pluginIsNotRunning").into()));
-                        }
-                        NativeCmd::Event { .. } => {}
-                        NativeCmd::Stop => return,
-                    }
-                }
-                return;
+                return refuse(&mut rx).await;
             }
             restarts.push(Instant::now());
             tokio::time::sleep(Duration::from_secs(2)).await;
         }
     });
     tx
+}
+
+/** Läuft das Plugin nicht: Anfragen weiterhin beantworten, damit niemand hängen bleibt. */
+async fn refuse(rx: &mut mpsc::UnboundedReceiver<NativeCmd>) {
+    while let Some(cmd) = rx.recv().await {
+        match cmd {
+            NativeCmd::Action { reply, .. } => {
+                let _ = reply.send(Err(t!("plugins.pluginIsNotRunning").into()));
+            }
+            NativeCmd::Event { .. } => {}
+            NativeCmd::Stop => return,
+        }
+    }
 }
 
 enum Stopped {
@@ -121,6 +130,9 @@ async fn run_once(
         .args(args)
         .current_dir(dir)
         .env("TOUCHDECK_PLUGIN_DIR", dir)
+        // Nachrichten sind UTF-8; Python nimmt unter Windows sonst die Codepage (Umlaute kaputt).
+        .env("PYTHONUTF8", "1")
+        .env("PYTHONIOENCODING", "utf-8")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

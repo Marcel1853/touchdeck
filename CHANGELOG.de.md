@@ -17,6 +17,9 @@ Datum: 2026-10-26
       Discord laufen über Windows-Schnittstellen. Eine GitHub-Aktion baut einen Installer. Unter
       Windows fehlen noch: Audiogeräte wechseln, Nachtlicht, Medientitel, Netzwerkrate, Auslöser
       „PC gesperrt“ und Ton-Auslöser; Töne nur als WAV.
+    - Plugins können ihre Betriebssysteme angeben (`"platforms": ["linux", "windows"]`). Der
+      Marktplatz kennzeichnet andere mit „nur Linux“ und installiert sie nicht; TouchDeck startet sie
+      nicht. Python-Plugins finden unter Windows `python` und sprechen immer UTF-8.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0

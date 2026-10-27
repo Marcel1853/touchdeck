@@ -291,22 +291,29 @@ function marketTab() {
     ...market.plugins.map((p) => {
       const mine = installedFor(p);
       const installed = mine?.source === `github:${p.repo}`;
+      // Plugin für ein anderes Betriebssystem: Hinweis statt Installieren.
+      const foreign = p.platforms?.length > 0 && !p.platforms.includes(market.platform);
       return h('div', { class: `settings-card plugin${mine ? ' is-installed' : ''}` },
         h('div', { class: 'plugin-head' },
           h('div', {}, h('b', {}, p.name || p.repo),
             mine && h('span', { class: 'installed-badge', title: mine.source ?? '' },
               `✓ ${tr('plugins.installedBadge')}${mine.manifest?.version ? ` · ${mine.manifest.version}` : ''}${installed ? '' : ` · ${tr('plugins.installedLocal')}`}`),
             mine?.update && h('span', { class: 'installed-badge update-badge' }, tr('plugins.updateTo', [mine.update.latest])),
+            foreign && h('span', { class: 'installed-badge update-badge', title: tr('plugins.onlyForHint', [systemName(market.platform)]) },
+              tr('plugins.onlyFor', [p.platforms.map(systemName).join(', ')])),
             h('p', { class: 'hint-text' }, p.description),
             h('p', { class: 'hint-text' }, p.author && tr('plugins.by2', [p.author]), p.license && tr('plugins.license2', [p.license]), h('a', { href: githubUrl(p.repo), target: '_blank', rel: 'noopener' }, p.repo))),
           h('div', { class: 'plugin-buttons' },
             h('button', { class: 'btn small', onclick: () => showReadme(p, installed) }, tr('plugins.readMore')),
             // Aus einem Ordner (Testmodus) installiert: die Marktplatz-Fassung kann sie ersetzen.
-            h('button', { class: `btn small ${mine ? '' : 'primary'}`, title: mine && !installed ? tr('plugins.takeFromMarketHint') : '', onclick: () => installFromGitHub(p.repo) },
+            h('button', { class: `btn small ${mine || foreign ? '' : 'primary'}`, disabled: foreign && !mine,
+              title: foreign ? tr('plugins.onlyForHint', [systemName(market.platform)]) : mine && !installed ? tr('plugins.takeFromMarketHint') : '', onclick: () => installFromGitHub(p.repo) },
               installed ? tr('common.update') : mine ? tr('plugins.takeFromMarket') : tr('plugins.install')))));
     }),
   ];
 }
+
+const systemName = (p) => ({ linux: 'Linux', windows: 'Windows' })[p] ?? p;
 
 async function setAdvanced(on) {
   if (on) {

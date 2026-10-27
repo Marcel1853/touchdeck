@@ -16,6 +16,9 @@ Date: 2026-10-26
       shortcuts, volume, system values, lock screen, power actions and Discord work through Windows
       interfaces. A GitHub Action builds an installer. Not yet available on Windows: switching audio
       devices, night light, media title, network rate, PC-lock and audio triggers; sounds WAV only.
+    - Plugins can state their operating systems (`"platforms": ["linux", "windows"]`). The
+      marketplace marks others as “Linux only” and does not install them; TouchDeck does not start
+      them. Python plugins find `python` on Windows and always talk UTF-8.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.0

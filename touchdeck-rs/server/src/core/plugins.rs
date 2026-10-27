@@ -233,6 +233,7 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "author": text(&raw["author"], 60),
         "description": ltext(&raw["description"], 400),
         "license": text(&raw["license"], 100),
+        "platforms": platforms(&raw["platforms"]),
         "main": main,
         "permissions": { "http": http, "values": p["values"] == true, "notify": p["notify"] == true,
                          "events": p["events"] == true, "deck": p["deck"] == true, "status": p["status"] == true },
@@ -247,6 +248,19 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "iconPacks": raw["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str)
             .filter(|p| p.to_lowercase().ends_with(".tdicons") && safe_rel_path(p)).take(10).collect::<Vec<_>>(),
     }))
+}
+
+/** Betriebssystem, auf dem TouchDeck gerade läuft (für das Plugin-Feld „platforms“). */
+pub const PLATFORM: &str = if cfg!(windows) { "windows" } else { "linux" };
+
+/** Unterstützte Systeme eines Plugins; leer heißt: überall. */
+fn platforms(v: &Value) -> Vec<String> {
+    v.as_array().into_iter().flatten().filter_map(Value::as_str).filter(|p| ["linux", "windows"].contains(p)).map(String::from).collect()
+}
+
+/** Läuft ein Plugin mit diesem „platforms“-Feld hier? */
+pub fn runs_here(platforms: &Value) -> bool {
+    platforms.as_array().is_none_or(|a| a.is_empty() || a.iter().any(|p| p == PLATFORM))
 }
 
 /** Einheiten für Rückgabe-Daten (Anzeige im Button). */
@@ -1737,10 +1751,11 @@ impl Plugins {
                     "description": localize(&ltext(&p["description"], 300), &lang),
                     "author": text(&p["author"], 60),
                     "license": text(&p["license"], 100),
+                    "platforms": platforms(&p["platforms"]),
                 }))
             })
             .collect();
-        Ok(json!({ "plugins": plugins }))
+        Ok(json!({ "plugins": plugins, "platform": PLATFORM }))
     }
 }
 
@@ -1832,6 +1847,15 @@ mod tests {
         // Gewöhnliche Objekte (Auswahlwerte) bleiben unverändert.
         assert_eq!(localize(&json!({ "value": "a", "label": "A" }), "en"), json!({ "value": "a", "label": "A" }));
         assert!(check_manifest(&json!({ "id": "x", "name": { "en": "" } })).is_err());
+    }
+
+    #[test]
+    fn betriebssysteme() {
+        let m = check_manifest(&json!({ "id": "x", "name": "X", "platforms": ["linux", "macos", 3] })).unwrap();
+        assert_eq!(m["platforms"], json!(["linux"]), "unbekannte Systeme fallen weg");
+        assert!(runs_here(&json!([])) && runs_here(&Value::Null), "ohne Angabe: überall");
+        assert!(runs_here(&json!(["linux", "windows"])));
+        assert_eq!(runs_here(&json!(["windows"])), cfg!(windows));
     }
 
     #[test]

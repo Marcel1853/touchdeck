@@ -78,6 +78,7 @@ Berechtigung angeben.
 |---|---|
 | `id` | 1–32 Zeichen: Kleinbuchstaben, Ziffern, Bindestrich. Muss eindeutig sein. |
 | `license` | Lizenz des Plugins, z. B. `MIT` oder `Alle Rechte vorbehalten`. Öffentlich heißt nicht frei: Ohne Lizenz gehört der Code allein dem Autor. |
+| `platforms` | Optional: Betriebssysteme, auf denen das Plugin läuft, `["linux"]`, `["windows"]` oder beides. Fehlt es, gilt: überall. Auf anderen Systemen zeigt der Marktplatz „nur Linux“, und TouchDeck startet es nicht. Windows ist eine ganz frühe Alpha. |
 | Texte | `name`, `description`, `label` usw. dürfen statt eines Texts eine Übersetzung sein: `{ "en": "Light", "de": "Licht" }`. TouchDeck nimmt die eingestellte Sprache, sonst Englisch, sonst Deutsch. So kann ein Plugin seine Übersetzungen gleich mitbringen. |
 | `permissions.http` | Erlaubte Adressen: genauer Name, `*.domain` für alle Unteradressen, `lan` für Geräte im Heimnetz. Ohne Eintrag kein Netz. |
 | `permissions.values` | TouchDeck-Werte lesen und setzen. |

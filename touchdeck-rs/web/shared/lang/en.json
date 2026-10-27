@@ -685,6 +685,8 @@
     "install": "Install",
     "installedBadge": "Installed",
     "installedLocal": "test mode from folder",
+    "onlyFor": "{0} only",
+    "onlyForHint": "This plugin does not run on {0}.",
     "installFromGithub": "Install from GitHub",
     "installed": "Installed",
     "installed2": "{0} installed ✓",
