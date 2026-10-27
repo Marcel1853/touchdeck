@@ -49,7 +49,10 @@ jobs:
 
       - name: Bauen (NSIS-Installer)
         working-directory: touchdeck-rs/app
-        run: cargo tauri build --bundles nsis --config '{\"bundle\":{\"icon\":[\"icons/32x32.png\",\"icons/128x128.png\",\"icons/icon.ico\",\"icons/icon.png\"]}}'
+        shell: bash
+        run: |
+          echo '{"bundle":{"icon":["icons/32x32.png","icons/128x128.png","icons/icon.ico","icons/icon.png"]}}' > windows-icons.json
+          cargo tauri build --bundles nsis --config windows-icons.json
 
       - uses: actions/upload-artifact@v4
         with:
