@@ -7,14 +7,14 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, bail};
 use serde_json::{Value, json};
 
-use crate::system::{linux, sort_key};
+use crate::system::{os, sort_key};
 
 // StateFlags im App-Manifest: Bit 2 = Update nötig, Bit 1024 = Update läuft.
 const FLAG_UPDATE_REQUIRED: u64 = 2;
 const FLAG_UPDATE_RUNNING: u64 = 1024;
 
 fn steam_root() -> Option<PathBuf> {
-    let home = linux::home();
+    let home = os::home();
     [".local/share/Steam", ".steam/steam", ".var/app/com.valvesoftware.Steam/.local/share/Steam"]
         .iter()
         .map(|r| home.join(r))
@@ -171,7 +171,7 @@ pub fn run_game(appid: &str) -> Result<()> {
     if appid.is_empty() || !appid.chars().all(|c| c.is_ascii_digit()) {
         bail!(t!("steam.noGameSelected"));
     }
-    linux::open_with_default(&format!("steam://rungameid/{appid}"))
+    os::open_with_default(&format!("steam://rungameid/{appid}"))
 }
 
 pub fn open_steam(view: &str) -> Result<()> {
@@ -183,7 +183,7 @@ pub fn open_steam(view: &str) -> Result<()> {
         "screenshots" => "steam://open/screenshots",
         _ => "steam://open/games",
     };
-    linux::open_with_default(url)
+    os::open_with_default(url)
 }
 
 #[cfg(test)]

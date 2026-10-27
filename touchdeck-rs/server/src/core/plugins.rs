@@ -559,7 +559,7 @@ fn install_host(ctx: &rquickjs::Ctx<'_>, host: Rc<Host>, manifest: &Value, setti
             if !h.notify {
                 return Err(js_err(&ctx, t!("plugins.noPermissionForNotifications")));
             }
-            let _ = crate::system::linux::command("notify-send").args(["-a", "TouchDeck", &title, &body]).spawn();
+            let _ = crate::system::os::command("notify-send").args(["-a", "TouchDeck", &title, &body]).spawn();
             Ok(())
         })?,
     )?;
@@ -1586,7 +1586,7 @@ impl Plugins {
 
     /** Testmodus: Plugin direkt aus einem lokalen Ordner laden (zum Entwickeln, bevor es veröffentlicht ist). */
     pub fn install_local(&self, app: &Arc<App>, path: &str) -> Result<String> {
-        let dir = crate::system::linux::expand_home(path.trim());
+        let dir = crate::system::os::expand_home(path.trim());
         if dir.is_file() && dir.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip")) {
             let bytes = std::fs::read(&dir)?;
             return self.install_zip(app, &bytes);

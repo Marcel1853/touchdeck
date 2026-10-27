@@ -14,7 +14,7 @@ use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::core::store::{ObsSettings, Store};
-use crate::system::{linux, sort_key};
+use crate::system::{os, sort_key};
 
 type Pending = Arc<Mutex<HashMap<String, oneshot::Sender<Result<Value, String>>>>>;
 
@@ -317,8 +317,8 @@ where
 /** Port und Passwort aus der lokalen OBS-Konfiguration (normale Installation oder Flatpak). */
 pub fn read_local_config() -> Result<Value> {
     let rel = "obs-studio/plugin_config/obs-websocket/config.json";
-    let config_home = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| linux::home().join(".config"), Into::into);
-    let candidates = [linux::home().join(".var/app/com.obsproject.Studio/config").join(rel), config_home.join(rel)];
+    let config_home = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| os::home().join(".config"), Into::into);
+    let candidates = [os::home().join(".var/app/com.obsproject.Studio/config").join(rel), config_home.join(rel)];
     let file = candidates
         .iter()
         .find(|f| f.exists())

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use touchdeck_server::core::store::Store;
 use touchdeck_server::server::{self, Options};
-use touchdeck_server::system::linux;
+use touchdeck_server::system::os;
 
 const HELP: &str = "TouchDeck – Makro-Fernbedienung für Linux
 
@@ -112,14 +112,14 @@ async fn main() {
         }
         println!("{}", t!("cli.touchdeckIsAlreadyRunning", editor_url));
         if args.open {
-            let _ = linux::open_with_default(&editor_url);
+            let _ = os::open_with_default(&editor_url);
         }
         return;
     }
 
     println!("{}", t!("cli.touchdeckIsRunningEditor", data.display(), editor_url));
     if args.open {
-        let _ = linux::open_with_default(&editor_url);
+        let _ = os::open_with_default(&editor_url);
     }
     // Strg+C und SIGTERM fängt der Server selbst ab (speichert noch und beendet).
     std::future::pending::<()>().await;

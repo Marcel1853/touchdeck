@@ -13,7 +13,7 @@ use tauri::webview::NewWindowResponse;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use touchdeck_server::core::store::Store;
 use touchdeck_server::server::{self, Options};
-use touchdeck_server::system::linux;
+use touchdeck_server::system::os;
 use touchdeck_server::t;
 
 static QUITTING: AtomicBool = AtomicBool::new(false);
@@ -35,7 +35,7 @@ fn data_dir() -> PathBuf {
     if let Some(d) = std::env::var_os("TOUCHDECK_DATA").filter(|d| !d.is_empty()) {
         return PathBuf::from(d);
     }
-    let config = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| linux::home().join(".config"), PathBuf::from);
+    let config = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| os::home().join(".config"), PathBuf::from);
     config.join("TouchDeck/data")
 }
 
@@ -87,7 +87,7 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
             && !HINT_SHOWN.swap(true, Ordering::Relaxed)
         {
             tauri::async_runtime::spawn(async {
-                let _ = linux::notify(t!("desktop.keepsRunning"), t!("desktop.keepsRunningText")).await;
+                let _ = os::notify(t!("desktop.keepsRunning"), t!("desktop.keepsRunningText")).await;
             });
         }
     });
@@ -105,7 +105,7 @@ fn open_external(url: &str) {
         return;
     }
     *last = Some(std::time::Instant::now());
-    let _ = linux::open_with_default(url);
+    let _ = os::open_with_default(url);
 }
 
 /** Fenstersymbol (für Taskleiste und Alt+Tab). Unter Linux geht das beim Anlegen eines unsichtbaren Fensters
@@ -160,7 +160,7 @@ fn open_preview_window(app: &AppHandle) {
 // ---------- Autostart ----------
 
 fn autostart_file() -> PathBuf {
-    let config = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| linux::home().join(".config"), PathBuf::from);
+    let config = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| os::home().join(".config"), PathBuf::from);
     config.join("autostart/touchdeck.desktop")
 }
 
@@ -186,7 +186,7 @@ fn restart(app: &AppHandle) {
     let program = std::env::var_os("APPIMAGE").map(PathBuf::from).or_else(|| std::env::current_exe().ok());
     let Some(program) = program else { return eprintln!("Neustart: Programmdatei nicht gefunden") };
     let visible = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
-    let mut cmd = linux::command(&program);
+    let mut cmd = os::command(&program);
     cmd.arg(format!("--restart-of={}", std::process::id()));
     if !visible {
         cmd.arg("--hidden");
@@ -245,7 +245,7 @@ fn install_desktop_entry() -> std::io::Result<()> {
     if std::path::Path::new("/usr/share/applications/TouchDeck.desktop").exists() {
         return Ok(());
     }
-    let data = std::env::var_os("XDG_DATA_HOME").map_or_else(|| linux::home().join(".local/share"), PathBuf::from);
+    let data = std::env::var_os("XDG_DATA_HOME").map_or_else(|| os::home().join(".local/share"), PathBuf::from);
     // Vollständiger Pfad statt Symbolname: ein veralteter icon-theme.cache würde den Namen sonst nicht finden.
     let icon_dir = data.join("icons/hicolor/512x512/apps");
     std::fs::create_dir_all(&icon_dir)?;

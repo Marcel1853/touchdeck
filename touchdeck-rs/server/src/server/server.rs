@@ -39,7 +39,7 @@ use crate::integrations::discord::DiscordClient;
 use crate::integrations::obs::{self, ObsClient};
 use crate::integrations::twitch::TwitchClient;
 use crate::integrations::{steam, steam_pages};
-use crate::system::linux;
+use crate::system::os;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -234,7 +234,7 @@ impl App {
         let token = &store.settings().token;
         // Eigene Adresse aus den Einstellungen, sonst alle Adressen im Heimnetz.
         let host = &store.settings().public_host;
-        let hosts = if host.is_empty() { linux::lan_addresses() } else { vec![host.clone()] };
+        let hosts = if host.is_empty() { os::lan_addresses() } else { vec![host.clone()] };
         hosts.iter().map(|ip| format!("http://{ip}:{}/deck/?token={token}", self.port)).collect()
     }
 
@@ -574,7 +574,7 @@ async fn check_updates(app: &Arc<App>, background: bool) {
         let text = t!("plugins.updateAvailable", &name, latest);
         app.log.info("Plugins", &text);
         if background {
-            let _ = linux::notify("TouchDeck", &text).await;
+            let _ = os::notify("TouchDeck", &text).await;
         }
     }
     // TouchDeck selbst: nur Hinweis, nie automatisch.
@@ -590,7 +590,7 @@ async fn check_updates(app: &Arc<App>, background: bool) {
             let was = std::mem::replace(&mut *app.release.lock().unwrap(), info);
             if background && was["version"] != version.as_str() {
                 let text = t!("server.newVersion", &version);
-                let _ = linux::notify("TouchDeck", &text).await;
+                let _ = os::notify("TouchDeck", &text).await;
             }
         } else {
             *app.release.lock().unwrap() = Value::Null;
@@ -1061,10 +1061,10 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
                 "newRelease": *app.release.lock().unwrap(),
                 "pluginUpdates": app.plugins.update_count(),
                 "platform": format!("Linux {}", release.trim()),
-                "host": linux::hostname(),
+                "host": os::hostname(),
                 "dataDir": store.data_dir,
                 "uptime": app.started.elapsed().as_secs(),
-                "lan": linux::lan_addresses(),
+                "lan": os::lan_addresses(),
                 "port": app.port,
                 "devices": devices,
                 "deviceList": device_list,
@@ -1115,9 +1115,9 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             probe.reset().await;
             Ok(json!({ "ok": true, "version": v["obsVersion"], "scenes": scenes.len() }))
         }
-        "GET /api/hello" => Ok(json!({ "app": "touchdeck", "name": linux::hostname(), "version": VERSION, "port": app.port, "language": lang(app) })),
+        "GET /api/hello" => Ok(json!({ "app": "touchdeck", "name": os::hostname(), "version": VERSION, "port": app.port, "language": lang(app) })),
         "POST /api/firewall/open" => {
-            linux::open_firewall(app.port).await.map_err(user_error)?;
+            os::open_firewall(app.port).await.map_err(user_error)?;
             app.store.lock().unwrap().set_settings(&json!({ "firewallOpened": true }));
             app.log.info("Server", t!("server.firewallOpenedForHome"));
             Ok(json!({ "ok": true }))
@@ -1161,20 +1161,20 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             app.twitch.disconnect();
             Ok(app.twitch.status())
         }
-        "GET /api/apps" => Ok(json!(tokio::task::spawn_blocking(linux::list_apps).await.unwrap_or_default())),
+        "GET /api/apps" => Ok(json!(tokio::task::spawn_blocking(os::list_apps).await.unwrap_or_default())),
         "GET /api/pairing" => {
             let (urls, lan_enabled, pin, firewall_opened) = {
                 let store = app.store.lock().unwrap();
                 let s = store.settings();
                 (app.pairing_urls(&store), s.lan_enabled, !s.pin.is_empty(), s.firewall_opened == Some(true))
             };
-            let lan = linux::lan_addresses();
+            let lan = os::lan_addresses();
             let qr = urls.first().and_then(|u| qr_svg(u));
             let apk_url = lan.first().filter(|_| app.apk.is_file()).map(|ip| format!("http://{ip}:{}/app/TouchDeck.apk", app.port));
             let apk_qr = apk_url.as_deref().and_then(qr_svg);
             let subnet = lan.first().map(|ip| format!("{}.0/24", ip.rsplit_once('.').map_or(ip.as_str(), |(net, _)| net)));
             let firewall = match subnet {
-                Some(net) if !firewall_opened && linux::firewall_active().await => Some(format!(
+                Some(net) if !firewall_opened && os::firewall_active().await => Some(format!(
                     "sudo ufw allow from {net} to any port {} proto tcp && sudo ufw allow from {net} to any port 8769 proto udp",
                     app.port
                 )),
@@ -1346,8 +1346,8 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
                 }
                 _ => return Err(HttpError::new(400, t!("server.unknownKind"))),
             };
-            let path = linux::save_download(&file, &bytes).map_err(bad)?;
-            linux::show_in_file_manager(&path);
+            let path = os::save_download(&file, &bytes).map_err(bad)?;
+            os::show_in_file_manager(&path);
             Ok(json!({ "ok": true, "path": path.to_string_lossy() }))
         }
         "POST /api/profiles/import" | "POST /api/plugins/import-page" => {
@@ -1898,7 +1898,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
             if !a.store.lock().unwrap().settings().usb {
                 continue;
             }
-            let status = match linux::usb_reverse(a.port).await {
+            let status = match os::usb_reverse(a.port).await {
                 Ok(devices) => json!({ "devices": devices }),
                 Err(e) => json!({ "devices": [], "error": e.to_string() }),
             };
@@ -1918,7 +1918,7 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
                 tokio::time::sleep(Duration::from_secs(10)).await;
                 continue;
             }
-            if let Some(mut watch) = linux::lock_watch() {
+            if let Some(mut watch) = os::lock_watch() {
                 while let Some(locked) = watch.next().await {
                     if a.pc_locked.swap(locked, Ordering::Relaxed) != locked {
                         a.broadcast(Some(Role::Device), &json!({ "type": "pclock", "locked": locked }));

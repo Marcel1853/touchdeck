@@ -9,7 +9,7 @@ use socket2::{Domain, Protocol, Socket, Type};
 use tokio::net::UdpSocket;
 
 use crate::server::App;
-use crate::system::linux as system;
+use crate::system::os as system;
 
 pub const DISCOVERY_PORT: u16 = 8769;
 const QUESTION: &str = "TOUCHDECK_DISCOVER";

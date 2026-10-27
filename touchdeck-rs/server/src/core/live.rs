@@ -13,7 +13,7 @@ use crate::core::i18n;
 use crate::core::store::{Button, Page, js_string};
 use crate::integrations::steam;
 use crate::server::App;
-use crate::system::linux::{self, Volume};
+use crate::system::os::{self, Volume};
 
 /** Liest pro Durchlauf jede Quelle nur einmal, auch wenn mehrere Buttons sie anzeigen. */
 #[derive(Default)]
@@ -26,7 +26,7 @@ struct Snapshot {
     cpu: OnceCell<Option<i64>>,
     ram: OnceCell<Option<i64>>,
     temp: OnceCell<Option<i64>>,
-    track: OnceCell<Result<Option<linux::Track>, String>>,
+    track: OnceCell<Result<Option<os::Track>, String>>,
     steam_updates: OnceCell<(Vec<String>, Vec<String>)>,
 }
 
@@ -36,10 +36,10 @@ fn cloned<T: Clone>(r: &Result<T, String>) -> Result<T> {
 
 impl Snapshot {
     async fn sink(&self) -> Result<Volume> {
-        cloned(self.sink.get_or_init(|| async { linux::get_volume(linux::SINK).await.map_err(|e| e.to_string()) }).await)
+        cloned(self.sink.get_or_init(|| async { os::get_volume(os::SINK).await.map_err(|e| e.to_string()) }).await)
     }
     async fn source(&self) -> Result<Volume> {
-        cloned(self.source.get_or_init(|| async { linux::get_volume(linux::SOURCE).await.map_err(|e| e.to_string()) }).await)
+        cloned(self.source.get_or_init(|| async { os::get_volume(os::SOURCE).await.map_err(|e| e.to_string()) }).await)
     }
 }
 
@@ -52,7 +52,7 @@ async fn command_output(cmd: &str) -> Result<String> {
     {
         return Ok(text.clone());
     }
-    let out = linux::shell(cmd, true, Duration::from_secs(4)).await?;
+    let out = os::shell(cmd, true, Duration::from_secs(4)).await?;
     let text: String = out.lines().next().unwrap_or("").chars().take(60).collect();
     COMMAND_CACHE.lock().unwrap().insert(cmd.into(), (Instant::now(), text.clone()));
     Ok(text)
@@ -85,38 +85,38 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             text(if i18n::is_english() { format!("{}, {} {}", WEEKDAYS_EN[day], MONTHS_EN[month], now.day()) } else { format!("{}, {}. {}", WEEKDAYS[day], now.day(), MONTHS[month]) })
         }
         "cpu" => {
-            let v = *snap.cpu.get_or_init(|| async { linux::cpu_usage() }).await;
+            let v = *snap.cpu.get_or_init(|| async { os::cpu_usage() }).await;
             json!({ "text": v.map_or_else(|| "…".into(), |v| format!("{v} %")), "value": v })
         }
         "ram" => {
-            let v = snap.ram.get_or_init(|| async { linux::ram_percent() }).await.ok_or_else(|| anyhow!(t!("live.memoryUsageNotReadable")))?;
+            let v = snap.ram.get_or_init(|| async { os::ram_percent() }).await.ok_or_else(|| anyhow!(t!("live.memoryUsageNotReadable")))?;
             json!({ "text": format!("{v} %"), "value": v })
         }
         "temp" => {
-            let t = *snap.temp.get_or_init(|| async { linux::cpu_temp() }).await;
+            let t = *snap.temp.get_or_init(|| async { os::cpu_temp() }).await;
             json!({ "text": t.map_or_else(|| "–".into(), |t| format!("{t} °C")), "on": t.is_some_and(|t| t >= 80), "value": t.map(|t| t.clamp(0, 100)) })
         }
         "gpu_temp" => {
-            let t = linux::gpu_temp();
+            let t = os::gpu_temp();
             json!({ "text": t.map_or_else(|| "–".into(), |t| format!("{t} °C")), "on": t.is_some_and(|t| t >= 85), "value": t.map(|t| t.clamp(0, 100)) })
         }
         "gpu_load" => {
-            let v = linux::gpu_load();
+            let v = os::gpu_load();
             json!({ "text": v.map_or_else(|| "–".into(), |v| format!("{v} %")), "value": v })
         }
         "disk" => {
-            let v = linux::disk_percent("/");
+            let v = os::disk_percent("/");
             json!({ "text": v.map_or_else(|| "–".into(), |v| format!("{v} %")), "on": v.is_some_and(|v| v >= 90), "value": v })
         }
         "net" => {
             let rate = |b: f64| if b >= 1_000_000.0 { format!("{:.1} MB/s", b / 1_000_000.0) } else { format!("{:.0} KB/s", b / 1000.0) };
-            match linux::net_rate() {
+            match os::net_rate() {
                 Some((down, up)) => json!({ "text": format!("↓ {}\n↑ {}", rate(down), rate(up)) }),
                 None => json!({ "text": "…" }),
             }
         }
         "uptime" => {
-            let s = linux::uptime_secs().unwrap_or(0);
+            let s = os::uptime_secs().unwrap_or(0);
             let (d, h, m) = (s / 86_400, s / 3600 % 24, s / 60 % 60);
             json!({ "text": if d > 0 { format!("{d} d {h} h") } else { format!("{h} h {m:02} min") } })
         }
@@ -130,7 +130,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             json!({ "text": if v.muted { t!("common.muted") } else { t!("live.on") }, "on": v.muted })
         }
         "track" => {
-            let t = cloned(snap.track.get_or_init(|| async { linux::current_track().await.map_err(|e| e.to_string()) }).await)?;
+            let t = cloned(snap.track.get_or_init(|| async { os::current_track().await.map_err(|e| e.to_string()) }).await)?;
             match t {
                 Some(t) => {
                     let label = [t.title.as_str(), t.artist.as_str()].iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" – ");
@@ -313,8 +313,8 @@ pub async fn apply_slider(app: &Arc<App>, button: &Button, value: f64) -> Result
     let v = value.round().clamp(0.0, 100.0) as i64;
     let s = &button.slider;
     match s.target.as_str() {
-        "volume" => linux::set_volume_percent(linux::SINK, v).await,
-        "mic" => linux::set_volume_percent(linux::SOURCE, v).await,
+        "volume" => os::set_volume_percent(os::SINK, v).await,
+        "mic" => os::set_volume_percent(os::SOURCE, v).await,
         "obs_volume" => {
             if s.input.is_empty() {
                 bail!(t!("live.noObsAudioSource"));
@@ -328,7 +328,7 @@ pub async fn apply_slider(app: &Arc<App>, button: &Button, value: f64) -> Result
                 bail!(t!("common.noCommandGiven"));
             }
             // Auf das Ende warten, damit Befehle nacheinander laufen und der letzte Wert gewinnt.
-            linux::shell(&s.command.replace("{value}", &v.to_string()), true, Duration::from_secs(10)).await.map(|_| ())
+            os::shell(&s.command.replace("{value}", &v.to_string()), true, Duration::from_secs(10)).await.map(|_| ())
         }
         _ => bail!(t!("live.unknownTargetForSlider")),
     }

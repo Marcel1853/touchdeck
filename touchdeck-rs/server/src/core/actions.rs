@@ -12,7 +12,7 @@ use crate::core::catalog;
 use crate::core::store::{Action, Params, js_string};
 use crate::integrations::{discord, steam};
 use crate::server::App;
-use crate::system::{linux, sort_key, x11};
+use crate::system::{input, os, sort_key};
 
 // ---------- Platzhalter ----------
 
@@ -570,7 +570,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if !scheme_ok {
                 bail!(t!("actions.pleaseEnterFullAddress"));
             }
-            linux::open_with_default(&url)?;
+            os::open_with_default(&url)?;
             none
         }
         "open_path" => {
@@ -578,7 +578,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if path.is_empty() {
                 bail!(t!("actions.noPathGiven"));
             }
-            linux::open_with_default(&linux::expand_home(&path).to_string_lossy())?;
+            os::open_with_default(&os::expand_home(&path).to_string_lossy())?;
             none
         }
         "launch_app" => {
@@ -586,7 +586,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if id.is_empty() {
                 bail!(t!("actions.noProgramSelected"));
             }
-            linux::launch_app(&id)?;
+            os::launch_app(&id)?;
             none
         }
         "run_command" => {
@@ -595,7 +595,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 bail!(t!("common.noCommandGiven"));
             }
             let wait = p.t("wait");
-            let out = linux::shell(&cmd, wait, Duration::from_secs(30)).await?;
+            let out = os::shell(&cmd, wait, Duration::from_secs(30)).await?;
             let save = p.s("saveTo");
             if wait && !save.is_empty() {
                 set_variable(app, &save, &truncate(out.trim(), 2000))?;
@@ -609,9 +609,9 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             }
             let window = p.s("window");
             if window.is_empty() {
-                x11::send_hotkey(&keys).await?;
+                input::send_hotkey(&keys).await?;
             } else {
-                x11::send_hotkey_to(&window, &keys, p.t("back")).await?;
+                input::send_hotkey_to(&window, &keys, p.t("back")).await?;
             }
             none
         }
@@ -623,16 +623,16 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 if let Some(ms) = step.strip_suffix("ms").and_then(|n| n.trim().parse::<f64>().ok()) {
                     tokio::time::sleep(Duration::from_millis((ms.clamp(0.0, 60_000.0) / speed) as u64)).await;
                 } else {
-                    x11::send_hotkey(&step).await.map_err(|e| anyhow!("{step}: {e}"))?;
+                    input::send_hotkey(&step).await.map_err(|e| anyhow!("{step}: {e}"))?;
                 }
             }
             none
         }
         "clipboard_set" => {
-            x11::clipboard_set(&fill(app, ctx, &p.s("text"))).await?;
+            input::clipboard_set(&fill(app, ctx, &p.s("text"))).await?;
             if p.t("paste") {
                 tokio::time::sleep(Duration::from_millis(60)).await;
-                x11::send_hotkey("ctrl+v").await?;
+                input::send_hotkey("ctrl+v").await?;
             }
             none
         }
@@ -641,24 +641,24 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if name.is_empty() {
                 bail!(t!("actions.noValueGiven"));
             }
-            let text = x11::clipboard_get().await?;
+            let text = input::clipboard_get().await?;
             set_variable(app, &name, &truncate(&text, 2000))?;
             none
         }
         "type_text" => {
             let text = fill(app, ctx, &p.s("text"));
             if !text.is_empty() {
-                x11::type_text(&text).await?;
+                input::type_text(&text).await?;
             }
             none
         }
-        "media" => Ok(Some(t!("actions.player", linux::media(&p.or("op", "play-pause")).await?))),
+        "media" => Ok(Some(t!("actions.player", os::media(&p.or("op", "play-pause")).await?))),
         "volume" => {
-            let v = linux::volume(&p.or("op", "up"), p.n("step"), p.n("value")).await?;
+            let v = os::volume(&p.or("op", "up"), p.n("step"), p.n("value")).await?;
             Ok(Some(if v.muted { t!("common.muted").into() } else { t!("actions.volume", v.volume.map_or_else(|| "?".into(), |v| v.to_string())) }))
         }
         "mic_mute" => {
-            let v = linux::mic(&p.or("op", "toggle")).await?;
+            let v = os::mic(&p.or("op", "toggle")).await?;
             Ok(Some(if v.muted { t!("actions.microphoneMuted") } else { t!("actions.microphoneOn") }.into()))
         }
         "timer" => {
@@ -701,7 +701,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let (title, body) = (fill(app, ctx, &p.s("title")), fill(app, ctx, &p.s("body")));
             let target = p.or("target", "pc");
             if target != "deck" {
-                linux::notify(&title, &body).await?;
+                os::notify(&title, &body).await?;
             }
             if target == "pc" {
                 return none;
@@ -743,33 +743,33 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             }
             Ok(Some(status.to_string()))
         }
-        "audio_output" => Ok(Some(t!("actions.audioOutput", linux::set_default_audio(true, &p.or("target", "next")).await?))),
-        "audio_input" => Ok(Some(t!("actions.audioInput", linux::set_default_audio(false, &p.or("target", "next")).await?))),
+        "audio_output" => Ok(Some(t!("actions.audioOutput", os::set_default_audio(true, &p.or("target", "next")).await?))),
+        "audio_input" => Ok(Some(t!("actions.audioInput", os::set_default_audio(false, &p.or("target", "next")).await?))),
         "screenshot" => {
-            linux::screenshot(&p.s("mode"))?;
+            os::screenshot(&p.s("mode"))?;
             none
         }
         "screen" => {
             if p.or("op", "off") == "off" {
-                linux::screen_off().await?;
+                os::screen_off().await?;
                 return none;
             }
             let pct = clamp(p.n_or("percent", 100.0), 10.0, 100.0) as u32;
-            let how = linux::screen_brightness(pct).await?;
+            let how = os::screen_brightness(pct).await?;
             Ok(Some(if how == "ddc" { t!("actions.brightnessDdc", pct) } else { t!("actions.brightnessSoft", pct) }.to_string()))
         }
         "lock_screen" => {
-            linux::lock_screen().await?;
+            os::lock_screen().await?;
             none
         }
         "power" => {
-            linux::power(&p.or("op", "suspend")).await?;
+            os::power(&p.or("op", "suspend")).await?;
             none
         }
-        "night_light" => Ok(Some(if linux::night_light(&p.or("mode", "toggle")).await? { t!("actions.nightLightOn") } else { t!("actions.nightLightOff") }.into())),
-        "dark_mode" => Ok(Some(if linux::dark_mode(&p.or("mode", "toggle")).await? { t!("actions.darkTheme") } else { t!("actions.lightTheme") }.into())),
+        "night_light" => Ok(Some(if os::night_light(&p.or("mode", "toggle")).await? { t!("actions.nightLightOn") } else { t!("actions.nightLightOff") }.into())),
+        "dark_mode" => Ok(Some(if os::dark_mode(&p.or("mode", "toggle")).await? { t!("actions.darkTheme") } else { t!("actions.lightTheme") }.into())),
         "wake_on_lan" => {
-            linux::wake_on_lan(&p.s("mac")).await?;
+            os::wake_on_lan(&p.s("mac")).await?;
             Ok(Some(t!("actions.wakePacketSent").into()))
         }
 
@@ -916,7 +916,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if input.is_empty() || file.is_empty() {
                 bail!(t!("actions.specifyImageSourceAnd"));
             }
-            app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "file": linux::expand_home(&file) } })).await?;
+            app.obs.call("SetInputSettings", json!({ "inputName": input, "inputSettings": { "file": os::expand_home(&file) } })).await?;
             none
         }
         "obs_profile" => {
@@ -941,7 +941,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 bail!(t!("common.noSourceSelected"));
             }
             let stamp = Local::now().format("%Y-%m-%d %H-%M-%S");
-            let file = linux::expand_home(&p.or("folder", "~/Bilder")).join(format!("OBS {source} {stamp}.png"));
+            let file = os::expand_home(&p.or("folder", "~/Bilder")).join(format!("OBS {source} {stamp}.png"));
             app.obs.call("SaveSourceScreenshot", json!({ "sourceName": source, "imageFormat": "png", "imageFilePath": file })).await?;
             Ok(Some(format!("Gespeichert: {}", file.display())))
         }
@@ -962,7 +962,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
 
         // ---------- Maus & Fenster ----------
         "mouse_click" => {
-            x11::mouse_click(&p.or("button", "left")).await?;
+            input::mouse_click(&p.or("button", "left")).await?;
             none
         }
         "mouse_move" => {
@@ -970,7 +970,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
                 let v = p.n(k);
                 if v.is_nan() { 0 } else { v.round() as i32 }
             };
-            x11::mouse_move(num("x"), num("y"), p.s("mode") == "rel").await?;
+            input::mouse_move(num("x"), num("y"), p.s("mode") == "rel").await?;
             none
         }
         "key_hold" => {
@@ -978,7 +978,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if keys.is_empty() {
                 bail!(t!("actions.noKeyGiven"));
             }
-            x11::hold_keys(&keys, p.n_or("ms", 1000.0).max(0.0) as u64).await?;
+            input::hold_keys(&keys, p.n_or("ms", 1000.0).max(0.0) as u64).await?;
             none
         }
         "window_activate" => {
@@ -986,25 +986,25 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             if w.is_empty() {
                 bail!(t!("actions.noWindowSelected"));
             }
-            Ok(Some(t!("actions.activated", x11::activate_window(&w).await?)))
+            Ok(Some(t!("actions.activated", input::activate_window(&w).await?)))
         }
         "kill_app" => {
-            linux::kill_process(&p.s("name"), p.t("force")).await?;
+            os::kill_process(&p.s("name"), p.t("force")).await?;
             none
         }
 
         // ---------- Soundboard & Dateien ----------
         "sound_play" => {
             let vol = if action.params.contains_key("volume") && !action.params["volume"].is_null() { p.n("volume") } else { 100.0 };
-            linux::play_sound(&p.s("file"), vol, p.t("exclusive"))?;
+            os::play_sound(&p.s("file"), vol, p.t("exclusive"))?;
             none
         }
         "sound_stop" => {
-            linux::stop_sounds();
+            os::stop_sounds();
             none
         }
         "file_write" => {
-            linux::write_file(&p.s("path"), &fill(app, ctx, &p.s("text")), &p.s("mode"))?;
+            os::write_file(&p.s("path"), &fill(app, ctx, &p.s("text")), &p.s("mode"))?;
             none
         }
 
@@ -1422,13 +1422,13 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
         "audio-sinks" | "audio-sources" => {
             let sinks = name == "audio-sinks";
             let first = json!({ "value": "next", "label": if sinks { t!("actions.alwaysNextOutput") } else { t!("actions.alwaysNextInput") } });
-            linux::audio_devices(sinks).await.map(|d| {
+            os::audio_devices(sinks).await.map(|d| {
                 let mut list = vec![first];
                 list.extend(d.into_iter().map(|d| json!(d)));
                 json!(list)
             })
         }
-        "audio-sinks-only" => linux::audio_devices(true).await.map(|d| json!(d)),
+        "audio-sinks-only" => os::audio_devices(true).await.map(|d| json!(d)),
         "obs-scenes" => obs.scenes().await.map(|s| opts(s.into_iter().map(|v| (v.clone(), v)))),
         "obs-inputs" => obs.inputs().await.map(|s| opts(s.into_iter().map(|v| (v.clone(), v)))),
         "obs-scene-items" => obs.scene_items().await.map(Value::from),
@@ -1447,7 +1447,7 @@ pub async fn option_source(app: &Arc<App>, name: &str) -> Option<Result<Value>> 
         "obs-profiles" => obs.list_of("GetProfileList", "profiles", "").await.map(Value::from),
         "obs-collections" => obs.list_of("GetSceneCollectionList", "sceneCollections", "").await.map(Value::from),
         "obs-hotkeys" => obs.list_of("GetHotkeyList", "hotkeys", "").await.map(Value::from),
-        "windows" => x11::open_windows().await.map(opts),
+        "windows" => input::open_windows().await.map(opts),
         "flows" => Ok(opts(app.store.lock().unwrap().config.flows.iter().map(|f| (f.id.clone(), f.name.clone())))),
         "buttons" => {
             let store = app.store.lock().unwrap();

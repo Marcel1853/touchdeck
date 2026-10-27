@@ -117,7 +117,7 @@ async fn run_once(
         Some(rel) => dir.join(rel).to_string_lossy().into_owned(),
         None => program.clone(),
     };
-    let mut child = Command::from(crate::system::linux::command(&program))
+    let mut child = Command::from(crate::system::os::command(&program))
         .args(args)
         .current_dir(dir)
         .env("TOUCHDECK_PLUGIN_DIR", dir)
@@ -181,7 +181,7 @@ async fn run_once(
                     }
                     "notify" => {
                         let (t, b) = (msg["title"].as_str().unwrap_or("TouchDeck").to_string(), msg["body"].as_str().unwrap_or("").to_string());
-                        let _ = crate::system::linux::notify(&t, &b).await;
+                        let _ = crate::system::os::notify(&t, &b).await;
                     }
                     "log" => log(app, id, msg["level"].as_str().unwrap_or("info"), msg["message"].as_str().unwrap_or("")),
                     "call" => {

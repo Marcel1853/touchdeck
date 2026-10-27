@@ -14,7 +14,7 @@ use crate::core::catalog;
 use crate::core::store::{Action, Trigger, js_string};
 use crate::integrations::steam;
 use crate::server::App;
-use crate::system::{linux, x11};
+use crate::system::{input, os};
 
 // Verkettung erkennen: ein Event, das ein Event auslöst, das ein Event auslöst …
 tokio::task_local! {
@@ -69,7 +69,7 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
         "page_view" => empty_or_eq(&g("page"), &d["pageId"]) && state_matches(&g("state"), &d["state"]),
         "timer_done" => empty_or_eq(&g("name"), &d["name"]),
-        "hotkey" => x11::normalize_combo(&s(&g("keys"))) == s(&d["keys"]),
+        "hotkey" => input::normalize_combo(&s(&g("keys"))) == s(&d["keys"]),
         "app_focus" => {
             let want = s(&g("app")).to_lowercase();
             // „Nur beim ersten Mal“: erst wieder, nachdem das Programm beendet und neu gestartet wurde.
@@ -252,7 +252,7 @@ impl EventEngine {
             if path.is_empty() {
                 continue;
             }
-            let file = linux::expand_home(&path);
+            let file = os::expand_home(&path);
             let (a, sub) = (app.clone(), sub.clone());
             let mtime = |f: &std::path::Path| std::fs::metadata(f).and_then(|m| m.modified()).ok();
             let last: Mutex<Option<SystemTime>> = Mutex::new(mtime(&file));
@@ -303,7 +303,7 @@ impl EventEngine {
             let a = app.clone();
             tasks.push(tokio::spawn(async move {
                 let check = |a: Arc<App>| async move {
-                    let Ok(devices) = linux::audio_devices(true).await else { return };
+                    let Ok(devices) = os::audio_devices(true).await else { return };
                     let sink = devices.into_iter().find(|d| d.is_default).map(|d| d.value);
                     let before = std::mem::replace(&mut a.events.state.lock().unwrap().sink, sink.clone());
                     if let (Some(b), Some(s)) = (before, sink)
@@ -320,8 +320,8 @@ impl EventEngine {
             let a = app.clone();
             tasks.push(tokio::spawn(async move {
                 let check = |a: Arc<App>| async move {
-                    for (target, dev) in [("output", linux::SINK), ("input", linux::SOURCE)] {
-                        let Ok(v) = linux::get_volume(dev).await else { continue };
+                    for (target, dev) in [("output", os::SINK), ("input", os::SOURCE)] {
+                        let Ok(v) = os::get_volume(dev).await else { continue };
                         let before = {
                             let mut st = a.events.state.lock().unwrap();
                             let slot = if target == "output" { &mut st.muted.0 } else { &mut st.muted.1 };
@@ -349,12 +349,12 @@ impl EventEngine {
                     tick += 1;
                     // Alle 10 s: beendete Programme vergessen, damit ihr nächster Start wieder „das erste Mal“ ist.
                     if tick.is_multiple_of(10)
-                        && let Ok(open) = x11::open_windows().await
+                        && let Ok(open) = input::open_windows().await
                     {
                         let open: std::collections::HashSet<String> = open.into_iter().map(|(c, _)| c.to_lowercase()).collect();
                         a.events.state.lock().unwrap().seen_apps.retain(|c| open.contains(c));
                     }
-                    let Ok(Some((class, title))) = x11::active_window().await else { continue };
+                    let Ok(Some((class, title))) = input::active_window().await else { continue };
                     let (before, first) = {
                         let mut st = a.events.state.lock().unwrap();
                         (st.focused.replace(class.clone()), st.seen_apps.insert(class.to_lowercase()))
@@ -366,7 +366,7 @@ impl EventEngine {
             }));
         }
         let combos: Vec<String> = {
-            let mut c: Vec<String> = subs.iter().filter(|s| s.trigger.kind == "hotkey").map(|s| x11::normalize_combo(&s.trigger.params.get("keys").map(js_string).unwrap_or_default())).filter(|c| !c.is_empty()).collect();
+            let mut c: Vec<String> = subs.iter().filter(|s| s.trigger.kind == "hotkey").map(|s| input::normalize_combo(&s.trigger.params.get("keys").map(js_string).unwrap_or_default())).filter(|c| !c.is_empty()).collect();
             c.sort();
             c.dedup();
             c
@@ -382,7 +382,7 @@ impl EventEngine {
                 std::thread::sleep(Duration::from_millis(150));
                 let fire = |combo: &str| a.events.fire(&a, "hotkey", &json!({ "keys": combo, "Tasten": combo }));
                 let busy = |combo: &str| a.log.warn("Events", t!("events.hotkeyBusy", combo));
-                if let Err(err) = x11::listen_hotkeys(&combos, &flag, fire, busy) {
+                if let Err(err) = input::listen_hotkeys(&combos, &flag, fire, busy) {
                     a.log.warn("Events", t!("events.hotkeysUnavailable", err));
                 }
             });
@@ -586,7 +586,7 @@ async fn on_obs(app: &Arc<App>, kind: &str, d: &Value) -> anyhow::Result<()> {
  */
 async fn wait_audio<F: std::future::Future<Output = ()>>(every: Duration, check: impl Fn() -> F) {
     loop {
-        if let Some(mut watch) = linux::audio_watch() {
+        if let Some(mut watch) = os::audio_watch() {
             while watch.changed().await {
                 check().await;
             }
