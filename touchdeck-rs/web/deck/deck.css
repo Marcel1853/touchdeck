@@ -134,6 +134,8 @@ body.hide-labels .td-title { display: none; }
 #overlay {
   position: fixed;
   inset: 0;
+  /* Über den Buttons (Graph-Werte haben z-index 1) und dem Seitenmenü, unter der PIN-Eingabe. */
+  z-index: 8;
   display: grid;
   place-items: center;
   background: rgb(13 15 20 / 0.86);
