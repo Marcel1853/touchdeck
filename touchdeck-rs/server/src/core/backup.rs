@@ -88,8 +88,7 @@ impl Backups {
         let name = if slug.is_empty() { format!("touchdeck-{stamp}.json") } else { format!("touchdeck-{stamp}-{slug}.json") };
         let path = self.dir.join(&name);
         fs::write(&path, serde_json::to_string_pretty(config)?)?;
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
+        crate::system::os::set_mode(&path, 0o600)?;
         self.prune(keep);
         Ok(name)
     }

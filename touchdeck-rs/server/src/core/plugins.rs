@@ -990,11 +990,10 @@ impl Plugins {
     }
 
     fn write_installed(&self, m: &Map<String, Value>) -> Result<()> {
-        use std::os::unix::fs::PermissionsExt;
         let file = installed_file(&self.dir);
         std::fs::write(&file, serde_json::to_string_pretty(m)?)?;
         // Kann Zugangsdaten (Plugin-Einstellungen) enthalten.
-        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600))?;
+        crate::system::os::set_mode(&file, 0o600)?;
         Ok(())
     }
 
@@ -1561,13 +1560,12 @@ impl Plugins {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir)?;
         for (name, data, exec) in &files {
-            use std::os::unix::fs::PermissionsExt;
             let target = dir.join(name);
             if let Some(parent) = target.parent() {
                 std::fs::create_dir_all(parent)?;
             }
             std::fs::write(&target, data)?;
-            std::fs::set_permissions(&target, std::fs::Permissions::from_mode(if *exec { 0o755 } else { 0o644 }))?;
+            crate::system::os::set_mode(&target, if *exec { 0o755 } else { 0o644 })?;
         }
         let old = installed.get(&id).cloned().unwrap_or_default();
         let settings = Some(old["settings"].clone()).filter(Value::is_object).unwrap_or_else(|| json!({}));
@@ -1619,13 +1617,12 @@ impl Plugins {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir)?;
         for (name, data, exec) in &files {
-            use std::os::unix::fs::PermissionsExt;
             let target = dir.join(name);
             if let Some(parent) = target.parent() {
                 std::fs::create_dir_all(parent)?;
             }
             std::fs::write(&target, data)?;
-            std::fs::set_permissions(&target, std::fs::Permissions::from_mode(if *exec { 0o755 } else { 0o644 }))?;
+            crate::system::os::set_mode(&target, if *exec { 0o755 } else { 0o644 })?;
         }
         self.install_local(app, &dir.to_string_lossy())
     }

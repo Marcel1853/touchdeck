@@ -17,6 +17,22 @@ pub fn home() -> PathBuf {
     std::env::var_os("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from)
 }
 
+/** Ordner für Einstellungen: $XDG_CONFIG_HOME oder ~/.config. */
+pub fn config_dir() -> PathBuf {
+    std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| home().join(".config"), PathBuf::from)
+}
+
+/** Dateirechte setzen (z. B. 0o600 für Dateien mit Zugangsdaten, 0o755 für Programme). */
+pub fn set_mode(path: &Path, mode: u32) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode))
+}
+
+/** Läuft der Prozess noch? (Neustart wartet, bis das alte TouchDeck beendet ist.) */
+pub fn process_alive(pid: u32) -> bool {
+    Path::new(&format!("/proc/{pid}")).exists()
+}
+
 pub fn expand_home(p: &str) -> PathBuf {
     if p == "~" {
         home()

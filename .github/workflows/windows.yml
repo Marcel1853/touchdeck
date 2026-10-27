@@ -1,0 +1,58 @@
+# Windows-Versuch: baut TouchDeck auf einem Windows-Rechner von GitHub, nur auf dem Zweig „windows“.
+# Kein Release – der Installer (.exe, NSIS) liegt danach unter „Artifacts“ der Aktion zum Herunterladen.
+# Die Android-App kommt aus dem letzten Release (TouchDeck bietet sie den Handys zum Installieren an).
+name: Windows
+
+on:
+  push:
+    branches:
+      - windows
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows (prüfen und Installer bauen)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust (stabil)
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup default stable
+
+      - name: Prüfen (Clippy)
+        working-directory: touchdeck-rs
+        run: cargo clippy -p touchdeck-server --all-targets
+
+      - name: Tests
+        working-directory: touchdeck-rs
+        run: cargo test -p touchdeck-server
+
+      - name: Android-App aus dem letzten Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p touchdeck-rs/downloads
+          gh release download --repo "${{ github.repository }}" --pattern 'TouchDeck-Android-*.apk' --output touchdeck-rs/downloads/TouchDeck.apk
+
+      - name: Tauri-CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Symbole für Windows (.ico)
+        working-directory: touchdeck-rs/app
+        run: cargo tauri icon icons/icon.png
+
+      - name: Bauen (NSIS-Installer)
+        working-directory: touchdeck-rs/app
+        run: cargo tauri build --bundles nsis --config '{\"bundle\":{\"icon\":[\"icons/32x32.png\",\"icons/128x128.png\",\"icons/icon.ico\",\"icons/icon.png\"]}}'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: touchdeck-windows
+          path: touchdeck-rs/target/release/bundle/nsis/*.exe
+          if-no-files-found: error

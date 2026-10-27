@@ -1803,12 +1803,19 @@ pub async fn start(store: Store, opts: Options) -> Result<Arc<App>> {
     // Beim Abmelden/Herunterfahren (SIGTERM, SIGHUP) und Strg+C: Ungeschriebenes noch speichern.
     let a = app.clone();
     tokio::spawn(async move {
-        use tokio::signal::unix::{SignalKind, signal};
-        let (Ok(mut term), Ok(mut hup), Ok(mut int)) = (signal(SignalKind::terminate()), signal(SignalKind::hangup()), signal(SignalKind::interrupt())) else { return };
-        tokio::select! {
-            _ = term.recv() => {}
-            _ = hup.recv() => {}
-            _ = int.recv() => {}
+        #[cfg(unix)]
+        {
+            use tokio::signal::unix::{SignalKind, signal};
+            let (Ok(mut term), Ok(mut hup), Ok(mut int)) = (signal(SignalKind::terminate()), signal(SignalKind::hangup()), signal(SignalKind::interrupt())) else { return };
+            tokio::select! {
+                _ = term.recv() => {}
+                _ = hup.recv() => {}
+                _ = int.recv() => {}
+            }
+        }
+        #[cfg(windows)]
+        if tokio::signal::ctrl_c().await.is_err() {
+            return;
         }
         a.store.lock().unwrap().flush();
         std::process::exit(0);

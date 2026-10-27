@@ -35,8 +35,7 @@ fn data_dir() -> PathBuf {
     if let Some(d) = std::env::var_os("TOUCHDECK_DATA").filter(|d| !d.is_empty()) {
         return PathBuf::from(d);
     }
-    let config = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| os::home().join(".config"), PathBuf::from);
-    config.join("TouchDeck/data")
+    os::config_dir().join("TouchDeck/data")
 }
 
 /** Editor und Bedienfeld: im Paket als Ressource, beim Entwickeln aus dem Quellordner touchdeck-rs/web. */
@@ -159,9 +158,24 @@ fn open_preview_window(app: &AppHandle) {
 
 // ---------- Autostart ----------
 
+#[cfg(not(windows))]
 fn autostart_file() -> PathBuf {
-    let config = std::env::var_os("XDG_CONFIG_HOME").map_or_else(|| os::home().join(".config"), PathBuf::from);
-    config.join("autostart/touchdeck.desktop")
+    os::config_dir().join("autostart/touchdeck.desktop")
+}
+
+/** Startet TouchDeck beim Anmelden? */
+#[cfg(not(windows))]
+fn autostart_enabled() -> bool {
+    autostart_file().exists()
+}
+
+/** Windows: Eintrag „TouchDeck“ unter HKCU\…\Run. */
+#[cfg(windows)]
+const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+
+#[cfg(windows)]
+fn autostart_enabled() -> bool {
+    os::command("reg").args(["query", RUN_KEY, "/v", "TouchDeck"]).output().is_ok_and(|o| o.status.success())
 }
 
 fn launch_command() -> String {
@@ -203,15 +217,28 @@ fn restart(app: &AppHandle) {
 /** Beim Neustart: warten, bis das alte Programm beendet ist (Port frei, kein „läuft schon“), höchstens 15 Sekunden. */
 fn wait_for_restart() {
     let Some(pid) = std::env::args().find_map(|a| a.strip_prefix("--restart-of=").and_then(|p| p.parse::<u32>().ok())) else { return };
-    let proc = PathBuf::from(format!("/proc/{pid}"));
     for _ in 0..150 {
-        if !proc.exists() {
+        if !os::process_alive(pid) {
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
 
+#[cfg(windows)]
+fn set_autostart(on: bool) -> std::io::Result<()> {
+    let status = if on {
+        os::command("reg").args(["add", RUN_KEY, "/v", "TouchDeck", "/t", "REG_SZ", "/d", &launch_command(), "/f"]).status()?
+    } else {
+        if !autostart_enabled() {
+            return Ok(());
+        }
+        os::command("reg").args(["delete", RUN_KEY, "/v", "TouchDeck", "/f"]).status()?
+    };
+    if status.success() { Ok(()) } else { Err(std::io::Error::other("reg")) }
+}
+
+#[cfg(not(windows))]
 fn set_autostart(on: bool) -> std::io::Result<()> {
     let file = autostart_file();
     if !on {
@@ -241,6 +268,13 @@ fn set_autostart(on: bool) -> std::io::Result<()> {
 
 /** Starter-Eintrag und Symbol im Benutzerordner, damit Taskleiste und Startmenü TouchDeck mit Symbol zeigen.
  *  Die Taskleiste ordnet das Fenster über StartupWMClass zu. Beim .deb-Paket gibt es den Eintrag schon. */
+/** Windows: Startmenü-Eintrag legt der Installer an. */
+#[cfg(windows)]
+fn install_desktop_entry() -> std::io::Result<()> {
+    Ok(())
+}
+
+#[cfg(not(windows))]
 fn install_desktop_entry() -> std::io::Result<()> {
     if std::path::Path::new("/usr/share/applications/TouchDeck.desktop").exists() {
         return Ok(());
@@ -276,7 +310,7 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
     let editor = MenuItem::with_id(app, "editor", t!("desktop.openEditor"), true, None::<&str>)?;
     let pair = MenuItem::with_id(app, "pair", t!("desktop.connectPhone"), true, None::<&str>)?;
     let preview = MenuItem::with_id(app, "preview", t!("desktop.openPreview"), true, None::<&str>)?;
-    let autostart = CheckMenuItem::with_id(app, "autostart", t!("desktop.startAtLogin"), true, autostart_file().exists(), None::<&str>)?;
+    let autostart = CheckMenuItem::with_id(app, "autostart", t!("desktop.startAtLogin"), true, autostart_enabled(), None::<&str>)?;
     let restart_item = MenuItem::with_id(app, "restart", t!("desktop.restart"), true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", t!("desktop.quit"), true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&editor, &pair, &preview, &PredefinedMenuItem::separator(app)?, &autostart, &PredefinedMenuItem::separator(app)?, &restart_item, &quit])?;
@@ -297,7 +331,7 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
                 if let Err(err) = set_autostart(on) {
                     eprintln!("Autostart: {err}");
                 }
-                let _ = check.set_checked(autostart_file().exists());
+                let _ = check.set_checked(autostart_enabled());
             }
             "restart" => restart(app),
             "quit" => {
@@ -357,12 +391,13 @@ fn main() {
                     err.to_string()
                 };
                 eprintln!("{}: {msg}", t!("desktop.cannotStart"));
-                let _ = std::process::Command::new("notify-send").args(["-a", "TouchDeck", t!("desktop.cannotStart"), &msg]).status();
+                let title = t!("desktop.cannotStart").to_string();
+                let _ = tauri::async_runtime::block_on(os::notify(&title, &msg));
                 std::process::exit(1);
             }
             println!("{}", t!("desktop.running", base(), data.display()));
             // Eingeschalteten Autostart auf diese Version zeigen lassen (Dateiname ändert sich mit jeder Version).
-            if autostart_file().exists()
+            if autostart_enabled()
                 && let Err(err) = set_autostart(true)
             {
                 eprintln!("Autostart: {err}");

@@ -3,7 +3,6 @@
 use crate::t;
 use std::fs;
 use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -1168,7 +1167,9 @@ pub struct Store {
 
 fn write_json(file: &Path, value: &impl Serialize) -> Result<()> {
     let tmp = file.with_extension("json.tmp");
-    let mut f = fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(&tmp)?;
+    let mut f = fs::OpenOptions::new().write(true).create(true).truncate(true).open(&tmp)?;
+    // Nur für den Nutzer lesbar (enthält Schlüssel und Zugangsdaten).
+    crate::system::os::set_mode(&tmp, 0o600)?;
     // Kompakt: halb so groß wie formatiert, schneller geschrieben (Export und Sicherungen bleiben lesbar).
     f.write_all(&serde_json::to_vec(value)?)?;
     f.sync_all()?;
