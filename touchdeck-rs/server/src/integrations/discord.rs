@@ -9,8 +9,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow, bail};
 use serde_json::{Value, json};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::UnixStream;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
 use crate::core::log::Log;
@@ -26,7 +25,38 @@ const OP_CLOSE: i32 = 2;
 const OP_PING: i32 = 3;
 const OP_PONG: i32 = 4;
 
+/** Unter Windows spricht Discord über benannte Pipes; Discord nimmt die erste freie von 0 bis 9. */
+#[cfg(windows)]
+pub fn socket_paths() -> Vec<PathBuf> {
+    (0..10).map(|i| PathBuf::from(format!(r"\\.\pipe\discord-ipc-{i}"))).collect()
+}
+
+type Reader = Box<dyn AsyncRead + Unpin + Send>;
+type Writer = Box<dyn AsyncWrite + Unpin + Send>;
+
+/** Verbindet mit dem ersten erreichbaren Socket (Linux) bzw. der ersten offenen Pipe (Windows). */
+async fn connect(paths: Vec<PathBuf>) -> Result<Option<(Reader, Writer)>> {
+    for path in paths {
+        #[cfg(unix)]
+        {
+            if !path.exists() {
+                continue;
+            }
+            let sock = tokio::net::UnixStream::connect(&path).await.map_err(|e| anyhow!("Discord: {e}"))?;
+            let (r, w) = sock.into_split();
+            return Ok(Some((Box::new(r), Box::new(w))));
+        }
+        #[cfg(windows)]
+        if let Ok(pipe) = tokio::net::windows::named_pipe::ClientOptions::new().open(&path) {
+            let (r, w) = tokio::io::split(pipe);
+            return Ok(Some((Box::new(r), Box::new(w))));
+        }
+    }
+    Ok(None)
+}
+
 /** Mögliche Orte des Sockets: normales Paket, Flatpak, Snap; Discord nimmt den ersten freien von 0 bis 9. */
+#[cfg(not(windows))]
 pub fn socket_paths() -> Vec<PathBuf> {
     let mut bases: Vec<String> = ["XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"].iter().filter_map(|k| std::env::var(k).ok()).filter(|v| !v.is_empty()).collect();
     bases.push("/tmp".into());
@@ -191,9 +221,7 @@ impl DiscordClient {
         if client_id.is_empty() {
             bail!(t!("discord.pleaseEnterDiscordApplication"));
         }
-        let Some(path) = (self.0.paths)().into_iter().find(|p| p.exists()) else { bail!(t!("discord.discordIsNotRunning")) };
-        let sock = UnixStream::connect(&path).await.map_err(|e| anyhow!("Discord: {e}"))?;
-        let (mut reader, mut writer) = sock.into_split();
+        let Some((mut reader, mut writer)) = connect((self.0.paths)()).await? else { bail!(t!("discord.discordIsNotRunning")) };
         let alive = Arc::new(AtomicBool::new(true));
         let (tx, mut rx) = mpsc::unbounded_channel::<Vec<u8>>();
         let a = alive.clone();
@@ -548,7 +576,8 @@ mod tests {
         assert_eq!(&f[4..8], &7i32.to_le_bytes());
     }
 
-    async fn read(s: &mut UnixStream) -> Option<Value> {
+    #[cfg(unix)]
+    async fn read(s: &mut tokio::net::UnixStream) -> Option<Value> {
         let mut head = [0u8; 8];
         s.read_exact(&mut head).await.ok()?;
         let len = i32::from_le_bytes(head[4..].try_into().unwrap()) as usize;
@@ -558,6 +587,7 @@ mod tests {
     }
 
     /** Ersatz-Discord über einen Unix-Socket: Handshake, Anmeldung und Spracheinstellungen. */
+    #[cfg(unix)]
     #[tokio::test]
     async fn spricht_mit_discord() {
         use tokio::net::UnixListener;
