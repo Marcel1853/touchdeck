@@ -910,6 +910,9 @@ pub struct Settings {
     /// Fertige Seiten bei Plugin-Updates: ask (fragen), replace (immer ersetzen), keep (nie).
     #[serde(default = "default_plugin_pages")]
     pub plugin_pages: String,
+    /// Zugang zum Factorio-Mod-Portal (Mods aus Plugins herunterladen); der Token geht nie an den Editor.
+    #[serde(default)]
+    pub factorio_portal: FactorioPortal,
     /// Unbekannte Einträge bleiben erhalten.
     #[serde(flatten)]
     pub extra: Map<String, Value>,
@@ -921,6 +924,14 @@ fn default_plugin_updates() -> String {
 
 fn default_plugin_pages() -> String {
     "ask".into()
+}
+
+/** Factorio-Benutzername und -Token (factorio.com › Profil oder player-data.json des Spiels). */
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct FactorioPortal {
+    pub username: String,
+    pub token: String,
 }
 
 /** MCP-Server: aus, bis man ihn einschaltet; Ändern und beliebige Aktionen nur mit zweitem Haken. */
@@ -961,6 +972,7 @@ fn default_settings(start_page: &str) -> Settings {
         mcp: McpSettings::default(),
         plugin_updates: default_plugin_updates(),
         plugin_pages: default_plugin_pages(),
+        factorio_portal: FactorioPortal::default(),
         pin: String::new(),
         deck: DeckSettings { press_animation: "shrink".into(), vibrate: true, sound: false, show_labels: true, orientation: default_orientation(), cell_shape: default_cell_shape(), footer: false, feedback: true, sleep_after: 0, sleep_mode: default_sleep_mode(), lock_with_pc: false, clock_style: default_clock_style(), clock_color: default_clock_color(), clock_date: true, saver_buttons: Vec::new(), saver_plugins: true },
         obs: ObsSettings { host: "127.0.0.1".into(), port: 4455, password: String::new() },
@@ -1362,6 +1374,19 @@ impl Store {
         if let Some(v) = patch["pluginPages"].as_str().filter(|v| ["ask", "replace", "keep"].contains(v)) {
             s.plugin_pages = v.into();
         }
+        let fp = &patch["factorioPortal"];
+        if fp.is_object() {
+            if fp["clear"] == true {
+                s.factorio_portal = FactorioPortal::default();
+            }
+            if let Some(u) = fp["username"].as_str() {
+                s.factorio_portal.username = truncate(u.trim(), 60);
+            }
+            // Leer = unverändert lassen (der Editor kennt den gespeicherten Token nicht).
+            if let Some(t) = fp["token"].as_str().map(str::trim).filter(|t| !t.is_empty() && t.chars().all(|c| c.is_ascii_alphanumeric())) {
+                s.factorio_portal.token = truncate(t, 64);
+            }
+        }
         let m = &patch["mcp"];
         if m.is_object() {
             if let Some(b) = m["enabled"].as_bool() {
@@ -1528,6 +1553,10 @@ impl Store {
             d.shift_remove("clientSecret");
             d.insert("hasSecret".into(), json!(!s.discord.client_secret.is_empty()));
             d.insert("connected".into(), json!(!s.discord.access_token.is_empty()));
+        }
+        if let Some(f) = v["factorioPortal"].as_object_mut() {
+            f.shift_remove("token");
+            f.insert("hasToken".into(), json!(!s.factorio_portal.token.is_empty()));
         }
         v
     }

@@ -75,6 +75,11 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
             // Nur TouchDeck selbst und die Adressen von Webseiten-Buttons (in deren Rahmen) dürfen laden.
             // Alles andere wird still verworfen – nie an den Browser gegeben, sonst könnte eine
             // eingebettete Seite endlos Fenster öffnen.
+            if is_workshop_link(url.as_str()) {
+                // „Im Steam Workshop abonnieren“: an Steam geben, das Fenster bleibt, wo es ist.
+                open_external(url.as_str());
+                return false;
+            }
             url.as_str().starts_with(&format!("{}/", base())) || touchdeck_server::core::store::is_web_button_url(url.as_str())
         })
         .build()?;
@@ -93,10 +98,15 @@ fn create_editor(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
     Ok(window)
 }
 
-/** Link im Standard-Browser öffnen – nur http(s) und höchstens einmal alle 3 Sekunden (Schutz vor Fensterfluten). */
+/** Link im Standard-Browser öffnen – nur http(s) und Workshop-Links, höchstens einmal alle 3 Sekunden (Schutz vor Fensterfluten). */
+/** Workshop-Seite eines Mods in Steam (steam://url/CommunityFilePage/<Nummer>) – sonst kein steam://-Link. */
+fn is_workshop_link(url: &str) -> bool {
+    url.strip_prefix("steam://url/CommunityFilePage/").is_some_and(|id| !id.is_empty() && id.len() <= 20 && id.chars().all(|c| c.is_ascii_digit()))
+}
+
 fn open_external(url: &str) {
     static LAST: std::sync::Mutex<Option<std::time::Instant>> = std::sync::Mutex::new(None);
-    if !(url.starts_with("https://") || url.starts_with("http://")) {
+    if !(url.starts_with("https://") || url.starts_with("http://") || is_workshop_link(url)) {
         return;
     }
     let mut last = LAST.lock().unwrap();

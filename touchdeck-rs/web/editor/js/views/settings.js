@@ -90,7 +90,37 @@ function general() {
         h('select', { value: st.pluginPages ?? 'ask', onchange: (e) => updateSettings({ pluginPages: e.target.value }) },
           [['ask', tr('settings.pluginPagesAsk')], ['replace', tr('settings.pluginPagesReplace')], ['keep', tr('settings.pluginPagesKeep')]].map(([v, l]) => h('option', { value: v }, l)))),
       h('p', { class: 'hint-text' }, tr('settings.updatesHint'))),
+    factorioPortalCard(st),
   ];
+}
+
+/** Zugang zum Factorio-Mod-Portal: freiwillig, nur für Mod-Downloads aus Plugins. Der Token bleibt am PC. */
+function factorioPortalCard(st) {
+  const fp = st.factorioPortal ?? {};
+  const user = h('input', { value: fp.username ?? '', autocomplete: 'off' });
+  const token = h('input', { type: 'password', placeholder: fp.hasToken ? tr('settings.set') : '', autocomplete: 'off' });
+  return card(
+    h('h3', {}, tr('settings.factorioPortal')),
+    h('p', { class: 'hint-text' }, tr('settings.factorioPortalHint')),
+    h('label', { class: 'field' }, tr('settings.factorioUser'), user),
+    h('label', { class: 'field' }, tr('settings.factorioToken'), token),
+    h('div', { class: 'pack-actions' },
+      h('button', { class: 'btn small primary', onclick: async () => {
+        if (await updateSettings({ factorioPortal: { username: user.value, token: token.value } })) toast(tr('settings.factorioSaved'), 'ok');
+      } }, tr('common.save')),
+      h('button', { class: 'btn small', onclick: async () => {
+        try {
+          const r = await api('POST', '/api/settings/factorio-from-game', {});
+          S.settings = r.settings;
+          render();
+          toast(tr('settings.factorioTaken'), 'ok');
+        } catch (err) {
+          toast(err.message, 'error');
+        }
+      } }, tr('settings.factorioFromGame')),
+      fp.hasToken && h('button', { class: 'btn small ghost danger', onclick: () => updateSettings({ factorioPortal: { clear: true } }) }, tr('settings.factorioForget'))),
+    h('p', { class: 'hint-text' }, tr('settings.factorioWhere'), ' ',
+      h('a', { href: 'https://factorio.com/profile', target: '_blank', rel: 'noopener' }, 'factorio.com/profile')));
 }
 
 /** Zustand der USB-Verbindung (wird alle paar Sekunden am PC geprüft). */

@@ -307,11 +307,14 @@ the game's mod folder with one click (plugin card › “🧩 Install mod”):
 | `keep` | Files the mod writes itself (settings), kept when updating. |
 | `conflicts` | Other versions TouchDeck must not touch (e.g. a development folder). If one is there, TouchDeck shows it and does not install. |
 | `targets` | Mod folders per system. `proton` = Windows game under Linux. Placeholders: `{home}`, `{appdata}`, `{localappdata}`, `{documents}`, `{steamGame:APPID}` (game folder in any Steam library), `{proton:APPID}` (user folder in the Proton prefix). Folders that do not exist on the PC are left out. |
-| `page` | Optional link to the mod page (Steam Workshop, mod portal). |
+| `workshop` | `{ "steamApp": "294100", "item": "3012345678" }` – the mod is in the Steam Workshop. The card shows “Subscribe in the Steam Workshop” (opens Steam); Steam downloads and updates it. If it is already subscribed, TouchDeck sees it and offers no second copy. Can stand alone without `targets`. |
+| `factorioPortal` | Name of the mod in the Factorio mod portal. TouchDeck shows the newest version and reports updates. Downloading needs the user's Factorio username and token (Settings › Factorio mod portal, optional); without them the card links to the portal and says to download it in the game. |
+| `page` | Optional link to another mod page. |
 | `hint` | Shown after installing, e.g. that the mod has to be switched on in the game. |
 
 TouchDeck asks before installing, shows the target folder and offers “Update mod” when the plugin
-brings a newer version. Nothing is written outside the target folder.
+brings a newer version; the regular update check also reports new mod versions (GitHub releases,
+Factorio mod portal). Nothing is written outside the target folder.
 
 ## Updates
 

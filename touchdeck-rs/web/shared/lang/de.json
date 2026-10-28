@@ -779,7 +779,12 @@
     "modInstallText": "TouchDeck legt den Mod „{0}“ in diesen Ordner:\n\n{1}\n\nVorhandene Dateien des Mods werden überschrieben, seine eigenen Einstellungen bleiben. Mods sind Programmcode, der im Spiel läuft – installiere nur Mods aus Plugins, denen du vertraust. Läuft das Spiel gerade, starte es danach neu.",
     "modDone": "Mod „{0}“ installiert.",
     "modConflictHint": "Andere Fassung im Mod-Ordner, bitte erst selbst entfernen: {0}",
-    "modFromRelease": "neueste Fassung aus den GitHub-Releases von {0}"
+    "modFromRelease": "neueste Fassung aus den GitHub-Releases von {0}",
+    "modViaWorkshop": "über den Steam Workshop installiert – Updates macht Steam",
+    "modSubscribe": "Im Steam Workshop abonnieren ↗",
+    "modWorkshopPage": "Workshop-Seite ↗",
+    "modPortalPage": "Mod-Portal ↗",
+    "modPortalNoToken": "Herunterladen im Spiel (Hauptmenü › Mods) – oder Factorio-Token unter Einstellungen › Factorio-Mod-Portal eintragen, dann installiert TouchDeck ihn hier."
   },
   "settings": {
     "accentColor": "Akzentfarbe",
@@ -986,7 +991,16 @@
     "waitingForConfirmationCode": "Warte auf Bestätigung … (der Code gilt etwa 30 Minuten)",
     "warningsAndErrorsOnly": "Nur Warnungen und Fehler",
     "wobble": "Wackeln",
-    "youFindTwitchActions": "Twitch-Aktionen findest du unter „Streaming › Twitch“, Auslöser bei den Events; Live-Anzeigen „Twitch: live?“, „Zuschauer“, „Follower“."
+    "youFindTwitchActions": "Twitch-Aktionen findest du unter „Streaming › Twitch“, Auslöser bei den Events; Live-Anzeigen „Twitch: live?“, „Zuschauer“, „Follower“.",
+    "factorioPortal": "Factorio-Mod-Portal",
+    "factorioPortalHint": "Freiwillig. Damit lädt TouchDeck Mods, die ein Plugin aus dem Factorio-Mod-Portal braucht, selbst herunter. Ohne lädst du sie im Spiel. Benutzername und Token bleiben auf diesem PC.",
+    "factorioUser": "Factorio-Benutzername",
+    "factorioToken": "Token",
+    "factorioFromGame": "Aus Factorio übernehmen",
+    "factorioForget": "Vergessen",
+    "factorioTaken": "Anmeldung aus Factorio übernommen.",
+    "factorioWhere": "Den Token findest du auf deinem Profil bei factorio.com – oder „Aus Factorio übernehmen“, wenn du im Spiel angemeldet bist:",
+    "factorioSaved": "Factorio-Zugang gespeichert."
   },
   "logs": {
     "all": "Alle",

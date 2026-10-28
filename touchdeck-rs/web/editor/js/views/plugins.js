@@ -216,19 +216,29 @@ const modTargets = new Map();
 function modRow(p, mod, i) {
   const key = `${p.id}:${i}`;
   const target = mod.targets.includes(modTargets.get(key)) ? modTargets.get(key) : (mod.installed?.target && mod.targets.includes(mod.installed.target) ? mod.installed.target : mod.targets[0]);
-  const state = mod.installed
+  const viaWorkshop = mod.workshop?.installed;
+  // Factorio-Mod-Portal ohne eigenen Token: nur Link und Hinweis, im Spiel herunterladen.
+  const needsToken = mod.portal && !S.settings.factorioPortal?.hasToken;
+  const state = viaWorkshop ? tr('plugins.modViaWorkshop')
+    : mod.installed
     ? (mod.update ? tr('plugins.modUpdate', [mod.installed.version || '?', mod.version]) : tr('plugins.modInstalledAt', [mod.installed.path]))
-    : mod.targets.length ? tr('plugins.modNotInstalled') : tr('plugins.modNoTarget');
+    : mod.targets.length || mod.workshop ? tr('plugins.modNotInstalled') : tr('plugins.modNoTarget');
+  const canInstall = !viaWorkshop && !needsToken && mod.targets.length > 0;
   // Andere Fassung im gewählten Ordner: erst selbst entfernen, dann installieren.
   const blocked = (mod.conflicts ?? []).filter((c) => c.target === target).map((c) => c.path);
   return h('div', { class: 'plugin-pages plugin-mod' },
     h('p', { class: 'hint-text' }, `🧩 ${mod.name}${mod.version ? ` ${mod.version}` : ''} – ${state}${mod.release ? ` · ${tr('plugins.modFromRelease', [mod.release])}` : ''}`),
-    mod.targets.length > 1 && h('select', { onchange: (e) => { modTargets.set(key, e.target.value); render(); } },
+    mod.targets.length > 1 && canInstall && h('select', { onchange: (e) => { modTargets.set(key, e.target.value); render(); } },
       mod.targets.map((t) => h('option', { value: t, selected: t === target }, t))),
     blocked.length > 0 && h('p', { class: 'hint-text error' }, tr('plugins.modConflictHint', [blocked.join(', ')])),
-    mod.targets.length > 0 && !blocked.length && (!mod.installed || mod.update) && h('button', { class: `btn small ${mod.update ? 'primary' : ''}`, onclick: () => installMod(p, mod, i, target) },
+    canInstall && !blocked.length && (!mod.installed || mod.update) && h('button', { class: `btn small ${mod.update ? 'primary' : ''}`, onclick: () => installMod(p, mod, i, target) },
       mod.update ? tr('plugins.modUpdateButton') : tr('plugins.modInstallButton')),
-    mod.installed && !mod.update && mod.targets.length > 0 && !blocked.length && h('button', { class: 'btn small ghost', title: tr('plugins.modReinstallHint'), onclick: () => installMod(p, mod, i, target) }, tr('plugins.modReinstall')),
+    mod.installed && !mod.update && canInstall && !blocked.length && h('button', { class: 'btn small ghost', title: tr('plugins.modReinstallHint'), onclick: () => installMod(p, mod, i, target) }, tr('plugins.modReinstall')),
+    // Workshop: abonnieren öffnet Steam selbst; Steam lädt und aktualisiert den Mod.
+    mod.workshop && !viaWorkshop && h('a', { class: 'btn small', href: `steam://url/CommunityFilePage/${mod.workshop.item}` }, tr('plugins.modSubscribe')),
+    mod.workshop && h('a', { href: mod.workshop.url, target: '_blank', rel: 'noopener' }, tr('plugins.modWorkshopPage')),
+    mod.portal && h('a', { href: mod.portal, target: '_blank', rel: 'noopener' }, tr('plugins.modPortalPage')),
+    needsToken && !mod.installed && h('p', { class: 'hint-text' }, tr('plugins.modPortalNoToken')),
     mod.page && h('a', { href: mod.page, target: '_blank', rel: 'noopener' }, tr('plugins.modPage')));
 }
 

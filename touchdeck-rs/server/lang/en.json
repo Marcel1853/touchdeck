@@ -255,7 +255,12 @@
     "modZipInvalid": "The mod file is not a valid ZIP file.",
     "modInstalled": "Plugin “{0}”: mod “{1}” {2} installed to {3}",
     "modConflict": "The mod folder already contains another version of the mod: {0}. TouchDeck does not install next to it (the game would have the mod twice) – please remove that version yourself first.",
-    "modNoReleaseAsset": "The latest release of {0} has no matching mod file."
+    "modNoReleaseAsset": "The latest release of {0} has no matching mod file.",
+    "modNoPortalRelease": "The Factorio mod portal has no release of “{0}”.",
+    "modFromWorkshop": "The mod is already installed via the Steam Workshop – Steam keeps it up to date. A second copy would make the game load it twice.",
+    "modPortalNeedsToken": "Downloads from the Factorio mod portal need your Factorio username and token (Settings › Factorio mod portal). Without a token: download the mod in the game under “Mods”.",
+    "modPortalDenied": "The Factorio mod portal refused the download – username or token are wrong.",
+    "factorioLoginNotFound": "No Factorio login found. Log in once in the game (main menu › Mods or Multiplayer) or enter username and token yourself."
   },
   "iconpacks": {
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",

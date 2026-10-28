@@ -7,7 +7,7 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.2
-Datum: noch offen
+Datum: 2026-10-28
   Neuerungen:
     - Mods für Spiele: Erweiterte Plugins können den Mod ihres Spiels mitbringen (Feld „mods“). In der
       Plugin-Karte legt „🧩 Mod installieren“ ihn in den Mod-Ordner – TouchDeck findet ihn selbst
@@ -16,7 +16,11 @@ Datum: noch offen
       mitbringt. Version und Datei kommen aus dem Dateinamen (z. B. „mod_*.zip“); andere Fassungen
       (z. B. ein Entwicklungsordner) werden erkannt und nicht angefasst. Mods können auch per Link
       kommen: aus dem neuesten GitHub-Release eines Repos (die Update-Suche findet neue Fassungen)
-      oder über einen festen GitHub-Link.
+      oder über einen festen GitHub-Link. Mods im Steam Workshop bekommen „Im Steam Workshop abonnieren“
+      (Steam lädt und aktualisiert; schon abonnierte werden erkannt), Mods im Factorio-Mod-Portal
+      zeigen die neueste Version und lassen sich mit eigenem Factorio-Token laden (Einstellungen ›
+      Factorio-Mod-Portal, freiwillig, „Aus Factorio übernehmen“) – ohne Token: Link und Hinweis, im
+      Spiel herunterzuladen. Neue Mod-Fassungen meldet die Update-Suche wie Plugin-Updates.
     - Icon-Pakete in Plugins dürfen auch ein Link zu GitHub sein; TouchDeck lädt sie einmal herunter.
   Fehlerbehebungen:
     - Bedienfeld: Beim Verbindungsabbruch lagen die Werte der Graph-Buttons und die Beschriftung des

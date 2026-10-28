@@ -843,7 +843,8 @@ const DEVICE_ROUTES: [&str; 3] = ["GET /api/state", "POST /api/press", "GET /api
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 68] = [
+const ROUTES: [&str; 69] = [
+    "POST /api/settings/factorio-from-game",
     "GET /api/updates",
     "POST /api/plugins/install-mod",
     "POST /api/updates/check",
@@ -947,6 +948,12 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             }
             store.set_project(&body).map_err(bad)?;
             Ok(json!({ "ok": true, "revision": store.revision }))
+        }
+        "POST /api/settings/factorio-from-game" => {
+            let (username, token) = crate::core::mods::factorio_login().ok_or_else(|| HttpError::new(400, t!("plugins.factorioLoginNotFound")))?;
+            let mut store = app.store.lock().unwrap();
+            store.set_settings(&json!({ "factorioPortal": { "username": username, "token": token } }));
+            Ok(json!({ "ok": true, "settings": store.public_settings() }))
         }
         "PUT /api/settings" => {
             let r = {
@@ -1268,7 +1275,8 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "POST /api/plugins/install-mod" => {
             let id = str_of(&body, "id");
             let index = body["index"].as_u64().unwrap_or(u64::MAX) as usize;
-            let (name, version, path) = app.plugins.install_mod(id, index, str_of(&body, "target")).await.map_err(user_error)?;
+            let portal = app.store.lock().unwrap().settings().factorio_portal.clone();
+            let (name, version, path) = app.plugins.install_mod(id, index, str_of(&body, "target"), &portal).await.map_err(user_error)?;
             app.log.info("Plugins", t!("plugins.modInstalled", id, name, version, &path));
             Ok(json!({ "ok": true, "path": path, "plugins": app.plugins.list(&lang(app)) }))
         }

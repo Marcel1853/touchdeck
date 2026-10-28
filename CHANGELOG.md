@@ -7,7 +7,7 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.2
-Date: not yet
+Date: 2026-10-28
   Features:
     - Game mods: advanced plugins can bring the mod of their game (field “mods”). In the plugin card,
       “🧩 Install mod” puts it into the mod folder – TouchDeck finds it itself (Steam libraries, Proton
@@ -15,7 +15,11 @@ Date: not yet
       when the plugin brings a newer version. Version and file come from the file name (e.g.
       “mod_*.zip”); other versions (e.g. a development folder) are detected and left alone. Mods can
       also come by link: from the latest GitHub release of a repo (the update check finds new
-      versions) or from a fixed GitHub link.
+      versions) or from a fixed GitHub link. Mods in the Steam Workshop get “Subscribe in the Steam
+      Workshop” (Steam downloads and updates; subscribed ones are detected), mods in the Factorio mod
+      portal show the newest version and can be downloaded with your own Factorio token (Settings ›
+      Factorio mod portal, optional, “Take from Factorio”) – without a token: link and a note to
+      download it in the game. The update check reports new mod versions like plugin updates.
     - Icon packs in plugins can also be a link to GitHub; TouchDeck downloads them once.
   Bugfixes:
     - Deck: when the connection was lost, graph button values and the volume slider label stayed

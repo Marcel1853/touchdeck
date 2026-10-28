@@ -310,11 +310,14 @@ TouchDeck legt ihn mit einem Klick in den Mod-Ordner des Spiels (Plugin-Karte �
 | `keep` | Dateien, die der Mod selbst schreibt (Einstellungen); bleiben beim Aktualisieren erhalten. |
 | `conflicts` | Andere Fassungen, die TouchDeck nicht anfassen darf (z. B. ein Entwicklungsordner). Liegt eine davon im Ordner, zeigt TouchDeck sie an und installiert nicht. |
 | `targets` | Mod-Ordner je System. `proton` = Windows-Spiel unter Linux. Platzhalter: `{home}`, `{appdata}`, `{localappdata}`, `{documents}`, `{steamGame:APPID}` (Spielordner in einer beliebigen Steam-Bibliothek), `{proton:APPID}` (Benutzerordner im Proton-Prefix). Ordner, die es auf dem PC nicht gibt, fallen weg. |
-| `page` | Optionaler Link zur Mod-Seite (Steam Workshop, Mod-Portal). |
+| `workshop` | `{ "steamApp": "294100", "item": "3012345678" }` – der Mod liegt im Steam Workshop. Die Karte zeigt „Im Steam Workshop abonnieren“ (öffnet Steam); Steam lädt und aktualisiert ihn. Ist er schon abonniert, erkennt TouchDeck das und bietet keine zweite Kopie an. Geht auch allein, ohne `targets`. |
+| `factorioPortal` | Name des Mods im Factorio-Mod-Portal. TouchDeck zeigt die neueste Version und meldet Updates. Herunterladen braucht Factorio-Benutzername und Token des Nutzers (Einstellungen › Factorio-Mod-Portal, freiwillig); ohne verlinkt die Karte aufs Portal und sagt, dass man ihn im Spiel herunterlädt. |
+| `page` | Optionaler Link zu einer anderen Mod-Seite. |
 | `hint` | Erscheint nach dem Installieren, z. B. dass man den Mod im Spiel einschalten muss. |
 
 TouchDeck fragt vor dem Installieren, zeigt den Zielordner und bietet „Mod aktualisieren“ an, wenn
-das Plugin eine neuere Fassung mitbringt. Außerhalb des Zielordners wird nichts geschrieben.
+das Plugin eine neuere Fassung mitbringt; die regelmäßige Update-Suche meldet auch neue Mod-Fassungen
+(GitHub-Releases, Factorio-Mod-Portal). Außerhalb des Zielordners wird nichts geschrieben.
 
 ## Updates
 

@@ -282,11 +282,13 @@ fn mod_status(manifest: &Value, entry: &Value, dir: &Path, releases: &HashMap<St
             let present = done["path"].as_str().is_some_and(|p| Path::new(p).exists());
             let version = done["version"].as_str().unwrap_or("");
             // Release-Mods: Version aus der letzten Nachfrage bei GitHub (Update-Suche oder Installation).
+            let remote = m["release"].is_object() || !m["factorioPortal"].as_str().unwrap_or("").is_empty();
             let src = match releases.get(&format!("{id}#{i}")) {
-                Some(r) if m["release"].is_object() => Some(crate::core::mods::Source { file: String::new(), name: text(&r["name"], 200), version: text(&r["version"], 40) }),
-                _ if m["release"].is_object() => None,
+                Some(r) if remote => Some(crate::core::mods::Source { file: String::new(), name: text(&r["name"], 200), version: text(&r["version"], 40) }),
+                _ if remote => None,
                 _ => crate::core::mods::source(m, dir),
             };
+            let workshop = crate::core::mods::workshop_installed(m);
             let wanted = src.as_ref().map_or("", |s| s.version.as_str());
             let mine = src.as_ref().map_or("", |s| s.name.as_str());
             let targets = crate::core::mods::targets(m);
@@ -299,10 +301,15 @@ fn mod_status(manifest: &Value, entry: &Value, dir: &Path, releases: &HashMap<St
             json!({
                 "name": localize(&m["name"], lang), "version": wanted, "page": m["page"], "hint": localize(&m["hint"], lang),
                 "release": m["release"]["repo"],
+                "workshop": if m["workshop"].is_object() {
+                    json!({ "item": m["workshop"]["item"], "installed": workshop.as_ref().map(|p| p.to_string_lossy().into_owned()),
+                            "url": format!("https://steamcommunity.com/sharedfiles/filedetails/?id={}", m["workshop"]["item"].as_str().unwrap_or("")) })
+                } else { Value::Null },
+                "portal": crate::core::mods::portal_page(m),
                 "targets": targets.iter().map(|p| p.to_string_lossy().into_owned()).collect::<Vec<_>>(),
                 "conflicts": conflicts,
                 "installed": if present { json!({ "version": version, "path": done["path"], "target": done["target"] }) } else { Value::Null },
-                "update": present && !wanted.is_empty() && version_newer(wanted, version),
+                "update": present && workshop.is_none() && !wanted.is_empty() && version_newer(wanted, version),
             })
         })
         .collect();
@@ -1219,6 +1226,28 @@ impl Plugins {
         Ok(bytes.to_vec())
     }
 
+    /** Mod aus dem Factorio-Mod-Portal laden (mit Benutzername und Token des Nutzers; höchstens 200 MB). */
+    async fn fetch_portal(&self, path: &str, portal: &crate::core::store::FactorioPortal) -> Result<Vec<u8>> {
+        if !path.starts_with("/download/") || path.contains("..") {
+            bail!(t!("plugins.modNotFound"));
+        }
+        let url = format!("https://mods.factorio.com{path}");
+        let with_login = reqwest::Url::parse_with_params(&url, [("username", portal.username.as_str()), ("token", portal.token.as_str())])?;
+        // Fehler ohne Adresse weitergeben: Die enthält den Token und landet sonst im Protokoll.
+        let res = self.http.get(with_login).send().await
+            .map_err(|e| anyhow!(t!("plugins.downloadFailed", &url, e.without_url())))?;
+        if matches!(res.status().as_u16(), 401 | 403) {
+            bail!(t!("plugins.modPortalDenied"));
+        }
+        let res = res.error_for_status().map_err(|e| anyhow!(t!("plugins.downloadFailed", &url, e.without_url())))?;
+        let bytes = res.bytes().await.map_err(|e| anyhow!(t!("plugins.downloadFailed", &url, e.without_url())))?;
+        // Ohne gültige Anmeldung liefert das Portal eine Anmeldeseite statt der ZIP.
+        if bytes.len() > crate::core::mods::MAX_SIZE || !bytes.starts_with(b"PK") {
+            bail!(t!("plugins.modPortalDenied"));
+        }
+        Ok(bytes.to_vec())
+    }
+
     /** Icon-Pakete per Link laden (falls noch nicht da) und dann wie mitgebrachte importieren – im Hintergrund. */
     fn icon_packs_soon(app: &Arc<App>, id: &str) {
         let (app, id) = (app.clone(), id.to_string());
@@ -1247,17 +1276,24 @@ impl Plugins {
      * Mod Nr. `index` eines Plugins in den Zielordner `target` legen (muss einer der gefundenen sein).
      * Nur für erweiterte Plugins: Mods sind Programmcode, der im Spiel läuft.
      */
-    pub async fn install_mod(&self, id: &str, index: usize, target: &str) -> Result<(String, String, String)> {
+    pub async fn install_mod(&self, id: &str, index: usize, target: &str, portal: &crate::core::store::FactorioPortal) -> Result<(String, String, String)> {
         let entry = self.read_installed().get(id).cloned().ok_or_else(|| anyhow!(t!("plugins.pluginIsNotInstalled", id)))?;
         let manifest = self.manifests.lock().unwrap().get(id).cloned().unwrap_or_default();
         if !is_native(&manifest) || !self.advanced() {
             bail!(t!("plugins.modsNeedAdvanced"));
         }
         let m = manifest["mods"].get(index).cloned().ok_or_else(|| anyhow!(t!("plugins.modNotFound")))?;
+        if crate::core::mods::workshop_installed(&m).is_some() {
+            bail!(t!("plugins.modFromWorkshop"));
+        }
         let targets = crate::core::mods::targets(&m);
         let target = targets.into_iter().find(|t| t.to_string_lossy() == target).ok_or_else(|| anyhow!(t!("plugins.modTargetUnknown")))?;
         let dir = self.plugin_dir(id, &entry);
-        let (src, url) = if m["release"].is_object() {
+        let from_portal = !m["factorioPortal"].as_str().unwrap_or("").is_empty();
+        if from_portal && (portal.username.is_empty() || portal.token.is_empty()) {
+            bail!(t!("plugins.modPortalNeedsToken"));
+        }
+        let (src, url) = if m["release"].is_object() || from_portal {
             let found = self.latest_mod(id, index, &m).await?;
             let src = crate::core::mods::Source { file: String::new(), name: text(&found["name"], 200), version: text(&found["version"], 40) };
             (src, text(&found["url"], 400))
@@ -1265,7 +1301,9 @@ impl Plugins {
             let src = crate::core::mods::source(&m, &dir).ok_or_else(|| anyhow!(t!("plugins.modFileMissing", m["file"].as_str().unwrap_or(""), "-")))?;
             (src, text(&m["url"], 400))
         };
-        let bytes = if src.file.is_empty() {
+        let bytes = if from_portal {
+            self.fetch_portal(&url, portal).await?
+        } else if src.file.is_empty() {
             self.fetch_file(&url).await?
         } else {
             std::fs::read(dir.join(&src.file)).map_err(|e| anyhow!(t!("plugins.modFileMissing", &src.file, e)))?
@@ -1437,9 +1475,14 @@ impl Plugins {
      */
     /** Neueste Fassung eines Mods mit „release“ bei GitHub nachsehen und merken. */
     async fn latest_mod(&self, id: &str, index: usize, m: &Value) -> Result<Value> {
-        let api = crate::core::mods::release_api(m).ok_or_else(|| anyhow!(t!("plugins.modNotFound")))?;
-        let release: Value = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?.error_for_status()?.json().await?;
-        let found = crate::core::mods::pick_asset(m, &release).ok_or_else(|| anyhow!(t!("plugins.modNoReleaseAsset", m["release"]["repo"].as_str().unwrap_or(""))))?;
+        let found = if let Some(api) = crate::core::mods::portal_api(m) {
+            let info: Value = self.http.get(&api).send().await?.error_for_status()?.json().await?;
+            crate::core::mods::pick_portal(&info).ok_or_else(|| anyhow!(t!("plugins.modNoPortalRelease", m["factorioPortal"].as_str().unwrap_or(""))))?
+        } else {
+            let api = crate::core::mods::release_api(m).ok_or_else(|| anyhow!(t!("plugins.modNotFound")))?;
+            let release: Value = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?.error_for_status()?.json().await?;
+            crate::core::mods::pick_asset(m, &release).ok_or_else(|| anyhow!(t!("plugins.modNoReleaseAsset", m["release"]["repo"].as_str().unwrap_or(""))))?
+        };
         self.mod_releases.lock().unwrap().insert(format!("{id}#{index}"), found.clone());
         Ok(found)
     }
@@ -1471,10 +1514,19 @@ impl Plugins {
         }
         // Mods aus GitHub-Releases: neueste Fassung merken, die Plugin-Karte bietet dann „Mod aktualisieren“ an.
         let manifests: Vec<(String, Value)> = self.manifests.lock().unwrap().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        let installed = self.read_installed();
         for (id, m) in manifests {
             for (i, md) in m["mods"].as_array().into_iter().flatten().enumerate() {
-                if md["release"].is_object() {
-                    let _ = self.latest_mod(&id, i, md).await;
+                if !md["release"].is_object() && md["factorioPortal"].as_str().unwrap_or("").is_empty() {
+                    continue;
+                }
+                let Ok(found) = self.latest_mod(&id, i, md).await else { continue };
+                // Installierter Mod älter als die neueste Fassung: einmal melden (wie bei Plugins).
+                let have = installed.get(&id).and_then(|e| e["mods"][mod_key(md)]["version"].as_str().map(String::from)).unwrap_or_default();
+                let latest = found["version"].as_str().unwrap_or("");
+                if !have.is_empty() && version_newer(latest, &have) && self.notified.lock().unwrap().insert(format!("{id}#mod{i}@{latest}")) {
+                    let name = format!("{} › {}", localize(&m["name"], "en").as_str().unwrap_or(&id), mod_key(md));
+                    fresh.push(json!({ "id": id, "name": name, "current": have, "latest": latest, "native": true, "mod": true }));
                 }
             }
         }

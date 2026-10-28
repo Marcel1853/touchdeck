@@ -73,6 +73,11 @@ pub fn proton_user_dir(appid: &str) -> Option<PathBuf> {
     library_paths().into_iter().map(|lib| lib.join("steamapps/compatdata").join(appid).join("pfx/drive_c/users/steamuser")).find(|d| d.is_dir())
 }
 
+/** Ordner eines abonnierten Workshop-Eintrags (steamapps/workshop/content/<appid>/<item>), falls Steam ihn geladen hat. */
+pub fn workshop_dir(appid: &str, item: &str) -> Option<PathBuf> {
+    library_paths().into_iter().map(|lib| lib.join("steamapps/workshop/content").join(appid).join(item)).find(|d| d.is_dir())
+}
+
 struct SteamApp {
     appid: String,
     name: String,

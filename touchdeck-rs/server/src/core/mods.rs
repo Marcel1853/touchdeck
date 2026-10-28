@@ -31,6 +31,49 @@ fn repo_ok(r: &str) -> bool {
     r.split_once('/').is_some_and(|(a, b)| ok(a) && ok(b))
 }
 
+/** Ist der Mod über den Steam Workshop abonniert und heruntergeladen? */
+pub fn workshop_installed(m: &Value) -> Option<PathBuf> {
+    steam::workshop_dir(m["workshop"]["steamApp"].as_str()?, m["workshop"]["item"].as_str()?)
+}
+
+/**
+ * Factorio-Anmeldung aus player-data.json des Spiels („service-username“, „service-token“) – Factorio legt sie an,
+ * sobald man sich im Spiel anmeldet. Nur auf ausdrücklichen Klick in den Einstellungen.
+ */
+pub fn factorio_login() -> Option<(String, String)> {
+    let home = os::home();
+    let mut files = vec![home.join(".factorio/player-data.json"), home.join(".var/app/com.valvesoftware.Steam/.factorio/player-data.json")];
+    if cfg!(windows) {
+        files.insert(0, os::config_dir().join("Factorio/player-data.json"));
+    }
+    files.into_iter().find_map(|f| {
+        let v: Value = serde_json::from_str(&std::fs::read_to_string(f).ok()?).ok()?;
+        let (u, t) = (v["service-username"].as_str()?, v["service-token"].as_str()?);
+        (!u.is_empty() && !t.is_empty()).then(|| (u.to_string(), t.to_string()))
+    })
+}
+
+/** Öffentliche Seite eines Mods im Factorio-Mod-Portal. */
+pub fn portal_page(m: &Value) -> Option<String> {
+    m["factorioPortal"].as_str().filter(|n| !n.is_empty()).map(|n| format!("https://mods.factorio.com/mod/{}", n.replace(' ', "%20")))
+}
+
+/** Öffentliche API des Factorio-Mod-Portals (Versionen, ohne Anmeldung). */
+pub fn portal_api(m: &Value) -> Option<String> {
+    m["factorioPortal"].as_str().filter(|n| !n.is_empty()).map(|n| format!("https://mods.factorio.com/api/mods/{}", n.replace(' ', "%20")))
+}
+
+/** Neueste Fassung aus der Antwort des Mod-Portals: { name, url (Pfad), version }. */
+pub fn pick_portal(info: &Value) -> Option<Value> {
+    let best = info["releases"].as_array()?.iter().filter(|r| r["version"].is_string()).max_by(|a, b| {
+        let (va, vb) = (a["version"].as_str().unwrap_or(""), b["version"].as_str().unwrap_or(""));
+        if version_newer(va, vb) { std::cmp::Ordering::Greater } else if version_newer(vb, va) { std::cmp::Ordering::Less } else { std::cmp::Ordering::Equal }
+    })?;
+    let path = best["download_url"].as_str().filter(|p| p.starts_with("/download/") && !p.contains(".."))?;
+    let name = best["file_name"].as_str().filter(|n| safe_name(n))?;
+    Some(json!({ "name": name, "url": path, "version": best["version"], "portal": true }))
+}
+
 /** Adresse der GitHub-API für das neueste Release eines Mods. */
 pub fn release_api(m: &Value) -> Option<String> {
     m["release"]["repo"].as_str().map(|r| format!("https://api.github.com/repos/{r}/releases/latest"))
@@ -88,7 +131,16 @@ pub fn sanitize(v: &Value) -> Vec<Value> {
             });
             let has_target = ["linux", "windows", "proton"].iter().any(|k| targets[k].as_array().is_some_and(|a| !a.is_empty()));
             let name = ltext(&m["name"], 60);
-            if (file.is_empty() && url.is_empty() && release.is_none()) || !has_target || name.as_str() == Some("") {
+            let digits = |v: &Value| v.as_str().filter(|d| !d.is_empty() && d.len() <= 20 && d.chars().all(|c| c.is_ascii_digit())).map(String::from);
+            // Steam Workshop: nur Link zum Abonnieren (Steam lädt und aktualisiert selbst) und Erkennung.
+            let workshop = match (digits(&m["workshop"]["steamApp"]), digits(&m["workshop"]["item"])) {
+                (Some(app), Some(item)) => json!({ "steamApp": app, "item": item }),
+                _ => Value::Null,
+            };
+            // Factorio-Mod-Portal: Name des Mods; Download nur mit eigenem Token, sonst Link und Hinweis.
+            let portal = m["factorioPortal"].as_str().filter(|n| !n.is_empty() && n.len() <= 100 && n.chars().all(|c| c.is_ascii_alphanumeric() || " -_".contains(c))).unwrap_or("");
+            let installable = (!file.is_empty() || !url.is_empty() || release.is_some() || !portal.is_empty()) && has_target;
+            if !(installable || workshop.is_object()) || name.as_str() == Some("") {
                 return None;
             }
             let sha = m["sha256"].as_str().map(str::to_lowercase).filter(|s| s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit()));
@@ -98,6 +150,8 @@ pub fn sanitize(v: &Value) -> Vec<Value> {
                 "file": file,
                 "url": url,
                 "release": release.map_or(Value::Null, |r| json!({ "repo": r["repo"], "asset": r["asset"] })),
+                "workshop": workshop,
+                "factorioPortal": portal,
                 "sha256": sha,
                 "unpack": m["unpack"] == true,
                 "keep": list(&m["keep"], 20, &|k| safe_parts(k)),
@@ -196,6 +250,10 @@ fn remove_patterns(m: &Value) -> Vec<String> {
     let given: Vec<String> = m["remove"].as_array().into_iter().flatten().filter_map(Value::as_str).map(String::from).collect();
     if !given.is_empty() {
         return given;
+    }
+    // Factorio benennt Mod-Dateien „<name>_<version>.zip“.
+    if let Some(n) = m["factorioPortal"].as_str().filter(|n| !n.is_empty()) {
+        return vec![format!("{n}_*.zip")];
     }
     m["file"].as_str().and_then(|f| f.rsplit('/').next()).filter(|p| p.contains('*')).map(|p| vec![p.to_string()]).unwrap_or_default()
 }
@@ -334,6 +392,13 @@ mod tests {
             { "name": "Quellen.zip", "browser_download_url": "https://github.com/a/b/releases/download/v1.4.0/Quellen.zip" },
             { "name": "Mod_1.4.0.zip", "browser_download_url": "https://github.com/a/b/releases/download/v1.4.0/Mod_1.4.0.zip" }] });
         assert_eq!(pick_asset(&r[0], &rel).unwrap()["version"], "1.4.0");
+        let portal = json!({ "releases": [
+            { "version": "0.5.0", "download_url": "/download/touchdeck-bridge/a", "file_name": "touchdeck-bridge_0.5.0.zip" },
+            { "version": "0.10.0", "download_url": "/download/touchdeck-bridge/c", "file_name": "touchdeck-bridge_0.10.0.zip" },
+            { "version": "0.6.0", "download_url": "/download/touchdeck-bridge/b", "file_name": "touchdeck-bridge_0.6.0.zip" }] });
+        assert_eq!(pick_portal(&portal).unwrap()["version"], "0.10.0");
+        let ws = sanitize(&json!([{ "name": "W", "workshop": { "steamApp": "294100", "item": "3012345678" } }]));
+        assert_eq!(ws.len(), 1, "nur Workshop, ohne Ziel: erlaubt (Steam installiert selbst)");
         let fixed = json!({ "release": { "repo": "a/b", "asset": "Quellen.zip" } });
         assert_eq!(pick_asset(&fixed, &rel).unwrap()["version"], "1.4.0", "ohne * aus dem Tag");
         assert!(!matches("touchdeck-bridge_*.zip", "touchdeck-bridge"));

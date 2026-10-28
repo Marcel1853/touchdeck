@@ -779,7 +779,12 @@
     "modInstallText": "TouchDeck puts the mod “{0}” into this folder:\n\n{1}\n\nExisting files of the mod are overwritten, its own settings are kept. Mods are program code that runs in the game – only install mods from plugins you trust. If the game is running, restart it afterwards.",
     "modDone": "Mod “{0}” installed.",
     "modConflictHint": "Another version is in the mod folder, please remove it yourself first: {0}",
-    "modFromRelease": "latest version from the GitHub releases of {0}"
+    "modFromRelease": "latest version from the GitHub releases of {0}",
+    "modViaWorkshop": "installed via the Steam Workshop – Steam keeps it up to date",
+    "modSubscribe": "Subscribe in the Steam Workshop ↗",
+    "modWorkshopPage": "Workshop page ↗",
+    "modPortalPage": "Mod portal ↗",
+    "modPortalNoToken": "Download it in the game (main menu › Mods) – or enter your Factorio token under Settings › Factorio mod portal, then TouchDeck installs it here."
   },
   "settings": {
     "accentColor": "Accent color",
@@ -986,7 +991,16 @@
     "waitingForConfirmationCode": "Waiting for confirmation … (the code is valid for about 30 minutes)",
     "warningsAndErrorsOnly": "Warnings and errors only",
     "wobble": "Wobble",
-    "youFindTwitchActions": "You find Twitch actions under “Streaming › Twitch”, triggers in events; live displays “Twitch: live?”, “Viewers”, “Followers”."
+    "youFindTwitchActions": "You find Twitch actions under “Streaming › Twitch”, triggers in events; live displays “Twitch: live?”, “Viewers”, “Followers”.",
+    "factorioPortal": "Factorio mod portal",
+    "factorioPortalHint": "Optional. With it, TouchDeck downloads mods a plugin needs from the Factorio mod portal itself. Without it, you download them in the game. Username and token stay on this PC.",
+    "factorioUser": "Factorio username",
+    "factorioToken": "Token",
+    "factorioFromGame": "Take from Factorio",
+    "factorioForget": "Forget",
+    "factorioTaken": "Login taken from Factorio.",
+    "factorioWhere": "You find the token on your profile at factorio.com – or use “Take from Factorio” if you are logged in in the game:",
+    "factorioSaved": "Factorio login saved."
   },
   "logs": {
     "all": "All",

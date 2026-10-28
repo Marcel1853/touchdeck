@@ -6,7 +6,7 @@ Macro remote for Linux: design button pages on your PC and trigger them from you
 phone or tablet – with an editor, an Android app and a deck in the browser. Written
 in Rust; the program window uses Tauri with the system's web view.
 
-Current version: **0.12.1** (desktop program), Android app **0.8.3**. Changes per
+Current version: **0.12.2** (desktop program), Android app **0.8.3**. Changes per
 version: [`CHANGELOG.md`](../CHANGELOG.md)
 
 ## Installing
