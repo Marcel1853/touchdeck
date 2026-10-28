@@ -13,12 +13,24 @@ use crate::system::{os, sort_key};
 const FLAG_UPDATE_REQUIRED: u64 = 2;
 const FLAG_UPDATE_RUNNING: u64 = 1024;
 
+#[cfg(not(windows))]
 fn steam_root() -> Option<PathBuf> {
     let home = os::home();
     [".local/share/Steam", ".steam/steam", ".var/app/com.valvesoftware.Steam/.local/share/Steam"]
         .iter()
         .map(|r| home.join(r))
         .find(|r| r.join("steamapps/libraryfolders.vdf").exists())
+}
+
+/** Unter Windows: Pfad aus der Registry (HKCU\Software\Valve\Steam), sonst der übliche Ordner. */
+#[cfg(windows)]
+fn steam_root() -> Option<PathBuf> {
+    let from_reg = os::command("reg").args(["query", r"HKCU\Software\Valve\Steam", "/v", "SteamPath"]).output().ok().and_then(|o| {
+        let text = String::from_utf8_lossy(&o.stdout).into_owned();
+        text.lines().find_map(|l| l.split_once("REG_SZ").map(|(_, v)| PathBuf::from(v.trim().replace('/', "\\"))))
+    });
+    let fallback = std::env::var_os("ProgramFiles(x86)").map(|p| PathBuf::from(p).join("Steam"));
+    [from_reg, fallback].into_iter().flatten().find(|r| r.join("steamapps/libraryfolders.vdf").exists())
 }
 
 /** Wert eines Schlüssels in einer VDF/ACF-Datei: "key"   "wert". */
@@ -45,6 +57,20 @@ fn library_paths() -> Vec<PathBuf> {
         }
     }
     paths
+}
+
+/** Installationsordner eines Spiels (steamapps/common/<installdir>) aus seinem App-Manifest. */
+pub fn game_dir(appid: &str) -> Option<PathBuf> {
+    library_paths().into_iter().find_map(|lib| {
+        let text = fs::read_to_string(lib.join("steamapps").join(format!("appmanifest_{appid}.acf"))).ok()?;
+        let dir = lib.join("steamapps/common").join(vdf_values(&text, "installdir").first()?);
+        dir.is_dir().then_some(dir)
+    })
+}
+
+/** Benutzerordner im Proton-Prefix eines Windows-Spiels (…/compatdata/<appid>/pfx/drive_c/users/steamuser). */
+pub fn proton_user_dir(appid: &str) -> Option<PathBuf> {
+    library_paths().into_iter().map(|lib| lib.join("steamapps/compatdata").join(appid).join("pfx/drive_c/users/steamuser")).find(|d| d.is_dir())
 }
 
 struct SteamApp {

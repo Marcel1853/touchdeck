@@ -242,7 +242,20 @@
     "folderNotInRepo": "Den Ordner „{0}“ gibt es in diesem Repo nicht (oder er ist leer).",
     "noReadme": "Dieses Plugin hat keine README.",
     "iconPackImported": "{0}: Icon-Paket „{1}“ importiert (vom Plugin vorausgesetzt)",
-    "iconPackFailed": "{0}: Icon-Paket {1} ließ sich nicht importieren: {2}"
+    "iconPackFailed": "{0}: Icon-Paket {1} ließ sich nicht importieren: {2}",
+    "onlyGithubDownloads": "Downloads sind nur von github.com erlaubt.",
+    "downloadFailed": "Download von {0} fehlgeschlagen: {1}",
+    "modTooLarge": "Der Mod ist zu groß (höchstens 200 MB).",
+    "modsNeedAdvanced": "Mods installieren können nur erweiterte Plugins, und dafür muss der erweiterte Modus an sein.",
+    "modNotFound": "Diesen Mod gibt es im Plugin nicht.",
+    "modTargetUnknown": "Dieser Zielordner gehört nicht zu dem Mod.",
+    "modFileMissing": "Mod-Datei „{0}“ fehlt im Plugin: {1}",
+    "modChecksumWrong": "Die Prüfsumme des Mods stimmt nicht – Datei beschädigt oder verändert. Nicht installiert.",
+    "modNoFileName": "Der Mod hat keinen gültigen Dateinamen.",
+    "modZipInvalid": "Die Mod-Datei ist keine gültige ZIP-Datei.",
+    "modInstalled": "Plugin „{0}“: Mod „{1}“ {2} installiert nach {3}",
+    "modConflict": "Im Mod-Ordner liegt schon eine andere Fassung des Mods: {0}. TouchDeck installiert nicht daneben (das Spiel hätte den Mod sonst doppelt) – bitte diese Fassung erst selbst entfernen.",
+    "modNoReleaseAsset": "Im neuesten Release von {0} gibt es keine passende Mod-Datei."
   },
   "iconpacks": {
     "fileContainsNoImages": "In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).",

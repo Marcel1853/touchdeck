@@ -843,8 +843,9 @@ const DEVICE_ROUTES: [&str; 3] = ["GET /api/state", "POST /api/press", "GET /api
 // Zum Koppeln braucht ein Handy noch keinen Schlüssel (nur WLAN-Zugriff muss erlaubt sein).
 const PAIR_ROUTES: [&str; 3] = ["GET /api/hello", "POST /api/pair/request", "GET /api/pair/status"];
 
-const ROUTES: [&str; 67] = [
+const ROUTES: [&str; 68] = [
     "GET /api/updates",
+    "POST /api/plugins/install-mod",
     "POST /api/updates/check",
     "POST /api/plugins/update",
     "POST /api/plugins/update-pages",
@@ -1263,6 +1264,13 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
             update_plugin_pages(app, str_of(&body, "id"), str_of(&body, "mode")).map_err(bad)?;
             let store = app.store.lock().unwrap();
             Ok(json!({ "ok": true, "plugins": app.plugins.list(&store.settings().language), "pages": store.config.pages, "revision": store.revision }))
+        }
+        "POST /api/plugins/install-mod" => {
+            let id = str_of(&body, "id");
+            let index = body["index"].as_u64().unwrap_or(u64::MAX) as usize;
+            let (name, version, path) = app.plugins.install_mod(id, index, str_of(&body, "target")).await.map_err(user_error)?;
+            app.log.info("Plugins", t!("plugins.modInstalled", id, name, version, &path));
+            Ok(json!({ "ok": true, "path": path, "plugins": app.plugins.list(&lang(app)) }))
         }
         "POST /api/plugins/reload" => {
             app.plugins.reload(app, str_of(&body, "id")).map_err(bad)?;

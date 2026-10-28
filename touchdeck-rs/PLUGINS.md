@@ -125,7 +125,9 @@ textOutline, titlePos, iconSize, iconFit, overlay, texFit, texVeil, bgImage and 
 `slider` knows shape (fill, rail, fader, knob, dial, mixer, combo), color and thickness.
 
 `iconPacks` lists icon packs (`.tdicons`, exported from TouchDeck) the plugin needs. TouchDeck
-imports them when the plugin is installed – only if there is no pack with that name yet.
+imports them when the plugin is installed – only if there is no pack with that name yet. An
+entry can also be a link to a `.tdicons` file on `https://github.com/…` (e.g. a release asset);
+TouchDeck downloads it once.
 Icon packs can carry designs themselves: `looks` in their `pack.json`, images by file name.
 
 ## The `td` object
@@ -274,6 +276,42 @@ TouchDeck restarts it, at most three times per minute.
 
 Complete examples in Python (standard library only) and Node.js:
 [`examples/example-python`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-python) and [`examples/example-node`](https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples/example-node).
+
+Game mods: an advanced plugin can bring the mod its game needs and let TouchDeck put it into
+the game's mod folder with one click (plugin card › “🧩 Install mod”):
+
+```json
+"mods": [{
+  "name": "TouchDeck Bridge",
+  "file": "TouchDeckBridge_*.zip",
+  "unpack": true,
+  "keep": ["TouchDeckBridge/settings.json"],
+  "conflicts": ["TouchDeckBridge-dev"],
+  "targets": {
+    "linux":   ["{steamGame:294100}/Mods"],
+    "windows": ["{steamGame:294100}/Mods"],
+    "proton":  ["{proton:1062090}/Documents/Timberborn/Mods"]
+  },
+  "page": "https://steamcommunity.com/sharedfiles/filedetails/?id=…",
+  "hint": { "en": "Switch the mod on in the game.", "de": "Mod im Spiel einschalten." }
+}]
+```
+
+| Field | Meaning |
+|---|---|
+| `file` | File in the plugin. A `*` stands for the version: TouchDeck takes the newest matching file and reads the version from its name, so a mod update only means replacing the ZIP. |
+| `release` | Instead of `file`: `{ "repo": "owner/repo", "asset": "Mod_*.zip" }` – TouchDeck takes the matching file from the repo's **latest GitHub release**; the version comes from the `*` or the release tag. The regular update check looks for new releases, the card then offers “Update mod”. |
+| `url` | Instead of `file`: a fixed download link on `https://github.com/…`. Then give `version`. |
+| `sha256` | Optional checksum; TouchDeck refuses files that do not match. |
+| `unpack` | `true`: unpack the ZIP into the folder (RimWorld, Timberborn). Otherwise the file is copied as is (Factorio) and older files matching the same pattern are removed. |
+| `keep` | Files the mod writes itself (settings), kept when updating. |
+| `conflicts` | Other versions TouchDeck must not touch (e.g. a development folder). If one is there, TouchDeck shows it and does not install. |
+| `targets` | Mod folders per system. `proton` = Windows game under Linux. Placeholders: `{home}`, `{appdata}`, `{localappdata}`, `{documents}`, `{steamGame:APPID}` (game folder in any Steam library), `{proton:APPID}` (user folder in the Proton prefix). Folders that do not exist on the PC are left out. |
+| `page` | Optional link to the mod page (Steam Workshop, mod portal). |
+| `hint` | Shown after installing, e.g. that the mod has to be switched on in the game. |
+
+TouchDeck asks before installing, shows the target folder and offers “Update mod” when the plugin
+brings a newer version. Nothing is written outside the target folder.
 
 ## Updates
 

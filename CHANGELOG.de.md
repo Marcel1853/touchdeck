@@ -6,6 +6,23 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.2
+Datum: noch offen
+  Neuerungen:
+    - Mods für Spiele: Erweiterte Plugins können den Mod ihres Spiels mitbringen (Feld „mods“). In der
+      Plugin-Karte legt „🧩 Mod installieren“ ihn in den Mod-Ordner – TouchDeck findet ihn selbst
+      (Steam-Bibliotheken, Proton-Prefix, AppData), zeigt vorher den Ordner, behält eigene
+      Einstellungen des Mods und bietet „Mod aktualisieren“ an, wenn das Plugin eine neuere Fassung
+      mitbringt. Version und Datei kommen aus dem Dateinamen (z. B. „mod_*.zip“); andere Fassungen
+      (z. B. ein Entwicklungsordner) werden erkannt und nicht angefasst. Mods können auch per Link
+      kommen: aus dem neuesten GitHub-Release eines Repos (die Update-Suche findet neue Fassungen)
+      oder über einen festen GitHub-Link.
+    - Icon-Pakete in Plugins dürfen auch ein Link zu GitHub sein; TouchDeck lädt sie einmal herunter.
+  Fehlerbehebungen:
+    - Bedienfeld: Beim Verbindungsabbruch lagen die Werte der Graph-Buttons und die Beschriftung des
+      Lautstärke-Reglers hell über der Abdunklung.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.1
 Datum: 2026-10-26
   Fehlerbehebungen:

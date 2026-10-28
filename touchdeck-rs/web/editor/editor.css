@@ -636,6 +636,8 @@ button.status-chip:hover { color: var(--text); }
 .td-web { pointer-events: none !important; }
 .plugin-pages { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
 .plugin-pages .hint-text { margin: 0 6px 0 0; }
+.plugin-mod select { max-width: 100%; min-width: 0; }
+.plugin-mod .hint-text { min-width: 0; overflow-wrap: anywhere; }
 
 /* Beschreibung eines Plugins (README) im Marktplatz */
 .plugin-buttons { display: flex; gap: 6px; align-items: flex-start; }

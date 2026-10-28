@@ -242,7 +242,20 @@
     "folderNotInRepo": "The folder “{0}” does not exist in this repo (or is empty).",
     "noReadme": "This plugin has no README.",
     "iconPackImported": "{0}: icon pack “{1}” imported (required by the plugin)",
-    "iconPackFailed": "{0}: icon pack {1} could not be imported: {2}"
+    "iconPackFailed": "{0}: icon pack {1} could not be imported: {2}",
+    "onlyGithubDownloads": "Downloads are only allowed from github.com.",
+    "downloadFailed": "Download from {0} failed: {1}",
+    "modTooLarge": "The mod is too large (200 MB at most).",
+    "modsNeedAdvanced": "Only advanced plugins can install mods, and advanced mode has to be on.",
+    "modNotFound": "The plugin has no such mod.",
+    "modTargetUnknown": "This target folder does not belong to the mod.",
+    "modFileMissing": "Mod file “{0}” is missing in the plugin: {1}",
+    "modChecksumWrong": "The mod's checksum does not match – file damaged or changed. Not installed.",
+    "modNoFileName": "The mod has no valid file name.",
+    "modZipInvalid": "The mod file is not a valid ZIP file.",
+    "modInstalled": "Plugin “{0}”: mod “{1}” {2} installed to {3}",
+    "modConflict": "The mod folder already contains another version of the mod: {0}. TouchDeck does not install next to it (the game would have the mod twice) – please remove that version yourself first.",
+    "modNoReleaseAsset": "The latest release of {0} has no matching mod file."
   },
   "iconpacks": {
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",

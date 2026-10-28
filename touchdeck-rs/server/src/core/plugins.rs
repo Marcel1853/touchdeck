@@ -127,7 +127,7 @@ fn short_id(id: &str) -> bool {
     (1..=24).contains(&id.len()) && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
-fn text(v: &Value, max: usize) -> String {
+pub(crate) fn text(v: &Value, max: usize) -> String {
     v.as_str().unwrap_or("").trim().chars().take(max).collect()
 }
 
@@ -149,7 +149,7 @@ fn is_translation(v: &Value) -> bool {
 }
 
 /** Text oder Übersetzung übernehmen (gekürzt). */
-fn ltext(v: &Value, max: usize) -> Value {
+pub(crate) fn ltext(v: &Value, max: usize) -> Value {
     if is_translation(v) {
         let map: Map<String, Value> = v.as_object().into_iter().flatten().map(|(k, t)| (k.clone(), json!(text(t, max)))).collect();
         return Value::Object(map);
@@ -244,9 +244,11 @@ pub fn check_manifest(raw: &Value) -> Result<Value> {
         "lives": items("lives")?,
         // Designs für Buttons und Regler, Bilder relativ zum Plugin-Ordner.
         "looks": sanitize_looks(&raw["looks"]),
-        // Icon-Pakete, die das Plugin mitbringt und voraussetzt (.tdicons im Plugin-Ordner).
+        // Icon-Pakete, die das Plugin mitbringt und voraussetzt (.tdicons im Plugin-Ordner oder Link zu GitHub).
         "iconPacks": raw["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str)
-            .filter(|p| p.to_lowercase().ends_with(".tdicons") && safe_rel_path(p)).take(10).collect::<Vec<_>>(),
+            .filter(|p| p.to_lowercase().ends_with(".tdicons") && (safe_rel_path(p) || crate::core::mods::url_allowed(p))).take(10).collect::<Vec<_>>(),
+        // Mods für Spiele, die TouchDeck auf Knopfdruck in den Mod-Ordner legt.
+        "mods": crate::core::mods::sanitize(&raw["mods"]),
     }))
 }
 
@@ -261,6 +263,50 @@ fn platforms(v: &Value) -> Vec<String> {
 /** Läuft ein Plugin mit diesem „platforms“-Feld hier? */
 pub fn runs_here(platforms: &Value) -> bool {
     platforms.as_array().is_none_or(|a| a.is_empty() || a.iter().any(|p| p == PLATFORM))
+}
+
+/** Schlüssel eines Mods im Installiert-Verzeichnis: sein Name (bei Übersetzungen der englische). */
+fn mod_key(m: &Value) -> String {
+    localize(&m["name"], "en").as_str().unwrap_or("").to_string()
+}
+
+/** Mods eines Plugins für den Editor: Zielordner auf diesem PC, installierte Fassung, Update vorhanden? */
+fn mod_status(manifest: &Value, entry: &Value, dir: &Path, releases: &HashMap<String, Value>, id: &str, lang: &str) -> Value {
+    let list: Vec<Value> = manifest["mods"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+        .map(|(i, m)| {
+            let done = &entry["mods"][mod_key(m)];
+            let present = done["path"].as_str().is_some_and(|p| Path::new(p).exists());
+            let version = done["version"].as_str().unwrap_or("");
+            // Release-Mods: Version aus der letzten Nachfrage bei GitHub (Update-Suche oder Installation).
+            let src = match releases.get(&format!("{id}#{i}")) {
+                Some(r) if m["release"].is_object() => Some(crate::core::mods::Source { file: String::new(), name: text(&r["name"], 200), version: text(&r["version"], 40) }),
+                _ if m["release"].is_object() => None,
+                _ => crate::core::mods::source(m, dir),
+            };
+            let wanted = src.as_ref().map_or("", |s| s.version.as_str());
+            let mine = src.as_ref().map_or("", |s| s.name.as_str());
+            let targets = crate::core::mods::targets(m);
+            let own = done["path"].as_str().map(PathBuf::from);
+            // Andere Fassungen je Zielordner: { target, path }.
+            let conflicts: Vec<Value> = targets
+                .iter()
+                .flat_map(|t| crate::core::mods::conflicts(m, t, own.as_deref(), mine).into_iter().map(move |p| json!({ "target": t.to_string_lossy(), "path": p.to_string_lossy() })))
+                .collect();
+            json!({
+                "name": localize(&m["name"], lang), "version": wanted, "page": m["page"], "hint": localize(&m["hint"], lang),
+                "release": m["release"]["repo"],
+                "targets": targets.iter().map(|p| p.to_string_lossy().into_owned()).collect::<Vec<_>>(),
+                "conflicts": conflicts,
+                "installed": if present { json!({ "version": version, "path": done["path"], "target": done["target"] }) } else { Value::Null },
+                "update": present && !wanted.is_empty() && version_newer(wanted, version),
+            })
+        })
+        .collect();
+    json!(list)
 }
 
 /** Einheiten für Rückgabe-Daten (Anzeige im Button). */
@@ -819,6 +865,8 @@ pub struct Plugins {
     notified: Mutex<std::collections::HashSet<String>>,
     /// Zeitpunkt der letzten Update-Suche (Sekunden seit 1970), 0 = noch nie.
     pub last_check: std::sync::atomic::AtomicU64,
+    /// Neueste Mod-Fassungen aus GitHub-Releases: „<plugin>#<nr>“ → { name, url, version }.
+    mod_releases: Mutex<HashMap<String, Value>>,
 }
 
 /** Versionen wie „1.2.10“ vergleichen (Zahlen je Teil, Fehlendes = 0). */
@@ -966,6 +1014,7 @@ impl Plugins {
             manifests: Mutex::new(HashMap::new()),
             http: reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(20)).build().expect("HTTP-Client"),
             updates: Mutex::new(Map::new()),
+            mod_releases: Mutex::new(HashMap::new()),
             notified: Mutex::new(std::collections::HashSet::new()),
             last_check: std::sync::atomic::AtomicU64::new(0),
         }
@@ -1099,6 +1148,7 @@ impl Plugins {
                     "update": self.updates.lock().unwrap().get(id).cloned().unwrap_or(Value::Null),
                     // Fertige Seiten, die sich mit dem letzten Update geändert haben (Frage „ersetzen?“).
                     "pagesChanged": e["pagesChanged"].clone(),
+                    "mods": manifests.get(id).map_or(Value::Null, |raw| mod_status(raw, e, &self.plugin_dir(id, e), &self.mod_releases.lock().unwrap(), id, lang)),
                 })
             })
             .collect();
@@ -1116,7 +1166,8 @@ impl Plugins {
         let manifest = self.manifests.lock().unwrap().get(id).cloned().unwrap_or_default();
         let mut added = Vec::new();
         for rel in manifest["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str) {
-            let Ok(bytes) = std::fs::read(dir.join(rel)) else { continue };
+            let file = if rel.starts_with("https://") { self.download_path(id, rel) } else { dir.join(rel) };
+            let Ok(bytes) = std::fs::read(file) else { continue };
             let name = pack_name(&bytes).unwrap_or_default();
             let existing = app.iconpacks.list().into_iter().find(|p| !name.is_empty() && p["name"] == name.as_str());
             if let Some(pack) = existing {
@@ -1140,6 +1191,101 @@ impl Plugins {
             }
         }
         added
+    }
+
+    /** Ablage für Dateien, die ein Plugin über einen GitHub-Link bezieht (nicht im Plugin-Ordner selbst). */
+    fn download_path(&self, id: &str, url: &str) -> PathBuf {
+        use sha2::{Digest, Sha256};
+        let name = url.rsplit('/').next().unwrap_or("").split(['?', '#']).next().unwrap_or("");
+        let name: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || "._-".contains(*c)).collect();
+        // Kurzer Hash, damit gleich benannte Dateien aus verschiedenen Links sich nicht überschreiben.
+        let tag = &hex::encode(Sha256::digest(url.as_bytes()))[..8];
+        self.dir.join("_downloads").join(id).join(format!("{tag}-{name}"))
+    }
+
+    /** Datei von GitHub holen (höchstens 200 MB). */
+    async fn fetch_file(&self, url: &str) -> Result<Vec<u8>> {
+        if !crate::core::mods::url_allowed(url) {
+            bail!(t!("plugins.onlyGithubDownloads"));
+        }
+        let res = self.http.get(url).send().await.and_then(reqwest::Response::error_for_status).map_err(|e| anyhow!(t!("plugins.downloadFailed", url, e)))?;
+        if res.content_length().is_some_and(|l| l as usize > crate::core::mods::MAX_SIZE) {
+            bail!(t!("plugins.modTooLarge"));
+        }
+        let bytes = res.bytes().await.map_err(|e| anyhow!(t!("plugins.downloadFailed", url, e)))?;
+        if bytes.len() > crate::core::mods::MAX_SIZE {
+            bail!(t!("plugins.modTooLarge"));
+        }
+        Ok(bytes.to_vec())
+    }
+
+    /** Icon-Pakete per Link laden (falls noch nicht da) und dann wie mitgebrachte importieren – im Hintergrund. */
+    fn icon_packs_soon(app: &Arc<App>, id: &str) {
+        let (app, id) = (app.clone(), id.to_string());
+        tokio::spawn(async move {
+            let manifest = app.plugins.manifests.lock().unwrap().get(&id).cloned().unwrap_or_default();
+            for url in manifest["iconPacks"].as_array().into_iter().flatten().filter_map(Value::as_str).filter(|p| p.starts_with("https://")) {
+                let path = app.plugins.download_path(&id, url);
+                if path.is_file() {
+                    continue;
+                }
+                match app.plugins.fetch_file(url).await {
+                    Ok(bytes) => {
+                        let saved = path.parent().map(std::fs::create_dir_all).transpose().and_then(|_| std::fs::write(&path, bytes));
+                        if let Err(e) = saved {
+                            app.log.warn("Plugins", t!("plugins.iconPackFailed", &id, url, e));
+                        }
+                    }
+                    Err(e) => app.log.warn("Plugins", t!("plugins.iconPackFailed", &id, url, e)),
+                }
+            }
+            app.plugins.ensure_icon_packs(&app, &id);
+        });
+    }
+
+    /**
+     * Mod Nr. `index` eines Plugins in den Zielordner `target` legen (muss einer der gefundenen sein).
+     * Nur für erweiterte Plugins: Mods sind Programmcode, der im Spiel läuft.
+     */
+    pub async fn install_mod(&self, id: &str, index: usize, target: &str) -> Result<(String, String, String)> {
+        let entry = self.read_installed().get(id).cloned().ok_or_else(|| anyhow!(t!("plugins.pluginIsNotInstalled", id)))?;
+        let manifest = self.manifests.lock().unwrap().get(id).cloned().unwrap_or_default();
+        if !is_native(&manifest) || !self.advanced() {
+            bail!(t!("plugins.modsNeedAdvanced"));
+        }
+        let m = manifest["mods"].get(index).cloned().ok_or_else(|| anyhow!(t!("plugins.modNotFound")))?;
+        let targets = crate::core::mods::targets(&m);
+        let target = targets.into_iter().find(|t| t.to_string_lossy() == target).ok_or_else(|| anyhow!(t!("plugins.modTargetUnknown")))?;
+        let dir = self.plugin_dir(id, &entry);
+        let (src, url) = if m["release"].is_object() {
+            let found = self.latest_mod(id, index, &m).await?;
+            let src = crate::core::mods::Source { file: String::new(), name: text(&found["name"], 200), version: text(&found["version"], 40) };
+            (src, text(&found["url"], 400))
+        } else {
+            let src = crate::core::mods::source(&m, &dir).ok_or_else(|| anyhow!(t!("plugins.modFileMissing", m["file"].as_str().unwrap_or(""), "-")))?;
+            (src, text(&m["url"], 400))
+        };
+        let bytes = if src.file.is_empty() {
+            self.fetch_file(&url).await?
+        } else {
+            std::fs::read(dir.join(&src.file)).map_err(|e| anyhow!(t!("plugins.modFileMissing", &src.file, e)))?
+        };
+        crate::core::mods::check_sha(&m, &bytes)?;
+        let key = mod_key(&m);
+        let own = entry["mods"][key.as_str()]["path"].as_str().map(PathBuf::from);
+        if let Some(other) = crate::core::mods::conflicts(&m, &target, own.as_deref(), &src.name).first() {
+            bail!(t!("plugins.modConflict", other.display()));
+        }
+        let check = crate::core::mods::install(&m, &bytes, &target, &src.name)?;
+        let mut installed = self.read_installed();
+        if let Some(e) = installed.get_mut(id) {
+            if !e["mods"].is_object() {
+                e["mods"] = json!({});
+            }
+            e["mods"][key.as_str()] = json!({ "version": src.version, "path": check.to_string_lossy(), "target": target.to_string_lossy() });
+        }
+        self.write_installed(&installed)?;
+        Ok((key, src.version, check.to_string_lossy().into_owned()))
     }
 
     /** Ordner eines installierten Plugins (für seine Bilder). */
@@ -1289,6 +1435,15 @@ impl Plugins {
      * Alle über GitHub/Marktplatz installierten Plugins auf neuere Versionen prüfen.
      * Liefert die Updates, die bisher noch nicht gemeldet wurden (für Benachrichtigungen).
      */
+    /** Neueste Fassung eines Mods mit „release“ bei GitHub nachsehen und merken. */
+    async fn latest_mod(&self, id: &str, index: usize, m: &Value) -> Result<Value> {
+        let api = crate::core::mods::release_api(m).ok_or_else(|| anyhow!(t!("plugins.modNotFound")))?;
+        let release: Value = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?.error_for_status()?.json().await?;
+        let found = crate::core::mods::pick_asset(m, &release).ok_or_else(|| anyhow!(t!("plugins.modNoReleaseAsset", m["release"]["repo"].as_str().unwrap_or(""))))?;
+        self.mod_releases.lock().unwrap().insert(format!("{id}#{index}"), found.clone());
+        Ok(found)
+    }
+
     pub async fn check_updates(&self) -> Vec<Value> {
         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
         self.last_check.store(now, std::sync::atomic::Ordering::Relaxed);
@@ -1312,6 +1467,15 @@ impl Plugins {
                     }
                 }
                 Err(_) => continue,
+            }
+        }
+        // Mods aus GitHub-Releases: neueste Fassung merken, die Plugin-Karte bietet dann „Mod aktualisieren“ an.
+        let manifests: Vec<(String, Value)> = self.manifests.lock().unwrap().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        for (id, m) in manifests {
+            for (i, md) in m["mods"].as_array().into_iter().flatten().enumerate() {
+                if md["release"].is_object() {
+                    let _ = self.latest_mod(&id, i, md).await;
+                }
             }
         }
         fresh
@@ -1586,13 +1750,13 @@ impl Plugins {
         // Einstellungen und das Wissen über importierte Seiten bleiben bei Updates erhalten.
         let enabled = old["enabled"] != false;
         installed.insert(id.clone(), json!({ "source": format!("github:{r}"), "ref": git_ref, "url": url, "enabled": enabled, "settings": settings,
-                                             "pages": old["pages"].clone(), "pagesChanged": [] }));
+                                             "pages": old["pages"].clone(), "pagesChanged": [], "mods": old["mods"].clone() }));
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m.clone());
         if enabled {
             self.start(app, &id);
         }
-        self.ensure_icon_packs(app, &id);
+        Self::icon_packs_soon(app, &id);
         Ok(())
     }
 
@@ -1611,11 +1775,12 @@ impl Plugins {
         let id = m["id"].as_str().unwrap_or("").to_string();
         let mut installed = self.read_installed();
         let settings = installed.get(&id).map(|e| e["settings"].clone()).filter(Value::is_object).unwrap_or_else(|| json!({}));
-        installed.insert(id.clone(), json!({ "source": format!("local:{}", dir.display()), "ref": "lokal", "url": null, "enabled": true, "settings": settings }));
+        let mods = installed.get(&id).map(|e| e["mods"].clone()).unwrap_or(Value::Null);
+        installed.insert(id.clone(), json!({ "source": format!("local:{}", dir.display()), "ref": "lokal", "url": null, "enabled": true, "settings": settings, "mods": mods }));
         self.write_installed(&installed)?;
         self.manifests.lock().unwrap().insert(id.clone(), m);
         self.start(app, &id);
-        self.ensure_icon_packs(app, &id);
+        Self::icon_packs_soon(app, &id);
         app.log.warn("Plugins", t!("plugins.devLoaded", id, dir.display()));
         Ok(id)
     }
@@ -1856,6 +2021,13 @@ mod tests {
         assert!(runs_here(&json!([])) && runs_here(&Value::Null), "ohne Angabe: überall");
         assert!(runs_here(&json!(["linux", "windows"])));
         assert_eq!(runs_here(&json!(["windows"])), cfg!(windows));
+    }
+
+    #[test]
+    fn icon_pakete_per_link() {
+        let m = check_manifest(&json!({ "id": "x", "name": "X", "iconPacks": [
+            "packs/a.tdicons", "https://github.com/a/b/releases/download/v1/b.tdicons", "https://example.com/c.tdicons", "../d.tdicons"] })).unwrap();
+        assert_eq!(m["iconPacks"], json!(["packs/a.tdicons", "https://github.com/a/b/releases/download/v1/b.tdicons"]));
     }
 
     #[test]

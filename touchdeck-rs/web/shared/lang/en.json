@@ -765,7 +765,21 @@
     "viewOnGithub": "View on GitHub ↗",
     "whatPluginLooksLike": "What a plugin looks like",
     "willBeRemovedButtons": "“{0}” will be removed. Buttons with actions of this plugin will report an error afterwards.",
-    "yesGiveFullRights": "Yes, give full rights"
+    "yesGiveFullRights": "Yes, give full rights",
+    "modNotInstalled": "not installed yet",
+    "modNoTarget": "game not found on this PC",
+    "modInstalledAt": "installed in {0}",
+    "modUpdate": "{0} is installed, the plugin brings {1}",
+    "modInstallButton": "🧩 Install mod",
+    "modUpdateButton": "🧩 Update mod",
+    "modReinstall": "Reinstall",
+    "modReinstallHint": "Put the mod into the folder again (e.g. if files are missing). The mod's own settings are kept.",
+    "modPage": "Mod page ↗",
+    "modInstallTitle": "Install mod “{0}”?",
+    "modInstallText": "TouchDeck puts the mod “{0}” into this folder:\n\n{1}\n\nExisting files of the mod are overwritten, its own settings are kept. Mods are program code that runs in the game – only install mods from plugins you trust. If the game is running, restart it afterwards.",
+    "modDone": "Mod “{0}” installed.",
+    "modConflictHint": "Another version is in the mod folder, please remove it yourself first: {0}",
+    "modFromRelease": "latest version from the GitHub releases of {0}"
   },
   "settings": {
     "accentColor": "Accent color",

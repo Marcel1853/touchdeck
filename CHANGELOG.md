@@ -6,6 +6,22 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.2
+Date: not yet
+  Features:
+    - Game mods: advanced plugins can bring the mod of their game (field “mods”). In the plugin card,
+      “🧩 Install mod” puts it into the mod folder – TouchDeck finds it itself (Steam libraries, Proton
+      prefix, AppData), shows the folder first, keeps the mod's own settings and offers “Update mod”
+      when the plugin brings a newer version. Version and file come from the file name (e.g.
+      “mod_*.zip”); other versions (e.g. a development folder) are detected and left alone. Mods can
+      also come by link: from the latest GitHub release of a repo (the update check finds new
+      versions) or from a fixed GitHub link.
+    - Icon packs in plugins can also be a link to GitHub; TouchDeck downloads them once.
+  Bugfixes:
+    - Deck: when the connection was lost, graph button values and the volume slider label stayed
+      bright above the dimming.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.1
 Date: 2026-10-26
   Bugfixes:

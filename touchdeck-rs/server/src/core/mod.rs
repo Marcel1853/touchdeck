@@ -7,6 +7,7 @@ pub mod i18n;
 pub mod iconpacks;
 pub mod live;
 pub mod log;
+pub mod mods;
 pub mod native_plugins;
 pub mod plugins;
 pub mod profiles;
