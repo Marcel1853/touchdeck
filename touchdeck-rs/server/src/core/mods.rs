@@ -293,6 +293,10 @@ pub fn conflicts(m: &Value, target: &Path, own: Option<&Path>, mine: &str) -> Ve
 
 /** Einfaches Muster mit höchstens einem „*“ (z. B. „touchdeck-bridge_*.zip“). */
 fn matches(pattern: &str, name: &str) -> bool {
+    // Windows unterscheidet bei Dateinamen nicht zwischen Groß- und Kleinschreibung.
+    if cfg!(windows) && (pattern.chars().any(|c| c.is_uppercase()) || name.chars().any(|c| c.is_uppercase())) {
+        return matches(&pattern.to_lowercase(), &name.to_lowercase());
+    }
     match pattern.split_once('*') {
         Some((a, b)) => name.len() >= a.len() + b.len() && name.starts_with(a) && name.ends_with(b),
         None => pattern == name,
@@ -411,21 +415,21 @@ mod tests {
         {
             let mut z = zip::ZipWriter::new(&mut buf);
             let o = zip::write::SimpleFileOptions::default();
-            z.start_file("Bridge/Code.dll", o).unwrap();
+            z.start_file("Paket/Code.dll", o).unwrap();
             z.write_all(b"neu").unwrap();
-            z.start_file("Bridge/settings.json", o).unwrap();
+            z.start_file("Paket/settings.json", o).unwrap();
             z.write_all(b"{}").unwrap();
             z.start_file("../boese.txt", o).unwrap();
             z.write_all(b"x").unwrap();
             z.finish().unwrap();
         }
-        let m = json!({ "unpack": true, "keep": ["Bridge/settings.json"] });
-        std::fs::create_dir_all(dir.join("Mods/Bridge")).unwrap();
-        std::fs::write(dir.join("Mods/Bridge/settings.json"), "{\"port\":1}").unwrap();
-        let check = install(&m, buf.get_ref(), &dir.join("Mods"), "Bridge.zip").unwrap();
-        assert_eq!(check, dir.join("Mods/Bridge"));
-        assert_eq!(std::fs::read_to_string(dir.join("Mods/Bridge/Code.dll")).unwrap(), "neu");
-        assert_eq!(std::fs::read_to_string(dir.join("Mods/Bridge/settings.json")).unwrap(), "{\"port\":1}", "eigene Einstellungen bleiben");
+        let m = json!({ "unpack": true, "keep": ["Paket/settings.json"] });
+        std::fs::create_dir_all(dir.join("Mods/Paket")).unwrap();
+        std::fs::write(dir.join("Mods/Paket/settings.json"), "{\"port\":1}").unwrap();
+        let check = install(&m, buf.get_ref(), &dir.join("Mods"), "Paket.zip").unwrap();
+        assert_eq!(check, dir.join("Mods/Paket"));
+        assert_eq!(std::fs::read_to_string(dir.join("Mods/Paket/Code.dll")).unwrap(), "neu");
+        assert_eq!(std::fs::read_to_string(dir.join("Mods/Paket/settings.json")).unwrap(), "{\"port\":1}", "eigene Einstellungen bleiben");
         assert!(!dir.join("boese.txt").exists());
 
         // Als Datei: alte Fassung weg, Ordner gleichen Namens bleibt.
