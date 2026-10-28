@@ -207,6 +207,9 @@ jobs:
   veroeffentlichen:
     name: Veröffentlichen
     needs: [pruefen, android, linux, windows]
+    # Windows ist eine Alpha: scheitert der Windows-Teil, erscheint das Release trotzdem (ohne .exe);
+    # der Installer kann nachgereicht werden. Android und Linux müssen geklappt haben.
+    if: always() && needs.pruefen.outputs.neu == 'true' && needs.android.result == 'success' && needs.linux.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -223,6 +226,7 @@ jobs:
           find ausgabe -mindepth 1 -type d -empty -delete
           mv ausgabe/app-release.apk "ausgabe/TouchDeck-Android-${{ needs.pruefen.outputs.app }}.apk"
           # Windows ist eine ganz frühe Alpha – das steht schon im Dateinamen.
+          shopt -s nullglob
           for f in ausgabe/*-setup.exe; do mv "$f" "${f%.exe}-ALPHA.exe"; done
           ls -la ausgabe
 
@@ -231,7 +235,11 @@ jobs:
           VERSION="${{ needs.pruefen.outputs.version }}"
           # Abschnitt ab „Version: X.Y.Z“ bis zur nächsten Trennlinie, als Textblock.
           {
-            echo '> **Windows: ganz frühe Alpha.** `TouchDeck_…_x64-setup-ALPHA.exe` ist noch nie auf einem echten Windows-PC getestet worden – mit Fehlern ist zu rechnen. Rückmeldungen gern als Issue.'
+            if ls ausgabe/*-ALPHA.exe >/dev/null 2>&1; then
+              echo '> **Windows: ganz frühe Alpha.** `TouchDeck_…_x64-setup-ALPHA.exe` ist noch nie auf einem echten Windows-PC getestet worden – mit Fehlern ist zu rechnen. Rückmeldungen gern als Issue.'
+            else
+              echo '> **Windows: ganz frühe Alpha.** Der Windows-Installer wird für diese Version nachgereicht.'
+            fi
             echo
             echo '```text'
             awk -v v="$VERSION" '
