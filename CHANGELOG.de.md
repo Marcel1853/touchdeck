@@ -6,6 +6,14 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.3
+Datum: noch offen
+  Fehlerbehebungen:
+    - Update-Hinweise kommen als eine einzige Benachrichtigung mit allen Updates statt einer je
+      Plugin, und jede Version wird nur einmal gemeldet – auch nach einem Neustart von TouchDeck
+      (gilt auch für den Hinweis auf eine neue TouchDeck-Version).
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.2
 Datum: 2026-10-28
   Neuerungen:

@@ -6,6 +6,14 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.3
+Date: not yet
+  Bugfixes:
+    - Update notices come as one single notification listing all updates instead of one per plugin,
+      and each version is reported only once – also after restarting TouchDeck (this applies to the
+      notice about a new TouchDeck version too).
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.2
 Date: 2026-10-28
   Features:

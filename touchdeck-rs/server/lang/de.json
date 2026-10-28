@@ -260,7 +260,8 @@
     "modFromWorkshop": "Der Mod ist schon über den Steam Workshop installiert – Steam hält ihn aktuell. Eine zweite Kopie würde das Spiel doppelt laden.",
     "modPortalNeedsToken": "Für Downloads aus dem Factorio-Mod-Portal braucht TouchDeck deinen Factorio-Benutzernamen und Token (Einstellungen › Factorio-Mod-Portal). Ohne Token: den Mod im Spiel unter „Mods“ herunterladen.",
     "modPortalDenied": "Das Factorio-Mod-Portal hat den Download abgelehnt – Benutzername oder Token stimmen nicht.",
-    "factorioLoginNotFound": "Keine Factorio-Anmeldung gefunden. Melde dich einmal im Spiel an (Hauptmenü › Mods oder Mehrspieler) oder trage Benutzername und Token selbst ein."
+    "factorioLoginNotFound": "Keine Factorio-Anmeldung gefunden. Melde dich einmal im Spiel an (Hauptmenü › Mods oder Mehrspieler) oder trage Benutzername und Token selbst ein.",
+    "updatesAvailableTitle": "TouchDeck: Updates verfügbar"
   },
   "iconpacks": {
     "fileContainsNoImages": "In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).",

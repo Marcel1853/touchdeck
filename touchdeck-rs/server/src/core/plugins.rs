@@ -1016,13 +1016,14 @@ impl Plugins {
         let dir = data_dir.join("plugins");
         let _ = std::fs::create_dir_all(&dir);
         Plugins {
-            dir,
+            dir: dir.clone(),
             running: Mutex::new(HashMap::new()),
             manifests: Mutex::new(HashMap::new()),
             http: reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(20)).build().expect("HTTP-Client"),
             updates: Mutex::new(Map::new()),
             mod_releases: Mutex::new(HashMap::new()),
-            notified: Mutex::new(std::collections::HashSet::new()),
+            // Schon gemeldete Updates überleben einen Neustart: jede Version wird nur einmal gemeldet.
+            notified: Mutex::new(std::fs::read_to_string(dir.join("notified.json")).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()),
             last_check: std::sync::atomic::AtomicU64::new(0),
         }
     }
@@ -1530,7 +1531,24 @@ impl Plugins {
                 }
             }
         }
+        if !fresh.is_empty() {
+            self.save_notified();
+        }
         fresh
+    }
+
+    fn save_notified(&self) {
+        let list: Vec<String> = self.notified.lock().unwrap().iter().cloned().collect();
+        let _ = std::fs::write(self.dir.join("notified.json"), serde_json::to_string(&list).unwrap_or_default());
+    }
+
+    /** Zum ersten Mal gemeldet? (z. B. „touchdeck@0.13.0“) – merkt es sich dauerhaft, damit nichts doppelt kommt. */
+    pub fn first_notice(&self, key: &str) -> bool {
+        let new = self.notified.lock().unwrap().insert(key.to_string());
+        if new {
+            self.save_notified();
+        }
+        new
     }
 
     /** Plugin auf den neuesten Stand bringen (Einstellungen bleiben). Liefert geänderte fertige Seiten. */
@@ -2073,6 +2091,19 @@ mod tests {
         assert!(runs_here(&json!([])) && runs_here(&Value::Null), "ohne Angabe: überall");
         assert!(runs_here(&json!(["linux", "windows"])));
         assert_eq!(runs_here(&json!(["windows"])), cfg!(windows));
+    }
+
+    #[test]
+    fn meldet_jedes_update_nur_einmal() {
+        let dir = std::env::temp_dir().join(crate::core::store::new_id("td-notified-"));
+        let plugins = Plugins::new(&dir);
+        assert!(plugins.first_notice("touchdeck@9.9.9"));
+        assert!(!plugins.first_notice("touchdeck@9.9.9"));
+        // Nach einem Neustart weiß TouchDeck es noch.
+        let again = Plugins::new(&dir);
+        assert!(!again.first_notice("touchdeck@9.9.9"));
+        assert!(again.first_notice("touchdeck@9.9.10"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

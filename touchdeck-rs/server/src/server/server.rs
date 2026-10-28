@@ -558,6 +558,8 @@ async fn check_updates(app: &Arc<App>, background: bool) {
         return;
     }
     let fresh = app.plugins.check_updates().await;
+    // Alle neuen Updates in einer einzigen Benachrichtigung, nicht eine je Plugin.
+    let mut found: Vec<String> = Vec::new();
     for u in &fresh {
         let id = u["id"].as_str().unwrap_or("");
         let name = u["name"].as_str().unwrap_or(id).to_string();
@@ -571,11 +573,12 @@ async fn check_updates(app: &Arc<App>, background: bool) {
             }
             continue;
         }
-        let text = t!("plugins.updateAvailable", &name, latest);
-        app.log.info("Plugins", &text);
-        if background {
-            let _ = os::notify("TouchDeck", &text).await;
-        }
+        app.log.info("Plugins", t!("plugins.updateAvailable", &name, latest));
+        found.push(format!("{name} {latest}"));
+    }
+    if background && !found.is_empty() {
+        let title = t!("plugins.updatesAvailableTitle").to_string();
+        let _ = os::notify(&title, &found.join(", ")).await;
     }
     // TouchDeck selbst: nur Hinweis, nie automatisch.
     if let Ok(res) = reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(15)).build().expect("HTTP-Client").get(RELEASES).send().await
@@ -587,8 +590,8 @@ async fn check_updates(app: &Arc<App>, background: bool) {
                 a["name"].as_str().and_then(|n| n.strip_prefix("TouchDeck-Android-")).and_then(|n| n.strip_suffix(".apk")).map(String::from)
             });
             let info = json!({ "version": version, "url": rel["html_url"], "appVersion": app_version });
-            let was = std::mem::replace(&mut *app.release.lock().unwrap(), info);
-            if background && was["version"] != version.as_str() {
+            *app.release.lock().unwrap() = info;
+            if background && app.plugins.first_notice(&format!("touchdeck@{version}")) {
                 let text = t!("server.newVersion", &version);
                 let _ = os::notify("TouchDeck", &text).await;
             }
