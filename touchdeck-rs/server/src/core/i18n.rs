@@ -40,7 +40,10 @@ fn index(lang: &str) -> usize {
 
 /** Legt die Sprache der Meldungen fest (eines der Kürzel aus LANGUAGES). */
 pub fn set_lang(lang: &str) {
-    CURRENT.store(index(lang), Ordering::Relaxed);
+    // Tests laufen gleichzeitig und prüfen deutsche Texte: dort bleibt es immer Deutsch.
+    if !cfg!(test) {
+        CURRENT.store(index(lang), Ordering::Relaxed);
+    }
 }
 
 /** Kürzel der eingestellten Sprache. */
