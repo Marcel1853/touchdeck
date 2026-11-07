@@ -77,7 +77,7 @@ their own small JS engine. They can only do what TouchDeck offers them through t
 | `id` | 1–32 characters: lowercase letters, digits, hyphen. Must be unique. |
 | `license` | The plugin's license, e.g. `MIT` or `All rights reserved`. Public does not mean free: without a license, the code belongs to the author alone. |
 | `platforms` | Optional: operating systems the plugin runs on, `["linux"]`, `["windows"]` or both. Missing means everywhere. On other systems the marketplace shows “Linux only” and TouchDeck does not start it. Windows support is a very early alpha. |
-| Texts | `name`, `description`, `label` etc. may be a translation instead of a text: `{ "en": "Light", "de": "Licht" }`. TouchDeck uses the selected language, otherwise English, otherwise German. This way a plugin ships its own translations. |
+| Texts | `name`, `description`, `label` etc. may be a translation instead of a text: `{ "en": "Light", "de": "Licht" }`. TouchDeck uses the selected language, otherwise English, otherwise German, otherwise the first text there is. This way a plugin ships its own translations. TouchDeck's languages: `de`, `en`, `es`, `fr`, `pl`, `pt-br`, `ru`, `zh-cn` (`pt-BR`, `zh-CN` work too). The marketplace description comes from `README.<language>.md`, otherwise from `README.md` (please in English). |
 | `permissions.http` | Allowed addresses: exact name, `*.domain` for all subdomains, `lan` for devices on the home network. Without an entry, no network. |
 | `permissions.values` | Read and set TouchDeck values. |
 | `permissions.notify` | Show notifications on the PC. |

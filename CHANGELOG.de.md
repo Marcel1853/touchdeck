@@ -8,6 +8,13 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.3
 Datum: noch offen
+  Neuerungen:
+    - Sechs neue Sprachen: Spanisch, Französisch, Polnisch, Portugiesisch (Brasilien), Russisch und
+      Chinesisch (vereinfacht) – im Editor, im Bedienfeld, in den Meldungen und in der Android-App.
+      Die Sprache folgt dem System oder wird unter Einstellungen › Allgemein gewählt; Datum und
+      Dezimalzahlen richten sich nach ihr.
+    - Plugins: Übersetzungen dürfen auch „pt-BR“ oder „zh-CN“ heißen; fehlt die eingestellte
+      Sprache, gilt Englisch.
   Fehlerbehebungen:
     - Update-Hinweise kommen als eine einzige Benachrichtigung mit allen Updates statt einer je
       Plugin, und jede Version wird nur einmal gemeldet – auch nach einem Neustart von TouchDeck

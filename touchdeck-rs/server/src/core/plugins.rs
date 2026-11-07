@@ -131,12 +131,12 @@ pub(crate) fn text(v: &Value, max: usize) -> String {
     v.as_str().unwrap_or("").trim().chars().take(max).collect()
 }
 
-/** Sprachkürzel wie „de“, „en“ oder „pt-br“. */
+/** Sprachkürzel wie „de“, „en“, „pt-br“ oder „pt-BR“ (das Land darf großgeschrieben sein). */
 fn is_language_code(k: &str) -> bool {
     let b = k.as_bytes();
     match b.len() {
         2 => b.iter().all(u8::is_ascii_lowercase),
-        5 => b[2] == b'-' && b[..2].iter().chain(&b[3..]).all(u8::is_ascii_lowercase),
+        5 => b[2] == b'-' && b[..2].iter().all(u8::is_ascii_lowercase) && b[3..].iter().all(u8::is_ascii_alphabetic),
         _ => false,
     }
 }
@@ -163,7 +163,9 @@ pub fn localize(v: &Value, lang: &str) -> Value {
     match v {
         _ if is_translation(v) => {
             let o = v.as_object().expect("Übersetzung ist ein Objekt");
-            [lang, "en", "de"].iter().find_map(|l| o.get(*l)).or_else(|| o.values().next()).cloned().unwrap_or_default()
+            // Gewünschte Sprache, sonst Englisch, sonst Deutsch, sonst der erste Text; „pt-BR“ zählt wie „pt-br“.
+            let get = |l: &str| o.iter().find(|(k, _)| k.eq_ignore_ascii_case(l)).map(|(_, t)| t);
+            [lang, "en", "de"].iter().find_map(|l| get(l)).or_else(|| o.values().next()).cloned().unwrap_or_default()
         }
         Value::Object(o) => Value::Object(o.iter().map(|(k, x)| (k.clone(), localize(x, lang))).collect()),
         Value::Array(a) => Value::Array(a.iter().map(|x| localize(x, lang)).collect()),
@@ -1933,7 +1935,13 @@ impl Plugins {
         let dir = if r.path.is_empty() { String::new() } else { format!("{}/", r.path) };
         let base = format!("https://raw.githubusercontent.com/{}/{}/HEAD/{dir}", r.owner, r.repo);
         let page = format!("https://github.com/{}/{}/tree/HEAD/{dir}", r.owner, r.repo);
-        let names = [format!("README.{lang}.md"), "README.md".to_string(), "readme.md".to_string()];
+        // Bei „pt-br“ auch README.pt-BR.md; fehlt die Sprache, gilt README.md (Englisch).
+        let upper = match lang.split_once('-') {
+            Some((l, c)) => format!("README.{l}-{}.md", c.to_uppercase()),
+            None => format!("README.{lang}.md"),
+        };
+        let mut names = vec![format!("README.{lang}.md"), upper, "README.md".to_string(), "readme.md".to_string()];
+        names.dedup();
         for name in names {
             let res = self.http.get(format!("{base}{name}")).timeout(std::time::Duration::from_secs(10)).send().await?;
             if !res.status().is_success() {
@@ -2078,6 +2086,10 @@ mod tests {
         assert_eq!(en["actions"][0]["label"], "Turn on");
         assert_eq!(en["actions"][0]["fields"][0]["label"], "Room");
         assert_eq!(localize(&m, "fr")["name"], "Light", "fehlende Sprache: Englisch");
+        let pt = json!({ "en": "Light", "pt-BR": "Luz" });
+        assert!(is_translation(&pt), "pt-BR mit großem Land ist eine Übersetzung");
+        assert_eq!(localize(&pt, "pt-br"), "Luz");
+        assert_eq!(localize(&json!({ "de": "Licht", "fr": "Lumière" }), "es"), "Licht", "ohne Englisch: Deutsch");
         assert_eq!(m["license"], "MIT");
         // Gewöhnliche Objekte (Auswahlwerte) bleiben unverändert.
         assert_eq!(localize(&json!({ "value": "a", "label": "A" }), "en"), json!({ "value": "a", "label": "A" }));

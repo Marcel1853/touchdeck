@@ -8,6 +8,12 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.3
 Date: not yet
+  Features:
+    - Six new languages: Spanish, French, Polish, Portuguese (Brazil), Russian and Chinese
+      (Simplified) – in the editor, the deck, the messages and the Android app. The language follows
+      the system or is chosen under Settings › General; dates and decimals follow it.
+    - Plugins: translations may also be called “pt-BR” or “zh-CN”; if the selected language is
+      missing, English applies.
   Bugfixes:
     - Update notices come as one single notification listing all updates instead of one per plugin,
       and each version is reported only once – also after restarting TouchDeck (this applies to the
