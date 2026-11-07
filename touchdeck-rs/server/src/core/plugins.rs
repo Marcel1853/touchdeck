@@ -328,7 +328,7 @@ pub fn format_unit(v: &Value, unit: &str) -> String {
     let Some(n) = v.as_f64().or_else(|| v.as_str().and_then(|s| s.trim().replace(',', ".").parse().ok())) else { return js_string(v) };
     let dec = |x: f64, d: usize| {
         let s = format!("{x:.d$}");
-        if crate::core::i18n::is_english() { s } else { s.replace('.', ",") }
+        if crate::core::i18n::decimal_comma() { s.replace('.', ",") } else { s }
     };
     let size = |bytes: f64| {
         let units = ["B", "KB", "MB", "GB", "TB"];

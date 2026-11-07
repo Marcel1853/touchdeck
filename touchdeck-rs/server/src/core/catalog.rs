@@ -12,9 +12,28 @@ pub static ACTION_TYPES: LazyLock<Value> = LazyLock::new(|| parse(include_str!("
 pub static TRIGGER_TYPES: LazyLock<Value> = LazyLock::new(|| parse(include_str!("../../catalog/triggers.json")));
 static LIVE: LazyLock<Value> = LazyLock::new(|| parse(include_str!("../../catalog/live.json")));
 
-/** Texte des Katalogs je Sprache (catalog/lang/<sprache>.json), nach Aktion, Feld und Auswahlwert geordnet. */
-static TEXTS_DE: LazyLock<Value> = LazyLock::new(|| parse(include_str!("../../catalog/lang/de.json")));
-static TEXTS_EN: LazyLock<Value> = LazyLock::new(|| parse(include_str!("../../catalog/lang/en.json")));
+/** Texte des Katalogs je Sprache (catalog/lang/<sprache>.json), nach Aktion, Feld und Auswahlwert geordnet; Reihenfolge wie i18n::LANGUAGES. */
+static TEXTS: LazyLock<[Value; 8]> = LazyLock::new(|| {
+    [
+        parse(include_str!("../../catalog/lang/de.json")),
+        parse(include_str!("../../catalog/lang/en.json")),
+        parse(include_str!("../../catalog/lang/es.json")),
+        parse(include_str!("../../catalog/lang/fr.json")),
+        parse(include_str!("../../catalog/lang/pl.json")),
+        parse(include_str!("../../catalog/lang/pt-br.json")),
+        parse(include_str!("../../catalog/lang/ru.json")),
+        parse(include_str!("../../catalog/lang/zh-cn.json")),
+    ]
+});
+
+/** Sprachdateien in der Reihenfolge, in der ein Text gesucht wird: gewünschte Sprache, Englisch, Deutsch. */
+fn dicts_for(lang: &str) -> Vec<&'static Value> {
+    let texts = &*TEXTS;
+    let i = super::i18n::LANGUAGES.iter().position(|l| *l == lang).unwrap_or(1);
+    let mut order = vec![i, 1, 0];
+    order.dedup();
+    order.into_iter().map(|n| &texts[n]).collect()
+}
 
 /** Welche Liste übersetzt wird: bestimmt den Bereich in der Sprachdatei. */
 #[derive(Clone, Copy)]
@@ -25,9 +44,9 @@ pub enum Section {
     SliderTargets,
 }
 
-/** Einen Katalog mit den Texten der gewünschten Sprache füllen (fehlt ein Text, gilt der deutsche). */
+/** Einen Katalog mit den Texten der gewünschten Sprache füllen (fehlt ein Text, gilt der englische, dann der deutsche). */
 pub fn localized(list: &Value, section: Section, lang: &str) -> Value {
-    let dicts: Vec<&Value> = if lang == "de" { vec![&TEXTS_DE] } else { vec![&TEXTS_EN, &TEXTS_DE] };
+    let dicts = dicts_for(lang);
     let text = |path: &[&str]| -> Option<Value> { dicts.iter().find_map(|d| path.iter().try_fold(*d, |v, k| v.get(*k)).filter(|v| v.is_string()).cloned()) };
     let mut out = list.clone();
     for item in out.as_array_mut().into_iter().flatten() {
@@ -74,8 +93,7 @@ pub fn localized(list: &Value, section: Section, lang: &str) -> Value {
 
 /** Name einer eingebauten Aktion in der gewünschten Sprache. */
 pub fn action_label(kind: &str, lang: &str) -> Option<String> {
-    let texts: &Value = if lang == "de" { &TEXTS_DE } else { &TEXTS_EN };
-    texts["actions"][kind]["label"].as_str().or(TEXTS_DE["actions"][kind]["label"].as_str()).map(String::from)
+    dicts_for(lang).into_iter().find_map(|d| d["actions"][kind]["label"].as_str()).map(String::from)
 }
 
 /** Englische Namen für Platzhalter in Event-Daten ({Event.User} = {Event.Nutzer} …). */
@@ -121,14 +139,17 @@ mod tests {
 
     #[test]
     fn sprachdateien_vollstaendig() {
-        let (mut de, mut en) = (Vec::new(), Vec::new());
-        paths(&TEXTS_DE, "", &mut de);
-        paths(&TEXTS_EN, "", &mut en);
+        let mut de = Vec::new();
+        paths(&TEXTS[0], "", &mut de);
         de.sort();
-        en.sort();
-        assert_eq!(de, en, "de.json und en.json haben verschiedene Schlüssel");
+        for (n, lang) in super::super::i18n::LANGUAGES.iter().enumerate().skip(1) {
+            let mut other = Vec::new();
+            paths(&TEXTS[n], "", &mut other);
+            other.sort();
+            assert_eq!(de, other, "de.json und {lang}.json haben verschiedene Schlüssel");
+        }
         for (list, section) in [(&*ACTION_TYPES, Section::Actions), (&*TRIGGER_TYPES, Section::Triggers)] {
-            for lang in ["de", "en"] {
+            for lang in super::super::i18n::LANGUAGES {
                 for item in localized(list, section, lang).as_array().unwrap() {
                     assert!(item["label"].is_string(), "Name fehlt: {}", item["type"]);
                     for f in item["fields"].as_array().unwrap() {

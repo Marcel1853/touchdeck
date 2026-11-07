@@ -9,7 +9,6 @@ use chrono::{Datelike, Local, Timelike};
 use serde_json::{Map, Value, json};
 use tokio::sync::OnceCell;
 
-use crate::core::i18n;
 use crate::core::store::{Button, Page, js_string};
 use crate::integrations::steam;
 use crate::server::App;
@@ -66,10 +65,11 @@ fn truthy(v: &Value) -> bool {
     *v == Value::Bool(true) || ["true", "1", "an", "ja", "on"].contains(&js_string(v).to_lowercase().as_str())
 }
 
-const WEEKDAYS: [&str; 7] = ["Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa.", "So."];
-const MONTHS: [&str; 12] = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
-const WEEKDAYS_EN: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTHS_EN: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** Datum wie „Mo., 3. Nov.“ in der eingestellten Sprache (Namen und Schreibweise aus der Sprachdatei). */
+fn date_text(weekday: usize, day: u32, month: usize) -> String {
+    let pick = |list: &str, i: usize| list.split('|').nth(i).unwrap_or("").to_string();
+    t!("live.dateFormat", pick(t!("live.weekdays"), weekday), day, pick(t!("live.months"), month))
+}
 
 fn text(t: impl Into<String>) -> Value {
     json!({ "text": t.into() })
@@ -82,7 +82,7 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
         "clock" => text(format!("{:02}:{:02}", now.hour(), now.minute())),
         "date" => {
             let (day, month) = (now.weekday().num_days_from_monday() as usize, now.month0() as usize);
-            text(if i18n::is_english() { format!("{}, {} {}", WEEKDAYS_EN[day], MONTHS_EN[month], now.day()) } else { format!("{}, {}. {}", WEEKDAYS[day], now.day(), MONTHS[month]) })
+            text(date_text(day, now.day(), month))
         }
         "cpu" => {
             let v = *snap.cpu.get_or_init(|| async { os::cpu_usage() }).await;

@@ -943,10 +943,19 @@ pub struct McpSettings {
     pub token: String,
 }
 
-/** Sprache des Systems (LANGUAGE, LC_ALL, LC_MESSAGES, LANG): Deutsch bei de_…, sonst Englisch. */
+/** Sprache des Systems (LANGUAGE, LC_ALL, LC_MESSAGES, LANG), z. B. de_DE → de, pt_BR → pt-br; sonst Englisch. */
 pub fn system_language() -> String {
     let env = ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"].iter().find_map(|k| std::env::var(k).ok().filter(|v| !v.is_empty() && v != "C" && v != "POSIX"));
-    if env.is_some_and(|v| v.to_lowercase().starts_with("de")) { "de".into() } else { "en".into() }
+    language_of(&env.unwrap_or_default())
+}
+
+/** Kürzel aus einer Locale wie „pt_BR.UTF-8“ oder „zh-CN“: erst mit Land (pt-br, zh-cn), dann nur die Sprache. */
+pub fn language_of(locale: &str) -> String {
+    let base = locale.split(['.', '@', ':']).next().unwrap_or("").to_lowercase().replace('_', "-");
+    let short = base.split('-').next().unwrap_or("");
+    let with_country = LANGUAGES.iter().find(|l| **l == base);
+    let only_language = LANGUAGES.iter().find(|l| **l == short || l.split('-').next() == Some(short));
+    with_country.or(only_language).map_or_else(|| "en".to_string(), |l| l.to_string())
 }
 
 fn default_port() -> u16 {
@@ -957,7 +966,7 @@ fn default_language() -> String {
     system_language()
 }
 
-pub const LANGUAGES: [&str; 2] = ["de", "en"];
+pub use super::i18n::LANGUAGES;
 
 const SETTING_GROUPS: [&str; 7] = ["deck", "obs", "twitch", "discord", "theme", "backups", "logs"];
 
@@ -1684,6 +1693,13 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sprache_aus_locale() {
+        for (locale, lang) in [("de_DE.UTF-8", "de"), ("pt_BR.UTF-8", "pt-br"), ("zh_CN.UTF-8", "zh-cn"), ("es_ES", "es"), ("fr_CA.UTF-8", "fr"), ("ru_RU", "ru"), ("pl_PL", "pl"), ("ja_JP", "en"), ("", "en")] {
+            assert_eq!(language_of(locale), lang, "{locale}");
+        }
+    }
 
     #[test]
     fn freie_seite_und_eigene_groessen() {

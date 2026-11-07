@@ -1,0 +1,1787 @@
+{
+  "categories": {
+    "run": "运行",
+    "input": "输入",
+    "media": "媒体",
+    "audio": "音频",
+    "navigation": "导航",
+    "logic": "逻辑",
+    "services": "服务",
+    "http": "HTTP",
+    "steam": "Steam",
+    "obsStudio": "OBS Studio",
+    "soundboard": "音效板",
+    "files": "文件",
+    "values": "值",
+    "twitch": "Twitch",
+    "discord": "Discord",
+    "visuals": "外观",
+    "other": "其他",
+    "general": "常规"
+  },
+  "groups": {
+    "general": "常规",
+    "audioMusicMedia": "音频、音乐和媒体",
+    "games": "游戏",
+    "streaming": "直播",
+    "communication": "通讯",
+    "other": "其他"
+  },
+  "actions": {
+    "open_url": {
+      "label": "打开网站",
+      "fields": {
+        "url": {
+          "label": "地址",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "open_path": {
+      "label": "打开文件或文件夹",
+      "fields": {
+        "path": {
+          "label": "路径",
+          "placeholder": "~/Documents"
+        }
+      }
+    },
+    "launch_app": {
+      "label": "启动程序",
+      "fields": {
+        "app": {
+          "label": "程序"
+        }
+      }
+    },
+    "run_command": {
+      "label": "运行命令",
+      "fields": {
+        "command": {
+          "label": "命令",
+          "placeholder": "例如 gnome-screenshot -i"
+        },
+        "wait": {
+          "label": "等待完成并显示输出"
+        },
+        "saveTo": {
+          "label": "将输出保存到值（空 = 不保存）"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "按下键盘快捷键",
+      "fields": {
+        "keys": {
+          "label": "键盘快捷键",
+          "placeholder": "ctrl+shift+s"
+        },
+        "window": {
+          "label": "发送到此程序（空 = 前台窗口）"
+        },
+        "back": {
+          "label": "之后返回上一个窗口"
+        }
+      }
+    },
+    "type_text": {
+      "label": "输入文本",
+      "fields": {
+        "text": {
+          "label": "文本"
+        }
+      }
+    },
+    "media": {
+      "label": "媒体控制",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "play-pause": "播放 / 暂停",
+            "next": "下一首",
+            "previous": "上一首",
+            "stop": "停止"
+          }
+        }
+      }
+    },
+    "volume": {
+      "label": "音量",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "up": "调高",
+            "down": "调低",
+            "set": "设为数值",
+            "mute": "静音开/关"
+          }
+        },
+        "step": {
+          "label": "步长（%）"
+        },
+        "value": {
+          "label": "音量（%）"
+        }
+      }
+    },
+    "mic_mute": {
+      "label": "麦克风静音",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "mute": "静音",
+            "unmute": "取消静音"
+          }
+        }
+      }
+    },
+    "go_page": {
+      "label": "切换页面",
+      "fields": {
+        "page": {
+          "label": "目标页面"
+        }
+      }
+    },
+    "delay": {
+      "label": "等待",
+      "fields": {
+        "ms": {
+          "label": "毫秒"
+        }
+      }
+    },
+    "notify": {
+      "label": "显示通知",
+      "fields": {
+        "title": {
+          "label": "标题"
+        },
+        "body": {
+          "label": "文本"
+        },
+        "target": {
+          "label": "显示位置",
+          "options": {
+            "pc": "在电脑上",
+            "deck": "在面板上（手机、平板）",
+            "both": "两者"
+          }
+        }
+      }
+    },
+    "http": {
+      "label": "HTTP 请求",
+      "fields": {
+        "method": {
+          "label": "方法",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "地址",
+          "placeholder": "http://…"
+        },
+        "headers": {
+          "label": "请求头（每行一个：名称: 值）"
+        },
+        "body": {
+          "label": "请求体"
+        },
+        "saveTo": {
+          "label": "将响应保存到值（空 = 不保存）"
+        },
+        "jsonPath": {
+          "label": "只取 JSON 响应中的此字段（例如 data.0.name，空 = 整个响应）"
+        }
+      }
+    },
+    "audio_output": {
+      "label": "切换音频输出",
+      "fields": {
+        "target": {
+          "label": "输出"
+        }
+      }
+    },
+    "audio_input": {
+      "label": "切换麦克风",
+      "fields": {
+        "target": {
+          "label": "输入"
+        }
+      }
+    },
+    "screenshot": {
+      "label": "截图",
+      "fields": {
+        "mode": {
+          "label": "区域",
+          "options": {
+            "dialog": "打开对话框",
+            "full": "整个屏幕",
+            "window": "活动窗口",
+            "area": "选择区域"
+          }
+        }
+      }
+    },
+    "lock_screen": {
+      "label": "锁定屏幕"
+    },
+    "power": {
+      "label": "电源",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "suspend": "挂起",
+            "logout": "注销",
+            "reboot": "重新启动",
+            "poweroff": "关机"
+          }
+        }
+      }
+    },
+    "night_light": {
+      "label": "夜灯",
+      "fields": {
+        "mode": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "开",
+            "off": "关"
+          }
+        }
+      }
+    },
+    "dark_mode": {
+      "label": "浅色 / 深色",
+      "fields": {
+        "mode": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "深色",
+            "off": "浅色"
+          }
+        }
+      }
+    },
+    "wake_on_lan": {
+      "label": "唤醒电脑（Wake-on-LAN）",
+      "fields": {
+        "mac": {
+          "label": "MAC 地址",
+          "placeholder": "00:11:22:33:44:55"
+        }
+      }
+    },
+    "steam_game": {
+      "label": "启动游戏",
+      "fields": {
+        "game": {
+          "label": "游戏"
+        }
+      }
+    },
+    "steam_open": {
+      "label": "打开 Steam",
+      "fields": {
+        "view": {
+          "label": "区域",
+          "options": {
+            "library": "游戏库",
+            "downloads": "下载与更新",
+            "bigpicture": "大屏幕模式",
+            "friends": "好友",
+            "store": "商店",
+            "screenshots": "截图"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "切换场景",
+      "fields": {
+        "scene": {
+          "label": "场景"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "直播",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "开始 / 停止",
+            "start": "开始",
+            "stop": "停止"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "录制",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "开始 / 停止",
+            "start": "开始",
+            "stop": "停止",
+            "pause": "暂停开/关"
+          }
+        }
+      }
+    },
+    "obs_replay": {
+      "label": "回放缓存",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "save": "保存剪辑",
+            "toggle": "缓存开/关"
+          }
+        }
+      }
+    },
+    "obs_mute": {
+      "label": "音频来源静音",
+      "fields": {
+        "input": {
+          "label": "音频来源"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "mute": "静音",
+            "unmute": "取消静音"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "显示/隐藏来源",
+      "fields": {
+        "item": {
+          "label": "来源"
+        },
+        "mode": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "show": "显示",
+            "hide": "隐藏"
+          }
+        }
+      }
+    },
+    "obs_misc": {
+      "label": "工作室模式 / 虚拟摄像机",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "virtualcam": "虚拟摄像机开/关",
+            "studio": "工作室模式开/关"
+          }
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "设置预览场景（工作室模式）",
+      "fields": {
+        "scene": {
+          "label": "场景"
+        }
+      }
+    },
+    "obs_transition": {
+      "label": "转场",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "take": "将预览切换到节目（工作室模式）",
+            "set": "选择转场"
+          }
+        },
+        "transition": {
+          "label": "转场"
+        },
+        "duration": {
+          "label": "时长（毫秒，0 = 不变）"
+        }
+      }
+    },
+    "obs_volume": {
+      "label": "音频来源的音量",
+      "fields": {
+        "input": {
+          "label": "音频来源"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "up": "调高",
+            "down": "调低",
+            "set": "设为数值"
+          }
+        },
+        "step": {
+          "label": "步长（dB）"
+        },
+        "value": {
+          "label": "音量（%）"
+        }
+      }
+    },
+    "obs_media": {
+      "label": "控制媒体来源",
+      "fields": {
+        "input": {
+          "label": "媒体来源"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "playpause": "播放 / 暂停",
+            "restart": "重新开始",
+            "stop": "停止",
+            "next": "下一个",
+            "previous": "上一个"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "开启/关闭滤镜",
+      "fields": {
+        "filter": {
+          "label": "滤镜"
+        },
+        "mode": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "开启",
+            "off": "关闭"
+          }
+        }
+      }
+    },
+    "obs_text": {
+      "label": "设置文本来源的文字",
+      "fields": {
+        "input": {
+          "label": "文本来源"
+        },
+        "text": {
+          "label": "文本（{Variable} 会被替换）"
+        }
+      }
+    },
+    "obs_browser": {
+      "label": "浏览器来源",
+      "fields": {
+        "input": {
+          "label": "浏览器来源"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "reload": "重新加载",
+            "url": "更改地址"
+          }
+        },
+        "url": {
+          "label": "地址",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "obs_image": {
+      "label": "更换图片来源的图片",
+      "fields": {
+        "input": {
+          "label": "图片来源"
+        },
+        "file": {
+          "label": "图片文件",
+          "placeholder": "~/Pictures/…png"
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "切换配置文件 / 场景集合",
+      "fields": {
+        "kind": {
+          "label": "切换什么？",
+          "options": {
+            "profile": "配置文件",
+            "collection": "场景集合"
+          }
+        },
+        "profile": {
+          "label": "配置文件"
+        },
+        "collection": {
+          "label": "场景集合"
+        }
+      }
+    },
+    "obs_hotkey": {
+      "label": "触发 OBS 快捷键",
+      "fields": {
+        "hotkey": {
+          "label": "功能"
+        }
+      }
+    },
+    "obs_screenshot": {
+      "label": "场景/来源截图",
+      "fields": {
+        "source": {
+          "label": "场景或来源"
+        },
+        "folder": {
+          "label": "文件夹",
+          "placeholder": "~/Pictures"
+        }
+      }
+    },
+    "obs_raw": {
+      "label": "自定义 OBS 请求（高级）",
+      "fields": {
+        "request": {
+          "label": "请求（requestType）",
+          "placeholder": "例如 SetInputMute"
+        },
+        "data": {
+          "label": "JSON 数据",
+          "placeholder": "{\"inputName\": \"Mic/Aux\", \"inputMuted\": true}"
+        }
+      }
+    },
+    "mouse_click": {
+      "label": "鼠标点击",
+      "fields": {
+        "button": {
+          "label": "按键",
+          "options": {
+            "left": "左键",
+            "double": "左键双击",
+            "right": "右键",
+            "middle": "中键",
+            "scrollup": "滚轮向上",
+            "scrolldown": "滚轮向下"
+          }
+        }
+      }
+    },
+    "mouse_move": {
+      "label": "移动鼠标",
+      "fields": {
+        "mode": {
+          "label": "类型",
+          "options": {
+            "abs": "移到屏幕位置",
+            "rel": "按距离移动"
+          }
+        },
+        "x": {
+          "label": "X"
+        },
+        "y": {
+          "label": "Y"
+        }
+      }
+    },
+    "key_hold": {
+      "label": "按住按键",
+      "fields": {
+        "keys": {
+          "label": "按键",
+          "placeholder": "w"
+        },
+        "ms": {
+          "label": "时长（毫秒）"
+        }
+      }
+    },
+    "window_activate": {
+      "label": "将窗口置于前台",
+      "fields": {
+        "window": {
+          "label": "程序（窗口类名或标题的一部分）"
+        }
+      }
+    },
+    "kill_app": {
+      "label": "退出程序",
+      "fields": {
+        "name": {
+          "label": "进程名",
+          "placeholder": "例如 firefox"
+        },
+        "force": {
+          "label": "立即强制退出（不保存）"
+        }
+      }
+    },
+    "sound_play": {
+      "label": "播放声音",
+      "fields": {
+        "file": {
+          "label": "音频文件（WAV、OGG、FLAC、MP3）",
+          "placeholder": "~/Music/sound.mp3"
+        },
+        "volume": {
+          "label": "音量（%）"
+        },
+        "exclusive": {
+          "label": "先停止其他声音"
+        }
+      }
+    },
+    "sound_stop": {
+      "label": "停止所有声音"
+    },
+    "file_write": {
+      "label": "写入文件",
+      "fields": {
+        "path": {
+          "label": "文件",
+          "placeholder": "~/notes.txt"
+        },
+        "mode": {
+          "label": "类型",
+          "options": {
+            "append": "追加为新行",
+            "write": "覆盖文件"
+          }
+        },
+        "text": {
+          "label": "文本（{Variable} 和 {Time} 会被替换）"
+        }
+      }
+    },
+    "var_set": {
+      "label": "设置变量",
+      "fields": {
+        "name": {
+          "label": "变量"
+        },
+        "value": {
+          "label": "值（{Variable} 和 {Time} 会被替换）"
+        }
+      }
+    },
+    "var_change": {
+      "label": "更改计数器",
+      "fields": {
+        "name": {
+          "label": "变量"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "add": "增加",
+            "sub": "减少",
+            "reset": "恢复初始值"
+          }
+        },
+        "amount": {
+          "label": "增减量 / 初始值"
+        }
+      }
+    },
+    "var_toggle": {
+      "label": "切换变量开/关",
+      "fields": {
+        "name": {
+          "label": "变量"
+        }
+      }
+    },
+    "condition": {
+      "label": "条件：仅当 … 时继续",
+      "fields": {
+        "name": {
+          "label": "变量或占位符（例如 {Event.User}）"
+        },
+        "op": {
+          "label": "比较",
+          "options": {
+            "eq": "等于",
+            "ne": "不等于",
+            "gt": "大于",
+            "ge": "大于等于",
+            "lt": "小于",
+            "le": "小于等于",
+            "contains": "包含",
+            "empty": "为空",
+            "not_empty": "不为空"
+          }
+        },
+        "value": {
+          "label": "值"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "发送聊天消息",
+      "fields": {
+        "message": {
+          "label": "消息（可使用 {Value} 和 {Event.X}）"
+        }
+      }
+    },
+    "twitch_announcement": {
+      "label": "聊天公告",
+      "fields": {
+        "message": {
+          "label": "文本"
+        },
+        "color": {
+          "label": "颜色",
+          "options": {
+            "primary": "频道颜色",
+            "blue": "蓝色",
+            "green": "绿色",
+            "orange": "橙色",
+            "purple": "紫色"
+          }
+        }
+      }
+    },
+    "twitch_clip": {
+      "label": "创建剪辑"
+    },
+    "twitch_marker": {
+      "label": "设置直播标记",
+      "fields": {
+        "description": {
+          "label": "描述（可选）"
+        }
+      }
+    },
+    "twitch_channel": {
+      "label": "更改标题 / 分类",
+      "fields": {
+        "title": {
+          "label": "新标题（空 = 不变）"
+        },
+        "game": {
+          "label": "新分类/游戏（空 = 不变）",
+          "placeholder": "例如 RimWorld"
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "开始广告",
+      "fields": {
+        "length": {
+          "label": "时长",
+          "options": {
+            "30": "30 秒",
+            "60": "60 秒",
+            "90": "90 秒",
+            "120": "120 秒",
+            "150": "150 秒",
+            "180": "180 秒"
+          }
+        }
+      }
+    },
+    "twitch_chat_mode": {
+      "label": "切换聊天模式",
+      "fields": {
+        "mode": {
+          "label": "模式",
+          "options": {
+            "emote_mode": "仅限表情",
+            "follower_mode": "仅限关注者",
+            "subscriber_mode": "仅限订阅者",
+            "slow_mode": "慢速模式",
+            "unique_chat_mode": "不重复聊天"
+          }
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "开",
+            "off": "关"
+          }
+        }
+      }
+    },
+    "twitch_shoutout": {
+      "label": "推荐频道（Shoutout）",
+      "fields": {
+        "user": {
+          "label": "频道（Twitch 名称，可用 {Event.User}）"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "开始 / 取消突袭",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "start": "开始突袭",
+            "cancel": "取消突袭"
+          }
+        },
+        "user": {
+          "label": "目标频道（Twitch 名称）"
+        }
+      }
+    },
+    "twitch_reward": {
+      "label": "频道积分奖励开/关",
+      "fields": {
+        "reward": {
+          "label": "奖励（只能更改由 TouchDeck 创建的奖励）"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "启用/禁用",
+            "pause": "暂停/继续"
+          }
+        }
+      }
+    },
+    "twitch_info": {
+      "label": "将频道信息写入值"
+    },
+    "discord_mute": {
+      "label": "麦克风静音（Discord）",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "静音",
+            "off": "取消静音"
+          }
+        }
+      }
+    },
+    "discord_deafen": {
+      "label": "关闭听筒（Discord）",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "已关闭听筒",
+            "off": "正在收听"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "加入 / 离开语音频道",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "join": "加入",
+            "toggle": "加入 / 离开",
+            "leave": "离开"
+          }
+        },
+        "channel": {
+          "label": "语音频道"
+        }
+      }
+    },
+    "discord_volume": {
+      "label": "音量（Discord）",
+      "fields": {
+        "target": {
+          "label": "什么？",
+          "options": {
+            "output": "输出（听别人）",
+            "input": "输入（自己的麦克风）"
+          }
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "up": "调高",
+            "down": "调低",
+            "set": "设为数值"
+          }
+        },
+        "step": {
+          "label": "步长"
+        },
+        "value": {
+          "label": "数值（输出 0–200，输入 0–100）"
+        }
+      }
+    },
+    "discord_mode": {
+      "label": "语音模式（按键说话）",
+      "fields": {
+        "op": {
+          "label": "模式",
+          "options": {
+            "toggle": "切换",
+            "PUSH_TO_TALK": "按键说话",
+            "VOICE_ACTIVITY": "语音活动"
+          }
+        }
+      }
+    },
+    "discord_webhook": {
+      "label": "向频道发送消息（Webhook）",
+      "fields": {
+        "url": {
+          "label": "Webhook URL（编辑频道 → 整合 → Webhook）",
+          "placeholder": "https://discord.com/api/webhooks/…"
+        },
+        "message": {
+          "label": "消息（可使用 {Value} 和 {Event.X}）"
+        },
+        "username": {
+          "label": "发送者名称（可选）"
+        }
+      }
+    },
+    "run_flow": {
+      "label": "运行流程",
+      "fields": {
+        "flow": {
+          "label": "流程"
+        },
+        "times": {
+          "label": "运行几次？（重复）"
+        },
+        "inputs": {
+          "label": "流程的输入（可使用占位符）"
+        }
+      }
+    },
+    "stop": {
+      "label": "停止（取消剩余操作）"
+    },
+    "comment": {
+      "label": "注释（不执行任何操作）",
+      "fields": {
+        "text": {
+          "label": "备注"
+        }
+      }
+    },
+    "change_visuals": {
+      "label": "更改按钮外观",
+      "fields": {
+        "target": {
+          "label": "按钮"
+        },
+        "title": {
+          "label": "新标签（空 = 不变，可用 {Value}）"
+        },
+        "color": {
+          "label": "新背景色（空 = 不变）"
+        },
+        "textColor": {
+          "label": "新文字颜色（空 = 不变）"
+        },
+        "icon": {
+          "label": "新表情符号（空 = 不变）"
+        },
+        "image": {
+          "label": "图片作为图标（代替表情符号）"
+        },
+        "bgImage": {
+          "label": "纹理（背景图片）"
+        },
+        "overlay": {
+          "label": "叠加效果",
+          "options": {
+            "keep": "不更改",
+            "none": "无",
+            "gloss": "光泽",
+            "frame": "边框",
+            "stripes": "条纹",
+            "dots": "圆点",
+            "vignette": "暗角",
+            "glow": "发光"
+          }
+        }
+      }
+    },
+    "restore_visuals": {
+      "label": "恢复原始外观",
+      "fields": {
+        "target": {
+          "label": "按钮"
+        }
+      }
+    },
+    "button_state": {
+      "label": "设置按钮状态（仅显示）",
+      "fields": {
+        "target": {
+          "label": "按钮"
+        },
+        "op": {
+          "label": "内容",
+          "options": {
+            "next": "下一个状态",
+            "prev": "上一个状态",
+            "set": "状态编号"
+          }
+        },
+        "index": {
+          "label": "编号（用于“状态编号”）"
+        }
+      }
+    },
+    "button_visible": {
+      "label": "显示 / 隐藏按钮",
+      "fields": {
+        "target": {
+          "label": "按钮"
+        },
+        "op": {
+          "label": "内容",
+          "options": {
+            "show": "显示",
+            "hide": "隐藏",
+            "toggle": "切换"
+          }
+        },
+        "seconds": {
+          "label": "仅持续 … 秒（0 = 永久）"
+        }
+      }
+    },
+    "page_background": {
+      "label": "更改页面背景",
+      "fields": {
+        "page": {
+          "label": "页面"
+        },
+        "color": {
+          "label": "颜色（空 = 原始）"
+        }
+      }
+    },
+    "unsupported": {
+      "label": "不支持"
+    },
+    "random": {
+      "label": "随机：执行后续操作之一",
+      "fields": {
+        "count": {
+          "label": "从后续多少个操作中选？（0 = 所有后续操作）"
+        }
+      }
+    },
+    "deck_show_page": {
+      "label": "在所有设备上显示页面",
+      "fields": {
+        "page": {
+          "label": "页面"
+        }
+      }
+    },
+    "timer": {
+      "label": "计时器（倒计时 / 秒表）",
+      "fields": {
+        "name": {
+          "label": "计时器名称"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "开始 / 暂停",
+            "start": "开始",
+            "stop": "暂停",
+            "reset": "重置",
+            "alarm": "闹钟：倒计时到某个时间"
+          }
+        },
+        "minutes": {
+          "label": "分钟（0 分 0 秒 = 秒表）"
+        },
+        "seconds": {
+          "label": "秒"
+        },
+        "time": {
+          "label": "闹钟时间（HH:MM）",
+          "placeholder": "07:30"
+        }
+      }
+    },
+    "if": {
+      "label": "如果 …",
+      "fields": {
+        "name": {
+          "label": "变量或占位符（例如 {Event.User}）"
+        },
+        "op": {
+          "label": "比较",
+          "options": {
+            "eq": "等于",
+            "ne": "不等于",
+            "gt": "大于",
+            "ge": "大于等于",
+            "lt": "小于",
+            "le": "小于等于",
+            "contains": "包含",
+            "empty": "为空",
+            "not_empty": "不为空"
+          }
+        },
+        "value": {
+          "label": "值"
+        }
+      }
+    },
+    "else_if": {
+      "label": "否则如果 …",
+      "fields": {
+        "name": {
+          "label": "变量或占位符（例如 {Event.User}）"
+        },
+        "op": {
+          "label": "比较",
+          "options": {
+            "eq": "等于",
+            "ne": "不等于",
+            "gt": "大于",
+            "ge": "大于等于",
+            "lt": "小于",
+            "le": "小于等于",
+            "contains": "包含",
+            "empty": "为空",
+            "not_empty": "不为空"
+          }
+        },
+        "value": {
+          "label": "值"
+        }
+      }
+    },
+    "while": {
+      "label": "当 … 时循环",
+      "fields": {
+        "name": {
+          "label": "变量或占位符（例如 {Event.User}）"
+        },
+        "op": {
+          "label": "比较",
+          "options": {
+            "eq": "等于",
+            "ne": "不等于",
+            "gt": "大于",
+            "ge": "大于等于",
+            "lt": "小于",
+            "le": "小于等于",
+            "contains": "包含",
+            "empty": "为空",
+            "not_empty": "不为空"
+          }
+        },
+        "value": {
+          "label": "值"
+        }
+      }
+    },
+    "else": {
+      "label": "否则"
+    },
+    "end": {
+      "label": "结束（如果 / 循环）"
+    },
+    "break": {
+      "label": "退出循环"
+    },
+    "repeat": {
+      "label": "重复（n 次）",
+      "fields": {
+        "count": {
+          "label": "重复几次？（当前轮次：{Event.Loop}）"
+        }
+      }
+    },
+    "var_calc": {
+      "label": "计算值",
+      "fields": {
+        "name": {
+          "label": "结果存入值"
+        },
+        "expr": {
+          "label": "计算式（例如 ({Goals} + 1) * 2、round(x)、min(a; b)、max(a; b)、abs(x)）",
+          "placeholder": "{Goals} + 1"
+        },
+        "decimals": {
+          "label": "最多保留几位小数"
+        }
+      }
+    },
+    "key_sequence": {
+      "label": "按键序列（录制）",
+      "fields": {
+        "steps": {
+          "label": "按键和停顿，每行一步（例如 ctrl+c、250ms、ctrl+v）"
+        },
+        "speed": {
+          "label": "速度（%，200 = 两倍速）"
+        }
+      }
+    },
+    "clipboard_set": {
+      "label": "复制到剪贴板",
+      "fields": {
+        "text": {
+          "label": "文本（可使用占位符）"
+        },
+        "paste": {
+          "label": "之后粘贴（Ctrl+V）"
+        }
+      }
+    },
+    "clipboard_get": {
+      "label": "将剪贴板保存到值",
+      "fields": {
+        "saveTo": {
+          "label": "值"
+        }
+      }
+    },
+    "screen": {
+      "label": "屏幕（关闭 / 亮度）",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "off": "关闭（移动鼠标唤醒）",
+            "brightness": "设置亮度"
+          }
+        },
+        "percent": {
+          "label": "亮度（%）"
+        }
+      }
+    }
+  },
+  "triggers": {
+    "value_change": {
+      "label": "值发生变化",
+      "fields": {
+        "name": {
+          "label": "值"
+        },
+        "op": {
+          "label": "何时？",
+          "options": {
+            "any": "每次变化",
+            "eq": "变为等于",
+            "ne": "变为不等于",
+            "gt": "变为大于",
+            "lt": "变为小于",
+            "contains": "包含"
+          }
+        },
+        "value": {
+          "label": "比较值"
+        }
+      }
+    },
+    "app_start": {
+      "label": "TouchDeck 启动"
+    },
+    "timer": {
+      "label": "计时器（定期）",
+      "fields": {
+        "seconds": {
+          "label": "每 … 秒"
+        }
+      }
+    },
+    "time_of_day": {
+      "label": "到达某个时间",
+      "fields": {
+        "time": {
+          "label": "时间（HH:MM，多个用逗号分隔：08:00, 18:30）",
+          "placeholder": "18:30"
+        },
+        "days": {
+          "label": "日期",
+          "options": {
+            "all": "每天",
+            "weekdays": "周一至周五",
+            "weekend": "周六和周日",
+            "pick": "选定的日期"
+          }
+        },
+        "d_mon": {
+          "label": "星期一"
+        },
+        "d_tue": {
+          "label": "星期二"
+        },
+        "d_wed": {
+          "label": "星期三"
+        },
+        "d_thu": {
+          "label": "星期四"
+        },
+        "d_fri": {
+          "label": "星期五"
+        },
+        "d_sat": {
+          "label": "星期六"
+        },
+        "d_sun": {
+          "label": "星期日"
+        },
+        "monthday": {
+          "label": "仅在每月的这一天（0 = 任意）"
+        }
+      }
+    },
+    "file_change": {
+      "label": "文件发生变化",
+      "fields": {
+        "path": {
+          "label": "文件",
+          "placeholder": "~/status.txt"
+        }
+      }
+    },
+    "device": {
+      "label": "手机连接/断开",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "connected": "已连接",
+            "disconnected": "已断开",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "button_toggle": {
+      "label": "开关被打开/关闭",
+      "fields": {
+        "button": {
+          "label": "按钮"
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "on": "开",
+            "off": "关",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "audio_output": {
+      "label": "音频输出变化",
+      "fields": {
+        "device": {
+          "label": "切换到设备（空 = 任意）"
+        }
+      }
+    },
+    "pc_lock": {
+      "label": "电脑锁定 / 解锁",
+      "fields": {
+        "state": {
+          "label": "何时",
+          "options": {
+            "locked": "锁定",
+            "unlocked": "解锁",
+            "any": "两者"
+          }
+        }
+      }
+    },
+    "audio_mute": {
+      "label": "声音或麦克风静音/取消静音",
+      "fields": {
+        "target": {
+          "label": "什么？",
+          "options": {
+            "output": "声音（输出）",
+            "input": "麦克风（输入）"
+          }
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "muted": "静音",
+            "unmuted": "取消静音",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "steam_game": {
+      "label": "游戏启动/结束",
+      "fields": {
+        "game": {
+          "label": "游戏（空 = 任意）"
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "started": "启动",
+            "stopped": "结束",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "场景变化",
+      "fields": {
+        "scene": {
+          "label": "切换到场景（空 = 任意）"
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "预览场景变化",
+      "fields": {
+        "scene": {
+          "label": "切换到场景（空 = 任意）"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "直播开始/停止",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "started": "开始",
+            "stopped": "停止",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "录制开始/停止/暂停",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "started": "开始",
+            "stopped": "停止",
+            "paused": "暂停",
+            "resumed": "继续",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_replay_saved": {
+      "label": "剪辑已保存"
+    },
+    "obs_mute": {
+      "label": "音频来源静音/取消静音",
+      "fields": {
+        "input": {
+          "label": "音频来源（空 = 任意）"
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "muted": "静音",
+            "unmuted": "取消静音",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "来源显示/隐藏",
+      "fields": {
+        "item": {
+          "label": "来源"
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "shown": "显示",
+            "hidden": "隐藏",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "滤镜开/关",
+      "fields": {
+        "filter": {
+          "label": "滤镜"
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "on": "开",
+            "off": "关",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_studio": {
+      "label": "工作室模式开/关",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "on": "开",
+            "off": "关",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "配置文件/场景集合变化",
+      "fields": {
+        "kind": {
+          "label": "什么？",
+          "options": {
+            "any": "任意",
+            "profile": "配置文件",
+            "collection": "场景集合"
+          }
+        }
+      }
+    },
+    "obs_connection": {
+      "label": "OBS 连接/断开",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "connected": "已连接",
+            "disconnected": "已断开",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "twitch_follow": {
+      "label": "新关注者"
+    },
+    "twitch_sub": {
+      "label": "订阅（新订阅、续订、赠送）",
+      "fields": {
+        "kind": {
+          "label": "类型",
+          "options": {
+            "any": "任意",
+            "new": "新订阅",
+            "resub": "续订",
+            "gift": "赠送"
+          }
+        }
+      }
+    },
+    "twitch_cheer": {
+      "label": "Bits",
+      "fields": {
+        "min": {
+          "label": "至少多少 Bits？"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "突袭",
+      "fields": {
+        "min": {
+          "label": "至少多少观众？"
+        }
+      }
+    },
+    "twitch_redeem": {
+      "label": "兑换频道积分",
+      "fields": {
+        "reward": {
+          "label": "奖励（标题，空 = 任意）"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "聊天消息 / 命令",
+      "fields": {
+        "mode": {
+          "label": "何时？",
+          "options": {
+            "command": "消息以此开头",
+            "contains": "消息包含",
+            "any": "任意消息"
+          }
+        },
+        "text": {
+          "label": "文本（例如 !scene）"
+        },
+        "who": {
+          "label": "来自谁？",
+          "options": {
+            "all": "所有人",
+            "mod": "仅版主和你",
+            "sub": "仅订阅者"
+          }
+        }
+      }
+    },
+    "twitch_stream": {
+      "label": "直播上线/下线",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "online": "在线",
+            "offline": "离线",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "广告时段开始"
+    },
+    "discord_voice": {
+      "label": "静音 / 关闭听筒",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "muted": "静音",
+            "unmuted": "麦克风已重新打开",
+            "deafened": "已关闭听筒",
+            "undeafened": "已恢复收听",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "加入 / 离开语音频道",
+      "fields": {
+        "state": {
+          "label": "状态",
+          "options": {
+            "joined": "已加入",
+            "left": "已离开",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "page_view": {
+      "label": "页面打开 / 离开",
+      "fields": {
+        "page": {
+          "label": "页面（空 = 任意；在页面逻辑中：此页面）"
+        },
+        "state": {
+          "label": "状态",
+          "options": {
+            "open": "打开",
+            "leave": "离开",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "app_focus": {
+      "label": "前台程序",
+      "fields": {
+        "app": {
+          "label": "程序（空 = 任意；名称的一部分即可，例如 obs）"
+        },
+        "once": {
+          "label": "仅第一次（程序关闭并重新启动后才会再次触发）"
+        }
+      }
+    },
+    "timer_done": {
+      "label": "计时器结束",
+      "fields": {
+        "name": {
+          "label": "计时器名称（空 = 任意）"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "在电脑上按下快捷键",
+      "fields": {
+        "keys": {
+          "label": "快捷键（在 X11 下电脑任何地方都有效，即使 TouchDeck 在后台；占位符 {Event.Keys}）"
+        }
+      }
+    }
+  },
+  "liveSources": {
+    "none": "无",
+    "clock": "时钟",
+    "date": "日期",
+    "cpu": "CPU 使用率",
+    "ram": "内存",
+    "temp": "CPU 温度",
+    "volume": "音量",
+    "mic": "麦克风已静音？",
+    "track": "当前音乐曲目",
+    "steam_updates": "Steam 更新",
+    "steam_running": "游戏运行中（来自操作）",
+    "obs_stream": "OBS：正在直播？",
+    "obs_record": "OBS：正在录制？",
+    "obs_scene": "OBS：场景激活？（来自操作）",
+    "twitch_live": "Twitch：直播中？",
+    "twitch_viewers": "Twitch：观众",
+    "twitch_followers": "Twitch：关注者",
+    "discord_mute": "Discord：已静音？",
+    "discord_deaf": "Discord：已关闭听筒？",
+    "discord_channel": "Discord：语音频道",
+    "variable": "变量的值",
+    "command": "命令的输出",
+    "timer": "计时器（剩余时间）– 在下方输入名称",
+    "page_indicator": "页面指示器（●○○）",
+    "gpu_temp": "显卡温度",
+    "gpu_load": "显卡负载",
+    "disk": "磁盘已用（/）",
+    "net": "网络 ↓ / ↑",
+    "uptime": "电脑已运行"
+  },
+  "sliderTargets": {
+    "volume": "音量（电脑）",
+    "mic": "麦克风音量",
+    "obs_volume": "OBS 音频来源",
+    "command": "自定义命令（{value} = 0–100）"
+  }
+}

@@ -158,7 +158,10 @@
     "running": "Läuft",
     "twitchOff": "Twitch aus",
     "unknown": "Unbekannt",
-    "unknownTargetForSlider": "Unbekanntes Ziel für den Regler."
+    "unknownTargetForSlider": "Unbekanntes Ziel für den Regler.",
+    "dateFormat": "{0}, {1}. {2}",
+    "weekdays": "Mo.|Di.|Mi.|Do.|Fr.|Sa.|So.",
+    "months": "Jan.|Feb.|März|Apr.|Mai|Juni|Juli|Aug.|Sept.|Okt.|Nov.|Dez."
   },
   "plugins": {
     "advancedModeTurnedOn": "Erweiterter Modus eingeschaltet – Plugins mit vollen Rechten sind erlaubt.",

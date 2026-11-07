@@ -1,0 +1,1787 @@
+{
+  "categories": {
+    "run": "Uruchamianie",
+    "input": "Wprowadzanie",
+    "media": "Multimedia",
+    "audio": "Dźwięk",
+    "navigation": "Nawigacja",
+    "logic": "Logika",
+    "services": "Usługi",
+    "http": "HTTP",
+    "steam": "Steam",
+    "obsStudio": "OBS Studio",
+    "soundboard": "Soundboard",
+    "files": "Pliki",
+    "values": "Wartości",
+    "twitch": "Twitch",
+    "discord": "Discord",
+    "visuals": "Wygląd",
+    "other": "Inne",
+    "general": "Ogólne"
+  },
+  "groups": {
+    "general": "Ogólne",
+    "audioMusicMedia": "Dźwięk, muzyka i multimedia",
+    "games": "Gry",
+    "streaming": "Streaming",
+    "communication": "Komunikacja",
+    "other": "Inne"
+  },
+  "actions": {
+    "open_url": {
+      "label": "Otwórz stronę internetową",
+      "fields": {
+        "url": {
+          "label": "Adres",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "open_path": {
+      "label": "Otwórz plik lub folder",
+      "fields": {
+        "path": {
+          "label": "Ścieżka",
+          "placeholder": "~/Documents"
+        }
+      }
+    },
+    "launch_app": {
+      "label": "Uruchom program",
+      "fields": {
+        "app": {
+          "label": "Program"
+        }
+      }
+    },
+    "run_command": {
+      "label": "Wykonaj polecenie",
+      "fields": {
+        "command": {
+          "label": "Polecenie",
+          "placeholder": "np. gnome-screenshot -i"
+        },
+        "wait": {
+          "label": "Poczekaj na zakończenie i pokaż wynik"
+        },
+        "saveTo": {
+          "label": "Zapisz wynik w wartości (puste = nie zapisuj)"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Naciśnij skrót klawiszowy",
+      "fields": {
+        "keys": {
+          "label": "Skrót klawiszowy",
+          "placeholder": "ctrl+shift+s"
+        },
+        "window": {
+          "label": "Wyślij do tego programu (puste = okno na pierwszym planie)"
+        },
+        "back": {
+          "label": "Potem wróć do poprzedniego okna"
+        }
+      }
+    },
+    "type_text": {
+      "label": "Wpisz tekst",
+      "fields": {
+        "text": {
+          "label": "Tekst"
+        }
+      }
+    },
+    "media": {
+      "label": "Sterowanie multimediami",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "play-pause": "Odtwórz / pauza",
+            "next": "Następny utwór",
+            "previous": "Poprzedni utwór",
+            "stop": "Stop"
+          }
+        }
+      }
+    },
+    "volume": {
+      "label": "Głośność",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "up": "Głośniej",
+            "down": "Ciszej",
+            "set": "Ustaw wartość",
+            "mute": "Wyciszenie wł./wył."
+          }
+        },
+        "step": {
+          "label": "Krok w %"
+        },
+        "value": {
+          "label": "Głośność w %"
+        }
+      }
+    },
+    "mic_mute": {
+      "label": "Wycisz mikrofon",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "mute": "Wyciszony",
+            "unmute": "Włączony"
+          }
+        }
+      }
+    },
+    "go_page": {
+      "label": "Zmień stronę",
+      "fields": {
+        "page": {
+          "label": "Strona docelowa"
+        }
+      }
+    },
+    "delay": {
+      "label": "Czekaj",
+      "fields": {
+        "ms": {
+          "label": "Milisekundy"
+        }
+      }
+    },
+    "notify": {
+      "label": "Pokaż powiadomienie",
+      "fields": {
+        "title": {
+          "label": "Tytuł"
+        },
+        "body": {
+          "label": "Tekst"
+        },
+        "target": {
+          "label": "Gdzie pokazać",
+          "options": {
+            "pc": "na komputerze",
+            "deck": "na panelu (telefon, tablet)",
+            "both": "w obu miejscach"
+          }
+        }
+      }
+    },
+    "http": {
+      "label": "Żądanie HTTP",
+      "fields": {
+        "method": {
+          "label": "Metoda",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "Adres",
+          "placeholder": "http://…"
+        },
+        "headers": {
+          "label": "Nagłówki (jeden wiersz na nagłówek: Nazwa: Wartość)"
+        },
+        "body": {
+          "label": "Treść"
+        },
+        "saveTo": {
+          "label": "Zapisz odpowiedź w wartości (puste = nie zapisuj)"
+        },
+        "jsonPath": {
+          "label": "Tylko to pole odpowiedzi JSON (np. data.0.name, puste = cała odpowiedź)"
+        }
+      }
+    },
+    "audio_output": {
+      "label": "Zmień wyjście dźwięku",
+      "fields": {
+        "target": {
+          "label": "Wyjście"
+        }
+      }
+    },
+    "audio_input": {
+      "label": "Zmień mikrofon",
+      "fields": {
+        "target": {
+          "label": "Wejście"
+        }
+      }
+    },
+    "screenshot": {
+      "label": "Zrzut ekranu",
+      "fields": {
+        "mode": {
+          "label": "Obszar",
+          "options": {
+            "dialog": "Otwórz okno dialogowe",
+            "full": "Cały ekran",
+            "window": "Aktywne okno",
+            "area": "Wybierz obszar"
+          }
+        }
+      }
+    },
+    "lock_screen": {
+      "label": "Zablokuj ekran"
+    },
+    "power": {
+      "label": "Zasilanie",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "suspend": "Uśpij",
+            "logout": "Wyloguj",
+            "reboot": "Uruchom ponownie",
+            "poweroff": "Wyłącz"
+          }
+        }
+      }
+    },
+    "night_light": {
+      "label": "Tryb nocny",
+      "fields": {
+        "mode": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Wł.",
+            "off": "Wył."
+          }
+        }
+      }
+    },
+    "dark_mode": {
+      "label": "Jasny / ciemny",
+      "fields": {
+        "mode": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Ciemny",
+            "off": "Jasny"
+          }
+        }
+      }
+    },
+    "wake_on_lan": {
+      "label": "Obudź komputer (Wake-on-LAN)",
+      "fields": {
+        "mac": {
+          "label": "Adres MAC",
+          "placeholder": "00:11:22:33:44:55"
+        }
+      }
+    },
+    "steam_game": {
+      "label": "Uruchom grę",
+      "fields": {
+        "game": {
+          "label": "Gra"
+        }
+      }
+    },
+    "steam_open": {
+      "label": "Otwórz Steam",
+      "fields": {
+        "view": {
+          "label": "Obszar",
+          "options": {
+            "library": "Biblioteka",
+            "downloads": "Pobieranie i aktualizacje",
+            "bigpicture": "Big Picture",
+            "friends": "Znajomi",
+            "store": "Sklep",
+            "screenshots": "Zrzuty ekranu"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "Zmień scenę",
+      "fields": {
+        "scene": {
+          "label": "Scena"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "Transmisja",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Start / stop",
+            "start": "Start",
+            "stop": "Stop"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "Nagrywanie",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Start / stop",
+            "start": "Start",
+            "stop": "Stop",
+            "pause": "Pauza wł./wył."
+          }
+        }
+      }
+    },
+    "obs_replay": {
+      "label": "Bufor powtórek",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "save": "Zapisz klip",
+            "toggle": "Bufor wł./wył."
+          }
+        }
+      }
+    },
+    "obs_mute": {
+      "label": "Wycisz źródło dźwięku",
+      "fields": {
+        "input": {
+          "label": "Źródło dźwięku"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "mute": "Wyciszone",
+            "unmute": "Włączone"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "Pokaż/ukryj źródło",
+      "fields": {
+        "item": {
+          "label": "Źródło"
+        },
+        "mode": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "show": "Pokaż",
+            "hide": "Ukryj"
+          }
+        }
+      }
+    },
+    "obs_misc": {
+      "label": "Tryb studia / wirtualna kamera",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "virtualcam": "Wirtualna kamera wł./wył.",
+            "studio": "Tryb studia wł./wył."
+          }
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "Ustaw scenę podglądu (tryb studia)",
+      "fields": {
+        "scene": {
+          "label": "Scena"
+        }
+      }
+    },
+    "obs_transition": {
+      "label": "Przejście",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "take": "Przenieś podgląd do programu (tryb studia)",
+            "set": "Wybierz przejście"
+          }
+        },
+        "transition": {
+          "label": "Przejście"
+        },
+        "duration": {
+          "label": "Czas w ms (0 = bez zmian)"
+        }
+      }
+    },
+    "obs_volume": {
+      "label": "Głośność źródła dźwięku",
+      "fields": {
+        "input": {
+          "label": "Źródło dźwięku"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "up": "Głośniej",
+            "down": "Ciszej",
+            "set": "Ustaw wartość"
+          }
+        },
+        "step": {
+          "label": "Krok w dB"
+        },
+        "value": {
+          "label": "Głośność w %"
+        }
+      }
+    },
+    "obs_media": {
+      "label": "Steruj źródłem multimediów",
+      "fields": {
+        "input": {
+          "label": "Źródło multimediów"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "playpause": "Odtwórz / pauza",
+            "restart": "Od początku",
+            "stop": "Stop",
+            "next": "Następne",
+            "previous": "Poprzednie"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "Włącz/wyłącz filtr",
+      "fields": {
+        "filter": {
+          "label": "Filtr"
+        },
+        "mode": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Włącz",
+            "off": "Wyłącz"
+          }
+        }
+      }
+    },
+    "obs_text": {
+      "label": "Ustaw tekst źródła tekstowego",
+      "fields": {
+        "input": {
+          "label": "Źródło tekstowe"
+        },
+        "text": {
+          "label": "Tekst ({Variable} zostanie zastąpione)"
+        }
+      }
+    },
+    "obs_browser": {
+      "label": "Źródło przeglądarki",
+      "fields": {
+        "input": {
+          "label": "Źródło przeglądarki"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "reload": "Odśwież",
+            "url": "Zmień adres"
+          }
+        },
+        "url": {
+          "label": "Adres",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "obs_image": {
+      "label": "Zmień obraz źródła obrazu",
+      "fields": {
+        "input": {
+          "label": "Źródło obrazu"
+        },
+        "file": {
+          "label": "Plik obrazu",
+          "placeholder": "~/Pictures/…png"
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "Zmień profil / kolekcję scen",
+      "fields": {
+        "kind": {
+          "label": "Co zmienić?",
+          "options": {
+            "profile": "Profil",
+            "collection": "Kolekcja scen"
+          }
+        },
+        "profile": {
+          "label": "Profil"
+        },
+        "collection": {
+          "label": "Kolekcja scen"
+        }
+      }
+    },
+    "obs_hotkey": {
+      "label": "Wywołaj skrót OBS",
+      "fields": {
+        "hotkey": {
+          "label": "Funkcja"
+        }
+      }
+    },
+    "obs_screenshot": {
+      "label": "Zrzut sceny/źródła",
+      "fields": {
+        "source": {
+          "label": "Scena lub źródło"
+        },
+        "folder": {
+          "label": "Folder",
+          "placeholder": "~/Pictures"
+        }
+      }
+    },
+    "obs_raw": {
+      "label": "Własne żądanie OBS (zaawansowane)",
+      "fields": {
+        "request": {
+          "label": "Żądanie (requestType)",
+          "placeholder": "np. SetInputMute"
+        },
+        "data": {
+          "label": "Dane jako JSON",
+          "placeholder": "{\"inputName\": \"Mic/Aux\", \"inputMuted\": true}"
+        }
+      }
+    },
+    "mouse_click": {
+      "label": "Kliknięcie myszą",
+      "fields": {
+        "button": {
+          "label": "Przycisk",
+          "options": {
+            "left": "Lewy",
+            "double": "Podwójne kliknięcie lewym",
+            "right": "Prawy",
+            "middle": "Środkowy",
+            "scrollup": "Kółko w górę",
+            "scrolldown": "Kółko w dół"
+          }
+        }
+      }
+    },
+    "mouse_move": {
+      "label": "Przesuń mysz",
+      "fields": {
+        "mode": {
+          "label": "Rodzaj",
+          "options": {
+            "abs": "Do pozycji na ekranie",
+            "rel": "O odległość"
+          }
+        },
+        "x": {
+          "label": "X"
+        },
+        "y": {
+          "label": "Y"
+        }
+      }
+    },
+    "key_hold": {
+      "label": "Przytrzymaj klawisz",
+      "fields": {
+        "keys": {
+          "label": "Klawisz(e)",
+          "placeholder": "w"
+        },
+        "ms": {
+          "label": "Czas w ms"
+        }
+      }
+    },
+    "window_activate": {
+      "label": "Przenieś okno na pierwszy plan",
+      "fields": {
+        "window": {
+          "label": "Program (klasa okna lub część tytułu)"
+        }
+      }
+    },
+    "kill_app": {
+      "label": "Zamknij program",
+      "fields": {
+        "name": {
+          "label": "Nazwa procesu",
+          "placeholder": "np. firefox"
+        },
+        "force": {
+          "label": "Wymuś natychmiast (bez zapisywania)"
+        }
+      }
+    },
+    "sound_play": {
+      "label": "Odtwórz dźwięk",
+      "fields": {
+        "file": {
+          "label": "Plik dźwiękowy (WAV, OGG, FLAC, MP3)",
+          "placeholder": "~/Music/sound.mp3"
+        },
+        "volume": {
+          "label": "Głośność w %"
+        },
+        "exclusive": {
+          "label": "Najpierw zatrzymaj inne dźwięki"
+        }
+      }
+    },
+    "sound_stop": {
+      "label": "Zatrzymaj wszystkie dźwięki"
+    },
+    "file_write": {
+      "label": "Zapisz do pliku",
+      "fields": {
+        "path": {
+          "label": "Plik",
+          "placeholder": "~/notes.txt"
+        },
+        "mode": {
+          "label": "Rodzaj",
+          "options": {
+            "append": "Dopisz jako nowy wiersz",
+            "write": "Nadpisz plik"
+          }
+        },
+        "text": {
+          "label": "Tekst ({Variable} i {Time} zostaną zastąpione)"
+        }
+      }
+    },
+    "var_set": {
+      "label": "Ustaw zmienną",
+      "fields": {
+        "name": {
+          "label": "Zmienna"
+        },
+        "value": {
+          "label": "Wartość ({Variable} i {Time} zostaną zastąpione)"
+        }
+      }
+    },
+    "var_change": {
+      "label": "Zmień licznik",
+      "fields": {
+        "name": {
+          "label": "Zmienna"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "add": "Zwiększ",
+            "sub": "Zmniejsz",
+            "reset": "Ustaw wartość początkową"
+          }
+        },
+        "amount": {
+          "label": "O / wartość początkowa"
+        }
+      }
+    },
+    "var_toggle": {
+      "label": "Przełącz zmienną wł./wył.",
+      "fields": {
+        "name": {
+          "label": "Zmienna"
+        }
+      }
+    },
+    "condition": {
+      "label": "Warunek: kontynuuj tylko, jeśli …",
+      "fields": {
+        "name": {
+          "label": "Zmienna lub symbol zastępczy (np. {Event.User})"
+        },
+        "op": {
+          "label": "Porównanie",
+          "options": {
+            "eq": "jest równe",
+            "ne": "nie jest równe",
+            "gt": "jest większe niż",
+            "ge": "jest większe lub równe",
+            "lt": "jest mniejsze niż",
+            "le": "jest mniejsze lub równe",
+            "contains": "zawiera",
+            "empty": "jest puste",
+            "not_empty": "nie jest puste"
+          }
+        },
+        "value": {
+          "label": "Wartość"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "Wyślij wiadomość na czat",
+      "fields": {
+        "message": {
+          "label": "Wiadomość (możliwe {Value} i {Event.X})"
+        }
+      }
+    },
+    "twitch_announcement": {
+      "label": "Ogłoszenie na czacie",
+      "fields": {
+        "message": {
+          "label": "Tekst"
+        },
+        "color": {
+          "label": "Kolor",
+          "options": {
+            "primary": "Kolor kanału",
+            "blue": "Niebieski",
+            "green": "Zielony",
+            "orange": "Pomarańczowy",
+            "purple": "Fioletowy"
+          }
+        }
+      }
+    },
+    "twitch_clip": {
+      "label": "Utwórz klip"
+    },
+    "twitch_marker": {
+      "label": "Ustaw znacznik transmisji",
+      "fields": {
+        "description": {
+          "label": "Opis (opcjonalnie)"
+        }
+      }
+    },
+    "twitch_channel": {
+      "label": "Zmień tytuł / kategorię",
+      "fields": {
+        "title": {
+          "label": "Nowy tytuł (puste = bez zmian)"
+        },
+        "game": {
+          "label": "Nowa kategoria/gra (puste = bez zmian)",
+          "placeholder": "np. RimWorld"
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "Uruchom reklamę",
+      "fields": {
+        "length": {
+          "label": "Długość",
+          "options": {
+            "30": "30 sekund",
+            "60": "60 sekund",
+            "90": "90 sekund",
+            "120": "120 sekund",
+            "150": "150 sekund",
+            "180": "180 sekund"
+          }
+        }
+      }
+    },
+    "twitch_chat_mode": {
+      "label": "Przełącz tryb czatu",
+      "fields": {
+        "mode": {
+          "label": "Tryb",
+          "options": {
+            "emote_mode": "Tylko emotki",
+            "follower_mode": "Tylko obserwujący",
+            "subscriber_mode": "Tylko subskrybenci",
+            "slow_mode": "Tryb powolny",
+            "unique_chat_mode": "Unikalny czat"
+          }
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Wł.",
+            "off": "Wył."
+          }
+        }
+      }
+    },
+    "twitch_shoutout": {
+      "label": "Shoutout",
+      "fields": {
+        "user": {
+          "label": "Kanał (nazwa na Twitchu, możliwe {Event.User})"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "Rozpocznij / anuluj raid",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "start": "Rozpocznij raid",
+            "cancel": "Anuluj raid"
+          }
+        },
+        "user": {
+          "label": "Kanał docelowy (nazwa na Twitchu)"
+        }
+      }
+    },
+    "twitch_reward": {
+      "label": "Nagroda za punkty kanału wł./wył.",
+      "fields": {
+        "reward": {
+          "label": "Nagroda (zmieniać można tylko nagrody utworzone przez TouchDeck)"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Włącz/wyłącz",
+            "pause": "Wstrzymaj/wznów"
+          }
+        }
+      }
+    },
+    "twitch_info": {
+      "label": "Zapisz informacje o kanale w wartościach"
+    },
+    "discord_mute": {
+      "label": "Wycisz mikrofon (Discord)",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Wyciszony",
+            "off": "Włączony"
+          }
+        }
+      }
+    },
+    "discord_deafen": {
+      "label": "Wycisz dźwięk (Discord)",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Dźwięk wyciszony",
+            "off": "Słychać"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "Dołącz do / opuść kanał głosowy",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "join": "Dołącz",
+            "toggle": "Dołącz / opuść",
+            "leave": "Opuść"
+          }
+        },
+        "channel": {
+          "label": "Kanał głosowy"
+        }
+      }
+    },
+    "discord_volume": {
+      "label": "Głośność (Discord)",
+      "fields": {
+        "target": {
+          "label": "Co?",
+          "options": {
+            "output": "Wyjście (słyszenie innych)",
+            "input": "Wejście (własny mikrofon)"
+          }
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "up": "Głośniej",
+            "down": "Ciszej",
+            "set": "Ustaw wartość"
+          }
+        },
+        "step": {
+          "label": "Krok"
+        },
+        "value": {
+          "label": "Wartość (wyjście 0–200, wejście 0–100)"
+        }
+      }
+    },
+    "discord_mode": {
+      "label": "Tryb głosowy (naciśnij, aby mówić)",
+      "fields": {
+        "op": {
+          "label": "Tryb",
+          "options": {
+            "toggle": "Przełącz",
+            "PUSH_TO_TALK": "Naciśnij, aby mówić",
+            "VOICE_ACTIVITY": "Aktywność głosowa"
+          }
+        }
+      }
+    },
+    "discord_webhook": {
+      "label": "Wyślij wiadomość na kanał (webhook)",
+      "fields": {
+        "url": {
+          "label": "URL webhooka (edytuj kanał → Integracje → Webhooki)",
+          "placeholder": "https://discord.com/api/webhooks/…"
+        },
+        "message": {
+          "label": "Wiadomość (możliwe {Value} i {Event.X})"
+        },
+        "username": {
+          "label": "Nazwa nadawcy (opcjonalnie)"
+        }
+      }
+    },
+    "run_flow": {
+      "label": "Uruchom przepływ",
+      "fields": {
+        "flow": {
+          "label": "Przepływ"
+        },
+        "times": {
+          "label": "Ile razy? (powtórz)"
+        },
+        "inputs": {
+          "label": "Wejścia przepływu (symbole zastępcze dozwolone)"
+        }
+      }
+    },
+    "stop": {
+      "label": "Stop (anuluj pozostałe akcje)"
+    },
+    "comment": {
+      "label": "Komentarz (nic nie robi)",
+      "fields": {
+        "text": {
+          "label": "Notatka"
+        }
+      }
+    },
+    "change_visuals": {
+      "label": "Zmień wygląd przycisku",
+      "fields": {
+        "target": {
+          "label": "Przycisk"
+        },
+        "title": {
+          "label": "Nowy napis (puste = bez zmian, możliwe {Value})"
+        },
+        "color": {
+          "label": "Nowy kolor tła (puste = bez zmian)"
+        },
+        "textColor": {
+          "label": "Nowy kolor tekstu (puste = bez zmian)"
+        },
+        "icon": {
+          "label": "Nowe emoji (puste = bez zmian)"
+        },
+        "image": {
+          "label": "Obraz jako ikona (zamiast emoji)"
+        },
+        "bgImage": {
+          "label": "Tekstura (obraz tła)"
+        },
+        "overlay": {
+          "label": "Nakładka",
+          "options": {
+            "keep": "nie zmieniaj",
+            "none": "brak",
+            "gloss": "Połysk",
+            "frame": "Ramka",
+            "stripes": "Paski",
+            "dots": "Kropki",
+            "vignette": "Winieta",
+            "glow": "Poświata"
+          }
+        }
+      }
+    },
+    "restore_visuals": {
+      "label": "Przywróć pierwotny wygląd",
+      "fields": {
+        "target": {
+          "label": "Przycisk"
+        }
+      }
+    },
+    "button_state": {
+      "label": "Ustaw stan przycisku (tylko wygląd)",
+      "fields": {
+        "target": {
+          "label": "Przycisk"
+        },
+        "op": {
+          "label": "Co",
+          "options": {
+            "next": "następny stan",
+            "prev": "poprzedni stan",
+            "set": "stan nr"
+          }
+        },
+        "index": {
+          "label": "Numer (dla „stan nr”)"
+        }
+      }
+    },
+    "button_visible": {
+      "label": "Pokaż / ukryj przycisk",
+      "fields": {
+        "target": {
+          "label": "Przycisk"
+        },
+        "op": {
+          "label": "Co",
+          "options": {
+            "show": "pokaż",
+            "hide": "ukryj",
+            "toggle": "przełącz"
+          }
+        },
+        "seconds": {
+          "label": "Tylko przez … sekund (0 = na stałe)"
+        }
+      }
+    },
+    "page_background": {
+      "label": "Zmień tło strony",
+      "fields": {
+        "page": {
+          "label": "Strona"
+        },
+        "color": {
+          "label": "Kolor (puste = pierwotny)"
+        }
+      }
+    },
+    "unsupported": {
+      "label": "Nieobsługiwane"
+    },
+    "random": {
+      "label": "Losowo: jedna z następnych akcji",
+      "fields": {
+        "count": {
+          "label": "Spośród ilu następnych akcji? (0 = wszystkie następne)"
+        }
+      }
+    },
+    "deck_show_page": {
+      "label": "Pokaż stronę na wszystkich urządzeniach",
+      "fields": {
+        "page": {
+          "label": "Strona"
+        }
+      }
+    },
+    "timer": {
+      "label": "Minutnik (odliczanie / stoper)",
+      "fields": {
+        "name": {
+          "label": "Nazwa minutnika"
+        },
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "toggle": "start / pauza",
+            "start": "start",
+            "stop": "pauza",
+            "reset": "wyzeruj",
+            "alarm": "Alarm: odliczaj do godziny"
+          }
+        },
+        "minutes": {
+          "label": "Minuty (0 min i 0 s = stoper)"
+        },
+        "seconds": {
+          "label": "Sekundy"
+        },
+        "time": {
+          "label": "Godzina alarmu (GG:MM)",
+          "placeholder": "07:30"
+        }
+      }
+    },
+    "if": {
+      "label": "Jeśli …",
+      "fields": {
+        "name": {
+          "label": "Zmienna lub symbol zastępczy (np. {Event.User})"
+        },
+        "op": {
+          "label": "Porównanie",
+          "options": {
+            "eq": "jest równe",
+            "ne": "nie jest równe",
+            "gt": "jest większe niż",
+            "ge": "jest większe lub równe",
+            "lt": "jest mniejsze niż",
+            "le": "jest mniejsze lub równe",
+            "contains": "zawiera",
+            "empty": "jest puste",
+            "not_empty": "nie jest puste"
+          }
+        },
+        "value": {
+          "label": "Wartość"
+        }
+      }
+    },
+    "else_if": {
+      "label": "W przeciwnym razie, jeśli …",
+      "fields": {
+        "name": {
+          "label": "Zmienna lub symbol zastępczy (np. {Event.User})"
+        },
+        "op": {
+          "label": "Porównanie",
+          "options": {
+            "eq": "jest równe",
+            "ne": "nie jest równe",
+            "gt": "jest większe niż",
+            "ge": "jest większe lub równe",
+            "lt": "jest mniejsze niż",
+            "le": "jest mniejsze lub równe",
+            "contains": "zawiera",
+            "empty": "jest puste",
+            "not_empty": "nie jest puste"
+          }
+        },
+        "value": {
+          "label": "Wartość"
+        }
+      }
+    },
+    "while": {
+      "label": "Dopóki …",
+      "fields": {
+        "name": {
+          "label": "Zmienna lub symbol zastępczy (np. {Event.User})"
+        },
+        "op": {
+          "label": "Porównanie",
+          "options": {
+            "eq": "jest równe",
+            "ne": "nie jest równe",
+            "gt": "jest większe niż",
+            "ge": "jest większe lub równe",
+            "lt": "jest mniejsze niż",
+            "le": "jest mniejsze lub równe",
+            "contains": "zawiera",
+            "empty": "jest puste",
+            "not_empty": "nie jest puste"
+          }
+        },
+        "value": {
+          "label": "Wartość"
+        }
+      }
+    },
+    "else": {
+      "label": "W przeciwnym razie"
+    },
+    "end": {
+      "label": "Koniec (jeśli / pętla)"
+    },
+    "break": {
+      "label": "Wyjdź z pętli"
+    },
+    "repeat": {
+      "label": "Powtórz (n razy)",
+      "fields": {
+        "count": {
+          "label": "Ile razy? (bieżąca runda: {Event.Loop})"
+        }
+      }
+    },
+    "var_calc": {
+      "label": "Oblicz wartość",
+      "fields": {
+        "name": {
+          "label": "Wynik w wartości"
+        },
+        "expr": {
+          "label": "Obliczenie (np. ({Goals} + 1) * 2, round(x), min(a; b), max(a; b), abs(x))",
+          "placeholder": "{Goals} + 1"
+        },
+        "decimals": {
+          "label": "Najwyżej tyle miejsc po przecinku"
+        }
+      }
+    },
+    "key_sequence": {
+      "label": "Sekwencja klawiszy (nagrana)",
+      "fields": {
+        "steps": {
+          "label": "Klawisze i pauzy, jeden wiersz na krok (np. ctrl+c, 250ms, ctrl+v)"
+        },
+        "speed": {
+          "label": "Szybkość w % (200 = dwa razy szybciej)"
+        }
+      }
+    },
+    "clipboard_set": {
+      "label": "Kopiuj do schowka",
+      "fields": {
+        "text": {
+          "label": "Tekst (symbole zastępcze dozwolone)"
+        },
+        "paste": {
+          "label": "Potem wklej (Ctrl+V)"
+        }
+      }
+    },
+    "clipboard_get": {
+      "label": "Zapisz schowek w wartości",
+      "fields": {
+        "saveTo": {
+          "label": "Wartość"
+        }
+      }
+    },
+    "screen": {
+      "label": "Ekran (wyłącz / jasność)",
+      "fields": {
+        "op": {
+          "label": "Akcja",
+          "options": {
+            "off": "wyłącz (mysz go budzi)",
+            "brightness": "ustaw jasność"
+          }
+        },
+        "percent": {
+          "label": "Jasność w %"
+        }
+      }
+    }
+  },
+  "triggers": {
+    "value_change": {
+      "label": "Wartość się zmienia",
+      "fields": {
+        "name": {
+          "label": "Wartość"
+        },
+        "op": {
+          "label": "Kiedy?",
+          "options": {
+            "any": "przy każdej zmianie",
+            "eq": "staje się równa",
+            "ne": "staje się różna",
+            "gt": "staje się większa niż",
+            "lt": "staje się mniejsza niż",
+            "contains": "zawiera"
+          }
+        },
+        "value": {
+          "label": "Wartość porównania"
+        }
+      }
+    },
+    "app_start": {
+      "label": "TouchDeck się uruchamia"
+    },
+    "timer": {
+      "label": "Minutnik (cykliczny)",
+      "fields": {
+        "seconds": {
+          "label": "Co … sekund"
+        }
+      }
+    },
+    "time_of_day": {
+      "label": "Osiągnięto godzinę",
+      "fields": {
+        "time": {
+          "label": "Godzina (GG:MM, kilka po przecinku: 08:00, 18:30)",
+          "placeholder": "18:30"
+        },
+        "days": {
+          "label": "Dni",
+          "options": {
+            "all": "codziennie",
+            "weekdays": "pon.–pt.",
+            "weekend": "sob. i niedz.",
+            "pick": "wybrane dni"
+          }
+        },
+        "d_mon": {
+          "label": "Poniedziałek"
+        },
+        "d_tue": {
+          "label": "Wtorek"
+        },
+        "d_wed": {
+          "label": "Środa"
+        },
+        "d_thu": {
+          "label": "Czwartek"
+        },
+        "d_fri": {
+          "label": "Piątek"
+        },
+        "d_sat": {
+          "label": "Sobota"
+        },
+        "d_sun": {
+          "label": "Niedziela"
+        },
+        "monthday": {
+          "label": "Tylko w tym dniu miesiąca (0 = dowolny)"
+        }
+      }
+    },
+    "file_change": {
+      "label": "Plik się zmienia",
+      "fields": {
+        "path": {
+          "label": "Plik",
+          "placeholder": "~/status.txt"
+        }
+      }
+    },
+    "device": {
+      "label": "Telefon łączy się/rozłącza",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "connected": "połączony",
+            "disconnected": "rozłączony",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "button_toggle": {
+      "label": "Przełącznik włączony/wyłączony",
+      "fields": {
+        "button": {
+          "label": "Przycisk"
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "on": "wł.",
+            "off": "wył.",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "audio_output": {
+      "label": "Zmienia się wyjście dźwięku",
+      "fields": {
+        "device": {
+          "label": "Na urządzenie (puste = dowolne)"
+        }
+      }
+    },
+    "pc_lock": {
+      "label": "Komputer zablokowany / odblokowany",
+      "fields": {
+        "state": {
+          "label": "Kiedy",
+          "options": {
+            "locked": "zablokowany",
+            "unlocked": "odblokowany",
+            "any": "oba"
+          }
+        }
+      }
+    },
+    "audio_mute": {
+      "label": "Dźwięk lub mikrofon wyciszony/włączony",
+      "fields": {
+        "target": {
+          "label": "Co?",
+          "options": {
+            "output": "Dźwięk (wyjście)",
+            "input": "Mikrofon (wejście)"
+          }
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "muted": "wyciszony",
+            "unmuted": "włączony",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "steam_game": {
+      "label": "Gra się zaczyna/kończy",
+      "fields": {
+        "game": {
+          "label": "Gra (puste = dowolna)"
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "started": "zaczyna się",
+            "stopped": "kończy się",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "Zmienia się scena",
+      "fields": {
+        "scene": {
+          "label": "Na scenę (puste = dowolna)"
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "Zmienia się scena podglądu",
+      "fields": {
+        "scene": {
+          "label": "Na scenę (puste = dowolna)"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "Transmisja startuje/kończy się",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "started": "startuje",
+            "stopped": "kończy się",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "Nagrywanie startuje/kończy się/pauzuje",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "started": "startuje",
+            "stopped": "kończy się",
+            "paused": "pauzuje",
+            "resumed": "wznawia",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_replay_saved": {
+      "label": "Klip zapisany"
+    },
+    "obs_mute": {
+      "label": "Źródło dźwięku wyciszone/włączone",
+      "fields": {
+        "input": {
+          "label": "Źródło dźwięku (puste = dowolne)"
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "muted": "wyciszone",
+            "unmuted": "włączone",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "Źródło pokazane/ukryte",
+      "fields": {
+        "item": {
+          "label": "Źródło"
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "shown": "pokazane",
+            "hidden": "ukryte",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "Filtr wł./wył.",
+      "fields": {
+        "filter": {
+          "label": "Filtr"
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "on": "wł.",
+            "off": "wył.",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_studio": {
+      "label": "Tryb studia wł./wył.",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "on": "wł.",
+            "off": "wył.",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "Zmienia się profil/kolekcja scen",
+      "fields": {
+        "kind": {
+          "label": "Co?",
+          "options": {
+            "any": "dowolne",
+            "profile": "Profil",
+            "collection": "Kolekcja scen"
+          }
+        }
+      }
+    },
+    "obs_connection": {
+      "label": "OBS połączony/rozłączony",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "connected": "połączony",
+            "disconnected": "rozłączony",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "twitch_follow": {
+      "label": "Nowy obserwujący"
+    },
+    "twitch_sub": {
+      "label": "Subskrypcja (nowa, odnowiona, podarowana)",
+      "fields": {
+        "kind": {
+          "label": "Rodzaj",
+          "options": {
+            "any": "dowolna",
+            "new": "nowa subskrypcja",
+            "resub": "odnowiona",
+            "gift": "podarowana"
+          }
+        }
+      }
+    },
+    "twitch_cheer": {
+      "label": "Bitsy",
+      "fields": {
+        "min": {
+          "label": "Od ilu bitsów?"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "Raid",
+      "fields": {
+        "min": {
+          "label": "Od ilu widzów?"
+        }
+      }
+    },
+    "twitch_redeem": {
+      "label": "Wymieniono punkty kanału",
+      "fields": {
+        "reward": {
+          "label": "Nagroda (tytuł, puste = dowolna)"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "Wiadomość na czacie / polecenie",
+      "fields": {
+        "mode": {
+          "label": "Kiedy?",
+          "options": {
+            "command": "Wiadomość zaczyna się od",
+            "contains": "Wiadomość zawiera",
+            "any": "dowolna wiadomość"
+          }
+        },
+        "text": {
+          "label": "Tekst (np. !scena)"
+        },
+        "who": {
+          "label": "Od kogo?",
+          "options": {
+            "all": "od wszystkich",
+            "mod": "tylko moderatorzy i ty",
+            "sub": "tylko subskrybenci"
+          }
+        }
+      }
+    },
+    "twitch_stream": {
+      "label": "Transmisja online/offline",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "online": "online",
+            "offline": "offline",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "Zaczyna się przerwa reklamowa"
+    },
+    "discord_voice": {
+      "label": "Wyciszony / dźwięk wyciszony",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "muted": "wyciszony",
+            "unmuted": "mikrofon znów włączony",
+            "deafened": "dźwięk wyciszony",
+            "undeafened": "znów słychać",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "Dołączenie do / opuszczenie kanału głosowego",
+      "fields": {
+        "state": {
+          "label": "Stan",
+          "options": {
+            "joined": "dołączono",
+            "left": "opuszczono",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "page_view": {
+      "label": "Strona otwarta / opuszczona",
+      "fields": {
+        "page": {
+          "label": "Strona (puste = dowolna; w logice strony: ta strona)"
+        },
+        "state": {
+          "label": "Stan",
+          "options": {
+            "open": "otwarta",
+            "leave": "opuszczona",
+            "any": "dowolny"
+          }
+        }
+      }
+    },
+    "app_focus": {
+      "label": "Program na pierwszym planie",
+      "fields": {
+        "app": {
+          "label": "Program (puste = dowolny; wystarczy część nazwy, np. obs)"
+        },
+        "once": {
+          "label": "Tylko za pierwszym razem (ponownie dopiero po zamknięciu i ponownym uruchomieniu programu)"
+        }
+      }
+    },
+    "timer_done": {
+      "label": "Minutnik skończył",
+      "fields": {
+        "name": {
+          "label": "Nazwa minutnika (puste = dowolny)"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Skrót naciśnięty na komputerze",
+      "fields": {
+        "keys": {
+          "label": "Skrót (działa wszędzie na komputerze pod X11, także gdy TouchDeck jest w tle; symbol zastępczy {Event.Keys})"
+        }
+      }
+    }
+  },
+  "liveSources": {
+    "none": "Brak",
+    "clock": "Zegar",
+    "date": "Data",
+    "cpu": "Użycie procesora",
+    "ram": "Pamięć",
+    "temp": "Temperatura procesora",
+    "volume": "Głośność",
+    "mic": "Mikrofon wyciszony?",
+    "track": "Bieżący utwór",
+    "steam_updates": "Aktualizacje Steam",
+    "steam_running": "Gra działa (z akcji)",
+    "obs_stream": "OBS: trwa transmisja?",
+    "obs_record": "OBS: trwa nagrywanie?",
+    "obs_scene": "OBS: scena aktywna? (z akcji)",
+    "twitch_live": "Twitch: na żywo?",
+    "twitch_viewers": "Twitch: widzowie",
+    "twitch_followers": "Twitch: obserwujący",
+    "discord_mute": "Discord: wyciszony?",
+    "discord_deaf": "Discord: dźwięk wyciszony?",
+    "discord_channel": "Discord: kanał głosowy",
+    "variable": "Wartość zmiennej",
+    "command": "Wynik polecenia",
+    "timer": "Minutnik (pozostały czas) – wpisz nazwę poniżej",
+    "page_indicator": "Wskaźnik strony (●○○)",
+    "gpu_temp": "Temperatura karty graficznej",
+    "gpu_load": "Obciążenie karty graficznej",
+    "disk": "Użycie dysku (/)",
+    "net": "Sieć ↓ / ↑",
+    "uptime": "Komputer działa od"
+  },
+  "sliderTargets": {
+    "volume": "Głośność (komputer)",
+    "mic": "Poziom mikrofonu",
+    "obs_volume": "Źródło dźwięku OBS",
+    "command": "Własne polecenie ({value} = 0–100)"
+  }
+}

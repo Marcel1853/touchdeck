@@ -1,5 +1,5 @@
 // Bereich „Einstellungen“: Allgemein, Handy & Sicherheit, Bedienfeld, Aussehen, Integrationen, Backups, Protokoll, Information.
-import { t as tr } from '/shared/i18n.js';
+import { t as tr, getLang, LANGUAGES, LANGUAGE_NAMES } from '/shared/i18n.js';
 import { h, api, toast, ask, segmented, saveFile } from '../dom.js';
 import { S, render, loadState } from '../state.js';
 import { dynamicSelect } from '../actions-ui.js';
@@ -69,9 +69,10 @@ function general() {
     ...title(tr('settings.general')),
     card(
       h('div', { class: 'field' }, tr('settings.spracheLanguage'),
-        segmented([['de', 'Deutsch'], ['en', 'English']], st.language ?? 'de', async (v) => {
+        h('select', { value: st.language ?? 'de', onchange: async (e) => {
+          const v = e.target.value;
           if (v !== st.language && await updateSettings({ language: v })) location.reload();
-        })),
+        } }, LANGUAGES.map((l) => h('option', { value: l }, LANGUAGE_NAMES[l])))),
       h('p', { class: 'hint-text' }, tr('settings.appliesToEditorDeck'))),
     card(
       h('label', { class: 'field' }, tr('settings.startPageOnPhone'),
@@ -494,7 +495,7 @@ function backupsSection() {
       !backups ? h('p', { class: 'muted-note' }, tr('common.loading'))
         : !backups.length ? h('p', { class: 'muted-note' }, tr('settings.noBackupsYet'))
           : h('table', { class: 'values-table' }, h('tbody', {}, backups.map((bk) => h('tr', {},
-            h('td', {}, new Date(bk.time).toLocaleString('de-DE')),
+            h('td', {}, new Date(bk.time).toLocaleString(getLang())),
             h('td', {}, bk.note || '–'),
             h('td', {}, tr('settings.kb', [Math.round(bk.size / 1024)])),
             h('td', { class: 'right' },

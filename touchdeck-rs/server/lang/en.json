@@ -158,7 +158,10 @@
     "running": "Running",
     "twitchOff": "Twitch off",
     "unknown": "Unknown",
-    "unknownTargetForSlider": "Unknown target for the slider."
+    "unknownTargetForSlider": "Unknown target for the slider.",
+    "dateFormat": "{0}, {2} {1}",
+    "weekdays": "Mon|Tue|Wed|Thu|Fri|Sat|Sun",
+    "months": "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
   },
   "plugins": {
     "advancedModeTurnedOn": "Advanced mode turned on – plugins with full rights are allowed.",

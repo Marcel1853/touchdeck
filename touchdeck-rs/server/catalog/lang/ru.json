@@ -1,0 +1,1787 @@
+{
+  "categories": {
+    "run": "Запуск",
+    "input": "Ввод",
+    "media": "Медиа",
+    "audio": "Звук",
+    "navigation": "Навигация",
+    "logic": "Логика",
+    "services": "Сервисы",
+    "http": "HTTP",
+    "steam": "Steam",
+    "obsStudio": "OBS Studio",
+    "soundboard": "Звуковая панель",
+    "files": "Файлы",
+    "values": "Значения",
+    "twitch": "Twitch",
+    "discord": "Discord",
+    "visuals": "Внешний вид",
+    "other": "Прочее",
+    "general": "Общее"
+  },
+  "groups": {
+    "general": "Общее",
+    "audioMusicMedia": "Звук, музыка и медиа",
+    "games": "Игры",
+    "streaming": "Стриминг",
+    "communication": "Общение",
+    "other": "Прочее"
+  },
+  "actions": {
+    "open_url": {
+      "label": "Открыть сайт",
+      "fields": {
+        "url": {
+          "label": "Адрес",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "open_path": {
+      "label": "Открыть файл или папку",
+      "fields": {
+        "path": {
+          "label": "Путь",
+          "placeholder": "~/Documents"
+        }
+      }
+    },
+    "launch_app": {
+      "label": "Запустить программу",
+      "fields": {
+        "app": {
+          "label": "Программа"
+        }
+      }
+    },
+    "run_command": {
+      "label": "Выполнить команду",
+      "fields": {
+        "command": {
+          "label": "Команда",
+          "placeholder": "например, gnome-screenshot -i"
+        },
+        "wait": {
+          "label": "Дождаться завершения и показать вывод"
+        },
+        "saveTo": {
+          "label": "Сохранить вывод в значение (пусто = не сохранять)"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Нажать сочетание клавиш",
+      "fields": {
+        "keys": {
+          "label": "Сочетание клавиш",
+          "placeholder": "ctrl+shift+s"
+        },
+        "window": {
+          "label": "Отправить этой программе (пусто = активное окно)"
+        },
+        "back": {
+          "label": "Затем вернуться в предыдущее окно"
+        }
+      }
+    },
+    "type_text": {
+      "label": "Ввести текст",
+      "fields": {
+        "text": {
+          "label": "Текст"
+        }
+      }
+    },
+    "media": {
+      "label": "Управление медиа",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "play-pause": "Воспроизведение / пауза",
+            "next": "Следующий трек",
+            "previous": "Предыдущий трек",
+            "stop": "Стоп"
+          }
+        }
+      }
+    },
+    "volume": {
+      "label": "Громкость",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "up": "Громче",
+            "down": "Тише",
+            "set": "Установить значение",
+            "mute": "Без звука вкл./выкл."
+          }
+        },
+        "step": {
+          "label": "Шаг в %"
+        },
+        "value": {
+          "label": "Громкость в %"
+        }
+      }
+    },
+    "mic_mute": {
+      "label": "Выключить микрофон",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "mute": "Выключен",
+            "unmute": "Включён"
+          }
+        }
+      }
+    },
+    "go_page": {
+      "label": "Сменить страницу",
+      "fields": {
+        "page": {
+          "label": "Целевая страница"
+        }
+      }
+    },
+    "delay": {
+      "label": "Подождать",
+      "fields": {
+        "ms": {
+          "label": "Миллисекунды"
+        }
+      }
+    },
+    "notify": {
+      "label": "Показать уведомление",
+      "fields": {
+        "title": {
+          "label": "Заголовок"
+        },
+        "body": {
+          "label": "Текст"
+        },
+        "target": {
+          "label": "Где показать",
+          "options": {
+            "pc": "на ПК",
+            "deck": "на панели (телефон, планшет)",
+            "both": "везде"
+          }
+        }
+      }
+    },
+    "http": {
+      "label": "HTTP-запрос",
+      "fields": {
+        "method": {
+          "label": "Метод",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "Адрес",
+          "placeholder": "http://…"
+        },
+        "headers": {
+          "label": "Заголовки (одна строка на заголовок: Имя: Значение)"
+        },
+        "body": {
+          "label": "Тело"
+        },
+        "saveTo": {
+          "label": "Сохранить ответ в значение (пусто = не сохранять)"
+        },
+        "jsonPath": {
+          "label": "Только это поле ответа JSON (например, data.0.name, пусто = весь ответ)"
+        }
+      }
+    },
+    "audio_output": {
+      "label": "Сменить аудиовыход",
+      "fields": {
+        "target": {
+          "label": "Выход"
+        }
+      }
+    },
+    "audio_input": {
+      "label": "Сменить микрофон",
+      "fields": {
+        "target": {
+          "label": "Вход"
+        }
+      }
+    },
+    "screenshot": {
+      "label": "Снимок экрана",
+      "fields": {
+        "mode": {
+          "label": "Область",
+          "options": {
+            "dialog": "Открыть диалог",
+            "full": "Весь экран",
+            "window": "Активное окно",
+            "area": "Выбрать область"
+          }
+        }
+      }
+    },
+    "lock_screen": {
+      "label": "Заблокировать экран"
+    },
+    "power": {
+      "label": "Питание",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "suspend": "Ждущий режим",
+            "logout": "Выйти из системы",
+            "reboot": "Перезагрузить",
+            "poweroff": "Выключить"
+          }
+        }
+      }
+    },
+    "night_light": {
+      "label": "Ночной свет",
+      "fields": {
+        "mode": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "on": "Вкл.",
+            "off": "Выкл."
+          }
+        }
+      }
+    },
+    "dark_mode": {
+      "label": "Светлая / тёмная тема",
+      "fields": {
+        "mode": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "on": "Тёмная",
+            "off": "Светлая"
+          }
+        }
+      }
+    },
+    "wake_on_lan": {
+      "label": "Разбудить компьютер (Wake-on-LAN)",
+      "fields": {
+        "mac": {
+          "label": "MAC-адрес",
+          "placeholder": "00:11:22:33:44:55"
+        }
+      }
+    },
+    "steam_game": {
+      "label": "Запустить игру",
+      "fields": {
+        "game": {
+          "label": "Игра"
+        }
+      }
+    },
+    "steam_open": {
+      "label": "Открыть Steam",
+      "fields": {
+        "view": {
+          "label": "Раздел",
+          "options": {
+            "library": "Библиотека",
+            "downloads": "Загрузки и обновления",
+            "bigpicture": "Big Picture",
+            "friends": "Друзья",
+            "store": "Магазин",
+            "screenshots": "Скриншоты"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "Сменить сцену",
+      "fields": {
+        "scene": {
+          "label": "Сцена"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "Трансляция",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Начать / остановить",
+            "start": "Начать",
+            "stop": "Остановить"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "Запись",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Начать / остановить",
+            "start": "Начать",
+            "stop": "Остановить",
+            "pause": "Пауза вкл./выкл."
+          }
+        }
+      }
+    },
+    "obs_replay": {
+      "label": "Буфер повтора",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "save": "Сохранить клип",
+            "toggle": "Буфер вкл./выкл."
+          }
+        }
+      }
+    },
+    "obs_mute": {
+      "label": "Выключить источник звука",
+      "fields": {
+        "input": {
+          "label": "Источник звука"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "mute": "Выключен",
+            "unmute": "Включён"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "Показать/скрыть источник",
+      "fields": {
+        "item": {
+          "label": "Источник"
+        },
+        "mode": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "show": "Показать",
+            "hide": "Скрыть"
+          }
+        }
+      }
+    },
+    "obs_misc": {
+      "label": "Режим студии / виртуальная камера",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "virtualcam": "Виртуальная камера вкл./выкл.",
+            "studio": "Режим студии вкл./выкл."
+          }
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "Задать сцену предпросмотра (режим студии)",
+      "fields": {
+        "scene": {
+          "label": "Сцена"
+        }
+      }
+    },
+    "obs_transition": {
+      "label": "Переход",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "take": "Отправить предпросмотр в эфир (режим студии)",
+            "set": "Выбрать переход"
+          }
+        },
+        "transition": {
+          "label": "Переход"
+        },
+        "duration": {
+          "label": "Длительность в мс (0 = без изменений)"
+        }
+      }
+    },
+    "obs_volume": {
+      "label": "Громкость источника звука",
+      "fields": {
+        "input": {
+          "label": "Источник звука"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "up": "Громче",
+            "down": "Тише",
+            "set": "Установить значение"
+          }
+        },
+        "step": {
+          "label": "Шаг в дБ"
+        },
+        "value": {
+          "label": "Громкость в %"
+        }
+      }
+    },
+    "obs_media": {
+      "label": "Управлять медиаисточником",
+      "fields": {
+        "input": {
+          "label": "Медиаисточник"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "playpause": "Воспроизведение / пауза",
+            "restart": "Сначала",
+            "stop": "Стоп",
+            "next": "Следующий",
+            "previous": "Предыдущий"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "Включить/выключить фильтр",
+      "fields": {
+        "filter": {
+          "label": "Фильтр"
+        },
+        "mode": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "on": "Включить",
+            "off": "Выключить"
+          }
+        }
+      }
+    },
+    "obs_text": {
+      "label": "Задать текст текстового источника",
+      "fields": {
+        "input": {
+          "label": "Текстовый источник"
+        },
+        "text": {
+          "label": "Текст ({Variable} заменяется)"
+        }
+      }
+    },
+    "obs_browser": {
+      "label": "Источник браузера",
+      "fields": {
+        "input": {
+          "label": "Источник браузера"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "reload": "Обновить",
+            "url": "Сменить адрес"
+          }
+        },
+        "url": {
+          "label": "Адрес",
+          "placeholder": "https://…"
+        }
+      }
+    },
+    "obs_image": {
+      "label": "Сменить изображение источника изображения",
+      "fields": {
+        "input": {
+          "label": "Источник изображения"
+        },
+        "file": {
+          "label": "Файл изображения",
+          "placeholder": "~/Pictures/…png"
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "Сменить профиль / коллекцию сцен",
+      "fields": {
+        "kind": {
+          "label": "Что сменить?",
+          "options": {
+            "profile": "Профиль",
+            "collection": "Коллекция сцен"
+          }
+        },
+        "profile": {
+          "label": "Профиль"
+        },
+        "collection": {
+          "label": "Коллекция сцен"
+        }
+      }
+    },
+    "obs_hotkey": {
+      "label": "Вызвать горячую клавишу OBS",
+      "fields": {
+        "hotkey": {
+          "label": "Функция"
+        }
+      }
+    },
+    "obs_screenshot": {
+      "label": "Снимок сцены/источника",
+      "fields": {
+        "source": {
+          "label": "Сцена или источник"
+        },
+        "folder": {
+          "label": "Папка",
+          "placeholder": "~/Pictures"
+        }
+      }
+    },
+    "obs_raw": {
+      "label": "Свой запрос к OBS (для опытных)",
+      "fields": {
+        "request": {
+          "label": "Запрос (requestType)",
+          "placeholder": "например, SetInputMute"
+        },
+        "data": {
+          "label": "Данные в JSON",
+          "placeholder": "{\"inputName\": \"Mic/Aux\", \"inputMuted\": true}"
+        }
+      }
+    },
+    "mouse_click": {
+      "label": "Щелчок мышью",
+      "fields": {
+        "button": {
+          "label": "Кнопка",
+          "options": {
+            "left": "Левая",
+            "double": "Двойной щелчок левой",
+            "right": "Правая",
+            "middle": "Средняя",
+            "scrollup": "Колесо вверх",
+            "scrolldown": "Колесо вниз"
+          }
+        }
+      }
+    },
+    "mouse_move": {
+      "label": "Переместить мышь",
+      "fields": {
+        "mode": {
+          "label": "Тип",
+          "options": {
+            "abs": "В точку на экране",
+            "rel": "На расстояние"
+          }
+        },
+        "x": {
+          "label": "X"
+        },
+        "y": {
+          "label": "Y"
+        }
+      }
+    },
+    "key_hold": {
+      "label": "Удерживать клавишу",
+      "fields": {
+        "keys": {
+          "label": "Клавиша(и)",
+          "placeholder": "w"
+        },
+        "ms": {
+          "label": "Длительность в мс"
+        }
+      }
+    },
+    "window_activate": {
+      "label": "Вывести окно на передний план",
+      "fields": {
+        "window": {
+          "label": "Программа (класс окна или часть заголовка)"
+        }
+      }
+    },
+    "kill_app": {
+      "label": "Закрыть программу",
+      "fields": {
+        "name": {
+          "label": "Имя процесса",
+          "placeholder": "например, firefox"
+        },
+        "force": {
+          "label": "Принудительно сразу (без сохранения)"
+        }
+      }
+    },
+    "sound_play": {
+      "label": "Воспроизвести звук",
+      "fields": {
+        "file": {
+          "label": "Аудиофайл (WAV, OGG, FLAC, MP3)",
+          "placeholder": "~/Music/sound.mp3"
+        },
+        "volume": {
+          "label": "Громкость в %"
+        },
+        "exclusive": {
+          "label": "Сначала остановить другие звуки"
+        }
+      }
+    },
+    "sound_stop": {
+      "label": "Остановить все звуки"
+    },
+    "file_write": {
+      "label": "Записать в файл",
+      "fields": {
+        "path": {
+          "label": "Файл",
+          "placeholder": "~/notes.txt"
+        },
+        "mode": {
+          "label": "Тип",
+          "options": {
+            "append": "Добавить новой строкой",
+            "write": "Перезаписать файл"
+          }
+        },
+        "text": {
+          "label": "Текст ({Variable} и {Time} заменяются)"
+        }
+      }
+    },
+    "var_set": {
+      "label": "Задать переменную",
+      "fields": {
+        "name": {
+          "label": "Переменная"
+        },
+        "value": {
+          "label": "Значение ({Variable} и {Time} заменяются)"
+        }
+      }
+    },
+    "var_change": {
+      "label": "Изменить счётчик",
+      "fields": {
+        "name": {
+          "label": "Переменная"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "add": "Увеличить",
+            "sub": "Уменьшить",
+            "reset": "Сбросить к начальному значению"
+          }
+        },
+        "amount": {
+          "label": "На / начальное значение"
+        }
+      }
+    },
+    "var_toggle": {
+      "label": "Переключить переменную вкл./выкл.",
+      "fields": {
+        "name": {
+          "label": "Переменная"
+        }
+      }
+    },
+    "condition": {
+      "label": "Условие: продолжать, только если …",
+      "fields": {
+        "name": {
+          "label": "Переменная или подстановка (например, {Event.User})"
+        },
+        "op": {
+          "label": "Сравнение",
+          "options": {
+            "eq": "равно",
+            "ne": "не равно",
+            "gt": "больше",
+            "ge": "больше или равно",
+            "lt": "меньше",
+            "le": "меньше или равно",
+            "contains": "содержит",
+            "empty": "пусто",
+            "not_empty": "не пусто"
+          }
+        },
+        "value": {
+          "label": "Значение"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "Отправить сообщение в чат",
+      "fields": {
+        "message": {
+          "label": "Сообщение (можно {Value} и {Event.X})"
+        }
+      }
+    },
+    "twitch_announcement": {
+      "label": "Объявление в чате",
+      "fields": {
+        "message": {
+          "label": "Текст"
+        },
+        "color": {
+          "label": "Цвет",
+          "options": {
+            "primary": "Цвет канала",
+            "blue": "Синий",
+            "green": "Зелёный",
+            "orange": "Оранжевый",
+            "purple": "Фиолетовый"
+          }
+        }
+      }
+    },
+    "twitch_clip": {
+      "label": "Создать клип"
+    },
+    "twitch_marker": {
+      "label": "Поставить маркер трансляции",
+      "fields": {
+        "description": {
+          "label": "Описание (необязательно)"
+        }
+      }
+    },
+    "twitch_channel": {
+      "label": "Изменить название / категорию",
+      "fields": {
+        "title": {
+          "label": "Новое название (пусто = без изменений)"
+        },
+        "game": {
+          "label": "Новая категория/игра (пусто = без изменений)",
+          "placeholder": "например, RimWorld"
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "Запустить рекламу",
+      "fields": {
+        "length": {
+          "label": "Длительность",
+          "options": {
+            "30": "30 секунд",
+            "60": "60 секунд",
+            "90": "90 секунд",
+            "120": "120 секунд",
+            "150": "150 секунд",
+            "180": "180 секунд"
+          }
+        }
+      }
+    },
+    "twitch_chat_mode": {
+      "label": "Переключить режим чата",
+      "fields": {
+        "mode": {
+          "label": "Режим",
+          "options": {
+            "emote_mode": "Только смайлы",
+            "follower_mode": "Только фолловеры",
+            "subscriber_mode": "Только подписчики",
+            "slow_mode": "Медленный режим",
+            "unique_chat_mode": "Уникальный чат"
+          }
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "on": "Вкл.",
+            "off": "Выкл."
+          }
+        }
+      }
+    },
+    "twitch_shoutout": {
+      "label": "Шаутаут",
+      "fields": {
+        "user": {
+          "label": "Канал (имя на Twitch, можно {Event.User})"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "Начать / отменить рейд",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "start": "Начать рейд",
+            "cancel": "Отменить рейд"
+          }
+        },
+        "user": {
+          "label": "Целевой канал (имя на Twitch)"
+        }
+      }
+    },
+    "twitch_reward": {
+      "label": "Награда за баллы канала вкл./выкл.",
+      "fields": {
+        "reward": {
+          "label": "Награда (изменять можно только награды, созданные TouchDeck)"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Включить/выключить",
+            "pause": "Приостановить/продолжить"
+          }
+        }
+      }
+    },
+    "twitch_info": {
+      "label": "Записать информацию о канале в значения"
+    },
+    "discord_mute": {
+      "label": "Выключить микрофон (Discord)",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "on": "Выключен",
+            "off": "Включён"
+          }
+        }
+      }
+    },
+    "discord_deafen": {
+      "label": "Выключить звук (Discord)",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "Переключить",
+            "on": "Звук выключен",
+            "off": "Слышно"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "Войти в / выйти из голосового канала",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "join": "Войти",
+            "toggle": "Войти / выйти",
+            "leave": "Выйти"
+          }
+        },
+        "channel": {
+          "label": "Голосовой канал"
+        }
+      }
+    },
+    "discord_volume": {
+      "label": "Громкость (Discord)",
+      "fields": {
+        "target": {
+          "label": "Что?",
+          "options": {
+            "output": "Выход (слышать других)",
+            "input": "Вход (свой микрофон)"
+          }
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "up": "Громче",
+            "down": "Тише",
+            "set": "Установить значение"
+          }
+        },
+        "step": {
+          "label": "Шаг"
+        },
+        "value": {
+          "label": "Значение (выход 0–200, вход 0–100)"
+        }
+      }
+    },
+    "discord_mode": {
+      "label": "Режим голоса (рация)",
+      "fields": {
+        "op": {
+          "label": "Режим",
+          "options": {
+            "toggle": "Переключить",
+            "PUSH_TO_TALK": "Рация",
+            "VOICE_ACTIVITY": "Голосовая активность"
+          }
+        }
+      }
+    },
+    "discord_webhook": {
+      "label": "Отправить сообщение в канал (вебхук)",
+      "fields": {
+        "url": {
+          "label": "URL вебхука (настроить канал → Интеграция → Вебхуки)",
+          "placeholder": "https://discord.com/api/webhooks/…"
+        },
+        "message": {
+          "label": "Сообщение (можно {Value} и {Event.X})"
+        },
+        "username": {
+          "label": "Имя отправителя (необязательно)"
+        }
+      }
+    },
+    "run_flow": {
+      "label": "Запустить поток",
+      "fields": {
+        "flow": {
+          "label": "Поток"
+        },
+        "times": {
+          "label": "Сколько раз? (повтор)"
+        },
+        "inputs": {
+          "label": "Входы потока (подстановки разрешены)"
+        }
+      }
+    },
+    "stop": {
+      "label": "Стоп (отменить оставшиеся действия)"
+    },
+    "comment": {
+      "label": "Комментарий (ничего не делает)",
+      "fields": {
+        "text": {
+          "label": "Заметка"
+        }
+      }
+    },
+    "change_visuals": {
+      "label": "Изменить вид кнопки",
+      "fields": {
+        "target": {
+          "label": "Кнопка"
+        },
+        "title": {
+          "label": "Новая надпись (пусто = без изменений, можно {Value})"
+        },
+        "color": {
+          "label": "Новый цвет фона (пусто = без изменений)"
+        },
+        "textColor": {
+          "label": "Новый цвет текста (пусто = без изменений)"
+        },
+        "icon": {
+          "label": "Новый эмодзи (пусто = без изменений)"
+        },
+        "image": {
+          "label": "Изображение как значок (вместо эмодзи)"
+        },
+        "bgImage": {
+          "label": "Текстура (фоновое изображение)"
+        },
+        "overlay": {
+          "label": "Наложение",
+          "options": {
+            "keep": "не менять",
+            "none": "нет",
+            "gloss": "Глянец",
+            "frame": "Рамка",
+            "stripes": "Полосы",
+            "dots": "Точки",
+            "vignette": "Виньетка",
+            "glow": "Свечение"
+          }
+        }
+      }
+    },
+    "restore_visuals": {
+      "label": "Восстановить исходный вид",
+      "fields": {
+        "target": {
+          "label": "Кнопка"
+        }
+      }
+    },
+    "button_state": {
+      "label": "Задать состояние кнопки (только вид)",
+      "fields": {
+        "target": {
+          "label": "Кнопка"
+        },
+        "op": {
+          "label": "Что",
+          "options": {
+            "next": "следующее состояние",
+            "prev": "предыдущее состояние",
+            "set": "состояние №"
+          }
+        },
+        "index": {
+          "label": "Номер (для «состояние №»)"
+        }
+      }
+    },
+    "button_visible": {
+      "label": "Показать / скрыть кнопку",
+      "fields": {
+        "target": {
+          "label": "Кнопка"
+        },
+        "op": {
+          "label": "Что",
+          "options": {
+            "show": "показать",
+            "hide": "скрыть",
+            "toggle": "переключить"
+          }
+        },
+        "seconds": {
+          "label": "Только на … секунд (0 = навсегда)"
+        }
+      }
+    },
+    "page_background": {
+      "label": "Изменить фон страницы",
+      "fields": {
+        "page": {
+          "label": "Страница"
+        },
+        "color": {
+          "label": "Цвет (пусто = исходный)"
+        }
+      }
+    },
+    "unsupported": {
+      "label": "Не поддерживается"
+    },
+    "random": {
+      "label": "Случайно: одно из следующих действий",
+      "fields": {
+        "count": {
+          "label": "Из скольких следующих действий? (0 = все следующие)"
+        }
+      }
+    },
+    "deck_show_page": {
+      "label": "Показать страницу на всех устройствах",
+      "fields": {
+        "page": {
+          "label": "Страница"
+        }
+      }
+    },
+    "timer": {
+      "label": "Таймер (обратный отсчёт / секундомер)",
+      "fields": {
+        "name": {
+          "label": "Имя таймера"
+        },
+        "op": {
+          "label": "Действие",
+          "options": {
+            "toggle": "старт / пауза",
+            "start": "старт",
+            "stop": "пауза",
+            "reset": "сбросить",
+            "alarm": "Будильник: отсчёт до времени"
+          }
+        },
+        "minutes": {
+          "label": "Минуты (0 мин и 0 с = секундомер)"
+        },
+        "seconds": {
+          "label": "Секунды"
+        },
+        "time": {
+          "label": "Время будильника (ЧЧ:ММ)",
+          "placeholder": "07:30"
+        }
+      }
+    },
+    "if": {
+      "label": "Если …",
+      "fields": {
+        "name": {
+          "label": "Переменная или подстановка (например, {Event.User})"
+        },
+        "op": {
+          "label": "Сравнение",
+          "options": {
+            "eq": "равно",
+            "ne": "не равно",
+            "gt": "больше",
+            "ge": "больше или равно",
+            "lt": "меньше",
+            "le": "меньше или равно",
+            "contains": "содержит",
+            "empty": "пусто",
+            "not_empty": "не пусто"
+          }
+        },
+        "value": {
+          "label": "Значение"
+        }
+      }
+    },
+    "else_if": {
+      "label": "Иначе если …",
+      "fields": {
+        "name": {
+          "label": "Переменная или подстановка (например, {Event.User})"
+        },
+        "op": {
+          "label": "Сравнение",
+          "options": {
+            "eq": "равно",
+            "ne": "не равно",
+            "gt": "больше",
+            "ge": "больше или равно",
+            "lt": "меньше",
+            "le": "меньше или равно",
+            "contains": "содержит",
+            "empty": "пусто",
+            "not_empty": "не пусто"
+          }
+        },
+        "value": {
+          "label": "Значение"
+        }
+      }
+    },
+    "while": {
+      "label": "Пока …",
+      "fields": {
+        "name": {
+          "label": "Переменная или подстановка (например, {Event.User})"
+        },
+        "op": {
+          "label": "Сравнение",
+          "options": {
+            "eq": "равно",
+            "ne": "не равно",
+            "gt": "больше",
+            "ge": "больше или равно",
+            "lt": "меньше",
+            "le": "меньше или равно",
+            "contains": "содержит",
+            "empty": "пусто",
+            "not_empty": "не пусто"
+          }
+        },
+        "value": {
+          "label": "Значение"
+        }
+      }
+    },
+    "else": {
+      "label": "Иначе"
+    },
+    "end": {
+      "label": "Конец (если / цикл)"
+    },
+    "break": {
+      "label": "Выйти из цикла"
+    },
+    "repeat": {
+      "label": "Повторить (n раз)",
+      "fields": {
+        "count": {
+          "label": "Сколько раз? (текущий круг: {Event.Loop})"
+        }
+      }
+    },
+    "var_calc": {
+      "label": "Вычислить значение",
+      "fields": {
+        "name": {
+          "label": "Результат в значение"
+        },
+        "expr": {
+          "label": "Вычисление (например, ({Goals} + 1) * 2, round(x), min(a; b), max(a; b), abs(x))",
+          "placeholder": "{Goals} + 1"
+        },
+        "decimals": {
+          "label": "Не больше стольких знаков после запятой"
+        }
+      }
+    },
+    "key_sequence": {
+      "label": "Последовательность клавиш (записанная)",
+      "fields": {
+        "steps": {
+          "label": "Клавиши и паузы, одна строка на шаг (например, ctrl+c, 250ms, ctrl+v)"
+        },
+        "speed": {
+          "label": "Скорость в % (200 = вдвое быстрее)"
+        }
+      }
+    },
+    "clipboard_set": {
+      "label": "Копировать в буфер обмена",
+      "fields": {
+        "text": {
+          "label": "Текст (подстановки разрешены)"
+        },
+        "paste": {
+          "label": "Затем вставить (Ctrl+V)"
+        }
+      }
+    },
+    "clipboard_get": {
+      "label": "Сохранить буфер обмена в значение",
+      "fields": {
+        "saveTo": {
+          "label": "Значение"
+        }
+      }
+    },
+    "screen": {
+      "label": "Экран (выключить / яркость)",
+      "fields": {
+        "op": {
+          "label": "Действие",
+          "options": {
+            "off": "выключить (мышь будит)",
+            "brightness": "задать яркость"
+          }
+        },
+        "percent": {
+          "label": "Яркость в %"
+        }
+      }
+    }
+  },
+  "triggers": {
+    "value_change": {
+      "label": "Значение изменилось",
+      "fields": {
+        "name": {
+          "label": "Значение"
+        },
+        "op": {
+          "label": "Когда?",
+          "options": {
+            "any": "при каждом изменении",
+            "eq": "становится равным",
+            "ne": "становится не равным",
+            "gt": "становится больше",
+            "lt": "становится меньше",
+            "contains": "содержит"
+          }
+        },
+        "value": {
+          "label": "Значение для сравнения"
+        }
+      }
+    },
+    "app_start": {
+      "label": "Запуск TouchDeck"
+    },
+    "timer": {
+      "label": "Таймер (периодический)",
+      "fields": {
+        "seconds": {
+          "label": "Каждые … секунд"
+        }
+      }
+    },
+    "time_of_day": {
+      "label": "Наступило время",
+      "fields": {
+        "time": {
+          "label": "Время (ЧЧ:ММ, несколько через запятую: 08:00, 18:30)",
+          "placeholder": "18:30"
+        },
+        "days": {
+          "label": "Дни",
+          "options": {
+            "all": "ежедневно",
+            "weekdays": "пн–пт",
+            "weekend": "сб и вс",
+            "pick": "выбранные дни"
+          }
+        },
+        "d_mon": {
+          "label": "Понедельник"
+        },
+        "d_tue": {
+          "label": "Вторник"
+        },
+        "d_wed": {
+          "label": "Среда"
+        },
+        "d_thu": {
+          "label": "Четверг"
+        },
+        "d_fri": {
+          "label": "Пятница"
+        },
+        "d_sat": {
+          "label": "Суббота"
+        },
+        "d_sun": {
+          "label": "Воскресенье"
+        },
+        "monthday": {
+          "label": "Только в этот день месяца (0 = любой)"
+        }
+      }
+    },
+    "file_change": {
+      "label": "Файл изменился",
+      "fields": {
+        "path": {
+          "label": "Файл",
+          "placeholder": "~/status.txt"
+        }
+      }
+    },
+    "device": {
+      "label": "Телефон подключается/отключается",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "connected": "подключён",
+            "disconnected": "отключён",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "button_toggle": {
+      "label": "Переключатель включён/выключен",
+      "fields": {
+        "button": {
+          "label": "Кнопка"
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "on": "вкл.",
+            "off": "выкл.",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "audio_output": {
+      "label": "Аудиовыход изменился",
+      "fields": {
+        "device": {
+          "label": "На устройство (пусто = любое)"
+        }
+      }
+    },
+    "pc_lock": {
+      "label": "ПК заблокирован / разблокирован",
+      "fields": {
+        "state": {
+          "label": "Когда",
+          "options": {
+            "locked": "заблокирован",
+            "unlocked": "разблокирован",
+            "any": "оба"
+          }
+        }
+      }
+    },
+    "audio_mute": {
+      "label": "Звук или микрофон выключен/включён",
+      "fields": {
+        "target": {
+          "label": "Что?",
+          "options": {
+            "output": "Звук (выход)",
+            "input": "Микрофон (вход)"
+          }
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "muted": "выключен",
+            "unmuted": "включён",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "steam_game": {
+      "label": "Игра запускается/завершается",
+      "fields": {
+        "game": {
+          "label": "Игра (пусто = любая)"
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "started": "запускается",
+            "stopped": "завершается",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_scene": {
+      "label": "Сцена сменилась",
+      "fields": {
+        "scene": {
+          "label": "На сцену (пусто = любая)"
+        }
+      }
+    },
+    "obs_preview": {
+      "label": "Сцена предпросмотра сменилась",
+      "fields": {
+        "scene": {
+          "label": "На сцену (пусто = любая)"
+        }
+      }
+    },
+    "obs_stream": {
+      "label": "Трансляция началась/остановилась",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "started": "началась",
+            "stopped": "остановилась",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_record": {
+      "label": "Запись началась/остановилась/на паузе",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "started": "началась",
+            "stopped": "остановилась",
+            "paused": "на паузе",
+            "resumed": "продолжена",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_replay_saved": {
+      "label": "Клип сохранён"
+    },
+    "obs_mute": {
+      "label": "Источник звука выключен/включён",
+      "fields": {
+        "input": {
+          "label": "Источник звука (пусто = любой)"
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "muted": "выключен",
+            "unmuted": "включён",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_source": {
+      "label": "Источник показан/скрыт",
+      "fields": {
+        "item": {
+          "label": "Источник"
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "shown": "показан",
+            "hidden": "скрыт",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_filter": {
+      "label": "Фильтр вкл./выкл.",
+      "fields": {
+        "filter": {
+          "label": "Фильтр"
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "on": "вкл.",
+            "off": "выкл.",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_studio": {
+      "label": "Режим студии вкл./выкл.",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "on": "вкл.",
+            "off": "выкл.",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "obs_profile": {
+      "label": "Профиль/коллекция сцен сменилась",
+      "fields": {
+        "kind": {
+          "label": "Что?",
+          "options": {
+            "any": "любое",
+            "profile": "Профиль",
+            "collection": "Коллекция сцен"
+          }
+        }
+      }
+    },
+    "obs_connection": {
+      "label": "OBS подключён/отключён",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "connected": "подключён",
+            "disconnected": "отключён",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "twitch_follow": {
+      "label": "Новый фолловер"
+    },
+    "twitch_sub": {
+      "label": "Подписка (новая, продлённая, подаренная)",
+      "fields": {
+        "kind": {
+          "label": "Тип",
+          "options": {
+            "any": "любая",
+            "new": "новая подписка",
+            "resub": "продлённая",
+            "gift": "подаренная"
+          }
+        }
+      }
+    },
+    "twitch_cheer": {
+      "label": "Биты",
+      "fields": {
+        "min": {
+          "label": "От скольких битов?"
+        }
+      }
+    },
+    "twitch_raid": {
+      "label": "Рейд",
+      "fields": {
+        "min": {
+          "label": "От скольких зрителей?"
+        }
+      }
+    },
+    "twitch_redeem": {
+      "label": "Баллы канала потрачены",
+      "fields": {
+        "reward": {
+          "label": "Награда (название, пусто = любая)"
+        }
+      }
+    },
+    "twitch_chat": {
+      "label": "Сообщение в чате / команда",
+      "fields": {
+        "mode": {
+          "label": "Когда?",
+          "options": {
+            "command": "Сообщение начинается с",
+            "contains": "Сообщение содержит",
+            "any": "любое сообщение"
+          }
+        },
+        "text": {
+          "label": "Текст (например, !сцена)"
+        },
+        "who": {
+          "label": "От кого?",
+          "options": {
+            "all": "от всех",
+            "mod": "только модераторы и вы",
+            "sub": "только подписчики"
+          }
+        }
+      }
+    },
+    "twitch_stream": {
+      "label": "Трансляция в сети/не в сети",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "online": "в сети",
+            "offline": "не в сети",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "twitch_ad": {
+      "label": "Началась рекламная пауза"
+    },
+    "discord_voice": {
+      "label": "Микрофон / звук выключен",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "muted": "микрофон выключен",
+            "unmuted": "микрофон снова включён",
+            "deafened": "звук выключен",
+            "undeafened": "снова слышно",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "discord_channel": {
+      "label": "Вход в / выход из голосового канала",
+      "fields": {
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "joined": "вошёл",
+            "left": "вышел",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "page_view": {
+      "label": "Страница открыта / покинута",
+      "fields": {
+        "page": {
+          "label": "Страница (пусто = любая; в логике страницы: эта страница)"
+        },
+        "state": {
+          "label": "Состояние",
+          "options": {
+            "open": "открыта",
+            "leave": "покинута",
+            "any": "любое"
+          }
+        }
+      }
+    },
+    "app_focus": {
+      "label": "Программа на переднем плане",
+      "fields": {
+        "app": {
+          "label": "Программа (пусто = любая; достаточно части имени, например obs)"
+        },
+        "once": {
+          "label": "Только в первый раз (снова только после закрытия и перезапуска программы)"
+        }
+      }
+    },
+    "timer_done": {
+      "label": "Таймер завершён",
+      "fields": {
+        "name": {
+          "label": "Имя таймера (пусто = любой)"
+        }
+      }
+    },
+    "hotkey": {
+      "label": "Сочетание нажато на ПК",
+      "fields": {
+        "keys": {
+          "label": "Сочетание (работает везде на ПК под X11, даже когда TouchDeck в фоне; подстановка {Event.Keys})"
+        }
+      }
+    }
+  },
+  "liveSources": {
+    "none": "Нет",
+    "clock": "Часы",
+    "date": "Дата",
+    "cpu": "Загрузка ЦП",
+    "ram": "Память",
+    "temp": "Температура ЦП",
+    "volume": "Громкость",
+    "mic": "Микрофон выключен?",
+    "track": "Текущий трек",
+    "steam_updates": "Обновления Steam",
+    "steam_running": "Игра запущена (из действия)",
+    "obs_stream": "OBS: идёт трансляция?",
+    "obs_record": "OBS: идёт запись?",
+    "obs_scene": "OBS: сцена активна? (из действия)",
+    "twitch_live": "Twitch: в эфире?",
+    "twitch_viewers": "Twitch: зрители",
+    "twitch_followers": "Twitch: фолловеры",
+    "discord_mute": "Discord: микрофон выключен?",
+    "discord_deaf": "Discord: звук выключен?",
+    "discord_channel": "Discord: голосовой канал",
+    "variable": "Значение переменной",
+    "command": "Вывод команды",
+    "timer": "Таймер (оставшееся время) – введите имя ниже",
+    "page_indicator": "Индикатор страницы (●○○)",
+    "gpu_temp": "Температура видеокарты",
+    "gpu_load": "Загрузка видеокарты",
+    "disk": "Занято на диске (/)",
+    "net": "Сеть ↓ / ↑",
+    "uptime": "ПК работает"
+  },
+  "sliderTargets": {
+    "volume": "Громкость (ПК)",
+    "mic": "Уровень микрофона",
+    "obs_volume": "Источник звука OBS",
+    "command": "Своя команда ({value} = 0–100)"
+  }
+}

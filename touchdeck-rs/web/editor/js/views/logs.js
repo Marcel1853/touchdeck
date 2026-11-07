@@ -1,5 +1,5 @@
 // Bereich „Logs“: was TouchDeck getan hat – Buttons, Events, Geräte, Fehler. Live.
-import { t as tr } from '/shared/i18n.js';
+import { t as tr, getLang } from '/shared/i18n.js';
 import { h, api, toast } from '../dom.js';
 import { S, onLog } from '../state.js';
 
@@ -17,7 +17,7 @@ function matches(e) {
 }
 
 const row = (e) => h('tr', { class: `log-${e.level}` },
-  h('td', { class: 'log-time' }, new Date(e.time).toLocaleTimeString('de-DE')),
+  h('td', { class: 'log-time' }, new Date(e.time).toLocaleTimeString(getLang())),
   h('td', {}, h('span', { class: `log-badge ${e.level}` }, LEVELS[e.level] ?? e.level)),
   h('td', { class: 'log-source' }, e.source),
   h('td', {}, e.message));
