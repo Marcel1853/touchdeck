@@ -7,7 +7,7 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.3
-Date: not yet
+Date: 2026-11-07
   Features:
     - Six new languages: Spanish, French, Polish, Portuguese (Brazil), Russian and Chinese
       (Simplified) – in the editor, the deck, the messages and the Android app. The language follows

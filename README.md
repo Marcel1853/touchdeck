@@ -8,8 +8,8 @@ games, OBS Studio, Twitch, Discord and much more.
 
 | Folder | Contents |
 |---|---|
-| [`touchdeck-rs/`](touchdeck-rs/) | Desktop program in Rust (Tauri), version 0.12.2: server, actions and integrations, editor and deck, window with system tray icon |
-| [`android/`](android/) | Android app (Kotlin), version 0.8.3, in German and English: finds the PC on the Wi-Fi, pairs via confirmation or QR code, shows the deck in full screen |
+| [`touchdeck-rs/`](touchdeck-rs/) | Desktop program in Rust (Tauri), version 0.12.3: server, actions and integrations, editor and deck, window with system tray icon |
+| [`android/`](android/) | Android app (Kotlin), version 0.8.4, in German and English: finds the PC on the Wi-Fi, pairs via confirmation or QR code, shows the deck in full screen |
 
 Changes per version: [`CHANGELOG.md`](CHANGELOG.md)
 
