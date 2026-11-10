@@ -876,6 +876,28 @@ pub struct Plugins {
     pub last_check: std::sync::atomic::AtomicU64,
     /// Neueste Mod-Fassungen aus GitHub-Releases: „<plugin>#<nr>“ → { name, url, version }.
     mod_releases: Mutex<HashMap<String, Value>>,
+    /// Neuester Stand je Repo („besitzer/repo“ → Release-Tag oder Hauptzweig), kurz gemerkt: Liegen mehrere
+    /// Plugins im selben Repo, fragt die Update-Suche GitHub nur einmal (das Limit ohne Anmeldung ist 60/Stunde).
+    repo_refs: Mutex<HashMap<String, (Instant, String)>>,
+}
+
+/** So lange gilt der gemerkte Stand eines Repos. */
+const REPO_REF_TTL: Duration = Duration::from_secs(300);
+
+/** Ist das die GitHub-Sperre „zu viele Abfragen“? Dann eine verständliche Meldung mit der Uhrzeit, ab wann es wieder geht. */
+fn github_limit(res: &reqwest::Response) -> Option<anyhow::Error> {
+    let header = |k: &str| res.headers().get(k).and_then(|v| v.to_str().ok());
+    let limited = matches!(res.status().as_u16(), 403 | 429) && header("x-ratelimit-remaining") == Some("0");
+    limited.then(|| {
+        let when = header("x-ratelimit-reset")
+            .and_then(|s| s.parse::<i64>().ok())
+            .and_then(|secs| chrono::DateTime::from_timestamp(secs, 0))
+            .map(|t| t.with_timezone(&chrono::Local).format("%H:%M").to_string());
+        match when {
+            Some(time) => anyhow!(t!("plugins.githubLimitUntil", time)),
+            None => anyhow!(t!("plugins.githubLimit")),
+        }
+    })
 }
 
 /** Versionen wie „1.2.10“ vergleichen (Zahlen je Teil, Fehlendes = 0). */
@@ -1024,6 +1046,7 @@ impl Plugins {
             http: reqwest::Client::builder().user_agent("TouchDeck").timeout(Duration::from_secs(20)).build().expect("HTTP-Client"),
             updates: Mutex::new(Map::new()),
             mod_releases: Mutex::new(HashMap::new()),
+            repo_refs: Mutex::new(HashMap::new()),
             // Schon gemeldete Updates überleben einen Neustart: jede Version wird nur einmal gemeldet.
             notified: Mutex::new(std::fs::read_to_string(dir.join("notified.json")).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()),
             last_check: std::sync::atomic::AtomicU64::new(0),
@@ -1456,16 +1479,38 @@ impl Plugins {
 
     // ---------- Updates ----------
 
-    /** plugin.json des neuesten Stands (Release, sonst Hauptzweig) – nur diese eine Datei, ohne alles zu laden. */
-    async fn latest_manifest(&self, r: &Repo) -> Result<(Value, String)> {
-        let api = format!("https://api.github.com/repos/{}/{}", r.owner, r.repo);
-        let release = self.http.get(format!("{api}/releases/latest")).header("Accept", "application/vnd.github+json").send().await?;
+    /** Abfrage an die GitHub-API; die Sperre „zu viele Abfragen“ wird zu einer verständlichen Meldung. */
+    async fn github(&self, url: &str) -> Result<reqwest::Response> {
+        let res = self.http.get(url).header("Accept", "application/vnd.github+json").send().await?;
+        match github_limit(&res) {
+            Some(err) => Err(err),
+            None => Ok(res),
+        }
+    }
+
+    /** Neuester Stand eines Repos: Tag des neuesten Release, sonst der Hauptzweig (kurz gemerkt, siehe repo_refs). */
+    async fn latest_ref(&self, r: &Repo) -> Result<String> {
+        let key = format!("{}/{}", r.owner, r.repo);
+        if let Some((at, git_ref)) = self.repo_refs.lock().unwrap().get(&key)
+            && at.elapsed() < REPO_REF_TTL
+        {
+            return Ok(git_ref.clone());
+        }
+        let api = format!("https://api.github.com/repos/{key}");
+        let release = self.github(&format!("{api}/releases/latest")).await?;
         let git_ref = if release.status().is_success() {
             release.json::<Value>().await?["tag_name"].as_str().unwrap_or("").to_string()
         } else {
-            let info: Value = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?.error_for_status()?.json().await?;
+            let info: Value = self.github(&api).await?.error_for_status()?.json().await?;
             info["default_branch"].as_str().unwrap_or("main").to_string()
         };
+        self.repo_refs.lock().unwrap().insert(key, (Instant::now(), git_ref.clone()));
+        Ok(git_ref)
+    }
+
+    /** plugin.json des neuesten Stands (Release, sonst Hauptzweig) – nur diese eine Datei, ohne alles zu laden. */
+    async fn latest_manifest(&self, r: &Repo) -> Result<(Value, String)> {
+        let git_ref = self.latest_ref(r).await?;
         let path = if r.path.is_empty() { "plugin.json".to_string() } else { format!("{}/plugin.json", r.path) };
         let raw = self.http.get(format!("https://raw.githubusercontent.com/{}/{}/{git_ref}/{path}", r.owner, r.repo)).send().await?.error_for_status()?.bytes().await?;
         let v: Value = serde_json::from_slice(&raw)?;
@@ -1483,7 +1528,7 @@ impl Plugins {
             crate::core::mods::pick_portal(&info).ok_or_else(|| anyhow!(t!("plugins.modNoPortalRelease", m["factorioPortal"].as_str().unwrap_or(""))))?
         } else {
             let api = crate::core::mods::release_api(m).ok_or_else(|| anyhow!(t!("plugins.modNotFound")))?;
-            let release: Value = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?.error_for_status()?.json().await?;
+            let release: Value = self.github(&api).await?.error_for_status()?.json().await?;
             crate::core::mods::pick_asset(m, &release).ok_or_else(|| anyhow!(t!("plugins.modNoReleaseAsset", m["release"]["repo"].as_str().unwrap_or(""))))?
         };
         self.mod_releases.lock().unwrap().insert(format!("{id}#{index}"), found.clone());
@@ -1739,7 +1784,7 @@ impl Plugins {
     async fn download(&self, r: &Repo) -> Result<(Vec<PluginFile>, String, String)> {
         let (owner, repo) = (&r.owner, &r.repo);
         let api = format!("https://api.github.com/repos/{owner}/{repo}");
-        let res = self.http.get(&api).header("Accept", "application/vnd.github+json").send().await?;
+        let res = self.github(&api).await?;
         if res.status().as_u16() == 404 {
             bail!(t!("plugins.repoDoesNotExist", owner, repo));
         }
@@ -1748,7 +1793,7 @@ impl Plugins {
             bail!(t!("plugins.repoIsNotPublic"));
         }
         let mut url = info["html_url"].as_str().unwrap_or("").to_string();
-        let release = self.http.get(format!("{api}/releases/latest")).header("Accept", "application/vnd.github+json").send().await?;
+        let release = self.github(&format!("{api}/releases/latest")).await?;
         let (zip_ref, git_ref) = match release.status().is_success() {
             true => {
                 let tag = release.json::<Value>().await?["tag_name"].as_str().unwrap_or("").to_string();
@@ -2103,6 +2148,18 @@ mod tests {
         assert!(runs_here(&json!([])) && runs_here(&Value::Null), "ohne Angabe: überall");
         assert!(runs_here(&json!(["linux", "windows"])));
         assert_eq!(runs_here(&json!(["windows"])), cfg!(windows));
+    }
+
+    #[test]
+    fn github_sperre_verstaendlich() {
+        let answer = |status: u16, remaining: &str| {
+            let r = axum::http::Response::builder().status(status).header("x-ratelimit-remaining", remaining).header("x-ratelimit-reset", "1793100000").body("").unwrap();
+            reqwest::Response::from(r)
+        };
+        let err = github_limit(&answer(403, "0")).expect("Sperre erkannt").to_string();
+        assert!(err.contains("zu viele Abfragen") && err.contains("Uhr"), "{err}");
+        assert!(github_limit(&answer(403, "12")).is_none(), "403 aus anderem Grund (z. B. privat)");
+        assert!(github_limit(&answer(200, "0")).is_none());
     }
 
     #[test]

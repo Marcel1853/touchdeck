@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "TouchDeck {1} is running on port {0}",
     "uploadedFile": "uploaded file",
     "wantsToConnect": "{0} ({1}) wants to connect",
-    "unknownKind": "Unknown kind."
+    "unknownKind": "Unknown kind.",
+    "unknownList": "Unknown list",
+    "unknownCall": "Unknown call"
   },
   "actions": {
     "actionIsNotSupported": "The action “{0}” is not supported yet.",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "Downloads from the Factorio mod portal need your Factorio username and token (Settings › Factorio mod portal). Without a token: download the mod in the game under “Mods”.",
     "modPortalDenied": "The Factorio mod portal refused the download – username or token are wrong.",
     "factorioLoginNotFound": "No Factorio login found. Log in once in the game (main menu › Mods or Multiplayer) or enter username and token yourself.",
-    "updatesAvailableTitle": "TouchDeck: updates available"
+    "updatesAvailableTitle": "TouchDeck: updates available",
+    "nativeCommandMissing": "plugin.json: “native.command” is missing.",
+    "githubLimitUntil": "GitHub has counted too many requests from this connection. Possible again from {0}.",
+    "githubLimit": "GitHub has counted too many requests from this connection. Please try again later (within an hour at the latest)."
   },
   "iconpacks": {
     "fileContainsNoImages": "The file contains no images (PNG, JPG, GIF, WebP or SVG).",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "Settings damaged, using defaults: {0}",
     "soundOn": "Sound on",
     "template": "Template",
-    "saveFailed": "Saving failed: {0}"
+    "saveFailed": "Saving failed: {0}",
+    "variableName": "Variable name: 1–40 characters, letters, digits, spaces, _ . -"
   },
   "backup": {
     "backupIsDamaged": "The backup is damaged."
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "The program holding the clipboard does not answer.",
     "clipboardNotTaken": "Could not take over the clipboard.",
     "noMonitorFound": "No screen found.",
-    "windowNotInFrontKeysNotSent": "“{0}” could not be brought to the front – shortcut not sent"
+    "windowNotInFrontKeysNotSent": "“{0}” could not be brought to the front – shortcut not sent",
+    "unknownMouseButton": "Unknown mouse button: {0}",
+    "unknownMediaAction": "Unknown media action: {0}"
   },
   "obs": {
     "disconnectedFromObs": "Disconnected from OBS.",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "Not connected to Discord (Settings → Integrations → Discord).",
     "notConnectedToDiscord2": "Not connected to Discord.",
     "pleaseEnterClientId": "Please enter the client ID and client secret of your Discord application.",
-    "pleaseEnterDiscordApplication": "Please enter the Discord application in the settings first."
+    "pleaseEnterDiscordApplication": "Please enter the Discord application in the settings first.",
+    "loginFailed": "Discord login: {0}"
   },
   "cli": {
     "portIsUsedBy": "Port {0} is used by another program. Choose another port: --port <n>",
     "portNotValidNumber": "--port: not a valid number",
     "touchdeckIsAlreadyRunning": "TouchDeck is already running – opening the editor: {0}",
-    "touchdeckIsRunningEditor": "TouchDeck is running.\n  Editor:  {1}\n  Data:    {0}"
+    "touchdeckIsRunningEditor": "TouchDeck is running.\n  Editor:  {1}\n  Data:    {0}",
+    "unknownOption": "Unknown option: {0}",
+    "needsValue": "{0} needs a value.",
+    "help": "TouchDeck – macro remote\n\n  --port <n>      Server port (default 8770, or TOUCHDECK_PORT)\n  --data <dir>    Data folder (default ./data, or TOUCHDECK_DATA)\n  --public <dir>  Serve editor and deck from this folder instead of the program (or TOUCHDECK_PUBLIC)\n  --no-open       Do not open the editor in the browser automatically"
   },
   "desktop": {
     "cannotStart": "TouchDeck cannot start",
@@ -406,7 +418,8 @@
     "quit": "Quit TouchDeck",
     "restart": "Restart TouchDeck",
     "running": "TouchDeck is running on {0} – data: {1}",
-    "startAtLogin": "Start at login"
+    "startAtLogin": "Start at login",
+    "restartNoProgram": "Restart: program file not found"
   },
   "profiles": {
     "imported": "Profile imported: {0} page(s), {1} flow(s), {2} value(s), {3} image(s)",

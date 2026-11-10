@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "TouchDeck {1} działa na porcie {0}",
     "uploadedFile": "przesłany plik",
     "wantsToConnect": "{0} ({1}) chce się połączyć",
-    "unknownKind": "Nieznany rodzaj."
+    "unknownKind": "Nieznany rodzaj.",
+    "unknownList": "Nieznana lista",
+    "unknownCall": "Nieznane wywołanie"
   },
   "actions": {
     "actionIsNotSupported": "Akcja „{0}” nie jest jeszcze obsługiwana.",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "Pobieranie z portalu modów Factorio wymaga twojej nazwy użytkownika i tokenu Factorio (Ustawienia › Portal modów Factorio). Bez tokenu: pobierz moda w grze w „Mody”.",
     "modPortalDenied": "Portal modów Factorio odrzucił pobieranie – nazwa użytkownika lub token są nieprawidłowe.",
     "factorioLoginNotFound": "Nie znaleziono logowania do Factorio. Zaloguj się raz w grze (menu główne › Mody lub Gra wieloosobowa) albo sam wpisz nazwę użytkownika i token.",
-    "updatesAvailableTitle": "TouchDeck: dostępne aktualizacje"
+    "updatesAvailableTitle": "TouchDeck: dostępne aktualizacje",
+    "nativeCommandMissing": "plugin.json: brak „native.command”.",
+    "githubLimitUntil": "GitHub naliczył zbyt wiele zapytań z tego łącza. Ponownie możliwe od {0}.",
+    "githubLimit": "GitHub naliczył zbyt wiele zapytań z tego łącza. Spróbuj później (najpóźniej za godzinę)."
   },
   "iconpacks": {
     "fileContainsNoImages": "Plik nie zawiera obrazów (PNG, JPG, GIF, WebP lub SVG).",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "Ustawienia uszkodzone, używane są wartości domyślne: {0}",
     "soundOn": "Dźwięk włączony",
     "template": "Szablon",
-    "saveFailed": "Zapisywanie nie powiodło się: {0}"
+    "saveFailed": "Zapisywanie nie powiodło się: {0}",
+    "variableName": "Nazwa zmiennej: 1–40 znaków, litery, cyfry, spacje, _ . -"
   },
   "backup": {
     "backupIsDamaged": "Kopia zapasowa jest uszkodzona."
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "Program trzymający schowek nie odpowiada.",
     "clipboardNotTaken": "Nie udało się przejąć schowka.",
     "noMonitorFound": "Nie znaleziono ekranu.",
-    "windowNotInFrontKeysNotSent": "Nie udało się przenieść „{0}” na pierwszy plan – skrót nie został wysłany"
+    "windowNotInFrontKeysNotSent": "Nie udało się przenieść „{0}” na pierwszy plan – skrót nie został wysłany",
+    "unknownMouseButton": "Nieznany przycisk myszy: {0}",
+    "unknownMediaAction": "Nieznana akcja multimediów: {0}"
   },
   "obs": {
     "disconnectedFromObs": "Rozłączono z OBS.",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "Brak połączenia z Discordem (Ustawienia → Integracje → Discord).",
     "notConnectedToDiscord2": "Brak połączenia z Discordem.",
     "pleaseEnterClientId": "Podaj identyfikator klienta i sekret klienta swojej aplikacji Discord.",
-    "pleaseEnterDiscordApplication": "Najpierw podaj aplikację Discord w ustawieniach."
+    "pleaseEnterDiscordApplication": "Najpierw podaj aplikację Discord w ustawieniach.",
+    "loginFailed": "Logowanie do Discorda: {0}"
   },
   "cli": {
     "portIsUsedBy": "Port {0} jest używany przez inny program. Wybierz inny port: --port <n>",
     "portNotValidNumber": "--port: nieprawidłowa liczba",
     "touchdeckIsAlreadyRunning": "TouchDeck już działa – otwieranie edytora: {0}",
-    "touchdeckIsRunningEditor": "TouchDeck działa.\n  Edytor:  {1}\n  Dane:    {0}"
+    "touchdeckIsRunningEditor": "TouchDeck działa.\n  Edytor:  {1}\n  Dane:    {0}",
+    "unknownOption": "Nieznana opcja: {0}",
+    "needsValue": "{0} wymaga wartości.",
+    "help": "TouchDeck – pilot do makr\n\n  --port <n>      Port serwera (domyślnie 8770 lub TOUCHDECK_PORT)\n  --data <dir>    Folder danych (domyślnie ./data lub TOUCHDECK_DATA)\n  --public <dir>  Edytor i panel z tego folderu zamiast z programu (lub TOUCHDECK_PUBLIC)\n  --no-open       Nie otwieraj edytora automatycznie w przeglądarce"
   },
   "desktop": {
     "cannotStart": "Nie można uruchomić TouchDeck",
@@ -406,7 +418,8 @@
     "quit": "Zamknij TouchDeck",
     "restart": "Uruchom TouchDeck ponownie",
     "running": "TouchDeck działa na {0} – dane: {1}",
-    "startAtLogin": "Uruchamiaj po zalogowaniu"
+    "startAtLogin": "Uruchamiaj po zalogowaniu",
+    "restartNoProgram": "Ponowne uruchomienie: nie znaleziono pliku programu"
   },
   "profiles": {
     "imported": "Zaimportowano profil: stron: {0}, przepływów: {1}, wartości: {2}, obrazów: {3}",

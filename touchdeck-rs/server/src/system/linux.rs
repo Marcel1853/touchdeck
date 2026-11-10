@@ -398,7 +398,7 @@ pub async fn media(op: &str) -> Result<String> {
         "stop" => "Stop",
         "play" => "Play",
         "pause" => "Pause",
-        _ => bail!("Unbekannte Medienaktion: {op}"),
+        _ => bail!(t!("system.unknownMediaAction", op)),
     };
     let Some((player, _)) = pick_player(true).await? else { bail!(t!("system.noMediaPlayerFound")) };
     run(

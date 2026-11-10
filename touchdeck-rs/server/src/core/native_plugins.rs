@@ -120,7 +120,7 @@ async fn run_once(
     version: &str,
     rx: &mut mpsc::UnboundedReceiver<NativeCmd>,
 ) -> Result<Stopped> {
-    let (program, args) = command.split_first().ok_or_else(|| anyhow::anyhow!("plugin.json: native.command fehlt."))?;
+    let (program, args) = command.split_first().ok_or_else(|| anyhow::anyhow!(t!("plugins.nativeCommandMissing")))?;
     // „./programm“ liegt im Plugin-Ordner, alles andere (python3, node …) wird im Suchpfad gesucht.
     let program = match program.strip_prefix("./") {
         Some(rel) => dir.join(rel).to_string_lossy().into_owned(),

@@ -1572,7 +1572,7 @@ impl Store {
 
     pub fn set_variable(&mut self, name: &str, value: &Value) -> Result<()> {
         if !valid_variable_name(name) {
-            bail!("Variablenname: 1–40 Zeichen, Buchstaben, Ziffern, Leerzeichen, _ . -");
+            bail!(t!("store.variableName"));
         }
         let v = truncate(&js_string(value), 1000);
         let old = self.config.variables.get(name).cloned();

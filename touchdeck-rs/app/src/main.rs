@@ -216,7 +216,7 @@ fn save_before_exit() {
 /** Neu starten: dieselbe Datei noch einmal starten (beim AppImage die AppImage-Datei) und dieses Programm beenden. */
 fn restart(app: &AppHandle) {
     let program = std::env::var_os("APPIMAGE").map(PathBuf::from).or_else(|| std::env::current_exe().ok());
-    let Some(program) = program else { return eprintln!("Neustart: Programmdatei nicht gefunden") };
+    let Some(program) = program else { return eprintln!("{}", t!("desktop.restartNoProgram")) };
     let visible = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
     let mut cmd = os::command(&program);
     cmd.arg(format!("--restart-of={}", std::process::id()));

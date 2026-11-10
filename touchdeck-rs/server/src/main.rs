@@ -8,13 +8,6 @@ use touchdeck_server::core::store::Store;
 use touchdeck_server::server::{self, Options};
 use touchdeck_server::system::os;
 
-const HELP: &str = "TouchDeck – Makro-Fernbedienung für Linux
-
-  --port <n>      Port des Servers (Standard 8770, oder TOUCHDECK_PORT)
-  --data <dir>    Datenordner (Standard ./data, oder TOUCHDECK_DATA)
-  --public <dir>  Editor und Bedienfeld aus diesem Ordner statt aus dem Programm (oder TOUCHDECK_PUBLIC)
-  --no-open       Editor nicht automatisch im Browser öffnen";
-
 struct Args {
     /// None = Port aus den Einstellungen.
     port: Option<u16>,
@@ -39,7 +32,7 @@ fn parse_args() -> Args {
     while let Some(a) = it.next() {
         let mut value = |name: &str| {
             it.next().unwrap_or_else(|| {
-                eprintln!("{name} braucht einen Wert.\n\n{HELP}");
+                eprintln!("{}\n\n{}", t!("cli.needsValue", name), t!("cli.help"));
                 std::process::exit(2)
             })
         };
@@ -54,11 +47,11 @@ fn parse_args() -> Args {
             "--public" => args.public = Some(PathBuf::from(value("--public"))),
             "--no-open" => args.open = false,
             "-h" | "--help" => {
-                println!("{HELP}");
+                println!("{}", t!("cli.help"));
                 std::process::exit(0)
             }
             other => {
-                eprintln!("Unbekannte Option: {other}\n\n{HELP}");
+                eprintln!("{}\n\n{}", t!("cli.unknownOption", other), t!("cli.help"));
                 std::process::exit(2)
             }
         }

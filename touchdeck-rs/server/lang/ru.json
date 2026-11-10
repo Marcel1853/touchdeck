@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "TouchDeck {1} работает на порту {0}",
     "uploadedFile": "загруженный файл",
     "wantsToConnect": "{0} ({1}) хочет подключиться",
-    "unknownKind": "Неизвестный тип."
+    "unknownKind": "Неизвестный тип.",
+    "unknownList": "Неизвестный список",
+    "unknownCall": "Неизвестный вызов"
   },
   "actions": {
     "actionIsNotSupported": "Действие «{0}» пока не поддерживается.",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "Для загрузки с портала модов Factorio нужны ваше имя пользователя и токен Factorio (Настройки › Портал модов Factorio). Без токена: скачайте мод в игре в разделе «Моды».",
     "modPortalDenied": "Портал модов Factorio отклонил загрузку – неверное имя пользователя или токен.",
     "factorioLoginNotFound": "Вход в Factorio не найден. Войдите один раз в игре (главное меню › Моды или Сетевая игра) или введите имя пользователя и токен сами.",
-    "updatesAvailableTitle": "TouchDeck: доступны обновления"
+    "updatesAvailableTitle": "TouchDeck: доступны обновления",
+    "nativeCommandMissing": "plugin.json: отсутствует «native.command».",
+    "githubLimitUntil": "GitHub насчитал слишком много запросов с этого подключения. Снова можно будет с {0}.",
+    "githubLimit": "GitHub насчитал слишком много запросов с этого подключения. Попробуйте позже (не позднее чем через час)."
   },
   "iconpacks": {
     "fileContainsNoImages": "Файл не содержит изображений (PNG, JPG, GIF, WebP или SVG).",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "Настройки повреждены, используются значения по умолчанию: {0}",
     "soundOn": "Звук включён",
     "template": "Шаблон",
-    "saveFailed": "Не удалось сохранить: {0}"
+    "saveFailed": "Не удалось сохранить: {0}",
+    "variableName": "Имя переменной: 1–40 символов, буквы, цифры, пробелы, _ . -"
   },
   "backup": {
     "backupIsDamaged": "Резервная копия повреждена."
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "Программа, владеющая буфером обмена, не отвечает.",
     "clipboardNotTaken": "Не удалось занять буфер обмена.",
     "noMonitorFound": "Экран не найден.",
-    "windowNotInFrontKeysNotSent": "Не удалось вывести «{0}» на передний план – сочетание не отправлено"
+    "windowNotInFrontKeysNotSent": "Не удалось вывести «{0}» на передний план – сочетание не отправлено",
+    "unknownMouseButton": "Неизвестная кнопка мыши: {0}",
+    "unknownMediaAction": "Неизвестное действие медиа: {0}"
   },
   "obs": {
     "disconnectedFromObs": "Отключено от OBS.",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "Нет подключения к Discord (Настройки → Интеграции → Discord).",
     "notConnectedToDiscord2": "Нет подключения к Discord.",
     "pleaseEnterClientId": "Введите ID клиента и секрет клиента вашего приложения Discord.",
-    "pleaseEnterDiscordApplication": "Сначала укажите приложение Discord в настройках."
+    "pleaseEnterDiscordApplication": "Сначала укажите приложение Discord в настройках.",
+    "loginFailed": "Вход в Discord: {0}"
   },
   "cli": {
     "portIsUsedBy": "Порт {0} занят другой программой. Выберите другой порт: --port <n>",
     "portNotValidNumber": "--port: недопустимое число",
     "touchdeckIsAlreadyRunning": "TouchDeck уже запущен – открываю редактор: {0}",
-    "touchdeckIsRunningEditor": "TouchDeck запущен.\n  Редактор:  {1}\n  Данные:    {0}"
+    "touchdeckIsRunningEditor": "TouchDeck запущен.\n  Редактор:  {1}\n  Данные:    {0}",
+    "unknownOption": "Неизвестный параметр: {0}",
+    "needsValue": "Для {0} нужно значение.",
+    "help": "TouchDeck – пульт для макросов\n\n  --port <n>      Порт сервера (по умолчанию 8770 или TOUCHDECK_PORT)\n  --data <dir>    Папка данных (по умолчанию ./data или TOUCHDECK_DATA)\n  --public <dir>  Редактор и панель из этой папки вместо программы (или TOUCHDECK_PUBLIC)\n  --no-open       Не открывать редактор в браузере автоматически"
   },
   "desktop": {
     "cannotStart": "Не удаётся запустить TouchDeck",
@@ -406,7 +418,8 @@
     "quit": "Выйти из TouchDeck",
     "restart": "Перезапустить TouchDeck",
     "running": "TouchDeck работает на {0} – данные: {1}",
-    "startAtLogin": "Запускать при входе в систему"
+    "startAtLogin": "Запускать при входе в систему",
+    "restartNoProgram": "Перезапуск: файл программы не найден"
   },
   "profiles": {
     "imported": "Профиль импортирован: страниц: {0}, потоков: {1}, значений: {2}, изображений: {3}",

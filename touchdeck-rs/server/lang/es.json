@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "TouchDeck {1} se está ejecutando en el puerto {0}",
     "uploadedFile": "archivo subido",
     "wantsToConnect": "{0} ({1}) quiere conectarse",
-    "unknownKind": "Tipo desconocido."
+    "unknownKind": "Tipo desconocido.",
+    "unknownList": "Lista desconocida",
+    "unknownCall": "Llamada desconocida"
   },
   "actions": {
     "actionIsNotSupported": "La acción «{0}» todavía no es compatible.",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "Las descargas del portal de mods de Factorio necesitan tu nombre de usuario y token de Factorio (Ajustes › Portal de mods de Factorio). Sin token: descarga el mod en el juego, en «Mods».",
     "modPortalDenied": "El portal de mods de Factorio rechazó la descarga: el nombre de usuario o el token no son correctos.",
     "factorioLoginNotFound": "No se encontró ningún inicio de sesión de Factorio. Inicia sesión una vez en el juego (menú principal › Mods o Multijugador) o introduce tú mismo el nombre de usuario y el token.",
-    "updatesAvailableTitle": "TouchDeck: actualizaciones disponibles"
+    "updatesAvailableTitle": "TouchDeck: actualizaciones disponibles",
+    "nativeCommandMissing": "plugin.json: falta «native.command».",
+    "githubLimitUntil": "GitHub ha contado demasiadas consultas desde esta conexión. Se podrá de nuevo a partir de las {0}.",
+    "githubLimit": "GitHub ha contado demasiadas consultas desde esta conexión. Inténtalo más tarde (como mucho en una hora)."
   },
   "iconpacks": {
     "fileContainsNoImages": "El archivo no contiene imágenes (PNG, JPG, GIF, WebP o SVG).",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "Ajustes dañados, se usan los valores predeterminados: {0}",
     "soundOn": "Sonido activado",
     "template": "Plantilla",
-    "saveFailed": "Error al guardar: {0}"
+    "saveFailed": "Error al guardar: {0}",
+    "variableName": "Nombre de variable: 1–40 caracteres, letras, cifras, espacios, _ . -"
   },
   "backup": {
     "backupIsDamaged": "La copia de seguridad está dañada."
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "El programa que tiene el portapapeles no responde.",
     "clipboardNotTaken": "No se pudo tomar el control del portapapeles.",
     "noMonitorFound": "No se encontró ninguna pantalla.",
-    "windowNotInFrontKeysNotSent": "No se pudo traer «{0}» al frente: atajo no enviado"
+    "windowNotInFrontKeysNotSent": "No se pudo traer «{0}» al frente: atajo no enviado",
+    "unknownMouseButton": "Botón del ratón desconocido: {0}",
+    "unknownMediaAction": "Acción multimedia desconocida: {0}"
   },
   "obs": {
     "disconnectedFromObs": "Desconectado de OBS.",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "No conectado a Discord (Ajustes → Integraciones → Discord).",
     "notConnectedToDiscord2": "No conectado a Discord.",
     "pleaseEnterClientId": "Introduce el ID de cliente y el secreto de cliente de tu aplicación de Discord.",
-    "pleaseEnterDiscordApplication": "Introduce primero la aplicación de Discord en los ajustes."
+    "pleaseEnterDiscordApplication": "Introduce primero la aplicación de Discord en los ajustes.",
+    "loginFailed": "Inicio de sesión en Discord: {0}"
   },
   "cli": {
     "portIsUsedBy": "El puerto {0} lo usa otro programa. Elige otro puerto: --port <n>",
     "portNotValidNumber": "--port: no es un número válido",
     "touchdeckIsAlreadyRunning": "TouchDeck ya se está ejecutando; abriendo el editor: {0}",
-    "touchdeckIsRunningEditor": "TouchDeck se está ejecutando.\n  Editor:  {1}\n  Datos:   {0}"
+    "touchdeckIsRunningEditor": "TouchDeck se está ejecutando.\n  Editor:  {1}\n  Datos:   {0}",
+    "unknownOption": "Opción desconocida: {0}",
+    "needsValue": "{0} necesita un valor.",
+    "help": "TouchDeck – control remoto de macros\n\n  --port <n>      Puerto del servidor (predeterminado 8770, o TOUCHDECK_PORT)\n  --data <dir>    Carpeta de datos (predeterminada ./data, o TOUCHDECK_DATA)\n  --public <dir>  Servir el editor y el panel desde esta carpeta en lugar del programa (o TOUCHDECK_PUBLIC)\n  --no-open       No abrir el editor automáticamente en el navegador"
   },
   "desktop": {
     "cannotStart": "TouchDeck no puede iniciarse",
@@ -406,7 +418,8 @@
     "quit": "Salir de TouchDeck",
     "restart": "Reiniciar TouchDeck",
     "running": "TouchDeck se está ejecutando en {0} – datos: {1}",
-    "startAtLogin": "Iniciar al iniciar sesión"
+    "startAtLogin": "Iniciar al iniciar sesión",
+    "restartNoProgram": "Reinicio: no se encontró el archivo del programa"
   },
   "profiles": {
     "imported": "Perfil importado: {0} página(s), {1} flujo(s), {2} valor(es), {3} imagen(es)",

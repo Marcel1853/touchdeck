@@ -306,7 +306,7 @@ impl Keyboard {
             "right" => 3,
             "scrollup" => 4,
             "scrolldown" => 5,
-            _ => bail!("Unbekannte Maustaste: {which}"),
+            _ => bail!(t!("system.unknownMouseButton", which)),
         };
         self.button(n);
         Ok(())

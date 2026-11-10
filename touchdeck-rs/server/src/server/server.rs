@@ -1393,12 +1393,12 @@ async fn api(app: &Arc<App>, key: &str, path: &str, who: Who, body: Value, query
         "GET /api/options/*" => {
             let name = path.trim_start_matches("/api/options/");
             match option_source(app, name).await {
-                None => Err(HttpError::new(404, "Unbekannte Liste")),
+                None => Err(HttpError::new(404, t!("server.unknownList"))),
                 Some(Ok(v)) => Ok(v),
                 Some(Err(e)) => Err(HttpError::new(502, format!("{e:#}"))),
             }
         }
-        _ => Err(HttpError::new(404, "Unbekannter Aufruf")),
+        _ => Err(HttpError::new(404, t!("server.unknownCall"))),
     }
 }
 

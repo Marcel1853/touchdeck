@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "TouchDeck {1} 正在端口 {0} 上运行",
     "uploadedFile": "已上传的文件",
     "wantsToConnect": "{0}（{1}）请求连接",
-    "unknownKind": "未知类型。"
+    "unknownKind": "未知类型。",
+    "unknownList": "未知列表",
+    "unknownCall": "未知调用"
   },
   "actions": {
     "actionIsNotSupported": "暂不支持操作“{0}”。",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "从 Factorio 模组门户下载需要你的 Factorio 用户名和令牌（设置 › Factorio 模组门户）。没有令牌：请在游戏的“模组”中下载。",
     "modPortalDenied": "Factorio 模组门户拒绝了下载 – 用户名或令牌不正确。",
     "factorioLoginNotFound": "未找到 Factorio 登录信息。请在游戏中登录一次（主菜单 › 模组或多人游戏），或自行输入用户名和令牌。",
-    "updatesAvailableTitle": "TouchDeck：有可用更新"
+    "updatesAvailableTitle": "TouchDeck：有可用更新",
+    "nativeCommandMissing": "plugin.json：缺少“native.command”。",
+    "githubLimitUntil": "GitHub 统计到来自此网络的请求过多。{0} 之后可再次使用。",
+    "githubLimit": "GitHub 统计到来自此网络的请求过多。请稍后再试（最迟一小时后）。"
   },
   "iconpacks": {
     "fileContainsNoImages": "文件中没有图片（PNG、JPG、GIF、WebP 或 SVG）。",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "设置已损坏，正在使用默认值：{0}",
     "soundOn": "声音已打开",
     "template": "模板",
-    "saveFailed": "保存失败：{0}"
+    "saveFailed": "保存失败：{0}",
+    "variableName": "变量名：1–40 个字符，字母、数字、空格、_ . -"
   },
   "backup": {
     "backupIsDamaged": "备份已损坏。"
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "占用剪贴板的程序没有响应。",
     "clipboardNotTaken": "无法接管剪贴板。",
     "noMonitorFound": "未找到屏幕。",
-    "windowNotInFrontKeysNotSent": "无法将“{0}”切换到前台 – 快捷键未发送"
+    "windowNotInFrontKeysNotSent": "无法将“{0}”切换到前台 – 快捷键未发送",
+    "unknownMouseButton": "未知的鼠标按键：{0}",
+    "unknownMediaAction": "未知的媒体操作：{0}"
   },
   "obs": {
     "disconnectedFromObs": "已与 OBS 断开连接。",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "未连接到 Discord（设置 → 集成 → Discord）。",
     "notConnectedToDiscord2": "未连接到 Discord。",
     "pleaseEnterClientId": "请输入你的 Discord 应用的客户端 ID 和客户端密钥。",
-    "pleaseEnterDiscordApplication": "请先在设置中填写 Discord 应用。"
+    "pleaseEnterDiscordApplication": "请先在设置中填写 Discord 应用。",
+    "loginFailed": "Discord 登录：{0}"
   },
   "cli": {
     "portIsUsedBy": "端口 {0} 已被其他程序占用。请选择其他端口：--port <n>",
     "portNotValidNumber": "--port：不是有效的数字",
     "touchdeckIsAlreadyRunning": "TouchDeck 已在运行 – 正在打开编辑器：{0}",
-    "touchdeckIsRunningEditor": "TouchDeck 正在运行。\n  编辑器：{1}\n  数据：  {0}"
+    "touchdeckIsRunningEditor": "TouchDeck 正在运行。\n  编辑器：{1}\n  数据：  {0}",
+    "unknownOption": "未知选项：{0}",
+    "needsValue": "{0}需要一个值。",
+    "help": "TouchDeck – 宏遥控器\n\n  --port <n>      服务器端口（默认 8770，或 TOUCHDECK_PORT）\n  --data <dir>    数据文件夹（默认 ./data，或 TOUCHDECK_DATA）\n  --public <dir>  从此文件夹而不是程序内提供编辑器和面板（或 TOUCHDECK_PUBLIC）\n  --no-open       不自动在浏览器中打开编辑器"
   },
   "desktop": {
     "cannotStart": "TouchDeck 无法启动",
@@ -406,7 +418,8 @@
     "quit": "退出 TouchDeck",
     "restart": "重新启动 TouchDeck",
     "running": "TouchDeck 正在 {0} 上运行 – 数据：{1}",
-    "startAtLogin": "登录时启动"
+    "startAtLogin": "登录时启动",
+    "restartNoProgram": "重新启动：未找到程序文件"
   },
   "profiles": {
     "imported": "配置文件已导入：{0} 个页面、{1} 个流程、{2} 个值、{3} 张图片",

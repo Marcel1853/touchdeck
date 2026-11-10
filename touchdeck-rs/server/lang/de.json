@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "TouchDeck {1} läuft auf Port {0}",
     "uploadedFile": "hochgeladene Datei",
     "wantsToConnect": "{0} ({1}) möchte sich verbinden",
-    "unknownKind": "Unbekannte Art."
+    "unknownKind": "Unbekannte Art.",
+    "unknownList": "Unbekannte Liste",
+    "unknownCall": "Unbekannter Aufruf"
   },
   "actions": {
     "actionIsNotSupported": "Die Aktion „{0}“ wird noch nicht unterstützt.",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "Für Downloads aus dem Factorio-Mod-Portal braucht TouchDeck deinen Factorio-Benutzernamen und Token (Einstellungen › Factorio-Mod-Portal). Ohne Token: den Mod im Spiel unter „Mods“ herunterladen.",
     "modPortalDenied": "Das Factorio-Mod-Portal hat den Download abgelehnt – Benutzername oder Token stimmen nicht.",
     "factorioLoginNotFound": "Keine Factorio-Anmeldung gefunden. Melde dich einmal im Spiel an (Hauptmenü › Mods oder Mehrspieler) oder trage Benutzername und Token selbst ein.",
-    "updatesAvailableTitle": "TouchDeck: Updates verfügbar"
+    "updatesAvailableTitle": "TouchDeck: Updates verfügbar",
+    "nativeCommandMissing": "plugin.json: „native.command“ fehlt.",
+    "githubLimitUntil": "GitHub hat zu viele Abfragen von diesem Anschluss gezählt. Wieder möglich ab {0} Uhr.",
+    "githubLimit": "GitHub hat zu viele Abfragen von diesem Anschluss gezählt. Bitte später noch einmal versuchen (spätestens in einer Stunde)."
   },
   "iconpacks": {
     "fileContainsNoImages": "In der Datei sind keine Bilder (PNG, JPG, GIF, WebP oder SVG).",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "Einstellungen beschädigt, nutze Standardwerte: {0}",
     "soundOn": "Ton an",
     "template": "Vorlage",
-    "saveFailed": "Speichern fehlgeschlagen: {0}"
+    "saveFailed": "Speichern fehlgeschlagen: {0}",
+    "variableName": "Variablenname: 1–40 Zeichen, Buchstaben, Ziffern, Leerzeichen, _ . -"
   },
   "backup": {
     "backupIsDamaged": "Die Sicherung ist beschädigt."
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "Das Programm mit der Zwischenablage antwortet nicht.",
     "clipboardNotTaken": "Die Zwischenablage konnte nicht übernommen werden.",
     "noMonitorFound": "Kein Bildschirm gefunden.",
-    "windowNotInFrontKeysNotSent": "„{0}“ ließ sich nicht nach vorn holen – Tastenkürzel nicht gesendet"
+    "windowNotInFrontKeysNotSent": "„{0}“ ließ sich nicht nach vorn holen – Tastenkürzel nicht gesendet",
+    "unknownMouseButton": "Unbekannte Maustaste: {0}",
+    "unknownMediaAction": "Unbekannte Medienaktion: {0}"
   },
   "obs": {
     "disconnectedFromObs": "OBS-Verbindung getrennt.",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "Nicht mit Discord verbunden (Einstellungen → Integrationen → Discord).",
     "notConnectedToDiscord2": "Nicht mit Discord verbunden.",
     "pleaseEnterClientId": "Bitte Client-ID und Client-Secret deiner Discord-Anwendung eintragen.",
-    "pleaseEnterDiscordApplication": "Bitte zuerst die Discord-Anwendung in den Einstellungen eintragen."
+    "pleaseEnterDiscordApplication": "Bitte zuerst die Discord-Anwendung in den Einstellungen eintragen.",
+    "loginFailed": "Discord-Anmeldung: {0}"
   },
   "cli": {
     "portIsUsedBy": "Port {0} ist von einem anderen Programm belegt. Anderen Port wählen: --port <n>",
     "portNotValidNumber": "--port: keine gültige Zahl",
     "touchdeckIsAlreadyRunning": "TouchDeck läuft bereits – öffne den Editor: {0}",
-    "touchdeckIsRunningEditor": "TouchDeck läuft.\n  Editor:  {1}\n  Daten:   {0}"
+    "touchdeckIsRunningEditor": "TouchDeck läuft.\n  Editor:  {1}\n  Daten:   {0}",
+    "unknownOption": "Unbekannte Option: {0}",
+    "needsValue": "{0} braucht einen Wert.",
+    "help": "TouchDeck – Makro-Fernbedienung\n\n  --port <n>      Port des Servers (Standard 8770, oder TOUCHDECK_PORT)\n  --data <dir>    Datenordner (Standard ./data, oder TOUCHDECK_DATA)\n  --public <dir>  Editor und Bedienfeld aus diesem Ordner statt aus dem Programm (oder TOUCHDECK_PUBLIC)\n  --no-open       Editor nicht automatisch im Browser öffnen"
   },
   "desktop": {
     "cannotStart": "TouchDeck kann nicht starten",
@@ -406,7 +418,8 @@
     "quit": "TouchDeck beenden",
     "restart": "TouchDeck neu starten",
     "running": "TouchDeck läuft auf {0} – Daten: {1}",
-    "startAtLogin": "Beim Anmelden starten"
+    "startAtLogin": "Beim Anmelden starten",
+    "restartNoProgram": "Neustart: Programmdatei nicht gefunden"
   },
   "profiles": {
     "imported": "Profil importiert: {0} Seite(n), {1} Vorlage(n), {2} Wert(e), {3} Bild(er)",

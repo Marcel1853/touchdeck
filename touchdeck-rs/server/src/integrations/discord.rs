@@ -385,7 +385,7 @@ impl DiscordClient {
         let d: Value = res.json().await.unwrap_or_default();
         if !status.is_success() {
             let why = d["error_description"].as_str().or(d["error"].as_str()).map_or_else(|| status.as_u16().to_string(), String::from);
-            bail!("Discord-Anmeldung: {why}");
+            bail!(t!("discord.loginFailed", why));
         }
         let expires = now_ms() + d["expires_in"].as_i64().unwrap_or(604_800) * 1000;
         Ok((d["access_token"].as_str().unwrap_or("").into(), d["refresh_token"].as_str().unwrap_or("").into(), json!(expires)))

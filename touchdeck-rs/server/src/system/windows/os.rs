@@ -254,7 +254,7 @@ pub async fn media(op: &str) -> Result<String> {
         "next" => "nexttrack",
         "previous" => "prevtrack",
         "stop" => "stop",
-        _ => bail!("Unbekannte Medienaktion: {op}"),
+        _ => bail!(t!("system.unknownMediaAction", op)),
     };
     super::input::send_hotkey(key).await?;
     Ok("Windows".into())

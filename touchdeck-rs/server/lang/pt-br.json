@@ -46,7 +46,9 @@
     "touchdeckIsRunningOn": "O TouchDeck {1} está rodando na porta {0}",
     "uploadedFile": "arquivo enviado",
     "wantsToConnect": "{0} ({1}) quer se conectar",
-    "unknownKind": "Tipo desconhecido."
+    "unknownKind": "Tipo desconhecido.",
+    "unknownList": "Lista desconhecida",
+    "unknownCall": "Chamada desconhecida"
   },
   "actions": {
     "actionIsNotSupported": "A ação “{0}” ainda não é compatível.",
@@ -264,7 +266,10 @@
     "modPortalNeedsToken": "Downloads do portal de mods do Factorio precisam do seu nome de usuário e token do Factorio (Configurações › Portal de mods do Factorio). Sem token: baixe o mod no jogo, em “Mods”.",
     "modPortalDenied": "O portal de mods do Factorio recusou o download – nome de usuário ou token incorretos.",
     "factorioLoginNotFound": "Nenhum login do Factorio encontrado. Faça login uma vez no jogo (menu principal › Mods ou Multijogador) ou digite você mesmo o nome de usuário e o token.",
-    "updatesAvailableTitle": "TouchDeck: atualizações disponíveis"
+    "updatesAvailableTitle": "TouchDeck: atualizações disponíveis",
+    "nativeCommandMissing": "plugin.json: “native.command” está faltando.",
+    "githubLimitUntil": "O GitHub contou consultas demais desta conexão. Possível de novo a partir de {0}.",
+    "githubLimit": "O GitHub contou consultas demais desta conexão. Tente mais tarde (no máximo em uma hora)."
   },
   "iconpacks": {
     "fileContainsNoImages": "O arquivo não contém imagens (PNG, JPG, GIF, WebP ou SVG).",
@@ -293,7 +298,8 @@
     "settingsDamagedUsingDefaults": "Configurações danificadas, usando padrões: {0}",
     "soundOn": "Som ligado",
     "template": "Modelo",
-    "saveFailed": "Falha ao salvar: {0}"
+    "saveFailed": "Falha ao salvar: {0}",
+    "variableName": "Nome da variável: 1–40 caracteres, letras, números, espaços, _ . -"
   },
   "backup": {
     "backupIsDamaged": "O backup está danificado."
@@ -331,7 +337,9 @@
     "clipboardNoAnswer": "O programa que detém a área de transferência não responde.",
     "clipboardNotTaken": "Não foi possível assumir a área de transferência.",
     "noMonitorFound": "Nenhuma tela encontrada.",
-    "windowNotInFrontKeysNotSent": "Não foi possível trazer “{0}” para a frente – atalho não enviado"
+    "windowNotInFrontKeysNotSent": "Não foi possível trazer “{0}” para a frente – atalho não enviado",
+    "unknownMouseButton": "Botão do mouse desconhecido: {0}",
+    "unknownMediaAction": "Ação de mídia desconhecida: {0}"
   },
   "obs": {
     "disconnectedFromObs": "Desconectado do OBS.",
@@ -386,13 +394,17 @@
     "notConnectedToDiscord": "Não conectado ao Discord (Configurações → Integrações → Discord).",
     "notConnectedToDiscord2": "Não conectado ao Discord.",
     "pleaseEnterClientId": "Digite o ID do cliente e o segredo do cliente do seu aplicativo do Discord.",
-    "pleaseEnterDiscordApplication": "Digite primeiro o aplicativo do Discord nas configurações."
+    "pleaseEnterDiscordApplication": "Digite primeiro o aplicativo do Discord nas configurações.",
+    "loginFailed": "Login do Discord: {0}"
   },
   "cli": {
     "portIsUsedBy": "A porta {0} está sendo usada por outro programa. Escolha outra porta: --port <n>",
     "portNotValidNumber": "--port: número inválido",
     "touchdeckIsAlreadyRunning": "O TouchDeck já está em execução – abrindo o editor: {0}",
-    "touchdeckIsRunningEditor": "O TouchDeck está em execução.\n  Editor:  {1}\n  Dados:   {0}"
+    "touchdeckIsRunningEditor": "O TouchDeck está em execução.\n  Editor:  {1}\n  Dados:   {0}",
+    "unknownOption": "Opção desconhecida: {0}",
+    "needsValue": "{0} precisa de um valor.",
+    "help": "TouchDeck – controle remoto de macros\n\n  --port <n>      Porta do servidor (padrão 8770, ou TOUCHDECK_PORT)\n  --data <dir>    Pasta de dados (padrão ./data, ou TOUCHDECK_DATA)\n  --public <dir>  Servir o editor e o painel desta pasta em vez do programa (ou TOUCHDECK_PUBLIC)\n  --no-open       Não abrir o editor automaticamente no navegador"
   },
   "desktop": {
     "cannotStart": "O TouchDeck não pode iniciar",
@@ -406,7 +418,8 @@
     "quit": "Sair do TouchDeck",
     "restart": "Reiniciar o TouchDeck",
     "running": "O TouchDeck está em execução em {0} – dados: {1}",
-    "startAtLogin": "Iniciar ao fazer login"
+    "startAtLogin": "Iniciar ao fazer login",
+    "restartNoProgram": "Reinício: arquivo do programa não encontrado"
   },
   "profiles": {
     "imported": "Perfil importado: {0} página(s), {1} fluxo(s), {2} valor(es), {3} imagem(ns)",
