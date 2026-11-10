@@ -23,7 +23,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
 use super::discovery;
-use super::http::{ApiResult, HttpError, error_response, json_response, safe_equal, serve_file, text_response};
+use super::http::{ApiResult, HttpError, error_response, json_response, safe_equal, serve_file, serve_ui, text_response};
 use crate::core::actions::{RunOpts, option_source, run_actions};
 use crate::core::backup::Backups;
 use crate::core::catalog::{self, Section};
@@ -75,8 +75,8 @@ pub struct PairRequest {
 pub struct Options {
     pub port: u16,
     pub host: IpAddr,
-    /// Ordner mit editor/, deck/ und shared/.
-    pub public_dir: PathBuf,
+    /// Ordner mit Editor und Bedienfeld; None = die ins Programm eingebetteten Dateien.
+    pub public_dir: Option<PathBuf>,
     /// Die Android-App zum Herunterladen.
     pub apk: PathBuf,
     /// Wird aufgerufen, wenn ein Handy sich koppeln möchte (z. B. um das Fenster zu zeigen).
@@ -148,7 +148,7 @@ pub struct App {
     pub plugins: Plugins,
     pub version: &'static str,
     pub port: u16,
-    public_dir: PathBuf,
+    public_dir: Option<PathBuf>,
     apk: PathBuf,
     started: Instant,
     clients: Mutex<HashMap<u64, Client>>,
@@ -1466,15 +1466,16 @@ async fn handle(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         return Response::builder().status(302).header(header::LOCATION, target).body(Body::empty()).expect("gültige Antwort");
     }
     let index = |p: &str| if p.ends_with('/') { format!("{p}index.html") } else { p.to_string() };
+    let if_none_match = headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok());
     // Editor und Vorschau (Geräte-Größen) nur am PC selbst.
     if path.starts_with("/editor/") || path.starts_with("/preview/") {
         if who != Some(Who::Local) {
             return text_response(403, t!("server.editorIsOnlyReachable"));
         }
-        return serve_file(&app.public_dir, &index(&path), &[]).await;
+        return serve_ui(app.public_dir.as_deref(), &index(&path), if_none_match).await;
     }
     if path.starts_with("/deck/") || path.starts_with("/shared/") {
-        return serve_file(&app.public_dir, &index(&path), &[]).await;
+        return serve_ui(app.public_dir.as_deref(), &index(&path), if_none_match).await;
     }
     if let Some(rel) = path.strip_prefix("/icons/") {
         let dir = app.store.lock().unwrap().icon_dir.clone();

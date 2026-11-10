@@ -101,6 +101,24 @@ pub async fn serve_file(root: &Path, rel: &str, extra: &[(&'static str, String)]
     }
 }
 
+/**
+ * Liefert eine Datei der Oberfläche: aus `folder`, falls gesetzt (beim Entwickeln), sonst die ins Programm
+ * eingebettete. Eingebettete Dateien tragen einen ETag – kennt der Browser ihn schon (`if_none_match`),
+ * kommt nur „304 unverändert“ zurück, und das Handy lädt nichts neu.
+ */
+pub async fn serve_ui(folder: Option<&Path>, rel: &str, if_none_match: Option<&str>) -> Response {
+    if let Some(root) = folder {
+        return serve_file(root, rel, &[]).await;
+    }
+    let Some((bytes, etag)) = super::assets::get(rel) else { return text_response(404, t!("server.notFound")) };
+    let unchanged = if_none_match.is_some_and(|sent| sent.split(',').any(|t| t.trim().trim_start_matches("W/") == etag));
+    let b = Response::builder().header(header::ETAG, etag).header(header::CACHE_CONTROL, "no-cache");
+    if unchanged {
+        return b.status(304).body(Body::empty()).expect("gültige Antwort");
+    }
+    b.status(200).header(header::CONTENT_TYPE, mime(Path::new(rel))).body(Body::from(bytes)).expect("gültige Antwort")
+}
+
 /** Vergleich in konstanter Zeit, damit sich der Schlüssel nicht erraten lässt. */
 pub fn safe_equal(a: Option<&str>, b: &str) -> bool {
     let a = a.unwrap_or("").as_bytes();

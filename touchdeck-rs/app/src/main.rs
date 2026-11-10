@@ -38,15 +38,23 @@ fn data_dir() -> PathBuf {
     os::config_dir().join("TouchDeck/data")
 }
 
-/** Editor und Bedienfeld: im Paket als Ressource, beim Entwickeln aus dem Quellordner touchdeck-rs/web. */
-fn public_dir(app: &AppHandle) -> PathBuf {
+/**
+ * Editor und Bedienfeld sind ins Programm eingebettet (None). Nur beim Entwickeln kommen sie aus einem
+ * Ordner: TOUCHDECK_PUBLIC oder, im Debug-Build, der Quellordner touchdeck-rs/web.
+ */
+fn public_dir() -> Option<PathBuf> {
     if let Some(d) = std::env::var_os("TOUCHDECK_PUBLIC") {
-        return PathBuf::from(d);
+        return Some(PathBuf::from(d));
     }
-    let bundled = app.path().resource_dir().map(|r| r.join("web"));
+    cfg!(debug_assertions).then(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web"))
+}
+
+/** Die Android-App zum Herunterladen: im Paket als Ressource, beim Entwickeln aus touchdeck-rs/downloads. */
+fn apk_file(app: &AppHandle) -> PathBuf {
+    let bundled = app.path().resource_dir().map(|r| r.join("downloads/TouchDeck.apk"));
     match bundled {
-        Ok(p) if p.join("editor/index.html").exists() => p,
-        _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web"),
+        Ok(p) if p.is_file() => p,
+        _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../downloads/TouchDeck.apk"),
     }
 }
 
@@ -365,7 +373,6 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_editor(app, "")))
         .setup(move |app| {
             let handle = app.handle().clone();
-            let public = public_dir(&handle);
             let data = data_dir();
             let store = Store::open(&data).map_err(|e| e.to_string())?;
             // Ohne TOUCHDECK_PORT gilt der Port aus den Einstellungen.
@@ -377,8 +384,8 @@ fn main() {
             let opts = Options {
                 port: port(),
                 host: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
-                apk: public.join("../downloads/TouchDeck.apk"),
-                public_dir: public,
+                apk: apk_file(&handle),
+                public_dir: public_dir(),
                 on_pair_request: Some(Box::new(move |_| {
                     let h = pair_handle.clone();
                     let _ = pair_handle.run_on_main_thread(move || {

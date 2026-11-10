@@ -1,4 +1,6 @@
-// Server: HTTP-Routen und WebSocket (server.rs), Hilfen (http.rs), Suche im WLAN (discovery.rs).
+// Server: HTTP-Routen und WebSocket (server.rs), Hilfen (http.rs), Suche im WLAN (discovery.rs),
+// eingebettete Oberfläche (assets.rs).
+pub mod assets;
 pub mod discovery;
 pub mod http;
 // MCP-Server für KI-Assistenten (POST /mcp).

@@ -12,25 +12,27 @@ const HELP: &str = "TouchDeck – Makro-Fernbedienung für Linux
 
   --port <n>      Port des Servers (Standard 8770, oder TOUCHDECK_PORT)
   --data <dir>    Datenordner (Standard ./data, oder TOUCHDECK_DATA)
-  --public <dir>  Ordner mit Editor und Bedienfeld (oder TOUCHDECK_PUBLIC)
+  --public <dir>  Editor und Bedienfeld aus diesem Ordner statt aus dem Programm (oder TOUCHDECK_PUBLIC)
   --no-open       Editor nicht automatisch im Browser öffnen";
 
 struct Args {
     /// None = Port aus den Einstellungen.
     port: Option<u16>,
     data: PathBuf,
-    public: PathBuf,
+    /// None = die ins Programm eingebetteten Dateien.
+    public: Option<PathBuf>,
     open: bool,
 }
 
 fn parse_args() -> Args {
     let env = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
-    // Beim Entwickeln: Editor und Bedienfeld aus dem Quellordner.
-    let dev_public = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web");
+    // Beim Entwickeln (Debug-Build): Editor und Bedienfeld aus dem Quellordner, damit Änderungen ohne
+    // Neubau sichtbar sind. Das fertige Programm nimmt die eingebetteten Dateien.
+    let dev_public = cfg!(debug_assertions).then(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web"));
     let mut args = Args {
         port: env("TOUCHDECK_PORT").and_then(|p| p.parse().ok()),
         data: env("TOUCHDECK_DATA").map_or_else(|| PathBuf::from("data"), PathBuf::from),
-        public: env("TOUCHDECK_PUBLIC").map_or(dev_public, PathBuf::from),
+        public: env("TOUCHDECK_PUBLIC").map(PathBuf::from).or(dev_public),
         open: true,
     };
     let mut it = std::env::args().skip(1);
@@ -49,7 +51,7 @@ fn parse_args() -> Args {
                 }))
             }
             "--data" => args.data = PathBuf::from(value("--data")),
-            "--public" => args.public = PathBuf::from(value("--public")),
+            "--public" => args.public = Some(PathBuf::from(value("--public"))),
             "--no-open" => args.open = false,
             "-h" | "--help" => {
                 println!("{HELP}");
@@ -81,7 +83,9 @@ async fn touchdeck_running(port: u16) -> bool {
 async fn main() {
     let args = parse_args();
     let data = std::path::absolute(&args.data).unwrap_or(args.data);
-    let public = args.public.canonicalize().unwrap_or(args.public);
+    let public = args.public.map(|p| p.canonicalize().unwrap_or(p));
+    // Die Android-App liegt neben dem web-Ordner unter downloads/ (im Quellbaum: touchdeck-rs/downloads).
+    let apk_base = public.clone().unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../web"));
     let store = match Store::open(&data) {
         Ok(s) => s,
         Err(err) => {
@@ -95,7 +99,7 @@ async fn main() {
     let opts = Options {
         port,
         host: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
-        apk: public.join("../downloads/TouchDeck.apk"),
+        apk: apk_base.join("../downloads/TouchDeck.apk"),
         public_dir: public,
         on_pair_request: None,
     };
