@@ -29,7 +29,8 @@
     "system": "Sistema",
     "then": "Entonces …",
     "update": "Actualizar",
-    "values": "Valores"
+    "values": "Valores",
+    "fullStop": "."
   },
   "editor": {
     "accessFromWiFi": "El acceso desde la wifi está desactivado.",

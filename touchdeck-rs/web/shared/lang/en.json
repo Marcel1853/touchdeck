@@ -29,7 +29,8 @@
     "system": "System",
     "then": "Then …",
     "update": "Update",
-    "values": "Values"
+    "values": "Values",
+    "fullStop": "."
   },
   "editor": {
     "accessFromWiFi": "Access from the Wi-Fi is turned off.",

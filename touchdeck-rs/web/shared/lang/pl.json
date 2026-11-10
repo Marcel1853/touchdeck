@@ -29,7 +29,8 @@
     "system": "System",
     "then": "Następnie …",
     "update": "Aktualizuj",
-    "values": "Wartości"
+    "values": "Wartości",
+    "fullStop": "."
   },
   "editor": {
     "accessFromWiFi": "Dostęp z Wi-Fi jest wyłączony.",

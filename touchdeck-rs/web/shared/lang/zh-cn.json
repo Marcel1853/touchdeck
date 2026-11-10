@@ -29,7 +29,8 @@
     "system": "系统",
     "then": "然后 …",
     "update": "更新",
-    "values": "值"
+    "values": "值",
+    "fullStop": "。"
   },
   "editor": {
     "accessFromWiFi": "已关闭 Wi-Fi 访问。",
@@ -814,7 +815,7 @@
     "backupRestored": "备份已恢复 ✓",
     "backups": "备份",
     "backupsOfPagesValues": "页面、值、流程、事件和设置的备份。",
-    "categoryApplicationIntegrationClient": "，类别“Application Integration”，客户端类型 ",
+    "categoryApplicationIntegrationClient": "，类别“Application Integration”，客户端类型",
     "cellShape": "格子形状",
     "cellShapeFill": "填满屏幕",
     "cellShapeHint": "“填满屏幕”能更好地利用屏幕：格子可以比正方形略宽或略高。“正方形”在某些页面上会留出更多边距。",

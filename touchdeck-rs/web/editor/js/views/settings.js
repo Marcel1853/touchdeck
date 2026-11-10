@@ -429,7 +429,7 @@ function twitchCard() {
         h('summary', {}, tr('settings.howToGetClient')),
         h('ol', {},
           h('li', {}, tr('settings.on'), h('a', { href: 'https://dev.twitch.tv/console/apps/create', target: '_blank', rel: 'noopener' }, 'dev.twitch.tv/console'), tr('settings.signInWithYour2')),
-          h('li', {}, tr('settings.registerYourApplicationAny'), h('code', {}, 'http://localhost'), tr('settings.categoryApplicationIntegrationClient'), h('b', {}, tr('settings.public')), '.'),
+          h('li', {}, tr('settings.registerYourApplicationAny'), h('code', {}, 'http://localhost'), tr('settings.categoryApplicationIntegrationClient'), h('b', {}, tr('settings.public')), tr('common.fullStop')),
           h('li', {}, tr('settings.createManageCopyClient')))),
       h('label', { class: 'field' }, tr('settings.clientIdOfYour'),
         h('input', { id: 'twitch-client', value: tw.clientId, placeholder: tr('settings.exampleGp762nuuoqcoxypju8c569th9wz7q5'), autocomplete: 'off', spellcheck: 'false' })),

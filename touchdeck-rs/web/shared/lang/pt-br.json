@@ -29,7 +29,8 @@
     "system": "Sistema",
     "then": "Então …",
     "update": "Atualizar",
-    "values": "Valores"
+    "values": "Valores",
+    "fullStop": "."
   },
   "editor": {
     "accessFromWiFi": "O acesso pelo Wi-Fi está desativado.",
@@ -668,7 +669,7 @@
     "chooseZip": "Escolher arquivo ZIP …",
     "collapse": "Recolher",
     "develop": "Desenvolver",
-    "examplesToCopyAre": ", exemplos para copiar estão na ",
+    "examplesToCopyAre": ", exemplos para copiar estão em ",
     "expand": "Expandir",
     "extensionsByOthersNew": "Extensões de outras pessoas: novas ações e gatilhos. Os plugins ficam isolados e só podem fazer o que declaram ao instalar.",
     "folder": "Pasta: {0}",

@@ -208,13 +208,14 @@ input[type="range"] { padding: 0; accent-color: var(--accent); }
 .insp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .insp-head h2 { flex: 1; }
 
-.tabs { display: flex; gap: 4px; padding: 4px; margin-bottom: 16px; border-radius: 11px; background: #0f121a; }
-/* Längere Wörter (z. B. Russisch, Polnisch) brechen um, statt in den Nachbarreiter zu laufen. */
-.tabs button { flex: 1; min-width: 0; min-height: 30px; line-height: 1.15; overflow-wrap: anywhere; hyphens: auto; font-size: 12.5px; padding: 4px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 16px; border-radius: 11px; background: #0f121a; }
+/* Reiter teilen sich die Breite nach Textlänge. Reicht der Platz nicht (lange Wörter, z. B. Russisch oder
+   Polnisch), rutschen Reiter in eine zweite Reihe – Wörter werden nie zerschnitten. */
+.tabs button { flex: 1 1 auto; min-height: 30px; white-space: nowrap; font-size: 12.5px; padding: 4px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
 .tabs button.active { background: var(--panel-2); color: var(--text); box-shadow: 0 1px 4px rgb(0 0 0 / 0.4); }
 
-.segmented { display: flex; gap: 4px; }
-.segmented button { flex: 1; min-width: 0; min-height: 30px; line-height: 1.15; overflow-wrap: anywhere; hyphens: auto; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.segmented { display: flex; flex-wrap: wrap; gap: 4px; }
+.segmented button { flex: 1 1 auto; min-height: 30px; padding-inline: 8px; white-space: nowrap; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
 .segmented button.active { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 
 .icon-preview { display: flex; gap: 10px; align-items: center; }
@@ -578,7 +579,7 @@ a.btn { text-decoration: none; }
 /* Plugins */
 .view-plugins { display: grid; min-height: 0; }
 .view-plugins .detail { max-width: 980px; }
-.plugin-tabs { max-width: 420px; margin: 4px 0 18px; }
+.plugin-tabs { max-width: 560px; margin: 4px 0 18px; }
 .plugin-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .plugin-head .muted { color: var(--muted); font-size: 12px; }
 .plugin .row { display: flex; gap: 8px; }

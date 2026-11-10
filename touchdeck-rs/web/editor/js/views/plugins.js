@@ -329,7 +329,7 @@ function marketTab() {
       h('button', { class: 'btn small', title: tr('plugins.reloadMarketHint'), onclick: () => { market = 'fresh'; render(); } }, `⟳ ${tr('plugins.reloadMarket')}`)),
     market.note && h('p', { class: 'hint-text' }, market.note),
     !market.note && !market.plugins.length && h('p', { class: 'hint-text' }, tr('plugins.thereAreNoPlugins'),
-      h('a', { href: wikiPage('Veröffentlichen', 'Publishing'), target: '_blank', rel: 'noopener' }, tr('plugins.pluginWiki')), '.'),
+      h('a', { href: wikiPage('Veröffentlichen', 'Publishing'), target: '_blank', rel: 'noopener' }, tr('plugins.pluginWiki')), tr('common.fullStop')),
     ...market.plugins.map((p) => {
       const mine = installedFor(p);
       const installed = mine?.source === `github:${p.repo}`;
@@ -411,7 +411,7 @@ function devTab() {
       h('h3', {}, tr('plugins.whatPluginLooksLike')),
       h('p', { class: 'hint-text' }, tr('plugins.folderOrPublicGithub'),
         h('a', { href: wikiPage('Startseite', 'Home'), target: '_blank', rel: 'noopener' }, tr('plugins.pluginWiki')), tr('plugins.examplesToCopyAre'),
-        h('a', { href: 'https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples', target: '_blank', rel: 'noopener' }, 'touchdeck-plugins/examples'), '.'),
+        h('a', { href: 'https://github.com/Marcel1853/touchdeck-plugins/tree/main/examples', target: '_blank', rel: 'noopener' }, 'touchdeck-plugins/examples'), tr('common.fullStop')),
       h('pre', { class: 'code' }, `// plugin.js
 td.action('greet', (params, info) => \`Hello \${params.name}!\`);   // ${tr('plugins.action')}
 td.every(60000, () => td.values.set('Time', new Date().toLocaleTimeString()));  // ${tr('plugins.timer')}

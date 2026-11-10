@@ -29,7 +29,8 @@
     "system": "System",
     "then": "Dann …",
     "update": "Aktualisieren",
-    "values": "Werte"
+    "values": "Werte",
+    "fullStop": "."
   },
   "editor": {
     "accessFromWiFi": "Der Zugriff aus dem WLAN ist ausgeschaltet.",
