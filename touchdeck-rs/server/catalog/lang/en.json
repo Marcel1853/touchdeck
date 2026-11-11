@@ -1287,6 +1287,88 @@
           "label": "Brightness in %"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "Poll",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "start": "Start",
+            "end": "End (show result)",
+            "cancel": "Cancel (no result)"
+          }
+        },
+        "title": {
+          "label": "Question (up to 60 characters)"
+        },
+        "choices": {
+          "label": "Answers: 2–5, one per line (up to 25 characters)"
+        },
+        "duration": {
+          "label": "Duration in seconds (15–1800)"
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "Prediction",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "start": "Start",
+            "lock": "Lock (no more bets)",
+            "resolve": "Resolve (pick winner)",
+            "cancel": "Cancel (refund points)"
+          }
+        },
+        "title": {
+          "label": "Question (up to 45 characters)"
+        },
+        "outcomes": {
+          "label": "Outcomes: 2–10, one per line (up to 25 characters)"
+        },
+        "window": {
+          "label": "Time to bet in seconds (30–1800)"
+        },
+        "winner": {
+          "label": "Winner: number (1, 2 …) or text of the outcome"
+        }
+      }
+    },
+    "twitch_ad_snooze": {
+      "label": "Snooze ad (5 minutes)"
+    },
+    "twitch_redemption": {
+      "label": "Complete channel points redemption",
+      "fields": {
+        "reward": {
+          "label": "Reward (only rewards created by TouchDeck; takes the oldest open redemption)"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "fulfill": "Fulfilled",
+            "cancel": "Reject (refund points)"
+          }
+        }
+      }
+    },
+    "twitch_shield": {
+      "label": "Shield mode",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Toggle",
+            "on": "On",
+            "off": "Off"
+          }
+        }
+      }
+    },
+    "twitch_clear_chat": {
+      "label": "Clear chat"
     }
   },
   "triggers": {
@@ -1656,6 +1738,9 @@
             "mod": "only moderators and you",
             "sub": "only subscribers"
           }
+        },
+        "cooldown": {
+          "label": "Cooldown in seconds (0 = none)"
         }
       }
     },
@@ -1745,6 +1830,47 @@
           "label": "Shortcut (works anywhere on the PC under X11, even with TouchDeck in the background; placeholder {Event.Keys})"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "Poll started/ended",
+      "fields": {
+        "state": {
+          "label": "When?",
+          "options": {
+            "begin": "started",
+            "end": "ended",
+            "any": "either"
+          }
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "Prediction started/locked/ended",
+      "fields": {
+        "state": {
+          "label": "When?",
+          "options": {
+            "begin": "started",
+            "lock": "locked",
+            "end": "ended",
+            "any": "any"
+          }
+        }
+      }
+    },
+    "twitch_hype": {
+      "label": "Hype Train",
+      "fields": {
+        "state": {
+          "label": "When?",
+          "options": {
+            "begin": "starts",
+            "progress": "progresses",
+            "end": "ends",
+            "any": "any"
+          }
+        }
+      }
     }
   },
   "liveSources": {
@@ -1776,7 +1902,21 @@
     "gpu_load": "Graphics card load",
     "disk": "Disk used (/)",
     "net": "Network ↓ / ↑",
-    "uptime": "PC running for"
+    "uptime": "PC running for",
+    "twitch_uptime": "Twitch: stream uptime",
+    "twitch_subs": "Twitch: subscribers",
+    "twitch_last_follower": "Twitch: latest follower",
+    "twitch_last_sub": "Twitch: latest sub",
+    "twitch_last_cheer": "Twitch: latest cheer",
+    "twitch_last_raid": "Twitch: latest raid",
+    "twitch_ad_next": "Twitch: next ad in",
+    "twitch_poll": "Twitch: running poll",
+    "twitch_prediction": "Twitch: running prediction",
+    "twitch_hype": "Twitch: Hype Train",
+    "twitch_goal": "Twitch: goal (followers/subs)",
+    "twitch_chat_mode": "Twitch: chat mode on? (from action)",
+    "twitch_shield": "Twitch: shield mode on?",
+    "twitch_redemptions": "Twitch: open redemptions (from action)"
   },
   "sliderTargets": {
     "volume": "Volume (PC)",

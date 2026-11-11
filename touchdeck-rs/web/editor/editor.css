@@ -589,6 +589,8 @@ a.btn { text-decoration: none; }
 .status-badge.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
 .status-badge.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
 .status-badge.warn { color: #f4b860; border-color: #f4b86080; }
+.twitch-relogin { color: #f4b860; }
+:root[data-theme="light"] .twitch-relogin { color: #7a5300; }
 .settings-card .row input { flex: 1; min-width: 0; }
 pre.code { margin: 8px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 12px; line-height: 1.6; overflow: auto; white-space: pre; }
 .danger-card { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }

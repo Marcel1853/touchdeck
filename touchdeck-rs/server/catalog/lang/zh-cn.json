@@ -1287,6 +1287,88 @@
           "label": "亮度（%）"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "投票",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "start": "开始",
+            "end": "结束（显示结果）",
+            "cancel": "取消（不显示结果）"
+          }
+        },
+        "title": {
+          "label": "问题（最多 60 个字符）"
+        },
+        "choices": {
+          "label": "选项：2–5 个，每行一个（最多 25 个字符）"
+        },
+        "duration": {
+          "label": "时长（秒，15–1800）"
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "预测",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "start": "开始",
+            "lock": "锁定（停止下注）",
+            "resolve": "结算（选择胜出项）",
+            "cancel": "取消（退还点数）"
+          }
+        },
+        "title": {
+          "label": "问题（最多 45 个字符）"
+        },
+        "outcomes": {
+          "label": "结果：2–10 个，每行一个（最多 25 个字符）"
+        },
+        "window": {
+          "label": "下注时间（秒，30–1800）"
+        },
+        "winner": {
+          "label": "胜出项：编号（1、2 …）或结果文字"
+        }
+      }
+    },
+    "twitch_ad_snooze": {
+      "label": "推迟广告（5 分钟）"
+    },
+    "twitch_redemption": {
+      "label": "处理频道点数兑换",
+      "fields": {
+        "reward": {
+          "label": "奖励（仅限 TouchDeck 创建的；处理最早的未完成兑换）"
+        },
+        "op": {
+          "label": "操作",
+          "options": {
+            "fulfill": "已完成",
+            "cancel": "拒绝（退还点数）"
+          }
+        }
+      }
+    },
+    "twitch_shield": {
+      "label": "护盾模式",
+      "fields": {
+        "op": {
+          "label": "操作",
+          "options": {
+            "toggle": "切换",
+            "on": "开启",
+            "off": "关闭"
+          }
+        }
+      }
+    },
+    "twitch_clear_chat": {
+      "label": "清空聊天"
     }
   },
   "triggers": {
@@ -1656,6 +1738,9 @@
             "mod": "仅版主和你",
             "sub": "仅订阅者"
           }
+        },
+        "cooldown": {
+          "label": "冷却时间（秒，0 = 无）"
         }
       }
     },
@@ -1745,6 +1830,47 @@
           "label": "快捷键（在 X11 下电脑任何地方都有效，即使 TouchDeck 在后台；占位符 {Event.Keys}）"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "投票开始/结束",
+      "fields": {
+        "state": {
+          "label": "何时？",
+          "options": {
+            "begin": "开始",
+            "end": "结束",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "预测开始/锁定/结束",
+      "fields": {
+        "state": {
+          "label": "何时？",
+          "options": {
+            "begin": "开始",
+            "lock": "锁定",
+            "end": "结束",
+            "any": "任意"
+          }
+        }
+      }
+    },
+    "twitch_hype": {
+      "label": "Hype Train（热力列车）",
+      "fields": {
+        "state": {
+          "label": "何时？",
+          "options": {
+            "begin": "开始",
+            "progress": "进行中",
+            "end": "结束",
+            "any": "任意"
+          }
+        }
+      }
     }
   },
   "liveSources": {
@@ -1776,7 +1902,21 @@
     "gpu_load": "显卡负载",
     "disk": "磁盘已用（/）",
     "net": "网络 ↓ / ↑",
-    "uptime": "电脑已运行"
+    "uptime": "电脑已运行",
+    "twitch_uptime": "Twitch：直播时长",
+    "twitch_subs": "Twitch：订阅者",
+    "twitch_last_follower": "Twitch：最新关注者",
+    "twitch_last_sub": "Twitch：最新订阅",
+    "twitch_last_cheer": "Twitch：最新 Cheer",
+    "twitch_last_raid": "Twitch：最新突袭",
+    "twitch_ad_next": "Twitch：下次广告倒计时",
+    "twitch_poll": "Twitch：进行中的投票",
+    "twitch_prediction": "Twitch：进行中的预测",
+    "twitch_hype": "Twitch：Hype Train",
+    "twitch_goal": "Twitch：目标（关注/订阅）",
+    "twitch_chat_mode": "Twitch：聊天模式开启？（来自操作）",
+    "twitch_shield": "Twitch：护盾模式开启？",
+    "twitch_redemptions": "Twitch：待处理兑换（来自操作）"
   },
   "sliderTargets": {
     "volume": "音量（电脑）",

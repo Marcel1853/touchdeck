@@ -414,6 +414,7 @@ function twitchCard() {
     body = [
       h('p', {}, tr('settings.connectedAs'), h('b', {}, st.displayName ?? st.login), st.events ? tr('settings.eventsActive') : ''),
       h('p', { class: 'hint-text' }, tr('settings.youFindTwitchActions')),
+      st.missingScopes?.length ? h('p', { class: 'hint-text twitch-relogin' }, tr('settings.twitchNeedsRelogin')) : null,
       h('button', { class: 'btn ghost danger', onclick: async () => { twitchStatus = await api('POST', '/api/twitch/disconnect', {}); toast(tr('settings.twitchDisconnected'), 'ok'); render(); } }, tr('settings.disconnect')),
     ];
   } else if (st.state === 'waiting') {

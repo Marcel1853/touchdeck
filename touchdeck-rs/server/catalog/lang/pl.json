@@ -1287,6 +1287,88 @@
           "label": "Jasność w %"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "Ankieta",
+      "fields": {
+        "op": {
+          "label": "Działanie",
+          "options": {
+            "start": "Rozpocznij",
+            "end": "Zakończ (pokaż wynik)",
+            "cancel": "Anuluj (bez wyniku)"
+          }
+        },
+        "title": {
+          "label": "Pytanie (do 60 znaków)"
+        },
+        "choices": {
+          "label": "Odpowiedzi: 2–5, każda w osobnym wierszu (do 25 znaków)"
+        },
+        "duration": {
+          "label": "Czas trwania w sekundach (15–1800)"
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "Przewidywanie",
+      "fields": {
+        "op": {
+          "label": "Działanie",
+          "options": {
+            "start": "Rozpocznij",
+            "lock": "Zablokuj (koniec obstawiania)",
+            "resolve": "Rozstrzygnij (wybierz zwycięzcę)",
+            "cancel": "Anuluj (zwrot punktów)"
+          }
+        },
+        "title": {
+          "label": "Pytanie (do 45 znaków)"
+        },
+        "outcomes": {
+          "label": "Wyniki: 2–10, każdy w osobnym wierszu (do 25 znaków)"
+        },
+        "window": {
+          "label": "Czas na obstawianie w sekundach (30–1800)"
+        },
+        "winner": {
+          "label": "Zwycięzca: numer (1, 2 …) lub tekst wyniku"
+        }
+      }
+    },
+    "twitch_ad_snooze": {
+      "label": "Odłóż reklamę (5 minut)"
+    },
+    "twitch_redemption": {
+      "label": "Zrealizuj wymianę punktów kanału",
+      "fields": {
+        "reward": {
+          "label": "Nagroda (tylko utworzone przez TouchDeck; bierze najstarszą otwartą wymianę)"
+        },
+        "op": {
+          "label": "Działanie",
+          "options": {
+            "fulfill": "Zrealizowano",
+            "cancel": "Odrzuć (zwrot punktów)"
+          }
+        }
+      }
+    },
+    "twitch_shield": {
+      "label": "Tryb ochrony",
+      "fields": {
+        "op": {
+          "label": "Działanie",
+          "options": {
+            "toggle": "Przełącz",
+            "on": "Włącz",
+            "off": "Wyłącz"
+          }
+        }
+      }
+    },
+    "twitch_clear_chat": {
+      "label": "Wyczyść czat"
     }
   },
   "triggers": {
@@ -1656,6 +1738,9 @@
             "mod": "tylko moderatorzy i ty",
             "sub": "tylko subskrybenci"
           }
+        },
+        "cooldown": {
+          "label": "Czas odnowienia w sekundach (0 = brak)"
         }
       }
     },
@@ -1745,6 +1830,47 @@
           "label": "Skrót (działa wszędzie na komputerze pod X11, także gdy TouchDeck jest w tle; symbol zastępczy {Event.Keys})"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "Ankieta rozpoczęta/zakończona",
+      "fields": {
+        "state": {
+          "label": "Kiedy?",
+          "options": {
+            "begin": "rozpoczęta",
+            "end": "zakończona",
+            "any": "obojętnie"
+          }
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "Przewidywanie rozpoczęte/zablokowane/zakończone",
+      "fields": {
+        "state": {
+          "label": "Kiedy?",
+          "options": {
+            "begin": "rozpoczęte",
+            "lock": "zablokowane",
+            "end": "zakończone",
+            "any": "obojętnie"
+          }
+        }
+      }
+    },
+    "twitch_hype": {
+      "label": "Hype Train",
+      "fields": {
+        "state": {
+          "label": "Kiedy?",
+          "options": {
+            "begin": "startuje",
+            "progress": "jedzie dalej",
+            "end": "kończy się",
+            "any": "obojętnie"
+          }
+        }
+      }
     }
   },
   "liveSources": {
@@ -1776,7 +1902,21 @@
     "gpu_load": "Obciążenie karty graficznej",
     "disk": "Użycie dysku (/)",
     "net": "Sieć ↓ / ↑",
-    "uptime": "Komputer działa od"
+    "uptime": "Komputer działa od",
+    "twitch_uptime": "Twitch: czas trwania streamu",
+    "twitch_subs": "Twitch: subskrybenci",
+    "twitch_last_follower": "Twitch: ostatni obserwujący",
+    "twitch_last_sub": "Twitch: ostatnia subskrypcja",
+    "twitch_last_cheer": "Twitch: ostatni cheer",
+    "twitch_last_raid": "Twitch: ostatni rajd",
+    "twitch_ad_next": "Twitch: następna reklama za",
+    "twitch_poll": "Twitch: trwająca ankieta",
+    "twitch_prediction": "Twitch: trwające przewidywanie",
+    "twitch_hype": "Twitch: Hype Train",
+    "twitch_goal": "Twitch: cel (obserwujący/suby)",
+    "twitch_chat_mode": "Twitch: tryb czatu włączony? (z działania)",
+    "twitch_shield": "Twitch: tryb ochrony włączony?",
+    "twitch_redemptions": "Twitch: otwarte wymiany (z działania)"
   },
   "sliderTargets": {
     "volume": "Głośność (komputer)",

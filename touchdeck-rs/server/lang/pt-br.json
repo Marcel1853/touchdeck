@@ -130,7 +130,16 @@
     "jsonFieldMissing": "O campo “{0}” não está na resposta.",
     "timeFormat": "Informe a hora como HH:MM, por ex. 07:30.",
     "brightnessDdc": "Brilho {0} %",
-    "brightnessSoft": "Brilho {0} % (escurecido; brilho real com ddcutil)"
+    "brightnessSoft": "Brilho {0} % (escurecido; brilho real com ddcutil)",
+    "pollNeedsTitleAndChoices": "Uma enquete precisa de uma pergunta e pelo menos 2 respostas.",
+    "pollStarted": "Enquete iniciada.",
+    "noActivePoll": "Nenhuma enquete em andamento.",
+    "predictionNeedsTitleAndOutcomes": "Um palpite precisa de uma pergunta e pelo menos 2 resultados.",
+    "predictionStarted": "Palpite iniciado.",
+    "noActivePrediction": "Nenhum palpite em andamento.",
+    "predictionOutcomeNotFound": "Resultado “{0}” não encontrado – informe um número (1, 2 …) ou o texto exato.",
+    "adSnoozed": "Anúncio adiado (restam {0}).",
+    "noOpenRedemption": "Nenhum resgate pendente para esta recompensa."
   },
   "events": {
     "activeEvents": "{0} evento(s) ativo(s)",

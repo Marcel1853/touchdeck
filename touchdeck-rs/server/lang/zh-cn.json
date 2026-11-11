@@ -130,7 +130,16 @@
     "jsonFieldMissing": "响应中没有字段“{0}”。",
     "timeFormat": "请按 HH:MM 格式输入时间，例如 07:30。",
     "brightnessDdc": "亮度 {0} %",
-    "brightnessSoft": "亮度 {0} %（已调暗；使用 ddcutil 可调节真实亮度）"
+    "brightnessSoft": "亮度 {0} %（已调暗；使用 ddcutil 可调节真实亮度）",
+    "pollNeedsTitleAndChoices": "投票需要一个问题和至少 2 个选项。",
+    "pollStarted": "投票已开始。",
+    "noActivePoll": "当前没有进行中的投票。",
+    "predictionNeedsTitleAndOutcomes": "预测需要一个问题和至少 2 个结果。",
+    "predictionStarted": "预测已开始。",
+    "noActivePrediction": "当前没有进行中的预测。",
+    "predictionOutcomeNotFound": "未找到结果“{0}”——请填写编号（1、2 …）或准确文字。",
+    "adSnoozed": "广告已推迟（还可推迟 {0} 次）。",
+    "noOpenRedemption": "此奖励没有待处理的兑换。"
   },
   "events": {
     "activeEvents": "{0} 个事件已启用",

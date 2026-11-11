@@ -9,6 +9,13 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 Version: 0.12.4
 Date: ?
   Features:
+    - More Twitch: start, end and cancel polls; start, lock, resolve and cancel predictions; snooze
+      the next ad; complete or reject channel points redemptions; shield mode; clear chat. New live
+      values: stream uptime, subscribers, latest follower/sub/cheer/raid, next ad countdown, running
+      poll and prediction, Hype Train, goal, chat modes and shield mode as switches with state, open
+      redemptions. New triggers: poll, prediction and Hype Train. Chat commands provide {Event.Befehl},
+      {Event.Argumente} and {Event.Arg1} … {Event.Arg3} and can have a cooldown. The new features need
+      one new Twitch login (the settings show a hint).
     - Editor and deck are built into the program: the package no longer carries a web folder, and
       TouchDeck still starts with one click. Phones and tablets load only changed files when they
       open the deck (faster start). For development, TOUCHDECK_PUBLIC serves a folder instead.

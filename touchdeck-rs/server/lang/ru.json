@@ -130,7 +130,16 @@
     "jsonFieldMissing": "Поля «{0}» нет в ответе.",
     "timeFormat": "Укажите время в формате ЧЧ:ММ, например 07:30.",
     "brightnessDdc": "Яркость {0} %",
-    "brightnessSoft": "Яркость {0} % (затемнено; настоящая яркость через ddcutil)"
+    "brightnessSoft": "Яркость {0} % (затемнено; настоящая яркость через ddcutil)",
+    "pollNeedsTitleAndChoices": "Для опроса нужен вопрос и минимум 2 ответа.",
+    "pollStarted": "Опрос начат.",
+    "noActivePoll": "Сейчас нет активного опроса.",
+    "predictionNeedsTitleAndOutcomes": "Для прогноза нужен вопрос и минимум 2 исхода.",
+    "predictionStarted": "Прогноз начат.",
+    "noActivePrediction": "Сейчас нет активного прогноза.",
+    "predictionOutcomeNotFound": "Исход «{0}» не найден – укажите номер (1, 2 …) или точный текст.",
+    "adSnoozed": "Реклама отложена (осталось {0}).",
+    "noOpenRedemption": "Нет открытых обменов для этой награды."
   },
   "events": {
     "activeEvents": "Активных событий: {0}",

@@ -1001,7 +1001,8 @@
     "factorioForget": "Olvidar",
     "factorioTaken": "Inicio de sesión tomado de Factorio.",
     "factorioWhere": "Encontrarás el token en tu perfil de factorio.com, o usa «Tomar de Factorio» si has iniciado sesión en el juego:",
-    "factorioSaved": "Acceso a Factorio guardado."
+    "factorioSaved": "Acceso a Factorio guardado.",
+    "twitchNeedsRelogin": "⚠️ Las nuevas funciones de Twitch (encuestas, predicciones, anuncios, modo escudo, Hype Train, objetivos) necesitan más permisos. Pulsa «Desconectar» una vez y vuelve a conectar."
   },
   "logs": {
     "all": "Todo",

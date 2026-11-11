@@ -1001,7 +1001,8 @@
     "factorioForget": "Забыть",
     "factorioTaken": "Вход взят из Factorio.",
     "factorioWhere": "Токен находится в вашем профиле на factorio.com – или нажмите «Взять из Factorio», если вы вошли в игре:",
-    "factorioSaved": "Доступ к Factorio сохранён."
+    "factorioSaved": "Доступ к Factorio сохранён.",
+    "twitchNeedsRelogin": "⚠️ Новым функциям Twitch (опросы, прогнозы, реклама, режим защиты, Hype Train, цели) нужны дополнительные права. Один раз нажмите «Отключить» и подключитесь заново."
   },
   "logs": {
     "all": "Все",

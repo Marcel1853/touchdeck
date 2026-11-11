@@ -1001,7 +1001,8 @@
     "factorioForget": "Oublier",
     "factorioTaken": "Connexion reprise de Factorio.",
     "factorioWhere": "Tu trouves le jeton sur ton profil sur factorio.com – ou utilise « Reprendre de Factorio » si tu es connecté dans le jeu :",
-    "factorioSaved": "Accès Factorio enregistré."
+    "factorioSaved": "Accès Factorio enregistré.",
+    "twitchNeedsRelogin": "⚠️ Les nouvelles fonctions Twitch (sondages, prédictions, pubs, mode bouclier, Hype Train, objectifs) demandent plus d'autorisations. Cliquez une fois sur « Déconnecter » puis reconnectez-vous."
   },
   "logs": {
     "all": "Tout",

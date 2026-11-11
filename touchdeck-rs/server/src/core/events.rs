@@ -65,7 +65,7 @@ pub fn trigger_matches(kind: &str, p: &Map<String, Value>, d: &Value) -> bool {
     match kind {
         "value_change" => s(&g("name")) == s(&d["name"]) && compare(&s(&g("op")), &d["value"], &g("value")),
         "app_start" | "timer" | "time_of_day" | "file_change" | "obs_replay_saved" | "twitch_follow" | "twitch_ad" => true,
-        "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
+        "device" | "obs_stream" | "obs_record" | "obs_studio" | "obs_connection" | "twitch_stream" | "twitch_poll" | "twitch_prediction" | "twitch_hype" | "discord_voice" | "discord_channel" => state_matches(&g("state"), &d["state"]),
         "button_toggle" => empty_or_eq(&g("button"), &d["buttonId"]) && state_matches(&g("state"), &d["state"]),
         "page_view" => empty_or_eq(&g("page"), &d["pageId"]) && state_matches(&g("state"), &d["state"]),
         "timer_done" => empty_or_eq(&g("name"), &d["name"]),
@@ -387,7 +387,15 @@ impl EventEngine {
                 }
             });
         }
-        let types: Vec<String> = subs.iter().map(|s| s.trigger.kind.clone()).collect();
+        let mut types: Vec<String> = subs.iter().map(|s| s.trigger.kind.clone()).collect();
+        // Live-Anzeigen, die von Twitch-Ereignissen leben, brauchen dieselben Abos.
+        {
+            let store = app.store.lock().unwrap();
+            for b in store.config.pages.iter().flat_map(|p| &p.buttons) {
+                let sources = std::iter::once(&b.live.source).chain(b.live.series.iter().map(|s| &s.source));
+                types.extend(sources.filter_map(|src| crate::core::live::twitch_event_for(src)).map(String::from));
+            }
+        }
         app.twitch.set_wanted(&types);
         app.log.debug("Events", t!("events.activeEvents", subs.len()));
         *self.subs.lock().unwrap() = subs;
@@ -434,7 +442,10 @@ impl EventEngine {
         }
         {
             let mut last = self.last_run.lock().unwrap();
-            if sub.cooldown > 0 && last.get(&sub.key).is_some_and(|t| t.elapsed() < Duration::from_secs(sub.cooldown as u64)) {
+            // Abklingzeit des Events oder des Auslösers (z. B. je Chat-Befehl).
+            let own = js_number(sub.trigger.params.get("cooldown"));
+            let cooldown = sub.cooldown.max(if own.is_finite() { own.clamp(0.0, 86400.0) as i64 } else { 0 });
+            if cooldown > 0 && last.get(&sub.key).is_some_and(|t| t.elapsed() < Duration::from_secs(cooldown as u64)) {
                 app.log.debug("Events", t!("events.isStillWaitingCooldown", sub.name));
                 return;
             }

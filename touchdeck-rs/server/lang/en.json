@@ -130,7 +130,16 @@
     "jsonFieldMissing": "Field “{0}” is not in the response.",
     "timeFormat": "Please give the time as HH:MM, e.g. 07:30.",
     "brightnessDdc": "Brightness {0} %",
-    "brightnessSoft": "Brightness {0} % (dimmed; real brightness with ddcutil)"
+    "brightnessSoft": "Brightness {0} % (dimmed; real brightness with ddcutil)",
+    "pollNeedsTitleAndChoices": "A poll needs a question and at least 2 answers.",
+    "pollStarted": "Poll started.",
+    "noActivePoll": "No poll is running right now.",
+    "predictionNeedsTitleAndOutcomes": "A prediction needs a question and at least 2 outcomes.",
+    "predictionStarted": "Prediction started.",
+    "noActivePrediction": "No prediction is running right now.",
+    "predictionOutcomeNotFound": "Outcome “{0}” not found – give a number (1, 2 …) or the exact text.",
+    "adSnoozed": "Ad snoozed ({0} snoozes left).",
+    "noOpenRedemption": "No open redemption for this reward."
   },
   "events": {
     "activeEvents": "{0} event(s) active",

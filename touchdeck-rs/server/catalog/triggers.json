@@ -756,6 +756,13 @@
       "value": "sub"
      }
     ]
+   },
+   {
+    "key": "cooldown",
+    "type": "number",
+    "default": 0,
+    "min": 0,
+    "max": 3600
    }
   ]
  },
@@ -787,6 +794,81 @@
   "category": "twitch",
   "icon": "📺",
   "fields": []
+ },
+ {
+  "type": "twitch_poll",
+  "category": "twitch",
+  "icon": "📊",
+  "fields": [
+   {
+    "key": "state",
+    "type": "select",
+    "default": "end",
+    "options": [
+     {
+      "value": "begin"
+     },
+     {
+      "value": "end"
+     },
+     {
+      "value": "any"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_prediction",
+  "category": "twitch",
+  "icon": "🔮",
+  "fields": [
+   {
+    "key": "state",
+    "type": "select",
+    "default": "end",
+    "options": [
+     {
+      "value": "begin"
+     },
+     {
+      "value": "lock"
+     },
+     {
+      "value": "end"
+     },
+     {
+      "value": "any"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_hype",
+  "category": "twitch",
+  "icon": "🚂",
+  "fields": [
+   {
+    "key": "state",
+    "type": "select",
+    "default": "begin",
+    "options": [
+     {
+      "value": "begin"
+     },
+     {
+      "value": "progress"
+     },
+     {
+      "value": "end"
+     },
+     {
+      "value": "any"
+     }
+    ]
+   }
+  ]
  },
  {
   "type": "discord_voice",

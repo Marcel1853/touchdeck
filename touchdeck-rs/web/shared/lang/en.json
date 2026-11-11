@@ -1001,7 +1001,8 @@
     "factorioForget": "Forget",
     "factorioTaken": "Login taken from Factorio.",
     "factorioWhere": "You find the token on your profile at factorio.com – or use “Take from Factorio” if you are logged in in the game:",
-    "factorioSaved": "Factorio login saved."
+    "factorioSaved": "Factorio login saved.",
+    "twitchNeedsRelogin": "⚠️ New Twitch features (polls, predictions, ads, shield mode, Hype Train, goals) need more permissions. “Disconnect” once and connect again."
   },
   "logs": {
     "all": "All",

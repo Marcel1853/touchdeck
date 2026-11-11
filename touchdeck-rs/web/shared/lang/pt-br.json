@@ -1001,7 +1001,8 @@
     "factorioForget": "Esquecer",
     "factorioTaken": "Login pego do Factorio.",
     "factorioWhere": "Você encontra o token no seu perfil em factorio.com – ou use “Pegar do Factorio” se estiver logado no jogo:",
-    "factorioSaved": "Acesso ao Factorio salvo."
+    "factorioSaved": "Acesso ao Factorio salvo.",
+    "twitchNeedsRelogin": "⚠️ Os novos recursos da Twitch (enquetes, palpites, anúncios, modo escudo, Hype Train, metas) precisam de mais permissões. Clique uma vez em “Desconectar” e conecte de novo."
   },
   "logs": {
     "all": "Tudo",

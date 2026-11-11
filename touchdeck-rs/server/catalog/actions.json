@@ -1977,6 +1977,190 @@
   "fields": []
  },
  {
+  "type": "twitch_poll",
+  "category": "twitch",
+  "group": "streaming",
+  "icon": "📊",
+  "fields": [
+   {
+    "key": "op",
+    "type": "select",
+    "default": "start",
+    "options": [
+     {
+      "value": "start"
+     },
+     {
+      "value": "end"
+     },
+     {
+      "value": "cancel"
+     }
+    ]
+   },
+   {
+    "key": "title",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   },
+   {
+    "key": "choices",
+    "type": "textarea",
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   },
+   {
+    "key": "duration",
+    "type": "number",
+    "default": 120,
+    "min": 15,
+    "max": 1800,
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "type": "twitch_prediction",
+  "category": "twitch",
+  "group": "streaming",
+  "icon": "🔮",
+  "fields": [
+   {
+    "key": "op",
+    "type": "select",
+    "default": "start",
+    "options": [
+     {
+      "value": "start"
+     },
+     {
+      "value": "lock"
+     },
+     {
+      "value": "resolve"
+     },
+     {
+      "value": "cancel"
+     }
+    ]
+   },
+   {
+    "key": "title",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   },
+   {
+    "key": "outcomes",
+    "type": "textarea",
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   },
+   {
+    "key": "window",
+    "type": "number",
+    "default": 120,
+    "min": 30,
+    "max": 1800,
+    "showIf": {
+     "op": [
+      "start"
+     ]
+    }
+   },
+   {
+    "key": "winner",
+    "type": "text",
+    "showIf": {
+     "op": [
+      "resolve"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "type": "twitch_ad_snooze",
+  "category": "twitch",
+  "group": "streaming",
+  "icon": "💤",
+  "fields": []
+ },
+ {
+  "type": "twitch_redemption",
+  "category": "twitch",
+  "group": "streaming",
+  "icon": "✅",
+  "fields": [
+   {
+    "key": "reward",
+    "type": "dynamic",
+    "source": "twitch-rewards"
+   },
+   {
+    "key": "op",
+    "type": "select",
+    "default": "fulfill",
+    "options": [
+     {
+      "value": "fulfill"
+     },
+     {
+      "value": "cancel"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_shield",
+  "category": "twitch",
+  "group": "streaming",
+  "icon": "🛡️",
+  "fields": [
+   {
+    "key": "op",
+    "type": "select",
+    "default": "toggle",
+    "options": [
+     {
+      "value": "toggle"
+     },
+     {
+      "value": "on"
+     },
+     {
+      "value": "off"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "twitch_clear_chat",
+  "category": "twitch",
+  "group": "streaming",
+  "icon": "🧹",
+  "fields": []
+ },
+ {
   "type": "discord_mute",
   "category": "discord",
   "group": "communication",

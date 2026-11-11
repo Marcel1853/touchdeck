@@ -9,6 +9,14 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 Version: 0.12.4
 Datum: ?
   Neuerungen:
+    - Mehr Twitch: Umfragen starten, beenden und abbrechen; Vorhersagen starten, sperren, auflösen
+      und abbrechen; nächste Werbung verschieben; Kanalpunkte-Einlösungen erledigen oder ablehnen;
+      Schutzmodus; Chat leeren. Neue Live-Werte: Laufzeit des Streams, Abonnenten, letzter
+      Follower/Abo/Cheer/Raid, Restzeit bis zur nächsten Werbung, laufende Umfrage und Vorhersage,
+      Hype Train, Ziel, Chat-Modi und Schutzmodus als Schalter mit Zustand, offene Einlösungen. Neue
+      Auslöser: Umfrage, Vorhersage und Hype Train. Chat-Befehle liefern {Event.Befehl},
+      {Event.Argumente} und {Event.Arg1} … {Event.Arg3} und können eine Abklingzeit haben. Die neuen
+      Funktionen brauchen einmal eine neue Twitch-Anmeldung (die Einstellungen zeigen einen Hinweis).
     - Editor und Bedienfeld sind ins Programm eingebaut: Im Paket liegt kein web-Ordner mehr, und
       TouchDeck startet weiter mit einem Klick. Handys und Tablets laden beim Öffnen nur noch
       geänderte Dateien (schnellerer Start). Zum Entwickeln liefert TOUCHDECK_PUBLIC einen Ordner.

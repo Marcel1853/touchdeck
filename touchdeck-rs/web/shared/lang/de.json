@@ -1001,7 +1001,8 @@
     "factorioForget": "Vergessen",
     "factorioTaken": "Anmeldung aus Factorio übernommen.",
     "factorioWhere": "Den Token findest du auf deinem Profil bei factorio.com – oder „Aus Factorio übernehmen“, wenn du im Spiel angemeldet bist:",
-    "factorioSaved": "Factorio-Zugang gespeichert."
+    "factorioSaved": "Factorio-Zugang gespeichert.",
+    "twitchNeedsRelogin": "⚠️ Neue Twitch-Funktionen (Umfragen, Vorhersagen, Werbung, Schutzmodus, Hype Train, Ziele) brauchen mehr Rechte. Einmal „Verbindung trennen“ und neu verbinden."
   },
   "logs": {
     "all": "Alle",

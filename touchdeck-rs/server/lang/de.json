@@ -130,7 +130,16 @@
     "jsonFieldMissing": "Feld „{0}“ steht nicht in der Antwort.",
     "timeFormat": "Uhrzeit bitte als HH:MM angeben, z. B. 07:30.",
     "brightnessDdc": "Helligkeit {0} %",
-    "brightnessSoft": "Helligkeit {0} % (abgedunkelt; echte Helligkeit mit ddcutil)"
+    "brightnessSoft": "Helligkeit {0} % (abgedunkelt; echte Helligkeit mit ddcutil)",
+    "pollNeedsTitleAndChoices": "Umfrage braucht eine Frage und mindestens 2 Antworten.",
+    "pollStarted": "Umfrage gestartet.",
+    "noActivePoll": "Gerade läuft keine Umfrage.",
+    "predictionNeedsTitleAndOutcomes": "Vorhersage braucht eine Frage und mindestens 2 Ausgänge.",
+    "predictionStarted": "Vorhersage gestartet.",
+    "noActivePrediction": "Gerade läuft keine Vorhersage.",
+    "predictionOutcomeNotFound": "Ausgang „{0}“ nicht gefunden – Nummer (1, 2 …) oder genauen Text angeben.",
+    "adSnoozed": "Werbung verschoben (noch {0}× möglich).",
+    "noOpenRedemption": "Keine offene Einlösung für diese Belohnung."
   },
   "events": {
     "activeEvents": "{0} Event(s) aktiv",

@@ -61,6 +61,157 @@ fn first_param(button: &Button, kind: &str, key: &str) -> Option<String> {
     button.actions.iter().find(|a| a.kind == kind).and_then(|a| a.params.get(key)).map(js_string).filter(|s| !s.is_empty())
 }
 
+/** Auslöser, dessen Twitch-Ereignisse eine Live-Anzeige braucht (dann wird er auch ohne Event abonniert). */
+pub fn twitch_event_for(source: &str) -> Option<&'static str> {
+    Some(match source {
+        "twitch_last_follower" => "twitch_follow",
+        "twitch_last_sub" => "twitch_sub",
+        "twitch_last_cheer" => "twitch_cheer",
+        "twitch_last_raid" => "twitch_raid",
+        "twitch_hype" => "twitch_hype",
+        _ => return None,
+    })
+}
+
+/** Sekunden als „1:05“ bzw. „1:02:05“. */
+fn clock_text(secs: i64) -> String {
+    let secs = secs.max(0);
+    let (h, m, s) = (secs / 3600, secs / 60 % 60, secs % 60);
+    if h > 0 { format!("{h}:{m:02}:{s:02}") } else { format!("{m}:{s:02}") }
+}
+
+/** Zeitpunkt von Twitch (RFC 3339 oder Unix-Sekunden) → Unix-Sekunden. */
+fn twitch_time(v: &Value) -> Option<i64> {
+    v.as_i64()
+        .or_else(|| v.as_str().and_then(|t| t.parse::<i64>().ok()))
+        .or_else(|| v.as_str().and_then(|t| chrono::DateTime::parse_from_rfc3339(t).ok()).map(|t| t.timestamp()))
+        .filter(|t| *t > 0)
+}
+
+fn short(t: &Value, n: usize) -> String {
+    let t = js_string(t);
+    if t.chars().count() > n { format!("{}…", t.chars().take(n - 1).collect::<String>()) } else { t }
+}
+
+/** Twitch-Werte für Live-Anzeigen (Laufzeit, Abos, Umfrage, Vorhersage, Werbung, Hype Train …). */
+async fn twitch_value(app: &Arc<App>, button: &Button, src: &str) -> Result<Value> {
+    let tw = &app.twitch;
+    let me = tw.me()?;
+    let dash = || text("–");
+    let last_text = |trigger: &str, extra: Option<&str>| {
+        let e = tw.last(trigger);
+        if e.is_null() {
+            return None;
+        }
+        let who = js_string(&e["Nutzer"]);
+        Some(text(match extra.map(|k| js_string(&e[k])).filter(|x| !x.is_empty()) {
+            Some(x) => format!("{who} ({x})"),
+            None => who,
+        }))
+    };
+    Ok(match src {
+        "twitch_live" | "twitch_viewers" => {
+            let s = tw.stream().await?;
+            let live = !s.is_null();
+            if src == "twitch_live" {
+                json!({ "text": if live { "LIVE" } else { t!("live.offline") }, "on": live })
+            } else {
+                json!({ "text": if live { format!("{} 👁", s["viewer_count"]) } else { "–".into() }, "on": live })
+            }
+        }
+        "twitch_followers" => text(tw.followers().await?.to_string()),
+        "twitch_uptime" => {
+            let s = tw.stream().await?;
+            match twitch_time(&s["started_at"]) {
+                Some(start) => json!({ "text": clock_text(chrono::Utc::now().timestamp() - start), "on": true }),
+                None => dash(),
+            }
+        }
+        "twitch_subs" => text(js_string(&tw.get_cached("subs", 120, &format!("/subscriptions?broadcaster_id={me}&first=1")).await?["total"])),
+        "twitch_last_follower" => match last_text("twitch_follow", None) {
+            Some(v) => v,
+            None => {
+                let d = tw.get_cached("lastfollow", 60, &format!("/channels/followers?broadcaster_id={me}&first=1")).await?;
+                text(d["data"][0]["user_name"].as_str().unwrap_or("–"))
+            }
+        },
+        "twitch_last_sub" => last_text("twitch_sub", Some("Monate")).unwrap_or_else(dash),
+        "twitch_last_cheer" => last_text("twitch_cheer", Some("Bits")).unwrap_or_else(dash),
+        "twitch_last_raid" => last_text("twitch_raid", Some("Zuschauer")).unwrap_or_else(dash),
+        "twitch_ad_next" => {
+            let d = tw.get_cached("ads", 30, &format!("/channels/ads?broadcaster_id={me}")).await?["data"][0].clone();
+            match twitch_time(&d["next_ad_at"]) {
+                Some(at) => {
+                    let left = at - chrono::Utc::now().timestamp();
+                    let snoozes = d["snooze_count"].as_i64().unwrap_or(0);
+                    let t = if snoozes > 0 { format!("{} · 💤{snoozes}", clock_text(left)) } else { clock_text(left) };
+                    json!({ "text": t, "on": left <= 120 })
+                }
+                None => dash(),
+            }
+        }
+        "twitch_poll" => {
+            let p = tw.get_cached("poll", 5, &format!("/polls?broadcaster_id={me}&first=1")).await?["data"][0].clone();
+            if p["status"] != "ACTIVE" {
+                return Ok(dash());
+            }
+            let parts: Vec<String> = p["choices"].as_array().into_iter().flatten().map(|c| format!("{} {}", short(&c["title"], 10), c["votes"].as_i64().unwrap_or(0))).collect();
+            json!({ "text": parts.join(" · "), "on": true })
+        }
+        "twitch_prediction" => {
+            let p = tw.get_cached("prediction", 5, &format!("/predictions?broadcaster_id={me}&first=1")).await?["data"][0].clone();
+            if p["status"] != "ACTIVE" && p["status"] != "LOCKED" {
+                return Ok(dash());
+            }
+            let outcomes = p["outcomes"].as_array().cloned().unwrap_or_default();
+            let total: i64 = outcomes.iter().map(|o| o["channel_points"].as_i64().unwrap_or(0)).sum();
+            let parts: Vec<String> = outcomes
+                .iter()
+                .map(|o| {
+                    let pts = o["channel_points"].as_i64().unwrap_or(0);
+                    format!("{} {}%", short(&o["title"], 10), if total > 0 { pts * 100 / total } else { 0 })
+                })
+                .collect();
+            let lock = if p["status"] == "LOCKED" { "🔒 " } else { "" };
+            json!({ "text": format!("{lock}{}", parts.join(" · ")), "on": true })
+        }
+        "twitch_hype" => {
+            let h = tw.last("twitch_hype");
+            if h.is_null() || h["state"] == "end" {
+                return Ok(dash());
+            }
+            let (progress, goal) = (h["Fortschritt"].as_f64().unwrap_or(0.0), h["Ziel"].as_f64().unwrap_or(0.0));
+            let pct = if goal > 0.0 { (progress / goal * 100.0).round() as i64 } else { 0 };
+            json!({ "text": format!("Lv {} · {pct}%", js_string(&h["Level"])), "on": true })
+        }
+        "twitch_goal" => {
+            let g = tw.get_cached("goals", 60, &format!("/goals?broadcaster_id={me}")).await?["data"][0].clone();
+            if g.is_null() {
+                return Ok(dash());
+            }
+            text(format!("{} / {}", js_string(&g["current_amount"]), js_string(&g["target_amount"])))
+        }
+        "twitch_chat_mode" => {
+            let mode = first_param(button, "twitch_chat_mode", "mode").unwrap_or_else(|| "emote_mode".into());
+            let d = tw.get_cached("chatsettings", 10, &format!("/chat/settings?broadcaster_id={me}&moderator_id={me}")).await?["data"][0].clone();
+            let on = d[&mode] == true;
+            json!({ "text": if on { t!("live.on") } else { t!("live.off") }, "on": on })
+        }
+        "twitch_shield" => {
+            let d = tw.get_cached("shield", 10, &format!("/moderation/shield_mode?broadcaster_id={me}&moderator_id={me}")).await?["data"][0].clone();
+            let on = d["is_active"] == true;
+            json!({ "text": if on { t!("live.on") } else { t!("live.off") }, "on": on })
+        }
+        "twitch_redemptions" => {
+            let Some(reward) = first_param(button, "twitch_redemption", "reward") else { return Ok(dash()) };
+            let path = format!("/channel_points/custom_rewards/redemptions?broadcaster_id={me}&reward_id={reward}&status=UNFULFILLED&first=50");
+            let n = tw.get_cached(&format!("redemptions:{reward}"), 10, &path).await?["data"].as_array().map_or(0, Vec::len);
+            json!({ "text": n.to_string(), "on": n > 0 })
+        }
+        _ => text(""),
+    })
+}
+
 fn truthy(v: &Value) -> bool {
     *v == Value::Bool(true) || ["true", "1", "an", "ja", "on"].contains(&js_string(v).to_lowercase().as_str())
 }
@@ -183,20 +334,11 @@ async fn live_value(app: &Arc<App>, button: &Button, snap: &Snapshot, variables:
             }
         }
         "command" => text(if live.command.is_empty() { String::new() } else { command_output(&live.command).await? }),
-        src @ ("twitch_live" | "twitch_viewers" | "twitch_followers") => {
+        src if src.starts_with("twitch_") => {
             if !app.twitch.connected() {
                 return Ok(Some(text(t!("live.twitchOff"))));
             }
-            if src == "twitch_followers" {
-                return Ok(Some(text(app.twitch.followers().await?.to_string())));
-            }
-            let s = app.twitch.stream().await?;
-            let live = !s.is_null();
-            if src == "twitch_live" {
-                json!({ "text": if live { "LIVE" } else { t!("live.offline") }, "on": live })
-            } else {
-                json!({ "text": if live { format!("{} 👁", s["viewer_count"]) } else { "–".into() }, "on": live })
-            }
+            twitch_value(app, button, src).await?
         }
         src @ ("discord_mute" | "discord_deaf" | "discord_channel") => {
             let d = &app.discord;

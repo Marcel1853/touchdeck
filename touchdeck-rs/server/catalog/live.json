@@ -67,6 +67,48 @@
    "value": "twitch_followers"
   },
   {
+   "value": "twitch_uptime"
+  },
+  {
+   "value": "twitch_subs"
+  },
+  {
+   "value": "twitch_last_follower"
+  },
+  {
+   "value": "twitch_last_sub"
+  },
+  {
+   "value": "twitch_last_cheer"
+  },
+  {
+   "value": "twitch_last_raid"
+  },
+  {
+   "value": "twitch_ad_next"
+  },
+  {
+   "value": "twitch_poll"
+  },
+  {
+   "value": "twitch_prediction"
+  },
+  {
+   "value": "twitch_hype"
+  },
+  {
+   "value": "twitch_goal"
+  },
+  {
+   "value": "twitch_chat_mode"
+  },
+  {
+   "value": "twitch_shield"
+  },
+  {
+   "value": "twitch_redemptions"
+  },
+  {
    "value": "discord_mute"
   },
   {

@@ -1001,7 +1001,8 @@
     "factorioForget": "Zapomnij",
     "factorioTaken": "Przejęto logowanie z Factorio.",
     "factorioWhere": "Token znajdziesz w swoim profilu na factorio.com – albo użyj „Przejmij z Factorio”, jeśli jesteś zalogowany w grze:",
-    "factorioSaved": "Zapisano dostęp do Factorio."
+    "factorioSaved": "Zapisano dostęp do Factorio.",
+    "twitchNeedsRelogin": "⚠️ Nowe funkcje Twitcha (ankiety, przewidywania, reklamy, tryb ochrony, Hype Train, cele) wymagają więcej uprawnień. Kliknij raz „Rozłącz” i połącz ponownie."
   },
   "logs": {
     "all": "Wszystko",

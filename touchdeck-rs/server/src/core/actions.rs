@@ -516,6 +516,12 @@ fn set_variable(app: &App, name: &str, value: &str) -> Result<()> {
     app.store.lock().unwrap().set_variable(name, &json!(value))
 }
 
+/** Liste aus einem Feld: je Zeile oder durch „|“ getrennt, leere Einträge weg, höchstens max Einträge zu je len Zeichen. */
+fn list_items(text: &str, max: usize, len: usize) -> Vec<String> {
+    let sep = if text.contains('\n') { '\n' } else { '|' };
+    text.split(sep).map(|x| truncate(x.trim(), len)).filter(|x| !x.is_empty()).take(max).collect()
+}
+
 fn truncate(s: &str, n: usize) -> String {
     s.chars().take(n).collect()
 }
@@ -1128,6 +1134,7 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             let mut body = Map::new();
             body.insert(mode, json!(on));
             app.twitch.api("PATCH", &format!("/chat/settings?{q}"), Some(Value::Object(body))).await?;
+            app.twitch.forget("chatsettings");
             Ok(Some(if on { t!("actions.modeOn") } else { t!("actions.modeOff") }.into()))
         }
         "twitch_shoutout" => {
@@ -1163,6 +1170,106 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             app.twitch.api("PATCH", &format!("/channel_points/custom_rewards?{q}"), Some(Value::Object(body))).await?;
             none
         }
+        "twitch_poll" => {
+            let me = app.twitch.me()?;
+            app.twitch.forget("poll");
+            let op = p.or("op", "start");
+            if op == "start" {
+                let title = truncate(&fill(app, ctx, &p.s("title")), 60);
+                let choices = list_items(&fill(app, ctx, &p.s("choices")), 5, 25);
+                if title.trim().is_empty() || choices.len() < 2 {
+                    bail!(t!("actions.pollNeedsTitleAndChoices"));
+                }
+                let duration = p.n_or("duration", 120.0).clamp(15.0, 1800.0) as i64;
+                let body = json!({ "broadcaster_id": me, "title": title, "choices": choices.iter().map(|c| json!({ "title": c })).collect::<Vec<_>>(), "duration": duration });
+                app.twitch.api("POST", "/polls", Some(body)).await?;
+                return Ok(Some(t!("actions.pollStarted").into()));
+            }
+            let cur = app.twitch.api("GET", &format!("/polls?broadcaster_id={me}&first=1"), None).await?["data"][0].clone();
+            if cur["status"] != "ACTIVE" {
+                bail!(t!("actions.noActivePoll"));
+            }
+            // Beenden zeigt das Ergebnis im Chat, Abbrechen nicht.
+            let status = if op == "cancel" { "ARCHIVED" } else { "TERMINATED" };
+            app.twitch.api("PATCH", "/polls", Some(json!({ "broadcaster_id": me, "id": cur["id"], "status": status }))).await?;
+            none
+        }
+        "twitch_prediction" => {
+            let me = app.twitch.me()?;
+            app.twitch.forget("prediction");
+            let op = p.or("op", "start");
+            if op == "start" {
+                let title = truncate(&fill(app, ctx, &p.s("title")), 45);
+                let outcomes = list_items(&fill(app, ctx, &p.s("outcomes")), 10, 25);
+                if title.trim().is_empty() || outcomes.len() < 2 {
+                    bail!(t!("actions.predictionNeedsTitleAndOutcomes"));
+                }
+                let window = p.n_or("window", 120.0).clamp(30.0, 1800.0) as i64;
+                let body = json!({ "broadcaster_id": me, "title": title, "outcomes": outcomes.iter().map(|o| json!({ "title": o })).collect::<Vec<_>>(), "prediction_window": window });
+                app.twitch.api("POST", "/predictions", Some(body)).await?;
+                return Ok(Some(t!("actions.predictionStarted").into()));
+            }
+            let cur = app.twitch.api("GET", &format!("/predictions?broadcaster_id={me}&first=1"), None).await?["data"][0].clone();
+            if cur["status"] != "ACTIVE" && cur["status"] != "LOCKED" {
+                bail!(t!("actions.noActivePrediction"));
+            }
+            let mut body = json!({ "broadcaster_id": me, "id": cur["id"] });
+            match op.as_str() {
+                "lock" => body["status"] = json!("LOCKED"),
+                "cancel" => body["status"] = json!("CANCELED"),
+                _ => {
+                    // Gewinner: Nummer (1, 2 …) oder Titel der Antwort.
+                    let want = fill(app, ctx, &p.s("winner")).trim().to_lowercase();
+                    let outcomes = cur["outcomes"].as_array().cloned().unwrap_or_default();
+                    let pick = want
+                        .parse::<usize>()
+                        .ok()
+                        .and_then(|n| n.checked_sub(1))
+                        .and_then(|i| outcomes.get(i))
+                        .or_else(|| outcomes.iter().find(|o| js_string(&o["title"]).to_lowercase() == want))
+                        .ok_or_else(|| anyhow!(t!("actions.predictionOutcomeNotFound", want)))?;
+                    body["status"] = json!("RESOLVED");
+                    body["winning_outcome_id"] = pick["id"].clone();
+                }
+            }
+            app.twitch.api("PATCH", "/predictions", Some(body)).await?;
+            none
+        }
+        "twitch_ad_snooze" => {
+            let me = app.twitch.me()?;
+            app.twitch.forget("ads");
+            let r = app.twitch.api("POST", &format!("/channels/ads/schedule/snooze?broadcaster_id={me}"), None).await?;
+            Ok(Some(t!("actions.adSnoozed", js_string(&r["data"][0]["snooze_count"]))))
+        }
+        "twitch_redemption" => {
+            let me = app.twitch.me()?;
+            let reward = p.s("reward");
+            if reward.is_empty() {
+                bail!(t!("actions.noRewardSelected"));
+            }
+            app.twitch.forget(&format!("redemptions:{reward}"));
+            let q = format!("broadcaster_id={me}&reward_id={reward}");
+            // Die älteste offene Einlösung zuerst (Warteschlange).
+            let open = app.twitch.api("GET", &format!("/channel_points/custom_rewards/redemptions?{q}&status=UNFULFILLED&sort=OLDEST&first=1"), None).await?["data"][0].clone();
+            let Some(id) = open["id"].as_str() else { bail!(t!("actions.noOpenRedemption")) };
+            let status = if p.s("op") == "cancel" { "CANCELED" } else { "FULFILLED" };
+            app.twitch.api("PATCH", &format!("/channel_points/custom_rewards/redemptions?{q}&id={id}"), Some(json!({ "status": status }))).await?;
+            Ok(Some(js_string(&open["user_name"])))
+        }
+        "twitch_shield" => {
+            let me = app.twitch.me()?;
+            app.twitch.forget("shield");
+            let path = format!("/moderation/shield_mode?broadcaster_id={me}&moderator_id={me}");
+            let op = p.s("op");
+            let on = if op.is_empty() || op == "toggle" { app.twitch.api("GET", &path, None).await?["data"][0]["is_active"] != true } else { op == "on" };
+            app.twitch.api("PUT", &path, Some(json!({ "is_active": on }))).await?;
+            Ok(Some(if on { t!("actions.modeOn") } else { t!("actions.modeOff") }.into()))
+        }
+        "twitch_clear_chat" => {
+            let me = app.twitch.me()?;
+            app.twitch.api("DELETE", &format!("/moderation/chat?broadcaster_id={me}&moderator_id={me}"), None).await?;
+            none
+        }
         "twitch_info" => {
             let me = app.twitch.me()?;
             let s = app.twitch.stream().await?;
@@ -1174,6 +1281,11 @@ async fn run_action(app: &Arc<App>, action: &Action, ctx: &mut Ctx) -> Result<Op
             set("Titel", &ch["title"])?;
             set("Kategorie", &ch["game_name"])?;
             set("Follower", &json!(followers))?;
+            let subs = app.twitch.api("GET", &format!("/subscriptions?broadcaster_id={me}&first=1"), None).await.map(|d| d["total"].clone()).unwrap_or(json!(""));
+            set("Abonnenten", &subs)?;
+            let since = s["started_at"].as_str().and_then(|t| chrono::DateTime::parse_from_rfc3339(t).ok());
+            let minutes = since.map_or(0, |t| (chrono::Utc::now().timestamp() - t.timestamp()) / 60);
+            set("Laufzeit", &json!(if since.is_some() { format!("{}:{:02}", minutes / 60, minutes % 60) } else { String::new() }))?;
             Ok(Some(t!("actions.updatedValuesTwitchLive").into()))
         }
 

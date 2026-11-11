@@ -1287,6 +1287,88 @@
           "label": "Luminosité en %"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "Sondage",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "start": "Lancer",
+            "end": "Terminer (afficher le résultat)",
+            "cancel": "Annuler (sans résultat)"
+          }
+        },
+        "title": {
+          "label": "Question (60 caractères max.)"
+        },
+        "choices": {
+          "label": "Réponses : 2 à 5, une par ligne (25 caractères max.)"
+        },
+        "duration": {
+          "label": "Durée en secondes (15–1800)"
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "Prédiction",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "start": "Lancer",
+            "lock": "Verrouiller (plus de mises)",
+            "resolve": "Conclure (choisir le gagnant)",
+            "cancel": "Annuler (rembourser les points)"
+          }
+        },
+        "title": {
+          "label": "Question (45 caractères max.)"
+        },
+        "outcomes": {
+          "label": "Issues : 2 à 10, une par ligne (25 caractères max.)"
+        },
+        "window": {
+          "label": "Temps pour miser en secondes (30–1800)"
+        },
+        "winner": {
+          "label": "Gagnant : numéro (1, 2 …) ou texte de l'issue"
+        }
+      }
+    },
+    "twitch_ad_snooze": {
+      "label": "Repousser la pub (5 minutes)"
+    },
+    "twitch_redemption": {
+      "label": "Traiter une récompense de points de chaîne",
+      "fields": {
+        "reward": {
+          "label": "Récompense (seulement celles créées par TouchDeck ; prend la plus ancienne demande ouverte)"
+        },
+        "op": {
+          "label": "Action",
+          "options": {
+            "fulfill": "Traitée",
+            "cancel": "Refuser (rembourser les points)"
+          }
+        }
+      }
+    },
+    "twitch_shield": {
+      "label": "Mode bouclier",
+      "fields": {
+        "op": {
+          "label": "Action",
+          "options": {
+            "toggle": "Basculer",
+            "on": "Activer",
+            "off": "Désactiver"
+          }
+        }
+      }
+    },
+    "twitch_clear_chat": {
+      "label": "Vider le chat"
     }
   },
   "triggers": {
@@ -1656,6 +1738,9 @@
             "mod": "seulement les modérateurs et toi",
             "sub": "seulement les abonnés"
           }
+        },
+        "cooldown": {
+          "label": "Temps de recharge en secondes (0 = aucun)"
         }
       }
     },
@@ -1745,6 +1830,47 @@
           "label": "Raccourci (fonctionne partout sur le PC sous X11, même avec TouchDeck en arrière-plan ; espace réservé {Event.Keys})"
         }
       }
+    },
+    "twitch_poll": {
+      "label": "Sondage lancé/terminé",
+      "fields": {
+        "state": {
+          "label": "Quand ?",
+          "options": {
+            "begin": "lancé",
+            "end": "terminé",
+            "any": "peu importe"
+          }
+        }
+      }
+    },
+    "twitch_prediction": {
+      "label": "Prédiction lancée/verrouillée/terminée",
+      "fields": {
+        "state": {
+          "label": "Quand ?",
+          "options": {
+            "begin": "lancée",
+            "lock": "verrouillée",
+            "end": "terminée",
+            "any": "peu importe"
+          }
+        }
+      }
+    },
+    "twitch_hype": {
+      "label": "Hype Train",
+      "fields": {
+        "state": {
+          "label": "Quand ?",
+          "options": {
+            "begin": "démarre",
+            "progress": "progresse",
+            "end": "se termine",
+            "any": "peu importe"
+          }
+        }
+      }
     }
   },
   "liveSources": {
@@ -1776,7 +1902,21 @@
     "gpu_load": "Charge de la carte graphique",
     "disk": "Disque utilisé (/)",
     "net": "Réseau ↓ / ↑",
-    "uptime": "PC allumé depuis"
+    "uptime": "PC allumé depuis",
+    "twitch_uptime": "Twitch : durée du live",
+    "twitch_subs": "Twitch : abonnés (subs)",
+    "twitch_last_follower": "Twitch : dernier follower",
+    "twitch_last_sub": "Twitch : dernier abonnement",
+    "twitch_last_cheer": "Twitch : dernier cheer",
+    "twitch_last_raid": "Twitch : dernier raid",
+    "twitch_ad_next": "Twitch : prochaine pub dans",
+    "twitch_poll": "Twitch : sondage en cours",
+    "twitch_prediction": "Twitch : prédiction en cours",
+    "twitch_hype": "Twitch : Hype Train",
+    "twitch_goal": "Twitch : objectif (followers/abonnés)",
+    "twitch_chat_mode": "Twitch : mode du chat actif ? (de l'action)",
+    "twitch_shield": "Twitch : mode bouclier actif ?",
+    "twitch_redemptions": "Twitch : demandes en attente (de l'action)"
   },
   "sliderTargets": {
     "volume": "Volume (PC)",

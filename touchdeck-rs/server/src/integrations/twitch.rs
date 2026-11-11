@@ -19,7 +19,7 @@ const ID: &str = "https://id.twitch.tv/oauth2";
 const HELIX: &str = "https://api.twitch.tv/helix";
 const EVENTSUB: &str = "wss://eventsub.wss.twitch.tv/ws";
 
-pub const SCOPES: [&str; 15] = [
+pub const SCOPES: [&str; 22] = [
     "user:read:chat",
     "user:write:chat",
     "moderator:manage:announcements",
@@ -35,6 +35,13 @@ pub const SCOPES: [&str; 15] = [
     "channel:read:subscriptions",
     "bits:read",
     "channel:read:ads",
+    "channel:manage:ads",
+    "channel:manage:polls",
+    "channel:manage:predictions",
+    "channel:read:hype_train",
+    "channel:read:goals",
+    "moderator:manage:shield_mode",
+    "moderator:manage:chat_messages",
 ];
 
 /** EventSub-Typen je Auslöser (nur abonniert, wenn ein Event sie braucht): (Typ, Version, Bedingung). */
@@ -49,6 +56,9 @@ fn eventsub_types(trigger: &str, user: &str) -> Vec<(&'static str, &'static str,
         "twitch_chat" => vec![("channel.chat.message", "1", json!({ "broadcaster_user_id": user, "user_id": user }))],
         "twitch_stream" => vec![("stream.online", "1", b()), ("stream.offline", "1", b())],
         "twitch_ad" => vec![("channel.ad_break.begin", "1", b())],
+        "twitch_poll" => vec![("channel.poll.begin", "1", b()), ("channel.poll.end", "1", b())],
+        "twitch_prediction" => vec![("channel.prediction.begin", "1", b()), ("channel.prediction.lock", "1", b()), ("channel.prediction.end", "1", b())],
+        "twitch_hype" => vec![("channel.hype_train.begin", "2", b()), ("channel.hype_train.progress", "2", b()), ("channel.hype_train.end", "2", b())],
         _ => vec![],
     }
 }
@@ -78,6 +88,10 @@ struct Inner {
     cache: Mutex<HashMap<String, (Instant, Value)>>,
     /// Laufende Erneuerung (es darf nur eine geben).
     refreshing: Mutex<Option<Refresh>>,
+    /// Letztes Ereignis je Auslöser (für Live-Anzeigen wie „letzter Sub“ und den Hype Train).
+    last: Mutex<HashMap<String, Value>>,
+    /// Berechtigungen, die der gespeicherten Anmeldung fehlen (neue Funktionen → neu anmelden).
+    missing_scopes: Mutex<Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -105,6 +119,8 @@ impl TwitchClient {
             events: broadcast::channel(256).0,
             cache: Mutex::new(HashMap::new()),
             refreshing: Mutex::new(None),
+            last: Mutex::new(HashMap::new()),
+            missing_scopes: Mutex::new(Vec::new()),
         }))
     }
 
@@ -130,7 +146,8 @@ impl TwitchClient {
         }
         let a = self.auth();
         if !a.access_token.is_empty() {
-            return json!({ "state": "connected", "login": a.login, "displayName": a.display_name, "events": self.0.session_id.lock().unwrap().is_some() });
+            let missing = self.0.missing_scopes.lock().unwrap().clone();
+            return json!({ "state": "connected", "login": a.login, "displayName": a.display_name, "events": self.0.session_id.lock().unwrap().is_some(), "missingScopes": missing });
         }
         json!({ "state": if a.last_error.is_null() { "idle" } else { "error" }, "error": a.last_error })
     }
@@ -267,6 +284,7 @@ impl TwitchClient {
             bail!(t!("twitch.twitchLoginInvalidPlease"));
         }
         let d: Value = res.json().await?;
+        *self.0.missing_scopes.lock().unwrap() = missing_scopes(&d["scopes"]);
         let user_id = d["user_id"].as_str().unwrap_or("").to_string();
         let users = self.api("GET", &format!("/users?id={user_id}"), None).await?;
         let login = d["login"].as_str().unwrap_or("").to_string();
@@ -427,6 +445,16 @@ impl TwitchClient {
         Ok(v)
     }
 
+    /** GET mit kurzem Zwischenspeicher (für Live-Anzeigen). */
+    pub async fn get_cached(&self, key: &str, secs: u64, path: &str) -> Result<Value> {
+        self.cached(key, Duration::from_secs(secs), async { self.api("GET", path, None).await }).await
+    }
+
+    /** Zwischengespeicherte Abfrage verwerfen (nach einer Änderung, damit die Anzeige sofort stimmt). */
+    pub fn forget(&self, key: &str) {
+        self.0.cache.lock().unwrap().retain(|k, _| !k.starts_with(key));
+    }
+
     /** Laufender Stream oder null. */
     pub async fn stream(&self) -> Result<Value> {
         let me = self.me()?;
@@ -511,6 +539,7 @@ impl TwitchClient {
                 Some("notification") => {
                     let kind = msg["payload"]["subscription"]["type"].as_str().unwrap_or("");
                     if let Some((trigger, data)) = translate(kind, &msg["payload"]["event"]) {
+                        self.0.last.lock().unwrap().insert(trigger.into(), data.clone());
                         let _ = self.0.events.send((trigger.into(), data));
                     }
                 }
@@ -536,10 +565,26 @@ impl TwitchClient {
         self.0.log.info("Twitch", format!("Ereignisse aktiv ({ok} Abos)"));
     }
 
+    /** Letztes Ereignis eines Auslösers seit dem Start (z. B. „twitch_sub“), sonst null. */
+    pub fn last(&self, trigger: &str) -> Value {
+        self.0.last.lock().unwrap().get(trigger).cloned().unwrap_or(Value::Null)
+    }
+
+    /** Ist eine Anzeige, die von Ereignissen lebt, für diesen Auslöser auf Empfang? (abonniert und verbunden) */
+    pub fn listening(&self, trigger: &str) -> bool {
+        self.0.wanted.lock().unwrap().contains(trigger) && self.0.session_id.lock().unwrap().is_some()
+    }
+
     pub fn stop(&self) {
         self.cancel_login();
         self.close_events();
     }
+}
+
+/** Berechtigungen aus SCOPES, die eine Anmeldung (Antwort von /validate) nicht hat. */
+fn missing_scopes(have: &Value) -> Vec<String> {
+    let have: Vec<&str> = have.as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+    SCOPES.iter().filter(|s| !have.contains(s)).map(|s| s.to_string()).collect()
 }
 
 fn tier(t: &Value) -> Value {
@@ -574,11 +619,44 @@ pub fn translate(kind: &str, e: &Value) -> Option<(&'static str, Value)> {
         ),
         "channel.chat.message" => {
             let badges: Vec<Value> = e["badges"].as_array().into_iter().flatten().map(|b| b["set_id"].clone()).collect();
-            ("twitch_chat", json!({ "text": e["message"]["text"], "badges": badges, "Nutzer": e["chatter_user_name"], "Nachricht": e["message"]["text"] }))
+            let text = e["message"]["text"].as_str().unwrap_or("");
+            let mut words = text.split_whitespace();
+            let command = words.next().unwrap_or("");
+            let args: Vec<&str> = words.collect();
+            let arg = |i: usize| args.get(i).copied().unwrap_or("");
+            (
+                "twitch_chat",
+                json!({ "text": text, "badges": badges, "Nutzer": e["chatter_user_name"], "Nachricht": text,
+                        "Befehl": command, "Argumente": args.join(" "), "Arg1": arg(0), "Arg2": arg(1), "Arg3": arg(2) }),
+            )
         }
         "stream.online" => ("twitch_stream", json!({ "state": "online", "Status": "online" })),
         "stream.offline" => ("twitch_stream", json!({ "state": "offline", "Status": "offline" })),
         "channel.ad_break.begin" => ("twitch_ad", json!({ "Dauer": e["duration_seconds"] })),
+        "channel.poll.begin" | "channel.poll.end" => {
+            let choices = e["choices"].as_array().cloned().unwrap_or_default();
+            let names: Vec<&str> = choices.iter().filter_map(|c| c["title"].as_str()).collect();
+            let best = choices.iter().max_by_key(|c| c["votes"].as_i64().unwrap_or(0));
+            let state = if kind == "channel.poll.begin" { "begin" } else { "end" };
+            (
+                "twitch_poll",
+                json!({ "state": state, "Titel": e["title"], "Auswahl": names.join(" / "),
+                        "Gewinner": best.map_or(json!(""), |c| c["title"].clone()), "Stimmen": best.map_or(json!(0), |c| c["votes"].clone()) }),
+            )
+        }
+        "channel.prediction.begin" | "channel.prediction.lock" | "channel.prediction.end" => {
+            let state = kind.rsplit('.').next().unwrap_or("");
+            let winner = e["outcomes"].as_array().into_iter().flatten().find(|o| o["id"] == e["winning_outcome_id"]);
+            (
+                "twitch_prediction",
+                json!({ "state": state, "Titel": e["title"], "Gewinner": winner.map_or(json!(""), |o| o["title"].clone()),
+                        "Punkte": winner.map_or(json!(0), |o| o["channel_points"].clone()) }),
+            )
+        }
+        "channel.hype_train.begin" | "channel.hype_train.progress" | "channel.hype_train.end" => {
+            let state = kind.rsplit('.').next().unwrap_or("");
+            ("twitch_hype", json!({ "state": state, "Level": e["level"], "Fortschritt": e["progress"], "Ziel": e["goal"], "Gesamt": e["total"] }))
+        }
         _ => return None,
     })
 }
@@ -596,6 +674,24 @@ mod tests {
         let (_, chat) = translate("channel.chat.message", &json!({ "message": { "text": "!szene" }, "badges": [{ "set_id": "moderator" }], "chatter_user_name": "x" })).unwrap();
         assert_eq!(chat["badges"], json!(["moderator"]));
         assert!(translate("unbekannt", &json!({})).is_none());
+        let (_, cmd) = translate("channel.chat.message", &json!({ "message": { "text": "!szene  Spiel 2" }, "chatter_user_name": "x" })).unwrap();
+        assert_eq!((cmd["Befehl"].as_str(), cmd["Argumente"].as_str(), cmd["Arg1"].as_str(), cmd["Arg3"].as_str()), (Some("!szene"), Some("Spiel 2"), Some("Spiel"), Some("")));
+        let poll = json!({ "title": "Was?", "choices": [{ "title": "A", "votes": 3 }, { "title": "B", "votes": 7 }] });
+        let (t, d) = translate("channel.poll.end", &poll).unwrap();
+        assert_eq!((t, d["state"].as_str(), d["Gewinner"].as_str(), d["Stimmen"].as_i64()), ("twitch_poll", Some("end"), Some("B"), Some(7)));
+        let pred = json!({ "title": "Sieg?", "winning_outcome_id": "2", "outcomes": [{ "id": "1", "title": "Ja" }, { "id": "2", "title": "Nein", "channel_points": 500 }] });
+        let (_, d) = translate("channel.prediction.end", &pred).unwrap();
+        assert_eq!((d["state"].as_str(), d["Gewinner"].as_str()), (Some("end"), Some("Nein")));
+        let (t, d) = translate("channel.hype_train.progress", &json!({ "level": 2, "progress": 300, "goal": 1000 })).unwrap();
+        assert_eq!((t, d["state"].as_str(), d["Level"].as_i64()), ("twitch_hype", Some("progress"), Some(2)));
+    }
+
+    #[test]
+    fn fehlende_berechtigungen() {
+        let all: Vec<&str> = SCOPES.to_vec();
+        assert!(missing_scopes(&json!(all)).is_empty());
+        let old = json!(["user:read:chat", "bits:read"]);
+        assert!(missing_scopes(&old).contains(&"channel:manage:polls".to_string()));
     }
 
     #[test]

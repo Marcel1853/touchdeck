@@ -1001,7 +1001,8 @@
     "factorioForget": "忘记",
     "factorioTaken": "已从 Factorio 获取登录信息。",
     "factorioWhere": "令牌可在 factorio.com 的个人资料中找到 – 如果你已在游戏中登录，也可以使用“从 Factorio 获取”：",
-    "factorioSaved": "Factorio 访问信息已保存。"
+    "factorioSaved": "Factorio 访问信息已保存。",
+    "twitchNeedsRelogin": "⚠️ 新的 Twitch 功能（投票、预测、广告、护盾模式、Hype Train、目标）需要更多权限。请先点一次“断开连接”，然后重新连接。"
   },
   "logs": {
     "all": "全部",

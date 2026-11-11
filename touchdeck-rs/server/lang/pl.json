@@ -130,7 +130,16 @@
     "jsonFieldMissing": "Pola „{0}” nie ma w odpowiedzi.",
     "timeFormat": "Podaj godzinę w formacie GG:MM, np. 07:30.",
     "brightnessDdc": "Jasność {0} %",
-    "brightnessSoft": "Jasność {0} % (przyciemnione; prawdziwa jasność z ddcutil)"
+    "brightnessSoft": "Jasność {0} % (przyciemnione; prawdziwa jasność z ddcutil)",
+    "pollNeedsTitleAndChoices": "Ankieta wymaga pytania i co najmniej 2 odpowiedzi.",
+    "pollStarted": "Ankieta rozpoczęta.",
+    "noActivePoll": "Żadna ankieta nie trwa.",
+    "predictionNeedsTitleAndOutcomes": "Przewidywanie wymaga pytania i co najmniej 2 wyników.",
+    "predictionStarted": "Przewidywanie rozpoczęte.",
+    "noActivePrediction": "Żadne przewidywanie nie trwa.",
+    "predictionOutcomeNotFound": "Nie znaleziono wyniku „{0}” – podaj numer (1, 2 …) lub dokładny tekst.",
+    "adSnoozed": "Reklama odłożona (pozostało {0}).",
+    "noOpenRedemption": "Brak otwartych wymian dla tej nagrody."
   },
   "events": {
     "activeEvents": "Aktywne zdarzenia: {0}",

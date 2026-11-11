@@ -130,7 +130,16 @@
     "jsonFieldMissing": "Le champ « {0} » ne figure pas dans la réponse.",
     "timeFormat": "Indique l’heure au format HH:MM, p. ex. 07:30.",
     "brightnessDdc": "Luminosité {0} %",
-    "brightnessSoft": "Luminosité {0} % (atténuée ; vraie luminosité avec ddcutil)"
+    "brightnessSoft": "Luminosité {0} % (atténuée ; vraie luminosité avec ddcutil)",
+    "pollNeedsTitleAndChoices": "Un sondage nécessite une question et au moins 2 réponses.",
+    "pollStarted": "Sondage lancé.",
+    "noActivePoll": "Aucun sondage n'est en cours.",
+    "predictionNeedsTitleAndOutcomes": "Une prédiction nécessite une question et au moins 2 issues.",
+    "predictionStarted": "Prédiction lancée.",
+    "noActivePrediction": "Aucune prédiction n'est en cours.",
+    "predictionOutcomeNotFound": "Issue « {0} » introuvable – indiquez un numéro (1, 2 …) ou le texte exact.",
+    "adSnoozed": "Pub repoussée (encore {0} fois possible).",
+    "noOpenRedemption": "Aucune demande en attente pour cette récompense."
   },
   "events": {
     "activeEvents": "{0} événement(s) actif(s)",
