@@ -7,7 +7,7 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.4
-Date: ?
+Date: 2026-11-11
   Features:
     - More Twitch: start, end and cancel polls; start, lock, resolve and cancel predictions; snooze
       the next ad; complete or reject channel points redemptions; shield mode; clear chat. New live

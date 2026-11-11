@@ -8,8 +8,8 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 
 | Ordner | Inhalt |
 |---|---|
-| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri), Version 0.12.3: Server, Aktionen und Integrationen, Editor und Bedienfeld, Fenster mit Symbol in der Systemleiste |
-| [`android/`](android/) | Android-App (Kotlin), Version 0.8.4, in acht Sprachen: findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
+| [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri), Version 0.12.4: Server, Aktionen und Integrationen, Editor und Bedienfeld, Fenster mit Symbol in der Systemleiste |
+| [`android/`](android/) | Android-App (Kotlin), Version 0.8.5, in acht Sprachen: findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
 
 Änderungen je Version: [`CHANGELOG.de.md`](CHANGELOG.de.md)
 

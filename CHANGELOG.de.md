@@ -7,7 +7,7 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 ```text
 ---------------------------------------------------------------------------------------------------
 Version: 0.12.4
-Datum: ?
+Datum: 2026-11-11
   Neuerungen:
     - Mehr Twitch: Umfragen starten, beenden und abbrechen; Vorhersagen starten, sperren, auflösen
       und abbrechen; nächste Werbung verschieben; Kanalpunkte-Einlösungen erledigen oder ablehnen;

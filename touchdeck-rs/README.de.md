@@ -6,7 +6,7 @@ Makro-Fernbedienung für Linux: Button-Seiten am PC gestalten und vom Handy oder
 aus auslösen – mit Editor, Android-App und Bedienfeld im Browser. Geschrieben in Rust,
 das Programmfenster nutzt Tauri mit der Web-Ansicht des Systems.
 
-Aktuelle Version: **0.12.3** (PC-Programm), Android-App **0.8.4**. Änderungen je
+Aktuelle Version: **0.12.4** (PC-Programm), Android-App **0.8.5**. Änderungen je
 Version: [`CHANGELOG.de.md`](../CHANGELOG.de.md)
 
 ## Installieren
