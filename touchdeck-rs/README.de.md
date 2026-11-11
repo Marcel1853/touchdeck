@@ -33,13 +33,13 @@ sudo apt install ./TouchDeck_<version>_amd64.deb   # mit Menüeintrag
 ## Sprache
 
 Die ganze Oberfläche – Editor, Bedienfeld, Android-App und Meldungen des Servers –
-gibt es auf Deutsch und Englisch. Voreingestellt ist die Systemsprache; umstellen
+gibt es in acht Sprachen: Deutsch, Englisch, Spanisch, Französisch, Polnisch, brasilianischem Portugiesisch, Russisch und vereinfachtem Chinesisch. Fehlt ein Text in einer Sprache, erscheint der englische. Voreingestellt ist die Systemsprache; umstellen
 lässt sie sich unter **Einstellungen › Allgemein**. Die Übersetzungen liegen in
-`web/shared/lang/de.json` und `en.json` (Editor und Bedienfeld), `server/lang/*.json`
+`web/shared/lang/<sprache>.json` (Editor und Bedienfeld), `server/lang/*.json`
 (Meldungen des Servers) und `server/catalog/lang/*.json` (Namen der Aktionen und
 Auslöser). Plugins können eigene Übersetzungen mitbringen.
 
-Auch die **Android-App** gibt es auf Deutsch und Englisch. Ihre Texte –
+Auch die **Android-App** gibt es in denselben acht Sprachen. Ihre Texte –
 Verbindungsbildschirm, Dialoge und Bedienfeld – folgen der Sprache, die in TouchDeck
 am PC eingestellt ist, und wechseln mit, wenn man sie dort umstellt. Vor der ersten
 Verbindung nimmt die App die Sprache des gefundenen PCs, sonst die Sprache des Handys.
@@ -268,10 +268,10 @@ touchdeck-rs/
 │   └── src/
 │       ├── core/           Daten (store), Aktionen, Events, Live-Werte, Timer, Profile, Icon-Pakete, Plugins, Protokoll, Sicherungen
 │       ├── server/         HTTP-Routen, WebSocket, Suche im WLAN
-│       ├── system/         Linux: Programme, Audio, Medien (linux.rs), Tastatur/Maus/Fenster (x11.rs)
+│       ├── system/         Programme, Audio, Medien (os), Tastatur/Maus/Fenster (input) – für Linux und, als frühe Alpha, Windows (windows/)
 │       └── integrations/   OBS, Steam, Twitch, Discord, Import von Seiten
 ├── app/                    Desktop-Programm (Tauri): Fenster, Symbol in der Systemleiste, Autostart, Starter-Eintrag
-├── web/                    Editor (editor/), Bedienfeld fürs Handy (deck/), gemeinsame Teile und Übersetzungen (shared/)
+├── web/                    Editor (editor/), Bedienfeld fürs Handy (deck/), gemeinsame Teile und Übersetzungen (shared/); wird von server/build.rs ins Programm eingebaut
 ├── downloads/              Android-App, die TouchDeck den Handys anbietet (wird gebaut, nicht im Repo)
 └── scripts/                Hilfsskripte
 ```
@@ -282,7 +282,7 @@ Nützliche Umgebungsvariablen:
 |---|---|
 | `TOUCHDECK_PORT` | anderer Port (Standard 8770), z. B. zum Testen neben einer laufenden Version |
 | `TOUCHDECK_DATA` | anderer Datenordner |
-| `TOUCHDECK_PUBLIC` | anderer Ordner für Editor und Bedienfeld |
+| `TOUCHDECK_PUBLIC` | Editor und Bedienfeld aus diesem Ordner statt aus den eingebauten Dateien liefern – Änderungen sind ohne Neubau sichtbar (Debug-Builds nehmen `web/` von selbst) |
 
 Zum Bauen des Fensters braucht das System einmalig:
 

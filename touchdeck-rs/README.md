@@ -32,13 +32,13 @@ sudo apt install ./TouchDeck_<version>_amd64.deb   # with menu entry
 ## Language
 
 The whole interface – editor, deck, Android app and server messages – is available
-in German and English. By default it follows the system language; you can change it
-in **Settings › General**. The translations live in `web/shared/lang/de.json` and
-`en.json` (editor and deck), `server/lang/*.json` (server messages) and
+in eight languages: German, English, Spanish, French, Polish, Brazilian Portuguese, Russian and Simplified Chinese. If a text is missing in a language, the English one is shown. By default it follows the system language; you can change it
+in **Settings › General**. The translations live in `web/shared/lang/<language>.json`
+(editor and deck), `server/lang/*.json` (server messages) and
 `server/catalog/lang/*.json` (names of actions and triggers). Plugins can ship their
 own translations.
 
-The **Android app** is available in German and English too. Its texts – connect
+The **Android app** is available in the same eight languages. Its texts – connect
 screen, dialogs and the deck – follow the language set in TouchDeck on the PC and
 switch along when you change it there. Before the first connection the app uses the
 language of the PC it found, otherwise the phone's language.
@@ -261,10 +261,10 @@ touchdeck-rs/
 │   └── src/
 │       ├── core/           data (store), actions, events, live values, timers, profiles, icon packs, plugins, log, backups
 │       ├── server/         HTTP routes, WebSocket, discovery on the Wi-Fi
-│       ├── system/         Linux: programs, audio, media (linux.rs), keyboard/mouse/windows (x11.rs)
+│       ├── system/         programs, audio, media (os), keyboard/mouse/windows (input) – for Linux and, as an early alpha, Windows (windows/)
 │       └── integrations/   OBS, Steam, Twitch, Discord, page import
 ├── app/                    desktop program (Tauri): window, system tray icon, autostart, launcher entry
-├── web/                    editor (editor/), deck for the phone (deck/), shared parts and translations (shared/)
+├── web/                    editor (editor/), deck for the phone (deck/), shared parts and translations (shared/); built into the program by server/build.rs
 ├── downloads/              Android app that TouchDeck offers to phones (built, not in the repo)
 └── scripts/                helper scripts
 ```
@@ -275,7 +275,7 @@ Useful environment variables:
 |---|---|
 | `TOUCHDECK_PORT` | different port (default 8770), e.g. for testing next to a running version |
 | `TOUCHDECK_DATA` | different data folder |
-| `TOUCHDECK_PUBLIC` | different folder for editor and deck |
+| `TOUCHDECK_PUBLIC` | serve editor and deck from this folder instead of the built-in files – changes show up without rebuilding (debug builds use `web/` automatically) |
 
 To build the window, the system needs once:
 

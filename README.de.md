@@ -9,7 +9,7 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 | Ordner | Inhalt |
 |---|---|
 | [`touchdeck-rs/`](touchdeck-rs/) | PC-Programm in Rust (Tauri), Version 0.12.3: Server, Aktionen und Integrationen, Editor und Bedienfeld, Fenster mit Symbol in der Systemleiste |
-| [`android/`](android/) | Android-App (Kotlin), Version 0.8.4, auf Deutsch und Englisch: findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
+| [`android/`](android/) | Android-App (Kotlin), Version 0.8.4, in acht Sprachen: findet den PC im WLAN, koppelt per Bestätigung oder QR-Code, zeigt das Bedienfeld im Vollbild |
 
 Änderungen je Version: [`CHANGELOG.de.md`](CHANGELOG.de.md)
 
@@ -46,10 +46,10 @@ Lautstärke, Steam-Spiele, OBS Studio, Twitch, Discord und vieles mehr.
 - **Handy und Tablet**: Android-App oder Bedienfeld im Browser; mehrere PCs,
   automatische Suche im WLAN, Kopplung mit Bestätigung am PC, optionale PIN;
   Einstellung „Form der Felder“: „Fläche füllen“ oder „Quadratisch“
-- **Deutsch und Englisch**: die ganze Oberfläche (Editor, Bedienfeld, Meldungen
+- **Acht Sprachen** (Deutsch, Englisch, Spanisch, Französisch, Polnisch, brasilianisches Portugiesisch, Russisch, vereinfachtes Chinesisch): die ganze Oberfläche (Editor, Bedienfeld, Meldungen
   des Servers, Menü in der Systemleiste) richtet sich nach der Systemsprache und
   lässt sich unter Einstellungen › Allgemein umstellen. Auch die **Android-App**
-  gibt es auf Deutsch und Englisch; sie folgt der Sprache, die in TouchDeck am PC
+  gibt es in denselben Sprachen; sie folgt der Sprache, die in TouchDeck am PC
   eingestellt ist – auch im Verbindungsbildschirm und in Dialogen (vor der ersten
   Verbindung: Sprache des gefundenen PCs, sonst die Sprache des Handys). Plugins
   können eigene Übersetzungen mitbringen

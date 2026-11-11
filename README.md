@@ -9,7 +9,7 @@ games, OBS Studio, Twitch, Discord and much more.
 | Folder | Contents |
 |---|---|
 | [`touchdeck-rs/`](touchdeck-rs/) | Desktop program in Rust (Tauri), version 0.12.3: server, actions and integrations, editor and deck, window with system tray icon |
-| [`android/`](android/) | Android app (Kotlin), version 0.8.4, in German and English: finds the PC on the Wi-Fi, pairs via confirmation or QR code, shows the deck in full screen |
+| [`android/`](android/) | Android app (Kotlin), version 0.8.4, in eight languages: finds the PC on the Wi-Fi, pairs via confirmation or QR code, shows the deck in full screen |
 
 Changes per version: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -44,9 +44,9 @@ Changes per version: [`CHANGELOG.md`](CHANGELOG.md)
 - **Phone and tablet**: Android app or deck in the browser; several PCs, automatic
   discovery on the Wi-Fi, pairing with confirmation on the PC, optional PIN; deck
   setting “Shape of the cells”: “Fill the screen” or “Square”
-- **German and English**: the whole interface (editor, deck, server messages, tray
+- **Eight languages** (German, English, Spanish, French, Polish, Brazilian Portuguese, Russian and Simplified Chinese): the whole interface (editor, deck, server messages, tray
   menu) follows the system language and can be switched in Settings › General.
-  The **Android app** is available in German and English as well and follows the
+  The **Android app** is available in the same languages and follows the
   language set in TouchDeck on the PC – including the connect screen and dialogs
   (before the first connection: the language of the PC it found, otherwise the
   phone's language). Plugins can ship their own translations

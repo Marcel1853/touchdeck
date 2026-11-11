@@ -6,6 +6,23 @@ Alle wichtigen Änderungen an TouchDeck, der Makro-Fernbedienung für Linux, und
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.4
+Datum: ?
+  Neuerungen:
+    - Editor und Bedienfeld sind ins Programm eingebaut: Im Paket liegt kein web-Ordner mehr, und
+      TouchDeck startet weiter mit einem Klick. Handys und Tablets laden beim Öffnen nur noch
+      geänderte Dateien (schnellerer Start). Zum Entwickeln liefert TOUCHDECK_PUBLIC einen Ordner.
+    - Die Update-Suche fragt GitHub je Repo nur noch einmal statt je Plugin.
+    - Letzte feste deutsche Meldungen (Hilfe der Kommandozeile, Fehler) sind übersetzt.
+    - Übersetzungen in allen neuen Sprachen noch einmal geprüft.
+  Fehlerbehebungen:
+    - Das Limit von GitHub (60 Abfragen pro Stunde) zeigt jetzt eine verständliche Meldung mit der
+      Uhrzeit, ab wann es wieder geht, statt „403 rate limit exceeded“.
+    - Reiter und Auswahlknöpfe brechen in langen Sprachen (z. B. Russisch) in eine neue Zeile um,
+      statt ineinanderzulaufen.
+    - Die Android-App übernimmt jetzt alle acht Sprachen vom PC, nicht nur Deutsch und Englisch.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.3
 Datum: 2026-11-07
   Neuerungen:

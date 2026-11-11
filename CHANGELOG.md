@@ -6,6 +6,23 @@ All notable changes to TouchDeck, the macro remote control for Linux, and its An
 
 ```text
 ---------------------------------------------------------------------------------------------------
+Version: 0.12.4
+Date: ?
+  Features:
+    - Editor and deck are built into the program: the package no longer carries a web folder, and
+      TouchDeck still starts with one click. Phones and tablets load only changed files when they
+      open the deck (faster start). For development, TOUCHDECK_PUBLIC serves a folder instead.
+    - The update check asks GitHub only once per repo instead of once per plugin.
+    - Remaining fixed German messages (command line help, errors) are translated.
+    - Translations reviewed again in all new languages.
+  Bugfixes:
+    - GitHub's limit of 60 requests per hour now shows an understandable message with the time when
+      it works again, instead of “403 rate limit exceeded”.
+    - Tabs and choice buttons wrap onto a new line instead of running into each other in long
+      languages (e.g. Russian).
+    - The Android app now takes over all eight languages from the PC, not only German and English.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.12.3
 Date: 2026-11-07
   Features:
