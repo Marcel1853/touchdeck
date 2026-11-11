@@ -302,7 +302,7 @@ fn install_desktop_entry() -> std::io::Result<()> {
     let icon_dir = data.join("icons/hicolor/512x512/apps");
     std::fs::create_dir_all(&icon_dir)?;
     let icon = icon_dir.join("touchdeck.png");
-    std::fs::write(&icon, include_bytes!("../icons/icon.png"))?;
+    write_if_changed(&icon, include_bytes!("../icons/icon.png"))?;
     let apps = data.join("applications");
     std::fs::create_dir_all(&apps)?;
     let exec = launch_command().trim_end_matches(" --hidden").to_string();
@@ -319,7 +319,17 @@ fn install_desktop_entry() -> std::io::Result<()> {
         "Terminal=false",
         "",
     ];
-    std::fs::write(apps.join("touchdeck.desktop"), entry.join("\n"))
+    write_if_changed(&apps.join("touchdeck.desktop"), entry.join("\n").as_bytes())
+}
+
+/** Schreibt nur, wenn sich der Inhalt ändert. Jedes Schreiben lässt die Taskleiste die Starter neu einlesen –
+ *  geschieht das gerade beim Öffnen des Fensters, ordnet sie es nicht zu und zeigt kein Symbol. */
+#[cfg(not(windows))]
+fn write_if_changed(path: &std::path::Path, data: &[u8]) -> std::io::Result<()> {
+    if std::fs::read(path).is_ok_and(|old| old == data) {
+        return Ok(());
+    }
+    std::fs::write(path, data)
 }
 
 // ---------- Systemleiste ----------
